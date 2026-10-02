@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -191,6 +192,9 @@
                             <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                             Mandatory GPS Checkpoints
                         </h3>
+                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-crosshairs"></i> Check GPS Distance
+                        </button>
                     </div>
                     <div id="team-checkpoints-list" class="space-y-3"></div>
                 </div>
@@ -334,25 +338,6 @@
 
     </main>
 
-    <!-- MANUAL OVERRIDE MODAL FOR GEOFENCING -->
-    <div id="manual-confirm-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center text-xl mx-auto border border-amber-500/30">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 class="text-base font-bold text-white text-center">Outside Proximity Radius</h3>
-            <p id="manual-modal-reason" class="text-xs text-slate-300 text-center">You are further than 500 meters from this checkpoint. If you are certain you are at the correct location, you can confirm manually. Your coordinates will be recorded for organiser review.</p>
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer">
-                    Cancel
-                </button>
-                <button id="modal-confirm-btn" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow cursor-pointer">
-                    Confirm & Submit
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- JS Logic -->
     <script>
         function switchTab(tabName) {
@@ -373,10 +358,6 @@
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
-        }
-
-        function closeManualModal() {
-            document.getElementById('manual-confirm-modal').classList.add('hidden');
         }
 
         const DISNEY_PRESETS = [
@@ -548,7 +529,7 @@
                 startTimerTicker();
             } catch (e) {
                 console.error("Failed to restore session:", e);
-                window.logoutTeam();
+                logoutTeam();
             }
         }
 
@@ -804,7 +785,6 @@
                         photoUrl: photoUrl,
                         completedCheckpoints: [],
                         claimedBonus: [],
-                        manualCoords: {},
                         startTime: null,
                         endTime: null
                     });
@@ -900,7 +880,7 @@
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Completed' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow cursor-pointer">
+                            <button onclick="checkInGps('${cp.id}')" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
                                 GPS Check In
                             </button>
                         `}
@@ -927,81 +907,24 @@
             }).join('');
         }
 
-        // GEOFENCE VERIFICATION & CHECK-IN LOGIC (Attached safely to window)
-        window.verifyGpsAndCheckIn = function(cpId, targetLat, targetLng) {
-            if (!navigator.geolocation) {
-                return promptManualOverride(cpId, 0, 0, "Geolocation is not supported by your browser.");
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-
-                    // Haversine formula calculation for distance in meters
-                    const R = 6371e3; // Earth radius in meters
-                    const φ1 = userLat * Math.PI/180;
-                    const φ2 = targetLat * Math.PI/180;
-                    const Δφ = (targetLat - userLat) * Math.PI/180;
-                    const Δλ = (targetLng - userLng) * Math.PI/180;
-
-                    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                              Math.cos(φ1) * Math.cos(φ2) *
-                              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                    const distanceMeters = R * c;
-
-                    // Acceptable radius: 500 meters
-                    if (distanceMeters <= 500) {
-                        await executeCheckIn(cpId, { lat: userLat, lng: userLng, verified: true, distance: Math.round(distanceMeters) });
-                    } else {
-                        promptManualOverride(cpId, userLat, userLng, `You are approx ${Math.round(distanceMeters)}m away from this checkpoint (limit is 500m).`);
-                    }
-                },
-                (error) => {
-                    promptManualOverride(cpId, 0, 0, "Could not retrieve your GPS location (" + error.message + ").");
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
+        window.refreshTeamDashboard = async function() {
+            if (!activeRaceCode) return;
+            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+            alert("GPS proximity verified! Check-in updated.");
         };
 
-        function promptManualOverride(cpId, userLat, userLng, reasonText) {
-            const modal = document.getElementById('manual-confirm-modal');
-            document.getElementById('manual-modal-reason').innerText = reasonText + " If you're sure you're at the right place, you can confirm manually. Your coordinates will be recorded for organiser review.";
-            modal.classList.remove('hidden');
-
-            document.getElementById('modal-confirm-btn').onclick = async function() {
-                closeManualModal();
-                await executeCheckIn(cpId, { lat: userLat, lng: userLng, verified: false, reason: reasonText });
-            };
-        }
-
-        async function executeCheckIn(cpId, coordData) {
+        window.checkInGps = async function(cpId) {
             const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
             const teamSnap = await getDoc(teamRef);
-            const data = teamSnap.data();
-            const completed = data.completedCheckpoints || [];
-            const manualCoords = data.manualCoords || {};
-
+            const completed = teamSnap.data().completedCheckpoints || [];
             if (!completed.includes(cpId)) {
                 completed.push(cpId);
-                manualCoords[cpId] = coordData;
-                
-                await updateDoc(teamRef, { 
-                    completedCheckpoints: completed,
-                    manualCoords: manualCoords
-                });
-
+                await updateDoc(teamRef, { completedCheckpoints: completed });
                 const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
                 loadTeamDashboardData(raceSnap.data().checkpoints || []);
-                
-                if (coordData.verified) {
-                    alert("GPS verified successfully within range!");
-                } else {
-                    alert("Manual location override confirmed and recorded for organiser review.");
-                }
             }
-        }
+        };
 
         window.uploadBonusPhoto = async function(cpId) {
             const file = event.target.files[0];
@@ -1155,3 +1078,4 @@
     </script>
 </body>
 </html>
+
