@@ -488,8 +488,48 @@
                     if (orgBadge) orgBadge.classList.add('hidden');
                 }
             });
+
+            // Check for persisted local storage session on page load
+            const savedRaceCode = localStorage.getItem('rad_race_code');
+            const savedTeamId = localStorage.getItem('rad_team_id');
+            if (savedRaceCode && savedTeamId) {
+                restoreSession(savedRaceCode, savedTeamId);
+            }
         } catch (err) {
             console.error("Firebase Initialization Error:", err);
+        }
+
+        async function restoreSession(code, teamId) {
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", code));
+                if (!raceSnap.exists()) return;
+                const teamSnap = await getDoc(doc(window.db, "races", code, "teams", teamId));
+                if (!teamSnap.exists()) return;
+
+                const tData = teamSnap.data();
+                activeRaceCode = code;
+                activeTeamId = teamId;
+
+                document.getElementById('active-team-name').innerText = tData.teamName;
+                document.getElementById('active-team-racecode').innerText = code;
+                document.getElementById('active-team-avatar').src = tData.photoUrl;
+                document.getElementById('team-status-banner').classList.remove('hidden');
+                document.getElementById('login-prompt-card').classList.add('hidden');
+                document.getElementById('team-dashboard-active').classList.remove('hidden');
+
+                document.getElementById('nav-team-badge').classList.remove('hidden');
+                document.getElementById('nav-team-avatar').classList.remove('hidden');
+                document.getElementById('nav-team-avatar').src = tData.photoUrl;
+                document.getElementById('nav-team-name').innerText = tData.teamName;
+
+                document.getElementById('leaderboard-code-input').value = code;
+
+                loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                startTimerTicker();
+            } catch (e) {
+                console.error("Failed to restore session:", e);
+                logoutTeam();
+            }
         }
 
         window.handleAdminAuth = async function() {
@@ -696,7 +736,7 @@
             loadAdminRaces();
         };
 
-        // TEAM JOIN / PIN RESUME LOGIN WITH PERSISTENT AVATAR
+        // TEAM JOIN / PIN RESUME LOGIN WITH PERSISTENT SESSION
         window.joinOrResumeTeam = async function() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
@@ -720,7 +760,6 @@
                 if (teamSnap.exists()) {
                     const data = teamSnap.data();
                     if (data.pin !== pin) return alert("Incorrect 4-digit PIN for this team name!");
-                    // Retain previously saved photo if no new one is uploaded
                     if (data.photoUrl) {
                         photoUrl = data.photoUrl;
                     }
@@ -753,6 +792,10 @@
                 activeRaceCode = code;
                 activeTeamId = teamId;
 
+                // Save to localStorage so refresh doesn't log out
+                localStorage.setItem('rad_race_code', code);
+                localStorage.setItem('rad_team_id', teamId);
+
                 // Update UI state & auto-populate leaderboard race code
                 document.getElementById('active-team-name').innerText = teamName;
                 document.getElementById('active-team-racecode').innerText = code;
@@ -761,13 +804,11 @@
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
 
-                // Nav Badge
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').src = photoUrl;
                 document.getElementById('nav-team-name').innerText = teamName;
 
-                // Default Leaderboard to this race code
                 document.getElementById('leaderboard-code-input').value = code;
 
                 loadTeamDashboardData(raceSnap.data().checkpoints || []);
@@ -780,6 +821,8 @@
         window.logoutTeam = function() {
             activeRaceCode = null;
             activeTeamId = null;
+            localStorage.removeItem('rad_race_code');
+            localStorage.removeItem('rad_team_id');
             clearInterval(timerInterval);
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
@@ -816,7 +859,6 @@
             } else if (tData.startTime) {
                 pill.innerText = "In Progress";
                 pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                // Lock start button once started so timer cannot be reset
                 startBtn.disabled = true;
                 startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
                 startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
@@ -942,7 +984,6 @@
             }, 1000);
         }
 
-        // LEADERBOARD RENDER (RAW TIME ACTIVE, ADJUSTED TIME UPON FINISHING)
         window.loadLeaderboard = async function() {
             const code = document.getElementById('leaderboard-code-input').value.trim().toUpperCase();
             if (!code) return alert("Please enter a race code.");
@@ -970,7 +1011,7 @@
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = missedCount * 60; // +60 min per missed mandatory stop
+                    const penaltyMin = missedCount * 60;
 
                     let bonusMinDeduction = 0;
                     (t.claimedBonus || []).forEach(bId => {
@@ -986,13 +1027,11 @@
                     }
 
                     t.rawMin = rawElapsedMin;
-                    // Adjusted Total Minutes = Elapsed + Penalties - Bonus Deductions
                     t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
                     t.progressCount = completed.length;
                     t.bonusCount = (t.claimedBonus || []).length;
                 });
 
-                // Sort: Finished teams ranked by adjusted time ascending, then active teams by progress count descending
                 teamList.sort((a, b) => {
                     if (a.endTime && !b.endTime) return -1;
                     if (!a.endTime && b.endTime) return 1;
@@ -1003,7 +1042,6 @@
 
                 let html = '';
                 teamList.forEach((t, index) => {
-                    // Show raw time if active, adjusted time if finished
                     const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
                     const hrs = Math.floor(displayMin / 60);
                     const mins = Math.floor(displayMin % 60);
