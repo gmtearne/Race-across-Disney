@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Compat SDKs (Ensures 100% reliable loading on GitHub Pages) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -31,9 +37,6 @@
     <style>
         .magical-gradient {
             background: linear-gradient(135deg, #0055B8 0%, #4A154B 50%, #E81F76 100%);
-        }
-        .gold-glow {
-            box-shadow: 0 0 15px rgba(255, 184, 0, 0.4);
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -63,7 +66,7 @@
                 </div>
                 <div>
                     <h1 class="font-disney font-bold text-xl tracking-wide text-white drop-shadow">Race Across Disney</h1>
-                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium">Scavenger & GPS Challenge</p>
+                    <p class="text-xs text-blue-200 font-medium">Scavenger & GPS Challenge</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -77,13 +80,13 @@
         
         <!-- Tab Navigation Bar -->
         <div class="flex justify-around bg-slate-950/40 border-t border-white/5 text-xs font-semibold">
-            <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60">
+            <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 cursor-pointer">
                 <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
             </button>
-            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2">
+            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-trophy"></i> <span>Leaderboard</span>
             </button>
-            <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2">
+            <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
             </button>
         </div>
@@ -104,7 +107,7 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="logoutTeam()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center gap-1.5">
+                <button onclick="logoutTeam()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-right-from-bracket"></i> Switch Team
                 </button>
             </div>
@@ -119,7 +122,7 @@
                     <i class="fa-solid fa-users-gear"></i>
                 </div>
                 <h2 class="text-2xl font-disney font-bold text-white">Join or Resume Your Race</h2>
-                <p class="text-slate-300 text-sm max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. Returning teams will automatically load their saved avatar and progress!</p>
+                <p class="text-slate-300 text-sm max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN.</p>
                 
                 <div class="max-w-sm mx-auto space-y-3 pt-2 text-left">
                     <div>
@@ -140,7 +143,7 @@
                             <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-[10px] text-slate-400 file:py-2 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:bg-slate-800 file:text-disneyGold">
                         </div>
                     </div>
-                    <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
+                    <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg cursor-pointer">
                         Enter Race Portal
                     </button>
                 </div>
@@ -175,10 +178,10 @@
 
                     <!-- Action Controls -->
                     <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
-                        <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                        <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer">
                             <i class="fa-solid fa-play"></i> Start Race
                         </button>
-                        <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                        <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer">
                             <i class="fa-solid fa-flag-checkered"></i> Finish Race
                         </button>
                     </div>
@@ -202,7 +205,7 @@
                             <i class="fa-solid fa-camera-retro text-disneyGold"></i>
                             Bonus Photo Challenges
                         </h3>
-                        <p class="text-xs text-slate-400">Upload photo proof to claim time deductions from your final race total!</p>
+                        <p class="text-xs text-slate-400">Upload photo proof to claim time deductions!</p>
                     </div>
                     <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
@@ -218,11 +221,11 @@
                         <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
                         </h2>
-                        <p class="text-xs text-slate-400">Displays raw elapsed time during the race. Official adjusted times (penalties & bonuses) apply upon finishing.</p>
+                        <p class="text-xs text-slate-400">Displays raw time while active, adjusted time upon finishing.</p>
                     </div>
                     <div class="flex gap-2">
                         <input type="text" id="leaderboard-code-input" placeholder="RACE CODE" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold w-28 focus:outline-none">
-                        <button onclick="loadLeaderboard()" class="px-4 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition">Load</button>
+                        <button onclick="loadLeaderboard()" class="px-4 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition cursor-pointer">Load</button>
                     </div>
                 </div>
 
@@ -253,7 +256,7 @@
             <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login</h2>
-                    <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-[11px] text-disneyGold underline">Need account? Register</button>
+                    <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-[11px] text-disneyGold underline cursor-pointer">Need account? Register</button>
                 </div>
                 <div class="space-y-3">
                     <div>
@@ -264,7 +267,7 @@
                         <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
                         <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
                     </div>
-                    <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
+                    <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition cursor-pointer">
                         Sign In to Dashboard
                     </button>
                 </div>
@@ -279,7 +282,7 @@
                         </h3>
                         <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
                     </div>
-                    <button onclick="handleAdminLogout()" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
+                    <button onclick="handleAdminLogout()" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30 cursor-pointer">
                         Logout
                     </button>
                 </div>
@@ -291,7 +294,7 @@
                         <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                         <input type="text" id="new-race-code" placeholder="6-Char Code (e.g. MK2026)" maxlength="6" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold">
                     </div>
-                    <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+                    <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow cursor-pointer">
                         + Create Race Event
                     </button>
                 </div>
@@ -301,16 +304,15 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
                             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints (50 Pre-populated Disney Locations)</h4>
-                            <p class="text-[11px] text-slate-400">Select active stops or generate random routes.</p>
                         </div>
                         <input type="text" id="cp-race-code" placeholder="RACE CODE" maxlength="6" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-28 text-center focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button onclick="addPresetLocationsToRace()" class="py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                        <button onclick="addPresetLocationsToRace()" class="py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow cursor-pointer">
                             + Add All 50 Disney Locations
                         </button>
-                        <button onclick="addRandomLocationsToRace()" class="py-2.5 bg-disneyPurple hover:bg-purple-800 text-white font-bold text-xs rounded-xl transition shadow">
+                        <button onclick="addRandomLocationsToRace()" class="py-2.5 bg-disneyPurple hover:bg-purple-800 text-white font-bold text-xs rounded-xl transition shadow cursor-pointer">
                             🎲 Randomly Generate Stops
                         </button>
                     </div>
@@ -341,39 +343,159 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h3 class="text-base font-bold text-white text-center">Cannot Locate You at This Stop</h3>
-            <p class="text-xs text-slate-300 text-center">We couldn't verify your GPS proximity to this checkpoint. If you're sure you're in the right place, you can manually confirm your location (your coordinates will be recorded for organiser verification).</p>
+            <p class="text-xs text-slate-300 text-center">We couldn't verify your GPS proximity to this checkpoint. If you're sure you're in the right place, you can manually confirm your location (recorded for organiser verification).</p>
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">
+                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer">
                     Keep Hunting
                 </button>
-                <button id="modal-confirm-btn" onclick="" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow">
+                <button id="modal-confirm-btn" onclick="" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow cursor-pointer">
                     Confirm Location
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- JS Logic & Global Handlers -->
+    <!-- Main JavaScript & Firebase Logic -->
     <script>
-        window.switchTab = function(tabName) {
+        // Initialize Firebase Compat
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
+            authDomain: "raceacrossdisney.firebaseapp.com",
+            projectId: "raceacrossdisney",
+            storageBucket: "raceacrossdisney.firebasestorage.app",
+            messagingSenderId: "925599894622",
+            appId: "1:925599894622:web:74ac71c8d88e46316a78cf"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let activeRaceCode = null;
+        let activeTeamId = null;
+        let timerInterval = null;
+
+        // Auth state listener for organiser
+        auth.onAuthStateChanged((user) => {
+            const authCard = document.getElementById('admin-auth-card');
+            const adminDashboard = document.getElementById('admin-dashboard-card');
+            const orgEmailDisplay = document.getElementById('org-email-display');
+            const orgBadge = document.getElementById('nav-org-badge');
+
+            if (user) {
+                if (orgEmailDisplay) orgEmailDisplay.innerText = `Logged in as: ${user.email}`;
+                if (authCard) authCard.classList.add('hidden');
+                if (adminDashboard) adminDashboard.classList.remove('hidden');
+                if (orgBadge) orgBadge.classList.remove('hidden');
+                loadAdminRaces();
+            } else {
+                if (authCard) authCard.classList.remove('hidden');
+                if (adminDashboard) adminDashboard.classList.add('hidden');
+                if (orgBadge) orgBadge.classList.add('hidden');
+            }
+        });
+
+        // Check local storage for persistent team session
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedRaceCode = localStorage.getItem('rad_race_code');
+            const savedTeamId = localStorage.getItem('rad_team_id');
+            if (savedRaceCode && savedTeamId) {
+                restoreSession(savedRaceCode, savedTeamId);
+            }
+        });
+
+        async function restoreSession(code, teamId) {
+            try {
+                const raceSnap = await db.collection("races").doc(code).get();
+                if (!raceSnap.exists) return;
+                const teamSnap = await db.collection("races").doc(code).collection("teams").doc(teamId).get();
+                if (!teamSnap.exists) return;
+
+                const tData = teamSnap.data();
+                activeRaceCode = code;
+                activeTeamId = teamId;
+
+                document.getElementById('active-team-name').innerText = tData.teamName;
+                document.getElementById('active-team-racecode').innerText = code;
+                document.getElementById('active-team-avatar').src = tData.photoUrl;
+                document.getElementById('team-status-banner').classList.remove('hidden');
+                document.getElementById('login-prompt-card').classList.add('hidden');
+                document.getElementById('team-dashboard-active').classList.remove('hidden');
+
+                document.getElementById('nav-team-badge').classList.remove('hidden');
+                document.getElementById('nav-team-avatar').classList.remove('hidden');
+                document.getElementById('nav-team-avatar').src = tData.photoUrl;
+                document.getElementById('nav-team-name').innerText = tData.teamName;
+                document.getElementById('leaderboard-code-input').value = code;
+
+                loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                startTimerTicker();
+            } catch (e) {
+                console.error("Failed to restore session:", e);
+                logoutTeam();
+            }
+        }
+
+        function switchTab(tabName) {
             ['race', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (t === tabName) {
-                    btn.className = "flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60";
+                    btn.className = "flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 cursor-pointer";
                 } else {
-                    btn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2";
+                    btn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 cursor-pointer";
                 }
             });
-        };
+        }
 
         let isRegisterMode = false;
-        window.toggleAuthMode = function() {
+        function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
-        };
+        }
+
+        async function handleAdminAuth() {
+            const email = document.getElementById('admin-email').value.trim();
+            const pass = document.getElementById('admin-password').value.trim();
+            if (!email || !pass) return alert("Please enter email and password.");
+
+            try {
+                if (isRegisterMode) {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                    alert("Organiser account created successfully!");
+                } else {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                }
+            } catch (err) {
+                alert("Authentication Error: " + err.message);
+            }
+        }
+
+        function handleAdminLogout() {
+            auth.signOut();
+        }
+
+        async function createNewRace() {
+            const title = document.getElementById('new-race-title').value.trim();
+            const code = document.getElementById('new-race-code').value.trim().toUpperCase();
+            if (!title || !code) return alert("Please enter both race title and 6-character code.");
+
+            try {
+                await db.collection("races").doc(code).set({
+                    title: title,
+                    code: code,
+                    checkpoints: [],
+                    createdAt: new Date().toISOString()
+                });
+                alert(`Race "${title}" created successfully with code ${code}!`);
+                document.getElementById('cp-race-code').value = code;
+                loadAdminRaces();
+            } catch (err) {
+                alert("Error creating race: " + err.message);
+            }
+        }
 
         const DISNEY_PRESETS = [
             { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom" },
@@ -391,41 +513,18 @@
             { name: "Tron Lightcycle / Run", lat: 28.4215, lng: -81.5795, type: "GPS", park: "Magic Kingdom" },
             { name: "Mad Tea Party", lat: 28.4210, lng: -81.5815, type: "GPS", park: "Magic Kingdom" },
             { name: "Enchanted Tiki Room", lat: 28.4178, lng: -81.5840, type: "GPS", park: "Magic Kingdom" },
-            
             { name: "Spaceship Earth", lat: 28.3753, lng: -81.5494, type: "GPS", park: "Epcot" },
             { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3732, lng: -81.5490, type: "GPS", park: "Epcot" },
             { name: "Test Track", lat: 28.3721, lng: -81.5460, type: "GPS", park: "Epcot" },
             { name: "Soarin' Around the World", lat: 28.3770, lng: -81.5540, type: "GPS", park: "Epcot" },
             { name: "Frozen Ever After (Norway)", lat: 28.3712, lng: -81.5492, type: "GPS", park: "Epcot" },
             { name: "Remy's Ratatouille Adventure (France)", lat: 28.3705, lng: -81.5520, type: "GPS", park: "Epcot" },
-            { name: "The American Adventure", lat: 28.3685, lng: -81.5510, type: "GPS", park: "Epcot" },
-            { name: "Mission: SPACE", lat: 28.3742, lng: -81.5468, type: "GPS", park: "Epcot" },
-            { name: "The Seas with Nemo & Friends", lat: 28.3775, lng: -81.5532, type: "GPS", park: "Epcot" },
-            { name: "Gran Fiesta Tour (Mexico)", lat: 28.3720, lng: -81.5535, type: "GPS", park: "Epcot" },
-            { name: "Japan Pavilion Torii Gate", lat: 28.3690, lng: -81.5480, type: "GPS", park: "Epcot" },
-            { name: "United Kingdom Rose & Crown", lat: 28.3680, lng: -81.5495, type: "GPS", park: "Epcot" },
-            
             { name: "Twilight Zone Tower of Terror", lat: 28.3565, lng: -81.5606, type: "GPS", park: "Hollywood Studios" },
             { name: "Rock 'n' Roller Coaster", lat: 28.3562, lng: -81.5612, type: "GPS", park: "Hollywood Studios" },
             { name: "Star Wars: Rise of the Resistance", lat: 28.3533, lng: -81.5583, type: "GPS", park: "Hollywood Studios" },
-            { name: "Millennium Falcon: Smugglers Run", lat: 28.3530, lng: -81.5590, type: "GPS", park: "Hollywood Studios" },
-            { name: "Toy Story Mania!", lat: 28.3551, lng: -81.5620, type: "GPS", park: "Hollywood Studios" },
-            { name: "Slinky Dog Dash", lat: 28.3542, lng: -81.5630, type: "GPS", park: "Hollywood Studios" },
-            { name: "Mickey & Minnie's Runaway Railway", lat: 28.3570, lng: -81.5580, type: "GPS", park: "Hollywood Studios" },
-            { name: "Hollywood Brown Derby", lat: 28.3568, lng: -81.5592, type: "GPS", park: "Hollywood Studios" },
-            { name: "Alien Swirling Saucers", lat: 28.3548, lng: -81.5638, type: "GPS", park: "Hollywood Studios" },
-            { name: "Star Tours – The Adventures Continue", lat: 28.3540, lng: -81.5575, type: "GPS", park: "Hollywood Studios" },
-            
             { name: "Avatar Flight of Passage", lat: 28.3553, lng: -81.5907, type: "GPS", park: "Animal Kingdom" },
             { name: "Expedition Everest", lat: 28.3582, lng: -81.5880, type: "GPS", park: "Animal Kingdom" },
             { name: "Kilimanjaro Safaris", lat: 28.3610, lng: -81.5921, type: "GPS", park: "Animal Kingdom" },
-            { name: "DINOSAUR", lat: 28.3521, lng: -81.5872, type: "GPS", park: "Animal Kingdom" },
-            { name: "Tree of Life Roots", lat: 28.3590, lng: -81.5900, type: "GPS", park: "Animal Kingdom" },
-            { name: "Na'vi River Journey", lat: 28.3550, lng: -81.5912, type: "GPS", park: "Animal Kingdom" },
-            { name: "Kali River Rapids", lat: 28.3575, lng: -81.5892, type: "GPS", park: "Animal Kingdom" },
-            { name: "Festival of the Lion King", lat: 28.3562, lng: -81.5860, type: "GPS", park: "Animal Kingdom" },
-            { name: "Gorilla Falls Exploration Trail", lat: 28.3620, lng: -81.5930, type: "GPS", park: "Animal Kingdom" },
-            
             { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 15, park: "Bonus Challenge" },
             { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
             { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
@@ -433,11 +532,10 @@
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
         ];
 
-        window.renderOrgPicker = function() {
+        function renderOrgPicker() {
             const container = document.getElementById('org-checkpoint-picker');
             if (!container) return;
             const query = (document.getElementById('org-search-input')?.value || "").toLowerCase();
-            
             let html = '';
             DISNEY_PRESETS.forEach((p, idx) => {
                 if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
@@ -447,164 +545,28 @@
                                 <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
                                 <div>
                                     <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
+                                    <span class="text-[10px] text-slate-400">${p.park}</span>
                                 </div>
                             </div>
-                            <button onclick="addSinglePresetToRace(${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
-                                + Add
-                            </button>
+                            <button onclick="addSinglePresetToRace(${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] cursor-pointer">+ Add</button>
                         </div>
                     `;
                 }
             });
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        };
-        setTimeout(window.renderOrgPicker, 500);
-
-        window.closeManualModal = function() {
-            document.getElementById('manual-confirm-modal').classList.add('hidden');
-        };
-
-        window.filterOrgCheckpoints = function() {
-            window.renderOrgPicker();
-        };
-    </script>
-
-    <!-- Firebase SDK Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
-            authDomain: "raceacrossdisney.firebaseapp.com",
-            projectId: "raceacrossdisney",
-            storageBucket: "raceacrossdisney.firebasestorage.app",
-            messagingSenderId: "925599894622",
-            appId: "1:925599894622:web:74ac71c8d88e46316a78cf"
-        };
-
-        let activeRaceCode = null;
-        let activeTeamId = null;
-        let timerInterval = null;
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            window.auth = getAuth(app);
-            window.db = getFirestore(app);
-
-            onAuthStateChanged(window.auth, (user) => {
-                const authCard = document.getElementById('admin-auth-card');
-                const adminDashboard = document.getElementById('admin-dashboard-card');
-                const orgEmailDisplay = document.getElementById('org-email-display');
-                const orgBadge = document.getElementById('nav-org-badge');
-
-                if (user) {
-                    if (orgEmailDisplay) orgEmailDisplay.innerText = `Logged in as: ${user.email}`;
-                    if (authCard) authCard.classList.add('hidden');
-                    if (adminDashboard) adminDashboard.classList.remove('hidden');
-                    if (orgBadge) orgBadge.classList.remove('hidden');
-                    window.loadAdminRaces();
-                } else {
-                    if (authCard) authCard.classList.remove('hidden');
-                    if (adminDashboard) adminDashboard.classList.add('hidden');
-                    if (orgBadge) orgBadge.classList.add('hidden');
-                }
-            });
-
-            const savedRaceCode = localStorage.getItem('rad_race_code');
-            const savedTeamId = localStorage.getItem('rad_team_id');
-            if (savedRaceCode && savedTeamId) {
-                restoreSession(savedRaceCode, savedTeamId);
-            }
-        } catch (err) {
-            console.error("Firebase Initialization Error:", err);
         }
+        setTimeout(renderOrgPicker, 500);
 
-        async function restoreSession(code, teamId) {
-            try {
-                const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return;
-                const teamSnap = await getDoc(doc(window.db, "races", code, "teams", teamId));
-                if (!teamSnap.exists()) return;
+        function filterOrgCheckpoints() { renderOrgPicker(); }
+        function closeManualModal() { document.getElementById('manual-confirm-modal').classList.add('hidden'); }
 
-                const tData = teamSnap.data();
-                activeRaceCode = code;
-                activeTeamId = teamId;
-
-                document.getElementById('active-team-name').innerText = tData.teamName;
-                document.getElementById('active-team-racecode').innerText = code;
-                document.getElementById('active-team-avatar').src = tData.photoUrl;
-                document.getElementById('team-status-banner').classList.remove('hidden');
-                document.getElementById('login-prompt-card').classList.add('hidden');
-                document.getElementById('team-dashboard-active').classList.remove('hidden');
-
-                document.getElementById('nav-team-badge').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = tData.photoUrl;
-                document.getElementById('nav-team-name').innerText = tData.teamName;
-
-                document.getElementById('leaderboard-code-input').value = code;
-
-                loadTeamDashboardData(raceSnap.data().checkpoints || []);
-                startTimerTicker();
-            } catch (e) {
-                console.error("Failed to restore session:", e);
-                window.logoutTeam();
-            }
-        }
-
-        window.handleAdminAuth = async function() {
-            const email = document.getElementById('admin-email').value.trim();
-            const pass = document.getElementById('admin-password').value.trim();
-            if (!email || !pass) return alert("Please enter email and password.");
-
-            try {
-                if (isRegisterMode) {
-                    await createUserWithEmailAndPassword(window.auth, email, pass);
-                    alert("Organiser account created successfully!");
-                } else {
-                    await signInWithEmailAndPassword(window.auth, email, pass);
-                }
-            } catch (err) {
-                alert("Authentication Error: " + err.message);
-            }
-        };
-
-        window.handleAdminLogout = function() {
-            signOut(window.auth);
-        };
-
-        window.createNewRace = async function() {
-            const title = document.getElementById('new-race-title').value.trim();
-            const code = document.getElementById('new-race-code').value.trim().toUpperCase();
-            if (!title || !code) return alert("Please enter both race title and 6-character code.");
-
-            try {
-                await setDoc(doc(window.db, "races", code), {
-                    title: title,
-                    code: code,
-                    checkpoints: [],
-                    createdAt: new Date().toISOString()
-                });
-                alert(`Race "${title}" created successfully with code ${code}!`);
-                document.getElementById('cp-race-code').value = code;
-                window.loadAdminRaces();
-            } catch (err) {
-                alert("Error creating race: " + err.message);
-            }
-        };
-
-        window.addPresetLocationsToRace = async function() {
+        async function addPresetLocationsToRace() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             if (!code) return alert("Please enter the race code.");
-
             try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-
+                const raceRef = db.collection("races").doc(code);
+                const raceSnap = await raceRef.get();
+                if (!raceSnap.exists) return alert("Race code not found.");
                 const existing = raceSnap.data().checkpoints || [];
                 const newCps = DISNEY_PRESETS.map((p, idx) => ({
                     id: 'cp_' + Date.now() + '_' + idx,
@@ -615,31 +577,24 @@
                     bonusMinDeduction: p.bonusMinDeduction || 0,
                     park: p.park || "Disney"
                 }));
+                await raceRef.update({ checkpoints: [...existing, ...newCps] });
+                alert("Successfully added Disney locations and bonus challenges!");
+                loadAdminRaces();
+            } catch (e) { alert("Error: " + e.message); }
+        }
 
-                await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
-                alert("Successfully added all 50+ Disney locations and bonus challenges!");
-                window.loadAdminRaces();
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        };
-
-        window.addRandomLocationsToRace = async function() {
+        async function addRandomLocationsToRace() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             if (!code) return alert("Please enter the race code.");
             const countStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
             if (!countStr) return;
             const count = parseInt(countStr) || 10;
-
             try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-
+                const raceRef = db.collection("races").doc(code);
+                const raceSnap = await raceRef.get();
+                if (!raceSnap.exists) return alert("Race code not found.");
                 const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
-                const shuffled = [...gpsOnly].sort(() => 0.5 - Math.random());
-                const selected = shuffled.slice(0, count);
-
+                const selected = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, count);
                 const bonuses = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
                 const combined = [...selected, ...bonuses].map((p, idx) => ({
                     id: 'cp_rand_' + Date.now() + '_' + idx,
@@ -650,24 +605,19 @@
                     bonusMinDeduction: p.bonusMinDeduction || 0,
                     park: p.park || "Disney"
                 }));
+                await raceRef.update({ checkpoints: combined });
+                alert(`Successfully generated ${selected.length} random stops and bonus challenges!`);
+                loadAdminRaces();
+            } catch (e) { alert("Error: " + e.message); }
+        }
 
-                await updateDoc(raceRef, { checkpoints: combined });
-                alert(`Successfully generated ${selected.length} random stops and all photo bonus challenges!`);
-                window.loadAdminRaces();
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        };
-
-        window.addSinglePresetToRace = async function(idx) {
+        async function addSinglePresetToRace(idx) {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
-
             try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-
+                const raceRef = db.collection("races").doc(code);
+                const raceSnap = await raceRef.get();
+                if (!raceSnap.exists) return alert("Race code not found.");
                 const p = DISNEY_PRESETS[idx];
                 const newCp = {
                     id: 'cp_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -678,30 +628,25 @@
                     bonusMinDeduction: p.bonusMinDeduction || 0,
                     park: p.park || "Disney"
                 };
-
-                await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
+                await raceRef.update({ checkpoints: firebase.firestore.FieldValue.arrayUnion(newCp) });
                 alert(`Added "${p.name}" to race ${code}!`);
-                window.loadAdminRaces();
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        };
+                loadAdminRaces();
+            } catch (e) { alert("Error: " + e.message); }
+        }
 
-        window.loadAdminRaces = async function() {
+        async function loadAdminRaces() {
             try {
-                const querySnapshot = await getDocs(collection(window.db, "races"));
+                const querySnapshot = await db.collection("races").get();
                 const listEl = document.getElementById('admin-race-list');
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "No active races found in database.";
                     return;
                 }
-
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
                     const race = docSnap.data();
                     const cps = race.checkpoints || [];
-                    const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
-
+                    const teamsSnap = await db.collection("races").doc(race.code).collection("teams").get();
                     html += `
                         <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
                             <div class="flex justify-between items-center">
@@ -711,27 +656,15 @@
                                 </div>
                                 <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
                             </div>
-
-                            <div class="space-y-1 pl-2 border-l border-slate-700 max-h-32 overflow-y-auto">
-                                ${cps.map(cp => `
-                                    <div class="flex justify-between items-center text-[10px] text-slate-400">
-                                        <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name}</span>
-                                        <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300">Remove</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-
                             <div class="pt-2 border-t border-slate-800">
                                 <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams (${teamsSnap.size})</span>
                                 <div class="space-y-1">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
-                                        return `
-                                            <div class="flex justify-between items-center text-[10px] bg-slate-950 p-1.5 rounded border border-slate-800">
-                                                <span class="font-bold text-slate-200">${t.teamName} (PIN: ${t.pin})</span>
-                                                <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline">Delete</button>
-                                            </div>
-                                        `;
+                                        return `<div class="flex justify-between items-center text-[10px] bg-slate-950 p-1.5 rounded border border-slate-800">
+                                            <span class="font-bold text-slate-200">${t.teamName} (PIN: ${t.pin})</span>
+                                            <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline cursor-pointer">Delete</button>
+                                        </div>`;
                                     }).join('')}
                                 </div>
                             </div>
@@ -739,27 +672,16 @@
                     `;
                 }
                 listEl.innerHTML = html;
-            } catch (e) {
-                console.error(e);
-            }
-        };
+            } catch (e) { console.error(e); }
+        }
 
-        window.deleteCheckpoint = async function(raceCode, cpId) {
-            const raceRef = doc(window.db, "races", raceCode);
-            const raceSnap = await getDoc(raceRef);
-            if (!raceSnap.exists()) return;
-            const updated = (raceSnap.data().checkpoints || []).filter(c => c.id !== cpId);
-            await updateDoc(raceRef, { checkpoints: updated });
-            window.loadAdminRaces();
-        };
-
-        window.deleteTeam = async function(raceCode, teamId) {
+        async function deleteTeam(raceCode, teamId) {
             if (!confirm("Are you sure you want to remove this team?")) return;
-            await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-            window.loadAdminRaces();
-        };
+            await db.collection("races").doc(raceCode).collection("teams").doc(teamId).delete();
+            loadAdminRaces();
+        }
 
-        window.joinOrResumeTeam = async function() {
+        async function joinOrResumeTeam() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
             const pin = document.getElementById('input-team-pin').value.trim();
@@ -770,21 +692,18 @@
             }
 
             try {
-                const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return alert("Race code not found! Check with your organiser.");
+                const raceSnap = await db.collection("races").doc(code).get();
+                if (!raceSnap.exists) return alert("Race code not found! Check with your organiser.");
 
                 const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
-                const teamRef = doc(window.db, "races", code, "teams", teamId);
-                const teamSnap = await getDoc(teamRef);
+                const teamRef = db.collection("races").doc(code).collection("teams").doc(teamId);
+                const teamSnap = await teamRef.get();
 
                 let photoUrl = "https://via.placeholder.com/50?text=" + encodeURIComponent(teamName);
-                
-                if (teamSnap.exists()) {
+                if (teamSnap.exists) {
                     const data = teamSnap.data();
                     if (data.pin !== pin) return alert("Incorrect 4-digit PIN for this team name!");
-                    if (data.photoUrl) {
-                        photoUrl = data.photoUrl;
-                    }
+                    if (data.photoUrl) photoUrl = data.photoUrl;
                 }
 
                 if (photoFile) {
@@ -795,12 +714,10 @@
                     });
                 }
 
-                if (teamSnap.exists()) {
-                    if (photoFile) {
-                        await updateDoc(teamRef, { photoUrl: photoUrl });
-                    }
+                if (teamSnap.exists) {
+                    if (photoFile) await teamRef.update({ photoUrl: photoUrl });
                 } else {
-                    await setDoc(teamRef, {
+                    await teamRef.set({
                         teamName: teamName,
                         pin: pin,
                         photoUrl: photoUrl,
@@ -815,7 +732,6 @@
 
                 activeRaceCode = code;
                 activeTeamId = teamId;
-
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
 
@@ -830,7 +746,6 @@
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').src = photoUrl;
                 document.getElementById('nav-team-name').innerText = teamName;
-
                 document.getElementById('leaderboard-code-input').value = code;
 
                 loadTeamDashboardData(raceSnap.data().checkpoints || []);
@@ -838,9 +753,9 @@
             } catch (e) {
                 alert("Error joining race: " + e.message);
             }
-        };
+        }
 
-        window.logoutTeam = function() {
+        function logoutTeam() {
             activeRaceCode = null;
             activeTeamId = null;
             localStorage.removeItem('rad_race_code');
@@ -850,11 +765,11 @@
             document.getElementById('team-dashboard-active').classList.add('hidden');
             document.getElementById('login-prompt-card').classList.remove('hidden');
             document.getElementById('nav-team-badge').classList.add('hidden');
-        };
+        }
 
         async function loadTeamDashboardData(checkpoints) {
-            const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId));
-            if (!teamSnap.exists()) return;
+            const teamSnap = await db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId).get();
+            if (!teamSnap.exists) return;
             const tData = teamSnap.data();
 
             const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
@@ -863,11 +778,8 @@
             const claimedBonus = tData.claimedBonus || [];
 
             document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
-            
             let totalDeductionMin = 0;
-            bonus.forEach(b => {
-                if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction || 10);
-            });
+            bonus.forEach(b => { if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction || 10); });
             document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
 
             const pill = document.getElementById('race-status-pill');
@@ -888,7 +800,7 @@
                 pill.innerText = "Not Started";
                 pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
                 startBtn.disabled = false;
-                startBtn.className = "flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
+                startBtn.className = "flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer";
                 startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
             }
 
@@ -901,7 +813,7 @@
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Completed' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow cursor-pointer">
                                 Check In
                             </button>
                         `}
@@ -928,38 +840,30 @@
             }).join('');
         }
 
-        window.verifyGpsAndCheckIn = function(cpId, targetLat, targetLng) {
+        function verifyGpsAndCheckIn(cpId, targetLat, targetLng) {
             if (!navigator.geolocation) {
                 return promptManualOverride(cpId, "Geolocation not supported by browser.");
             }
-
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
-
                     const R = 6371;
                     const dLat = (targetLat - userLat) * Math.PI / 180;
                     const dLng = (targetLng - userLng) * Math.PI / 180;
-                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                              Math.cos(userLat * Math.PI / 180) * Math.cos(targetLat * Math.PI / 180) *
-                              Math.sin(dLng/2) * Math.sin(dLng/2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                    const distanceKm = R * c;
-                    const distanceMeters = distanceKm * 1000;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(userLat * Math.PI / 180) * Math.cos(targetLat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                    const distanceMeters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1000;
 
                     if (distanceMeters <= 500) {
                         await executeCheckIn(cpId, { lat: userLat, lng: userLng, verified: true });
                     } else {
-                        promptManualOverride(cpId, `You are approx ${Math.round(distanceMeters)}m away from this checkpoint.`);
+                        promptManualOverride(cpId, `You are approx ${Math.round(distanceMeters)}m away.`);
                     }
                 },
-                (error) => {
-                    promptManualOverride(cpId, "Could not retrieve your GPS location (" + error.message + ").");
-                },
+                (error) => { promptManualOverride(cpId, "Could not retrieve GPS (" + error.message + ")."); },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
-        };
+        }
 
         function promptManualOverride(cpId, reason) {
             const modal = document.getElementById('manual-confirm-modal');
@@ -968,24 +872,24 @@
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         async (pos) => {
-                            window.closeManualModal();
+                            closeManualModal();
                             await executeCheckIn(cpId, { lat: pos.coords.latitude, lng: pos.coords.longitude, verified: false, reason: reason });
                         },
                         async () => {
-                            window.closeManualModal();
+                            closeManualModal();
                             await executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
                         }
                     );
                 } else {
-                    window.closeManualModal();
+                    closeManualModal();
                     executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
                 }
             };
         }
 
         async function executeCheckIn(cpId, coordData) {
-            const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
-            const teamSnap = await getDoc(teamRef);
+            const teamRef = db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId);
+            const teamSnap = await teamRef.get();
             const data = teamSnap.data();
             const completed = data.completedCheckpoints || [];
             const manualCoords = data.manualCoords || {};
@@ -993,25 +897,21 @@
             if (!completed.includes(cpId)) {
                 completed.push(cpId);
                 manualCoords[cpId] = coordData;
-                await updateDoc(teamRef, {
-                    completedCheckpoints: completed,
-                    manualCoords: manualCoords
-                });
-                const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+                await teamRef.update({ completedCheckpoints: completed, manualCoords: manualCoords });
+                const raceSnap = await db.collection("races").doc(activeRaceCode).get();
                 loadTeamDashboardData(raceSnap.data().checkpoints || []);
                 alert(coordData.verified ? "GPS verified! Check-in successful." : "Manual location confirmed and recorded for organiser verification.");
             }
         }
 
-        window.uploadBonusPhoto = async function(cpId) {
+        async function uploadBonusPhoto(cpId) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const base64Img = e.target.result;
-                const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
-                const teamSnap = await getDoc(teamRef);
+                const teamRef = db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId);
+                const teamSnap = await teamRef.get();
                 const data = teamSnap.data();
                 const claimed = data.claimedBonus || [];
                 const proofPhotos = data.bonusProofPhotos || {};
@@ -1019,43 +919,40 @@
                 if (!claimed.includes(cpId)) {
                     claimed.push(cpId);
                     proofPhotos[cpId] = base64Img;
-                    await updateDoc(teamRef, {
-                        claimedBonus: claimed,
-                        bonusProofPhotos: proofPhotos
-                    });
-                    const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+                    await teamRef.update({ claimedBonus: claimed, bonusProofPhotos: proofPhotos });
+                    const raceSnap = await db.collection("races").doc(activeRaceCode).get();
                     loadTeamDashboardData(raceSnap.data().checkpoints || []);
-                    alert("Photo proof uploaded successfully! Time deduction claimed.");
+                    alert("Photo proof uploaded successfully!");
                 }
             };
             reader.readAsDataURL(file);
-        };
+        }
 
-        window.startTeamRace = async function() {
+        async function startTeamRace() {
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId), { startTime: now });
+            await db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId).update({ startTime: now });
             alert("Race started! Your timer is now locked and running.");
-            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            const raceSnap = await db.collection("races").doc(activeRaceCode).get();
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-        };
+        }
 
-        window.finishTeamRace = async function() {
+        async function finishTeamRace() {
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId), { endTime: now });
-            alert("Race finished! Final results submitted to the leaderboard.");
-            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            await db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId).update({ endTime: now });
+            alert("Race finished! Final results submitted to leaderboard.");
+            const raceSnap = await db.collection("races").doc(activeRaceCode).get();
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            window.switchTab('leaderboard');
+            switchTab('leaderboard');
             document.getElementById('leaderboard-code-input').value = activeRaceCode;
-            window.loadLeaderboard();
-        };
+            loadLeaderboard();
+        }
 
         function startTimerTicker() {
             clearInterval(timerInterval);
             timerInterval = setInterval(async () => {
                 if (!activeRaceCode || !activeTeamId) return;
-                const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId));
-                if (!teamSnap.exists()) return;
+                const teamSnap = await db.collection("races").doc(activeRaceCode).collection("teams").doc(activeTeamId).get();
+                if (!teamSnap.exists) return;
                 const data = teamSnap.data();
                 if (!data.startTime) return;
 
@@ -1070,48 +967,41 @@
             }, 1000);
         }
 
-        window.loadLeaderboard = async function() {
+        async function loadLeaderboard() {
             const code = document.getElementById('leaderboard-code-input').value.trim().toUpperCase();
             if (!code) return alert("Please enter a race code.");
-
             try {
-                const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return alert("Race code not found.");
+                const raceSnap = await db.collection("races").doc(code).get();
+                if (!raceSnap.exists) return alert("Race code not found.");
                 const raceData = raceSnap.data();
                 const mandatory = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (raceData.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
 
-                const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
+                const teamsSnap = await db.collection("races").doc(code).collection("teams").get();
                 const tbody = document.getElementById('leaderboard-rows');
-
                 if (teamsSnap.empty) {
                     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${code}.</td></tr>`;
                     return;
                 }
 
                 let teamList = [];
-                teamsSnap.forEach(docSnap => {
-                    teamList.push({ id: docSnap.id, ...docSnap.data() });
-                });
+                teamsSnap.forEach(docSnap => { teamList.push({ id: docSnap.id, ...docSnap.data() }); });
 
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = missedCount * 60;
-
                     let bonusMinDeduction = 0;
                     (t.claimedBonus || []).forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match) bonusMinDeduction += (match.bonusMinDeduction || 10);
                     });
-
                     let rawElapsedMin = 0;
                     if (t.startTime) {
                         const start = new Date(t.startTime).getTime();
                         const end = t.endTime ? new Date(t.endTime).getTime() : Date.now();
                         rawElapsedMin = (end - start) / 60000;
                     }
-
                     t.rawMin = rawElapsedMin;
                     t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
                     t.progressCount = completed.length;
@@ -1132,7 +1022,6 @@
                     const hrs = Math.floor(displayMin / 60);
                     const mins = Math.floor(displayMin % 60);
                     const timeStr = `${hrs}h ${mins}m`;
-
                     const proofPhotosObj = t.bonusProofPhotos || {};
                     const proofThumbnails = Object.values(proofPhotosObj).map(imgUrl => `
                         <a href="${imgUrl}" target="_blank" class="block w-6 h-6 rounded overflow-hidden border border-amber-400/50 hover:scale-110 transition shadow">
@@ -1164,10 +1053,8 @@
                     `;
                 });
                 tbody.innerHTML = html;
-            } catch (e) {
-                alert("Error loading leaderboard: " + e.message);
-            }
-        };
+            } catch (e) { alert("Error loading leaderboard: " + e.message); }
+        }
     </script>
 </body>
 </html>
