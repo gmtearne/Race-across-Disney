@@ -685,7 +685,12 @@
                                     <p class="font-bold text-white text-xs">${race.title}</p>
                                     <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code}</p>
                                 </div>
-                                <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
+                                    <button onclick="deleteEntireRace('${race.code}')" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-[10px] font-semibold transition">
+                                        <i class="fa-solid fa-trash mr-1"></i> Delete Race
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="space-y-1 pl-2 border-l border-slate-700 max-h-32 overflow-y-auto">
@@ -753,6 +758,25 @@
             if (!confirm("Are you sure you want to remove this team?")) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
             loadAdminRaces();
+        };
+
+        window.deleteEntireRace = async function(raceCode) {
+            if (!confirm(`Are you sure you want to delete the entire race (${raceCode})? This will also remove all registered teams and logs permanently.`)) return;
+            
+            try {
+                // Delete all teams subcollection records first
+                const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
+                for (const tDoc of teamsSnap.docs) {
+                    await deleteDoc(doc(window.db, "races", raceCode, "teams", tDoc.id));
+                }
+
+                // Delete the main race document
+                await deleteDoc(doc(window.db, "races", raceCode));
+                alert(`Race ${raceCode} has been completely deleted.`);
+                loadAdminRaces();
+            } catch (e) {
+                alert("Error deleting race: " + e.message);
+            }
         };
 
         // TEAM JOIN / PIN RESUME LOGIN WITH PERSISTENT SESSION
