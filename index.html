@@ -353,9 +353,9 @@
         </div>
     </div>
 
-    <!-- JS Logic -->
+    <!-- JS Logic & Global Handlers -->
     <script>
-        function switchTab(tabName) {
+        window.switchTab = function(tabName) {
             ['race', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
@@ -365,15 +365,15 @@
                     btn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2";
                 }
             });
-        }
+        };
 
         let isRegisterMode = false;
-        function toggleAuthMode() {
+        window.toggleAuthMode = function() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
-        }
+        };
 
         const DISNEY_PRESETS = [
             { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom" },
@@ -433,8 +433,9 @@
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
         ];
 
-        function renderOrgPicker() {
+        window.renderOrgPicker = function() {
             const container = document.getElementById('org-checkpoint-picker');
+            if (!container) return;
             const query = (document.getElementById('org-search-input')?.value || "").toLowerCase();
             
             let html = '';
@@ -457,12 +458,16 @@
                 }
             });
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        }
-        setTimeout(renderOrgPicker, 500);
+        };
+        setTimeout(window.renderOrgPicker, 500);
 
-        function closeManualModal() {
+        window.closeManualModal = function() {
             document.getElementById('manual-confirm-modal').classList.add('hidden');
-        }
+        };
+
+        window.filterOrgCheckpoints = function() {
+            window.renderOrgPicker();
+        };
     </script>
 
     <!-- Firebase SDK Logic -->
@@ -490,7 +495,6 @@
             window.db = getFirestore(app);
 
             onAuthStateChanged(window.auth, (user) => {
-                const statusText = document.getElementById('user-status-text');
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
@@ -501,7 +505,7 @@
                     if (authCard) authCard.classList.add('hidden');
                     if (adminDashboard) adminDashboard.classList.remove('hidden');
                     if (orgBadge) orgBadge.classList.remove('hidden');
-                    loadAdminRaces();
+                    window.loadAdminRaces();
                 } else {
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
@@ -547,7 +551,7 @@
                 startTimerTicker();
             } catch (e) {
                 console.error("Failed to restore session:", e);
-                logoutTeam();
+                window.logoutTeam();
             }
         }
 
@@ -586,7 +590,7 @@
                 });
                 alert(`Race "${title}" created successfully with code ${code}!`);
                 document.getElementById('cp-race-code').value = code;
-                loadAdminRaces();
+                window.loadAdminRaces();
             } catch (err) {
                 alert("Error creating race: " + err.message);
             }
@@ -614,7 +618,7 @@
 
                 await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
                 alert("Successfully added all 50+ Disney locations and bonus challenges!");
-                loadAdminRaces();
+                window.loadAdminRaces();
             } catch (e) {
                 alert("Error: " + e.message);
             }
@@ -649,7 +653,7 @@
 
                 await updateDoc(raceRef, { checkpoints: combined });
                 alert(`Successfully generated ${selected.length} random stops and all photo bonus challenges!`);
-                loadAdminRaces();
+                window.loadAdminRaces();
             } catch (e) {
                 alert("Error: " + e.message);
             }
@@ -677,13 +681,13 @@
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
                 alert(`Added "${p.name}" to race ${code}!`);
-                loadAdminRaces();
+                window.loadAdminRaces();
             } catch (e) {
                 alert("Error: " + e.message);
             }
         };
 
-        async function loadAdminRaces() {
+        window.loadAdminRaces = async function() {
             try {
                 const querySnapshot = await getDocs(collection(window.db, "races"));
                 const listEl = document.getElementById('admin-race-list');
@@ -738,7 +742,7 @@
             } catch (e) {
                 console.error(e);
             }
-        }
+        };
 
         window.deleteCheckpoint = async function(raceCode, cpId) {
             const raceRef = doc(window.db, "races", raceCode);
@@ -746,13 +750,13 @@
             if (!raceSnap.exists()) return;
             const updated = (raceSnap.data().checkpoints || []).filter(c => c.id !== cpId);
             await updateDoc(raceRef, { checkpoints: updated });
-            loadAdminRaces();
+            window.loadAdminRaces();
         };
 
         window.deleteTeam = async function(raceCode, teamId) {
             if (!confirm("Are you sure you want to remove this team?")) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-            loadAdminRaces();
+            window.loadAdminRaces();
         };
 
         window.joinOrResumeTeam = async function() {
@@ -924,7 +928,6 @@
             }).join('');
         }
 
-        // TRUE GPS HAFERSINE DISTANCE VERIFICATION WITH FALLBACK
         window.verifyGpsAndCheckIn = function(cpId, targetLat, targetLng) {
             if (!navigator.geolocation) {
                 return promptManualOverride(cpId, "Geolocation not supported by browser.");
@@ -935,8 +938,7 @@
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
 
-                    // Haversine formula calculation (Distance in kilometers)
-                    const R = 6371; // Earth radius in km
+                    const R = 6371;
                     const dLat = (targetLat - userLat) * Math.PI / 180;
                     const dLng = (targetLng - userLng) * Math.PI / 180;
                     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -946,7 +948,6 @@
                     const distanceKm = R * c;
                     const distanceMeters = distanceKm * 1000;
 
-                    // Allow check-in if within 500 meters (generous geofence for theme park accuracy)
                     if (distanceMeters <= 500) {
                         await executeCheckIn(cpId, { lat: userLat, lng: userLng, verified: true });
                     } else {
@@ -967,16 +968,16 @@
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         async (pos) => {
-                            closeManualModal();
+                            window.closeManualModal();
                             await executeCheckIn(cpId, { lat: pos.coords.latitude, lng: pos.coords.longitude, verified: false, reason: reason });
                         },
                         async () => {
-                            closeManualModal();
+                            window.closeManualModal();
                             await executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
                         }
                     );
                 } else {
-                    closeManualModal();
+                    window.closeManualModal();
                     executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
                 }
             };
@@ -1044,9 +1045,9 @@
             alert("Race finished! Final results submitted to the leaderboard.");
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            switchTab('leaderboard');
+            window.switchTab('leaderboard');
             document.getElementById('leaderboard-code-input').value = activeRaceCode;
-            loadLeaderboard();
+            window.loadLeaderboard();
         };
 
         function startTimerTicker() {
@@ -1069,7 +1070,6 @@
             }, 1000);
         }
 
-        // LEADERBOARD WITH PROOF PHOTO BADGES UNDERNEATH
         window.loadLeaderboard = async function() {
             const code = document.getElementById('leaderboard-code-input').value.trim().toUpperCase();
             if (!code) return alert("Please enter a race code.");
@@ -1167,10 +1167,6 @@
             } catch (e) {
                 alert("Error loading leaderboard: " + e.message);
             }
-        };
-
-        window.filterOrgCheckpoints = function() {
-            renderOrgPicker();
         };
     </script>
 </body>
