@@ -899,7 +899,7 @@
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Checked In' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="checkInGps('${cp.id}')" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
                                 GPS Check In
                             </button>
                         `}
@@ -944,12 +944,12 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        window.checkInGps = async function(cpId) {
-            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            if (!raceSnap.exists()) return alert("Race not found.");
-            const checkpoints = raceSnap.data().checkpoints || [];
-            const targetCp = checkpoints.find(c => c.id === cpId);
-            if (!targetCp) return alert("Checkpoint not found.");
+        window.checkInGps = async function(cpId, btnElement) {
+            // Check for secure context requirement
+            if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                alert("Error: Geolocation requires a secure HTTPS connection. Your site is currently loading over insecure HTTP.");
+                return;
+            }
 
             if (!navigator.geolocation) {
                 alert("Geolocation is not supported by your browser.");
@@ -961,15 +961,25 @@
                 return;
             }
 
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Acquiring GPS...";
-            btn.disabled = true;
+            const btn = btnElement || (event ? event.target : null);
+            const originalText = btn ? btn.innerText : "";
+            if (btn) {
+                btn.innerText = "Acquiring GPS...";
+                btn.disabled = true;
+            }
 
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+                    if (btn) {
+                        btn.innerText = originalText;
+                        btn.disabled = false;
+                    }
+
+                    const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+                    if (!raceSnap.exists()) return alert("Race not found.");
+                    const checkpoints = raceSnap.data().checkpoints || [];
+                    const targetCp = checkpoints.find(c => c.id === cpId);
+                    if (!targetCp) return alert("Checkpoint not found.");
 
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
@@ -991,19 +1001,29 @@
                     }
                 },
                 async (error) => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+                    if (btn) {
+                        btn.innerText = originalText;
+                        btn.disabled = false;
+                    }
 
                     let errMessage = "Unable to retrieve GPS location.";
-                    if (error.code === error.PERMISSION_DENIED) errMessage = "Location permission denied.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errMessage = "Location permission was denied. Please enable location permissions in your browser settings.";
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errMessage = "Location information is unavailable.";
+                    } else if (error.code === error.TIMEOUT) {
+                        errMessage = "Location request timed out.";
+                    }
 
-                    const forceManual = confirm(`${errMessage}\n\nDo you want to submit a manual check-in anyway for organiser review?`);
+                    alert(errMessage);
+
+                    const forceManual = confirm("Do you want to submit a manual check-in anyway for organiser review?");
                     if (forceManual) {
                         await saveCheckInRecord(cpId, null, null, null, true, errMessage);
                         alert("Manual check-in recorded for organiser review.");
                     }
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         };
 
