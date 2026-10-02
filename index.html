@@ -10,6 +10,18 @@
     .hidden { display: none !important; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
   </style>
+  
+  <!-- INSTANT GUARANTEED LOADER KILLER -->
+  <script>
+    function forceDismissLoader() {
+      var loader = document.getElementById('loading-screen');
+      var app = document.getElementById('app-container');
+      if (loader) loader.style.display = 'none';
+      if (app) app.classList.remove('hidden');
+    }
+    // Hard limit: Dismiss loader in 1.8 seconds max, no matter what modules or networks do
+    setTimeout(forceDismissLoader, 1800);
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans pb-12">
 
@@ -20,8 +32,10 @@
       <i class="fa-solid fa-wand-magic-sparkles text-xl text-amber-300 absolute"></i>
     </div>
     <h2 class="text-xl font-bold text-amber-400">Race Across Disney</h2>
-    <p id="loading-status" class="text-xs text-slate-400 mt-2">Connecting race operations...</p>
-    <button onclick="hideLoader()" class="mt-4 text-xs text-slate-500 underline">Bypass Loading</button>
+    <p class="text-xs text-slate-400 mt-2">Connecting operations...</p>
+    <button onclick="forceDismissLoader()" class="mt-4 px-3 py-1 bg-slate-800 text-xs text-amber-400 rounded border border-amber-500/30">
+      Tap to skip loading
+    </button>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -82,7 +96,7 @@
         <div class="space-y-2">
           <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Race Checkpoints</h4>
           <div id="team-checkpoints-list" class="space-y-2 text-xs text-slate-400">
-            Loading checkpoints...
+            Enter a race code above to load checkpoints.
           </div>
         </div>
       </div>
@@ -167,10 +181,248 @@
 
   </div>
 
-  <!-- FIREBASE MODULE SCRIPTS -->
+  <!-- STANDARD SCRIPT FOR TAB NAVIGATION -->
+  <script>
+    function showTab(tabName) {
+      var teamTab = document.getElementById('tab-team');
+      var adminTab = document.getElementById('tab-admin');
+      var btnTeam = document.getElementById('tab-btn-team');
+      var btnAdmin = document.getElementById('tab-btn-admin');
+
+      if (tabName === 'team') {
+        teamTab.classList.remove('hidden');
+        adminTab.classList.add('hidden');
+        btnTeam.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow";
+        btnAdmin.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+      } else {
+        adminTab.classList.remove('hidden');
+        teamTab.classList.add('hidden');
+        btnAdmin.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow";
+        btnTeam.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+      }
+    }
+  </script>
+
+  <!-- FIREBASE MODULES -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
+      authDomain: "raceacrossdisney.firebaseapp.com",
+      projectId: "raceacrossdisney",
+      storageBucket: "raceacrossdisney.firebasestorage.app",
+      messagingSenderId: "925599894622",
+      appId: "1:925599894622:web:74ac71c8d88e46316a78cf"
+    };
+
+    let activeRaceCode = null;
+    let activeTeamName = null;
+    let activeTeamScore = 0;
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      window.auth = getAuth(app);
+      window.db = getFirestore(app);
+
+      onAuthStateChanged(window.auth, (user) => {
+        const statusText = document.getElementById('user-status-text');
+        const loginCard = document.getElementById('admin-login-card');
+        const adminDashboard = document.getElementById('admin-dashboard-card');
+
+        if (user) {
+          if (statusText) statusText.innerText = `Organiser: ${user.email}`;
+          if (loginCard) loginCard.classList.add('hidden');
+          if (adminDashboard) adminDashboard.classList.remove('hidden');
+          loadAdminRaces();
+        } else {
+          if (statusText) statusText.innerText = "Not logged in";
+          if (loginCard) loginCard.classList.remove('hidden');
+          if (adminDashboard) adminDashboard.classList.add('hidden');
+        }
+      });
+
+      forceDismissLoader();
+    } catch (err) {
+      console.error("Firebase Error:", err);
+      forceDismissLoader();
+    }
+
+    // ORGANISER: LOGIN / LOGOUT
+    window.handleAdminLogin = async function() {
+      const email = document.getElementById('admin-email').value.trim();
+      const pass = document.getElementById('admin-password').value.trim();
+      if (!email || !pass) return alert("Please enter both email and password.");
+
+      try {
+        await signInWithEmailAndPassword(window.auth, email, pass);
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
+    };
+
+    window.handleAdminLogout = function() {
+      signOut(window.auth);
+    };
+
+    // ORGANISER: CREATE RACE
+    window.createNewRace = async function() {
+      const title = document.getElementById('new-race-title').value.trim();
+      const code = document.getElementById('new-race-code').value.trim().toUpperCase();
+      if (!title || !code) return alert("Please fill in both race title and code.");
+
+      try {
+        await setDoc(doc(window.db, "races", code), {
+          title: title,
+          code: code,
+          checkpoints: [],
+          createdAt: new Date().toISOString()
+        });
+        alert(`Race "${title}" created successfully! Code: ${code}`);
+        document.getElementById('new-race-title').value = '';
+        document.getElementById('new-race-code').value = '';
+        document.getElementById('cp-race-code').value = code;
+        loadAdminRaces();
+      } catch (err) {
+        alert("Error creating race: " + err.message);
+      }
+    };
+
+    // ORGANISER: ADD CHECKPOINT
+    window.addCheckpointToRace = async function() {
+      const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+      const cpName = document.getElementById('cp-name').value.trim();
+      const cpPoints = parseInt(document.getElementById('cp-points').value) || 10;
+
+      if (!code || !cpName) return alert("Please specify the race code and checkpoint name.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+
+        if (!raceSnap.exists()) {
+          return alert(`Race with code "${code}" does not exist.`);
+        }
+
+        const newCp = {
+          id: 'cp_' + Date.now(),
+          name: cpName,
+          points: cpPoints
+        };
+
+        await updateDoc(raceRef, {
+          checkpoints: arrayUnion(newCp)
+        });
+
+        alert(`Added "${cpName}" (${cpPoints} pts) to Race ${code}!`);
+        document.getElementById('cp-name').value = '';
+        document.getElementById('cp-points').value = '';
+        loadAdminRaces();
+      } catch (err) {
+        alert("Error adding checkpoint: " + err.message);
+      }
+    };
+
+    // ORGANISER: LOAD ACTIVE RACES
+    async function loadAdminRaces() {
+      try {
+        const querySnapshot = await getDocs(collection(window.db, "races"));
+        const listEl = document.getElementById('admin-race-list');
+        if (querySnapshot.empty) {
+          listEl.innerHTML = "No active races found in database.";
+          return;
+        }
+
+        let html = '';
+        querySnapshot.forEach((docSnap) => {
+          const race = docSnap.data();
+          const cpCount = race.checkpoints ? race.checkpoints.length : 0;
+          
+          html += `
+            <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="font-bold text-amber-300">${race.title}</p>
+                  <p class="text-[10px] text-slate-400 font-mono">CODE: ${race.code}</p>
+                </div>
+                <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cpCount} Checkpoints</span>
+              </div>
+          `;
+
+          if (race.checkpoints && race.checkpoints.length > 0) {
+            html += `<div class="pl-2 border-l border-slate-800 space-y-1 mt-1">`;
+            race.checkpoints.forEach(cp => {
+              html += `<div class="flex justify-between text-[11px] text-slate-400">
+                <span>📍 ${cp.name}</span>
+                <span class="text-amber-400 font-bold">+${cp.points} pts</span>
+              </div>`;
+            });
+            html += `</div>`;
+          }
+
+          html += `</div>`;
+        });
+
+        listEl.innerHTML = html;
+      } catch (e) {
+        console.error("Error loading races:", e);
+      }
+    }
+
+    // TEAM: JOIN RACE
+    window.joinRaceTeam = async function() {
+      const code = document.getElementById('input-race-code').value.trim().toUpperCase();
+      const teamName = document.getElementById('input-team-name').value.trim();
+
+      if (!code || !teamName) return alert("Please enter both race code and team name.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+
+        if (!raceSnap.exists()) {
+          return alert("Race code not found! Please verify with your organiser.");
+        }
+
+        activeRaceCode = code;
+        activeTeamName = teamName;
+        activeTeamScore = 0;
+
+        const raceData = raceSnap.data();
+        document.getElementById('display-team-name').innerText = teamName;
+        document.getElementById('display-race-title').innerText = "Race: " + raceData.title;
+        document.getElementById('display-team-score').innerText = activeTeamScore;
+        document.getElementById('team-active-dashboard').classList.remove('hidden');
+
+        renderTeamCheckpoints(raceData.checkpoints || []);
+        alert(`Joined race: ${raceData.title}!`);
+      } catch (err) {
+        alert("Error joining race: " + err.message);
+      }
+    };
+
+    // TEAM: RENDER CHECKPOINTS & CHECK IN
+    function renderTeamCheckpoints(checkpoints) {
+      const listEl = document.getElementById('team-checkpoints-list');
+      if (!checkpoints || checkpoints.length === 0) {
+        listEl.innerHTML = `<p class="italic text-slate-500">No checkpoints created for this race yet.</p>`;
+        return;
+      }
+
+      let html = '';
+      checkpoints.forEach(cp => {
+        html += `
+          <div id="cp-card-${cp.id}" class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-slate-200 text-xs">📍 ${cp.name}</p>
+              <p class="text-[10px] text-amber-400 font-semibold">+${cp.points} Points</p>
+            </div>
+            <button onclick="checkInTeam('${cp.id}', ${cp.points}, '${cp.name}')" class="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs shadow transition active:scale-95">
+              Check In
+            </button>
+          </div>word, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
