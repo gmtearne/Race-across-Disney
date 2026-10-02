@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -193,7 +192,7 @@
                             Mandatory GPS Checkpoints
                         </h3>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-location-crosshairs"></i> Check GPS Distance
+                            <i class="fa-solid fa-rotate"></i> Refresh Status
                         </button>
                     </div>
                     <div id="team-checkpoints-list" class="space-y-3"></div>
@@ -330,7 +329,7 @@
 
                 <!-- Active Races Overview -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races & Management</h4>
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races, Teams & GPS Review Logs</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
             </div>
@@ -471,7 +470,6 @@
             window.db = getFirestore(app);
 
             onAuthStateChanged(window.auth, (user) => {
-                const statusText = document.getElementById('user-status-text');
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
@@ -700,14 +698,34 @@
                             </div>
 
                             <div class="pt-2 border-t border-slate-800">
-                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams (${teamsSnap.size})</span>
-                                <div class="space-y-1">
+                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams & GPS Logs (${teamsSnap.size})</span>
+                                <div class="space-y-1.5">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
+                                        const checkinDetails = t.checkinDetails || {};
                                         return `
-                                            <div class="flex justify-between items-center text-[10px] bg-slate-950 p-1.5 rounded border border-slate-800">
-                                                <span class="font-bold text-slate-200">${t.teamName} (PIN:${t.pin})</span>
-                                                <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline">Delete</button>
+                                            <div class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1.5">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
+                                                    <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete Team</button>
+                                                </div>
+                                                <div class="text-[10px] text-slate-400 space-y-1 pt-1 border-t border-slate-900">
+                                                    <p class="font-semibold text-slate-300">Check-in Audit Logs:</p>
+                                                    ${Object.keys(checkinDetails).length === 0 ? '<span class="italic text-slate-500 block">No check-ins recorded yet.</span>' : ''}
+                                                    ${Object.entries(checkinDetails).map(([cpId, info]) => {
+                                                        const cpObj = cps.find(c => c.id === cpId);
+                                                        const cpName = cpObj ? cpObj.name : cpId;
+                                                        return `
+                                                            <div class="p-1 rounded ${info.isManual ? 'bg-amber-950/30 border border-amber-500/30 text-amber-300' : 'bg-slate-900 text-slate-300'} flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
+                                                                <span class="font-medium">📍 ${cpName}</span>
+                                                                <span class="flex items-center gap-2">
+                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
+                                                                    <span class="text-[9px] text-slate-400 font-mono">${info.latitude ? info.latitude.toFixed(4) + ', ' + info.longitude.toFixed(4) : ''}</span>
+                                                                </span>
+                                                            </div>
+                                                        `;
+                                                    }).join('')}
+                                                </div>
                                             </div>
                                         `;
                                     }).join('')}
@@ -784,6 +802,7 @@
                         pin: pin,
                         photoUrl: photoUrl,
                         completedCheckpoints: [],
+                        checkinDetails: {},
                         claimedBonus: [],
                         startTime: null,
                         endTime: null
@@ -877,7 +896,7 @@
                     <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-700/80'} flex justify-between items-center">
                         <div>
                             <p class="font-bold text-xs ${isDone ? 'text-emerald-300' : 'text-white'}">📍 ${cp.name}</p>
-                            <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Completed' : 'Mandatory GPS Stop'}</p>
+                            <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Checked In' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
                             <button onclick="checkInGps('${cp.id}')" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
@@ -911,20 +930,111 @@
             if (!activeRaceCode) return;
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            alert("GPS proximity verified! Check-in updated.");
+            alert("Dashboard refreshed.");
         };
 
+        // Haversine formula for distance calculation in meters
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
         window.checkInGps = async function(cpId) {
+            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            if (!raceSnap.exists()) return alert("Race not found.");
+            const checkpoints = raceSnap.data().checkpoints || [];
+            const targetCp = checkpoints.find(c => c.id === cpId);
+            if (!targetCp) return alert("Checkpoint not found.");
+
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
+                if (forceManual) {
+                    await saveCheckInRecord(cpId, null, null, null, true, "Not Supported");
+                    alert("Manual check-in recorded for organiser review.");
+                }
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Acquiring GPS...";
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const distance = calculateDistance(userLat, userLng, targetCp.lat, targetCp.lng);
+                    const ALLOWED_RADIUS_METERS = 150; // Allowed range threshold in meters
+
+                    if (distance <= ALLOWED_RADIUS_METERS) {
+                        await saveCheckInRecord(cpId, userLat, userLng, Math.round(distance), false, "GPS Verified");
+                        alert(`Check-in successful! Verified within range (${Math.round(distance)}m).`);
+                    } else {
+                        const confirmed = confirm(
+                            `You appear to be outside the check-in area for "${targetCp.name}" (approximately ${Math.round(distance)}m away).\n\nWould you still like to manually record your check-in for the organiser to review?`
+                        );
+
+                        if (confirmed) {
+                            await saveCheckInRecord(cpId, userLat, userLng, Math.round(distance), true, "Manual Override (Outside Range)");
+                            alert("Manual check-in recorded for organiser review.");
+                        }
+                    }
+                },
+                async (error) => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+
+                    let errMessage = "Unable to retrieve GPS location.";
+                    if (error.code === error.PERMISSION_DENIED) errMessage = "Location permission denied.";
+
+                    const forceManual = confirm(`${errMessage}\n\nDo you want to submit a manual check-in anyway for organiser review?`);
+                    if (forceManual) {
+                        await saveCheckInRecord(cpId, null, null, null, true, errMessage);
+                        alert("Manual check-in recorded for organiser review.");
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        };
+
+        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note) {
             const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
             const teamSnap = await getDoc(teamRef);
-            const completed = teamSnap.data().completedCheckpoints || [];
+            const tData = teamSnap.data();
+            
+            const completed = tData.completedCheckpoints || [];
             if (!completed.includes(cpId)) {
                 completed.push(cpId);
-                await updateDoc(teamRef, { completedCheckpoints: completed });
-                const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-                loadTeamDashboardData(raceSnap.data().checkpoints || []);
             }
-        };
+
+            const checkinDetails = tData.checkinDetails || {};
+            checkinDetails[cpId] = {
+                timestamp: new Date().toISOString(),
+                latitude: lat,
+                longitude: lng,
+                distance: distance,
+                isManual: isManual,
+                note: note
+            };
+
+            await updateDoc(teamRef, {
+                completedCheckpoints: completed,
+                checkinDetails: checkinDetails
+            });
+
+            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+        }
 
         window.uploadBonusPhoto = async function(cpId) {
             const file = event.target.files[0];
@@ -1078,4 +1188,3 @@
     </script>
 </body>
 </html>
-
