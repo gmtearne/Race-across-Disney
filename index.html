@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +9,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     .hidden { display: none !important; }
-    .glass-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-card { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
   </style>
   <script>
     function forceDismissLoader() {
@@ -29,9 +34,9 @@
       <i class="fa-solid fa-wand-magic-sparkles text-xl text-amber-300 absolute"></i>
     </div>
     <h2 class="text-xl font-bold text-amber-400">Race Across Disney</h2>
-    <p class="text-xs text-slate-400 mt-2">Loading system...</p>
+    <p class="text-xs text-slate-400 mt-2">Initializing park maps & race portal...</p>
     <button onclick="forceDismissLoader()" class="mt-4 px-3 py-1 bg-slate-800 text-xs text-amber-400 rounded border border-amber-500/30">
-      Tap to continue
+      Tap to enter
     </button>
   </div>
 
@@ -39,8 +44,8 @@
   <div id="app-container" class="w-full max-w-md mx-auto flex-1 flex flex-col hidden p-4">
     
     <!-- HEADER -->
-    <header class="glass-card rounded-2xl p-4 mb-4 text-center shadow-xl border-amber-500/20">
-      <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+    <header class="glass-card rounded-2xl p-4 mb-4 text-center shadow-xl border-amber-500/20 relative">
+      <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
         RACE ACROSS DISNEY
       </h1>
       <p id="user-status-text" class="text-xs text-slate-400 mt-1">Not logged in</p>
@@ -61,9 +66,10 @@
 
     <!-- TAB 1: TEAM PORTAL -->
     <div id="tab-team" class="space-y-4">
+      <!-- LOGIN / JOIN CARD -->
       <div id="team-join-card" class="glass-card rounded-2xl p-5 border-slate-800">
         <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-flag-checkered mr-2"></i>Join or Resume Race</h2>
-        <p class="text-xs text-slate-400 mb-4">Set a 4-digit PIN to secure your team access.</p>
+        <p class="text-xs text-slate-400 mb-4">Enter race code, your team name, and 4-digit PIN to login or register.</p>
         
         <div class="space-y-3">
           <div>
@@ -82,6 +88,7 @@
             <div>
               <label class="block text-xs text-slate-400 mb-1 font-semibold">TEAM LOGO/PHOTO</label>
               <input type="file" id="input-team-photo" accept="image/*" class="w-full text-[10px] text-slate-400 file:mr-2 file:py-2 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700">
+              <span class="text-[9px] text-slate-500 block mt-0.5">Optional when logging back in</span>
             </div>
           </div>
           <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black rounded-xl shadow-lg transition active:scale-95 text-xs uppercase tracking-wide">
@@ -93,12 +100,12 @@
       <!-- ACTIVE TEAM DASHBOARD -->
       <div id="team-active-dashboard" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
         <div class="flex items-center space-x-3 pb-3 border-b border-slate-800">
-          <img id="team-display-avatar" src="https://via.placeholder.com/50?text=Team" class="w-12 h-12 rounded-full object-cover border border-amber-400">
-          <div class="flex-1">
-            <h3 id="display-team-name" class="font-bold text-amber-300 text-base">Team</h3>
-            <p id="display-race-title" class="text-xs text-slate-400">Race: ---</p>
+          <img id="team-display-avatar" src="https://via.placeholder.com/50?text=Team" class="w-12 h-12 rounded-full object-cover border-2 border-amber-400 shadow">
+          <div class="flex-1 min-w-0">
+            <h3 id="display-team-name" class="font-bold text-amber-300 text-base truncate">Team Name</h3>
+            <p id="display-race-title" class="text-xs text-slate-400 truncate">Race: ---</p>
           </div>
-          <div class="text-right">
+          <div class="text-right flex-shrink-0">
             <span id="display-progress-ratio" class="text-lg font-black text-amber-400">0/0</span>
             <span class="block text-[9px] text-slate-400">STOPS</span>
           </div>
@@ -106,41 +113,57 @@
 
         <!-- RACE CONTROLS -->
         <div class="grid grid-cols-2 gap-2">
-          <button id="btn-start-race" onclick="startTeamRace()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow">
+          <button id="btn-start-race" onclick="startTeamRace()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition">
             ▶ START RACE
           </button>
-          <button id="btn-end-race" onclick="endTeamRace()" class="py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow">
+          <button id="btn-end-race" onclick="endTeamRace()" class="py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">
             🏁 FINISH RACE
           </button>
         </div>
 
-        <div id="team-timer-banner" class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-center">
-          <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Race Timer</span>
-          <span id="display-elapsed-time" class="text-xl font-mono font-bold text-amber-300">00:00:00</span>
+        <div id="team-timer-banner" class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Elapsed Race Time</span>
+          <span id="display-elapsed-time" class="text-2xl font-mono font-bold text-amber-300">00:00:00</span>
+          <p id="display-time-bonus-summary" class="text-[10px] text-emerald-400 mt-1 font-medium">Bonuses: -0 mins | Mandatory Left: 0</p>
         </div>
 
         <!-- CHECKPOINTS -->
         <div class="space-y-2">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Mandatory GPS Checkpoints</h4>
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex justify-between items-center">
+            <span>📍 Mandatory GPS Checkpoints</span>
+            <span id="mandatory-count-badge" class="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">0 Pending</span>
+          </h4>
           <div id="team-gps-checkpoints" class="space-y-2 text-xs">---</div>
         </div>
 
         <div class="space-y-2 pt-2 border-t border-slate-800">
-          <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Bonus Photo Challenges</h4>
+          <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider flex justify-between items-center">
+            <span>⭐ Bonus Photo Challenges</span>
+            <span id="bonus-count-badge" class="text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">0 Claimed</span>
+          </h4>
           <div id="team-bonus-checkpoints" class="space-y-2 text-xs">---</div>
         </div>
+
+        <button onclick="leaveTeamSession()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs rounded-xl border border-slate-800 transition">
+          <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Switch / Exit Team Session
+        </button>
       </div>
     </div>
 
     <!-- TAB 2: LEADERBOARD -->
     <div id="tab-leaderboard" class="space-y-4 hidden">
       <div class="glass-card rounded-2xl p-5 border-slate-800">
-        <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-trophy mr-2"></i>Race Leaderboard</h2>
-        <div class="flex space-x-2 my-3">
-          <input type="text" id="leaderboard-search-code" placeholder="ENTER RACE CODE (e.g. MK2026)" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs uppercase font-mono text-amber-300 focus:outline-none">
-          <button onclick="loadLeaderboard()" class="px-4 py-2 bg-amber-400 text-slate-950 font-bold text-xs rounded-xl">View</button>
+        <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-trophy mr-2"></i>Live Race Standings</h2>
+        <p class="text-xs text-slate-400 mb-3">View live race status, completion progress, adjusted finish times and bonus proofs.</p>
+        
+        <div class="flex space-x-2 mb-4">
+          <input type="text" id="leaderboard-search-code" placeholder="RACE CODE (e.g. MK2026)" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs uppercase font-mono text-amber-300 focus:outline-none focus:border-amber-400">
+          <button onclick="loadLeaderboard()" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-xl shadow">
+            Fetch Standings
+          </button>
         </div>
-        <div id="leaderboard-list" class="space-y-2 text-xs text-slate-400">
+
+        <div id="leaderboard-list" class="space-y-3 text-xs text-slate-400">
           Enter a race code above to view live standings.
         </div>
       </div>
@@ -173,7 +196,7 @@
       <!-- ORGANISER DASHBOARD -->
       <div id="admin-dashboard-card" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h3 class="font-bold text-indigo-300 text-sm"><i class="fa-solid fa-gauge-high mr-2"></i>Organiser Control</h3>
+          <h3 class="font-bold text-indigo-300 text-sm"><i class="fa-solid fa-gauge-high mr-2"></i>Organiser Dashboard</h3>
           <button onclick="handleAdminLogout()" class="text-xs bg-rose-500/20 text-rose-300 px-3 py-1 rounded-lg border border-rose-500/30">Logout</button>
         </div>
 
@@ -181,31 +204,31 @@
         <div class="space-y-3 pb-4 border-b border-slate-800">
           <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race</h4>
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="new-race-title" placeholder="Race Title" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs">
-            <input type="text" id="new-race-code" placeholder="Code (e.g. MK2026)" maxlength="6" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono">
+            <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Dash)" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs">
+            <input type="text" id="new-race-code" placeholder="Code (e.g. MK2026)" maxlength="8" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono">
           </div>
-          <button onclick="createNewRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl">
+          <button onclick="createNewRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow">
             + CREATE RACE
           </button>
         </div>
 
         <!-- 2. ADD CHECKPOINT -->
         <div class="space-y-3 pb-4 border-b border-slate-800">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints</h4>
-          <input type="text" id="cp-race-code" placeholder="SELECT RACE CODE" maxlength="6" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono text-amber-300">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Stops to Race</h4>
+          <input type="text" id="cp-race-code" placeholder="SELECT RACE CODE (e.g. MK2026)" maxlength="8" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono text-amber-300 font-bold focus:outline-none focus:border-amber-400">
           
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="addPresetLocationsToRace()" class="py-2 bg-indigo-600 text-white font-bold text-[11px] rounded-lg">
-              + Pick Disney Location
+            <button onclick="openPrepopulatedModal()" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">
+              <i class="fa-solid fa-map-location-dot mr-1"></i> Prepopulated Disney Stops
             </button>
-            <button onclick="addRandomLocationsToRace()" class="py-2 bg-purple-600 text-white font-bold text-[11px] rounded-lg">
+            <button onclick="addRandomLocationsToRacePrompt()" class="py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition">
               🎲 Add Random Stops
             </button>
           </div>
 
           <!-- MANUAL FORM -->
-          <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
-            <span class="text-[10px] text-slate-400 font-bold block uppercase">Custom Stop / Challenge</span>
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
+            <span class="text-[10px] text-slate-400 font-bold block uppercase">Custom Stop / Photo Challenge</span>
             <input type="text" id="manual-cp-name" placeholder="Name (e.g. Photo with Mickey)" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs">
             <div class="grid grid-cols-2 gap-2">
               <select id="manual-cp-type" class="px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs">
@@ -222,7 +245,10 @@
 
         <!-- 3. MANAGE RACES & TEAMS -->
         <div>
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Active Races, Stops & Teams</h4>
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races & Teams</h4>
+            <button onclick="loadAdminRaces()" class="text-[10px] text-amber-400 hover:underline"><i class="fa-solid fa-rotate mr-1"></i>Refresh</button>
+          </div>
           <div id="admin-race-list" class="text-xs text-slate-400 space-y-3">
             Loading active races...
           </div>
@@ -230,6 +256,48 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- MODAL: PREPOPULATED DISNEY LOCATIONS SELECTOR -->
+  <div id="modal-disney-locations" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card w-full max-w-lg rounded-2xl p-5 border-amber-500/30 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-sm font-bold text-amber-300"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Disney Prepopulated Locations</h3>
+          <p class="text-[10px] text-slate-400">Select park locations to add to race <span id="modal-target-race-code" class="font-mono text-amber-400 font-bold">---</span></p>
+        </div>
+        <button onclick="closePrepopulatedModal()" class="text-slate-400 hover:text-white p-1 text-lg">&times;</button>
+      </div>
+
+      <!-- SEARCH & PARK FILTER -->
+      <div class="my-3 space-y-2">
+        <input type="text" id="disney-search-input" onkeyup="filterDisneyLocations()" placeholder="Search location name..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200">
+        <div class="flex flex-wrap gap-1 text-[10px]">
+          <button onclick="filterParkCategory('ALL')" class="park-filter-btn px-2.5 py-1 bg-amber-400 text-slate-950 font-bold rounded-lg">ALL (50)</button>
+          <button onclick="filterParkCategory('Magic Kingdom')" class="park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg">Magic Kingdom</button>
+          <button onclick="filterParkCategory('Epcot')" class="park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg">Epcot</button>
+          <button onclick="filterParkCategory('Hollywood Studios')" class="park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg">Hollywood Studios</button>
+          <button onclick="filterParkCategory('Animal Kingdom')" class="park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg">Animal Kingdom</button>
+          <button onclick="filterParkCategory('Disney Springs')" class="park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg">Disney Springs</button>
+        </div>
+      </div>
+
+      <!-- LOCATIONS LIST -->
+      <div id="disney-locations-list" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs">
+        <!-- Dynamic content inserted by script -->
+      </div>
+
+      <!-- FOOTER -->
+      <div class="pt-3 border-t border-slate-800 flex justify-between items-center mt-2">
+        <span id="selected-locations-count" class="text-[11px] text-slate-400">0 selected</span>
+        <div class="space-x-2">
+          <button onclick="closePrepopulatedModal()" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancel</button>
+          <button onclick="commitSelectedDisneyLocations()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">
+            Add Selected Locations
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- SCRIPT ENGINE -->
@@ -247,6 +315,13 @@
           btnEl.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
         }
       });
+      if (tabName === 'leaderboard') {
+        const code = document.getElementById('input-race-code').value.trim().toUpperCase() || document.getElementById('cp-race-code').value.trim().toUpperCase();
+        if (code && !document.getElementById('leaderboard-search-code').value) {
+          document.getElementById('leaderboard-search-code').value = code;
+          if (window.loadLeaderboard) window.loadLeaderboard();
+        }
+      }
     }
 
     let isRegisterMode = false;
@@ -258,10 +333,74 @@
     }
   </script>
 
+  <!-- FIREBASE MODULE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Disney Prepopulated Database (50 iconic park locations across Walt Disney World)
+    const PREPOPULATED_DISNEY_LOCATIONS = [
+      // Magic Kingdom
+      { name: "Cinderella Castle", park: "Magic Kingdom", type: "GPS", lat: 28.4186, lng: -81.5812, desc: "Iconic hub center of Magic Kingdom Park." },
+      { name: "Space Mountain", park: "Magic Kingdom", type: "GPS", lat: 28.4192, lng: -81.5772, desc: "Tomorrowland futuristic space attraction." },
+      { name: "Big Thunder Mountain Railroad", park: "Magic Kingdom", type: "GPS", lat: 28.4201, lng: -81.5851, desc: "Wildest ride in the wilderness in Frontierland." },
+      { name: "Haunted Mansion", park: "Magic Kingdom", type: "GPS", lat: 28.4208, lng: -81.5830, desc: "Liberty Square ghostly estate." },
+      { name: "Pirates of the Caribbean", park: "Magic Kingdom", type: "GPS", lat: 28.4184, lng: -81.5847, desc: "Adventureland swashbuckling ride entrance." },
+      { name: "Seven Dwarfs Mine Train", park: "Magic Kingdom", type: "GPS", lat: 28.4205, lng: -81.5801, desc: "Fantasyland coaster attraction." },
+      { name: "TRON Lightcycle / Run", park: "Magic Kingdom", type: "GPS", lat: 28.4198, lng: -81.5765, desc: "High-speed canopy coaster in Tomorrowland." },
+      { name: "Peter Pan's Flight", park: "Magic Kingdom", type: "GPS", lat: 28.4207, lng: -81.5817, desc: "Classic Fantasyland flight over London." },
+      { name: "Jungle Cruise", park: "Magic Kingdom", type: "GPS", lat: 28.4179, lng: -81.5838, desc: "Adventureland river boat tour." },
+      { name: "Tiana's Bayou Adventure", park: "Magic Kingdom", type: "GPS", lat: 28.4194, lng: -81.5856, desc: "Frontierland musical bayou journey." },
+      
+      // Epcot
+      { name: "Spaceship Earth", park: "Epcot", type: "GPS", lat: 28.3747, lng: -81.5494, desc: "Epcot signature geodesic sphere landmark." },
+      { name: "Test Track", park: "Epcot", type: "GPS", lat: 28.3719, lng: -81.5463, desc: "World Discovery high-speed proving grounds." },
+      { name: "Soarin' Around the World", park: "Epcot", type: "GPS", lat: 28.3715, lng: -81.5518, desc: "World Nature flight simulator." },
+      { name: "Guardians of the Galaxy: Cosmic Rewind", park: "Epcot", type: "GPS", lat: 28.3732, lng: -81.5472, desc: "Wonders of Xandar pavilion coaster." },
+      { name: "Frozen Ever After", park: "Epcot", type: "GPS", lat: 28.3703, lng: -81.5472, desc: "Norway Pavilion boat journey." },
+      { name: "Remy's Ratatouille Adventure", park: "Epcot", type: "GPS", lat: 28.3653, lng: -81.5524, desc: "France Pavilion 4D trackless ride." },
+      { name: "World Showcase Lagoon Plaza", park: "Epcot", type: "GPS", lat: 28.3692, lng: -81.5496, desc: "Promenade viewing area for fireworks." },
+      { name: "Japan Pavilion Torii Gate", park: "Epcot", type: "GPS", lat: 28.3667, lng: -81.5501, desc: "Red Torii Gate on the Lagoon shoreline." },
+      { name: "Mission: SPACE", park: "Epcot", type: "GPS", lat: 28.3728, lng: -81.5458, desc: "Astronaut training centrifuge ride." },
+      { name: "Journey Into Imagination with Figment", park: "Epcot", type: "GPS", lat: 28.3718, lng: -81.5508, desc: "Imagination Pavilion colorful ride." },
+
+      // Hollywood Studios
+      { name: "Hollywood Tower of Terror", park: "Hollywood Studios", type: "GPS", lat: 28.3582, lng: -81.5587, desc: "Sunset Boulevard haunted elevator drop." },
+      { name: "Star Wars: Rise of the Resistance", park: "Hollywood Studios", type: "GPS", lat: 28.3547, lng: -81.5627, desc: "Galaxy's Edge immersive Resistance outpost." },
+      { name: "Millennium Falcon: Smugglers Run", park: "Hollywood Studios", type: "GPS", lat: 28.3533, lng: -81.5620, desc: "Batuu iconic freighter starship." },
+      { name: "Slinky Dog Dash", park: "Hollywood Studios", type: "GPS", lat: 28.3562, lng: -81.5638, desc: "Toy Story Land coaster attraction." },
+      { name: "Rock 'n' Roller Coaster", park: "Hollywood Studios", type: "GPS", lat: 28.3586, lng: -81.5580, desc: "Aerosmith high-speed launch coaster." },
+      { name: "Mickey & Minnie's Runaway Railway", park: "Hollywood Studios", type: "GPS", lat: 28.3575, lng: -81.5598, desc: "Grauman's Chinese Theatre centerpiece." },
+      { name: "Toy Story Mania!", park: "Hollywood Studios", type: "GPS", lat: 28.3568, lng: -81.5631, desc: "4D carnival arcade adventure." },
+      { name: "Star Tours – The Adventures Continue", park: "Hollywood Studios", type: "GPS", lat: 28.3570, lng: -81.5613, desc: "Echo Lake flight simulator ride." },
+      { name: "Indiana Jones Epic Stunt Spectacular", park: "Hollywood Studios", type: "GPS", lat: 28.3579, lng: -81.5607, desc: "Live stunt theater amphitheater." },
+      { name: "Oga's Cantina Entrance", park: "Hollywood Studios", type: "GPS", lat: 28.3538, lng: -81.5615, desc: "Black Spire Outpost watering hole." },
+
+      // Animal Kingdom
+      { name: "Tree of Life", park: "Animal Kingdom", type: "GPS", lat: 28.3578, lng: -81.5905, desc: "Discovery Island carved centerpiece tree." },
+      { name: "Avatar Flight of Passage", park: "Animal Kingdom", type: "GPS", lat: 28.3556, lng: -81.5936, desc: "Pandora banshee flight simulator." },
+      { name: "Expedition Everest", park: "Animal Kingdom", type: "GPS", lat: 28.3588, lng: -81.5872, desc: "Asia Yeti roller coaster." },
+      { name: "Kilimanjaro Safaris", park: "Animal Kingdom", type: "GPS", lat: 28.3610, lng: -81.5925, desc: "Harambe Wildlife Reserve expedition." },
+      { name: "Kali River Rapids", park: "Animal Kingdom", type: "GPS", lat: 28.3601, lng: -81.5875, desc: "Chakranadi River white-water raft ride." },
+      { name: "Na'vi River Journey", park: "Animal Kingdom", type: "GPS", lat: 28.3560, lng: -81.5930, desc: "Pandora bioluminescent river ride." },
+      { name: "DINOSAUR", park: "Animal Kingdom", type: "GPS", lat: 28.3568, lng: -81.5878, desc: "DinoLand U.S.A. time-rover rescue mission." },
+      { name: "Festival of the Lion King Theater", park: "Animal Kingdom", type: "GPS", lat: 28.3605, lng: -81.5938, desc: "Harambe Theater musical spectacle." },
+      { name: "Gorilla Falls Exploration Trail", park: "Animal Kingdom", type: "GPS", lat: 28.3615, lng: -81.5912, desc: "Africa wildlife walking sanctuary." },
+      { name: "Maharajah Jungle Trek", park: "Animal Kingdom", type: "GPS", lat: 28.3595, lng: -81.5866, desc: "An आनंदपुर Royal Forest tiger walk." },
+
+      // Disney Springs & Bonus Photo Challenges
+      { name: "Aerophile Tethered Balloon", park: "Disney Springs", type: "GPS", lat: 28.3712, lng: -81.5208, desc: "Giant flight balloon at West Side." },
+      { name: "World of Disney Store", park: "Disney Springs", type: "GPS", lat: 28.3708, lng: -81.5165, desc: "Marketplace massive Disney merchandise shop." },
+      { name: "Gideon's Bakehouse", park: "Disney Springs", type: "GPS", lat: 28.3710, lng: -81.5182, desc: "The Landing popular bakery storefront." },
+      { name: "The Boathouse Amphicars", park: "Disney Springs", type: "GPS", lat: 28.3715, lng: -81.5178, desc: "Vintage amphicar dock launch." },
+      { name: "Lego Store Giant Sea Serpent", park: "Disney Springs", type: "GPS", lat: 28.3705, lng: -81.5160, desc: "Brick-built lake monster in Marketplace." },
+      { name: "Bonus Challenge: Photo with Mickey Hat", park: "Disney Springs", type: "BONUS_PHOTO", bonusMinDeduction: 15, desc: "Take a team selfie wearing Mickey Mouse ears." },
+      { name: "Bonus Challenge: High-Five a Cast Member", park: "Magic Kingdom", type: "BONUS_PHOTO", bonusMinDeduction: 10, desc: "Team photo high-fiving a friendly Cast Member." },
+      { name: "Bonus Challenge: Dole Whip Treat Selfie", park: "Magic Kingdom", type: "BONUS_PHOTO", bonusMinDeduction: 10, desc: "Team photo enjoying a classic Dole Whip snack." },
+      { name: "Bonus Challenge: Monorail Pass-By Shot", park: "Epcot", type: "BONUS_PHOTO", bonusMinDeduction: 15, desc: "Capture the Disney Monorail zooming overhead." },
+      { name: "Bonus Challenge: Pandora Floating Mountains", park: "Animal Kingdom", type: "BONUS_PHOTO", bonusMinDeduction: 20, desc: "Group photo with Pandora's floating rocks behind." }
+    ];
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -273,7 +412,7 @@
     };
 
     let activeRaceCode = null;
-    let activeTeamName = null;
+    let activeTeamData = null;
     let timerInterval = null;
 
     try {
@@ -287,12 +426,12 @@
         const adminDashboard = document.getElementById('admin-dashboard-card');
 
         if (user) {
-          if (statusText) statusText.innerText = `Organiser: ${user.email}`;
+          if (statusText && !activeTeamData) statusText.innerText = `Organiser Mode: ${user.email}`;
           if (authCard) authCard.classList.add('hidden');
           if (adminDashboard) adminDashboard.classList.remove('hidden');
           loadAdminRaces();
         } else {
-          if (statusText) statusText.innerText = "Not logged in";
+          if (statusText && !activeTeamData) statusText.innerText = "Not logged in";
           if (authCard) authCard.classList.remove('hidden');
           if (adminDashboard) adminDashboard.classList.add('hidden');
         }
@@ -300,11 +439,11 @@
 
       forceDismissLoader();
     } catch (err) {
-      console.error("Firebase Error:", err);
+      console.error("Firebase Initialization Error:", err);
       forceDismissLoader();
     }
 
-    // ORGANISER AUTH WITH CLEAR ERROR MESSAGING
+    // ORGANISER AUTH
     window.handleAdminAuth = async function() {
       const email = document.getElementById('admin-email').value.trim();
       const pass = document.getElementById('admin-password').value.trim();
@@ -313,7 +452,7 @@
       try {
         if (isRegisterMode) {
           await createUserWithEmailAndPassword(window.auth, email, pass);
-          alert("Account created successfully!");
+          alert("Organiser account created successfully!");
         } else {
           await signInWithEmailAndPassword(window.auth, email, pass);
         }
@@ -341,31 +480,189 @@
     window.createNewRace = async function() {
       const title = document.getElementById('new-race-title').value.trim();
       const code = document.getElementById('new-race-code').value.trim().toUpperCase();
-      if (!title || !code) return alert("Fill in title and race code.");
+      if (!title || !code) return alert("Please fill in both Race Title and Race Code.");
 
       try {
-        await setDoc(doc(window.db, "races", code), {
+        const raceRef = doc(window.db, "races", code);
+        const existing = await getDoc(raceRef);
+        if (existing.exists()) return alert(`Race code "${code}" is already in use. Please use a unique code.`);
+
+        await setDoc(raceRef, {
           title: title,
           code: code,
           checkpoints: [],
           createdAt: new Date().toISOString()
         });
-        alert(`Race "${title}" created! Code: ${code}`);
+        alert(`Race "${title}" created successfully! Code: ${code}`);
         document.getElementById('cp-race-code').value = code;
+        document.getElementById('new-race-title').value = '';
+        document.getElementById('new-race-code').value = '';
         loadAdminRaces();
       } catch (err) {
-        alert("Error: " + err.message);
+        alert("Error creating race: " + err.message);
       }
     };
 
-    // ADD CUSTOM MANUAL STOP
+    let selectedDisneyIndexes = new Set();
+    let currentFilterCategory = 'ALL';
+
+    window.openPrepopulatedModal = function() {
+      const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+      if (!code) return alert("Please enter or select a Race Code first in step 2.");
+      
+      document.getElementById('modal-target-race-code').innerText = code;
+      selectedDisneyIndexes.clear();
+      renderDisneyLocationsList();
+      document.getElementById('modal-disney-locations').classList.remove('hidden');
+    };
+
+    window.closePrepopulatedModal = function() {
+      document.getElementById('modal-disney-locations').classList.add('hidden');
+    };
+
+    window.filterParkCategory = function(category) {
+      currentFilterCategory = category;
+      const btns = document.querySelectorAll('.park-filter-btn');
+      btns.forEach(b => {
+        if (b.innerText.includes(category)) {
+          b.className = "park-filter-btn px-2.5 py-1 bg-amber-400 text-slate-950 font-bold rounded-lg";
+        } else {
+          b.className = "park-filter-btn px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg";
+        }
+      });
+      renderDisneyLocationsList();
+    };
+
+    window.filterDisneyLocations = function() {
+      renderDisneyLocationsList();
+    };
+
+    function renderDisneyLocationsList() {
+      const searchVal = (document.getElementById('disney-search-input').value || '').toLowerCase();
+      const listContainer = document.getElementById('disney-locations-list');
+      
+      let filtered = PREPOPULATED_DISNEY_LOCATIONS.map((loc, index) => ({ ...loc, originalIndex: index }))
+        .filter(loc => {
+          const matchPark = currentFilterCategory === 'ALL' || loc.park === currentFilterCategory;
+          const matchSearch = loc.name.toLowerCase().includes(searchVal) || loc.park.toLowerCase().includes(searchVal);
+          return matchPark && matchSearch;
+        });
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No matching Disney locations found.</div>`;
+        return;
+      }
+
+      listContainer.innerHTML = filtered.map(item => {
+        const isChecked = selectedDisneyIndexes.has(item.originalIndex);
+        const isBonus = item.type === 'BONUS_PHOTO';
+        return `
+          <div onclick="toggleDisneyLocationSelection(${item.originalIndex})" class="p-3 bg-slate-900 rounded-xl border ${isChecked ? 'border-amber-400 bg-slate-800/80' : 'border-slate-800'} flex items-center justify-between cursor-pointer hover:border-amber-500/50 transition">
+            <div class="flex items-center space-x-3 min-w-0 pr-2">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 text-amber-500 rounded border-slate-700 bg-slate-900 focus:ring-0 pointer-events-none">
+              <div class="min-w-0">
+                <p class="font-bold text-slate-200 truncate text-xs">${isBonus ? '⭐' : '📍'} ${item.name}</p>
+                <div class="flex items-center space-x-2 text-[10px] text-slate-400">
+                  <span class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-700">${item.park}</span>
+                  <span class="truncate">${isBonus ? `Bonus Time: -${item.bonusMinDeduction}m` : 'GPS Mandatory'}</span>
+                </div>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono flex-shrink-0">${item.type}</span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('selected-locations-count').innerText = `${selectedDisneyIndexes.size} selected`;
+    }
+
+    window.toggleDisneyLocationSelection = function(idx) {
+      if (selectedDisneyIndexes.has(idx)) {
+        selectedDisneyIndexes.delete(idx);
+      } else {
+        selectedDisneyIndexes.add(idx);
+      }
+      renderDisneyLocationsList();
+    };
+
+    window.commitSelectedDisneyLocations = async function() {
+      const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+      if (!code) return alert("Select race code.");
+      if (selectedDisneyIndexes.size === 0) return alert("Please select at least one Disney location.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+        if (!raceSnap.exists()) return alert("Race code does not exist.");
+
+        const existingCps = raceSnap.data().checkpoints || [];
+        const newCps = Array.from(selectedDisneyIndexes).map(idx => {
+          const loc = PREPOPULATED_DISNEY_LOCATIONS[idx];
+          return {
+            id: 'cp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: loc.name,
+            park: loc.park,
+            type: loc.type,
+            lat: loc.lat,
+            lng: loc.lng,
+            bonusMinDeduction: loc.bonusMinDeduction || 0,
+            desc: loc.desc || ""
+          };
+        });
+
+        await updateDoc(raceRef, { checkpoints: [...existingCps, ...newCps] });
+        alert(`Successfully added ${newCps.length} Disney locations to race ${code}!`);
+        closePrepopulatedModal();
+        loadAdminRaces();
+      } catch (err) {
+        alert("Error adding locations: " + err.message);
+      }
+    };
+
+    window.addRandomLocationsToRacePrompt = async function() {
+      const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+      if (!code) return alert("Please enter a Race Code first.");
+
+      const countStr = prompt("How many random Disney stops would you like to add? (1 to 20)", "5");
+      if (!countStr) return;
+      const count = parseInt(countStr);
+      if (isNaN(count) || count < 1 || count > 20) return alert("Invalid count. Enter a number between 1 and 20.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+        if (!raceSnap.exists()) return alert(`Race code "${code}" does not exist.`);
+
+        const shuffled = [...PREPOPULATED_DISNEY_LOCATIONS].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, count);
+
+        const newCps = selected.map(loc => ({
+          id: 'cp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          name: loc.name,
+          park: loc.park,
+          type: loc.type,
+          lat: loc.lat,
+          lng: loc.lng,
+          bonusMinDeduction: loc.bonusMinDeduction || 0,
+          desc: loc.desc || ""
+        }));
+
+        const existingCps = raceSnap.data().checkpoints || [];
+        await updateDoc(raceRef, { checkpoints: [...existingCps, ...newCps] });
+        alert(`Randomly added ${newCps.length} Disney stops to race ${code}!`);
+        loadAdminRaces();
+      } catch (err) {
+        alert("Error adding random stops: " + err.message);
+      }
+    };
+
     window.addManualCheckpoint = async function() {
       const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
       const name = document.getElementById('manual-cp-name').value.trim();
       const type = document.getElementById('manual-cp-type').value;
       const bonusMin = parseInt(document.getElementById('manual-cp-bonus-min').value) || 10;
 
-      if (!code || !name) return alert("Select race code and name.");
+      if (!code || !name) return alert("Select race code and type stop name.");
 
       try {
         const raceRef = doc(window.db, "races", code);
@@ -373,29 +670,33 @@
         if (!raceSnap.exists()) return alert("Race code does not exist.");
 
         const newCp = {
-          id: 'cp_' + Date.now(),
+          id: 'cp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           name: name,
+          park: "Custom Stop",
           type: type,
           lat: 28.4177,
           lng: -81.5812,
           bonusMinDeduction: type === 'BONUS_PHOTO' ? bonusMin : 0
         };
 
-        await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
-        alert(`Added ${name} to race ${code}!`);
+        const existing = raceSnap.data().checkpoints || [];
+        await updateDoc(raceRef, { checkpoints: [...existing, newCp] });
+        alert(`Added custom stop "${name}" to race ${code}!`);
+        document.getElementById('manual-cp-name').value = '';
         loadAdminRaces();
       } catch (err) {
-        alert("Error adding stop: " + err.message);
+        alert("Error adding custom stop: " + err.message);
       }
     };
 
-    // LOAD ORGANISER RACES
-    async function loadAdminRaces() {
+    window.loadAdminRaces = async function() {
       try {
         const querySnapshot = await getDocs(collection(window.db, "races"));
         const listEl = document.getElementById('admin-race-list');
+        if (!listEl) return;
+        
         if (querySnapshot.empty) {
-          listEl.innerHTML = "No active races found.";
+          listEl.innerHTML = `<div class="p-3 text-center bg-slate-900/50 rounded-xl text-slate-500">No active races found in system. Create one above.</div>`;
           return;
         }
 
@@ -404,7 +705,6 @@
           const race = docSnap.data();
           const cps = race.checkpoints || [];
           
-          // Get teams
           const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
 
           html += `
@@ -414,29 +714,40 @@
                   <p class="font-bold text-amber-300 text-xs">${race.title}</p>
                   <p class="text-[10px] text-slate-400 font-mono">CODE: ${race.code}</p>
                 </div>
-                <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Stops</span>
+                <div class="flex items-center space-x-2">
+                  <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Stops</span>
+                  <button onclick="deleteRace('${race.code}')" class="text-rose-400 hover:text-rose-300 text-[10px] bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">Delete Race</button>
+                </div>
               </div>
 
-              <!-- CHECKPOINTS LIST WITH DELETE -->
-              <div class="space-y-1 pl-2 border-l border-slate-800">
-                ${cps.map(cp => `
-                  <div class="flex justify-between items-center text-[10px] text-slate-400">
-                    <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name}</span>
-                    <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300 text-[10px]">Remove</button>
+              <!-- CHECKPOINTS LIST -->
+              <div class="space-y-1 pl-2 border-l-2 border-slate-800 max-h-36 overflow-y-auto custom-scrollbar">
+                ${cps.length === 0 ? '<span class="text-[10px] text-slate-500 italic">No stops added yet</span>' : cps.map(cp => `
+                  <div class="flex justify-between items-center text-[10px] text-slate-400 pr-1">
+                    <span class="truncate pr-2">${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name} <span class="text-slate-600">(${cp.park || 'Disney'})</span></span>
+                    <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] flex-shrink-0">Remove</button>
                   </div>
                 `).join('')}
               </div>
 
-              <!-- TEAMS LIST WITH DELETE -->
+              <!-- TEAMS LIST -->
               <div class="pt-2 border-t border-slate-800/80">
                 <span class="text-[10px] text-slate-400 font-bold block mb-1">Registered Teams (${teamsSnap.size})</span>
                 <div class="space-y-1">
-                  ${teamsSnap.docs.map(tDoc => {
+                  ${teamsSnap.empty ? '<span class="text-[10px] text-slate-500 italic block">No teams joined yet</span>' : teamsSnap.docs.map(tDoc => {
                     const t = tDoc.data();
+                    const completed = (t.completedCheckpoints || []).length;
+                    const bonusCount = (t.claimedBonus || []).length;
                     return `
-                      <div class="flex justify-between items-center text-[10px] bg-slate-950 p-1.5 rounded">
-                        <span class="font-bold text-slate-300">${t.teamName}</span>
-                        <button onclick="deleteTeamFromRace('${race.code}', '${tDoc.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] font-bold">Delete Team</button>
+                      <div class="flex justify-between items-center text-[10px] bg-slate-950 p-2 rounded border border-slate-800">
+                        <div class="flex items-center space-x-2 min-w-0 pr-2">
+                          <img src="${t.photoUrl || 'https://via.placeholder.com/24'}" class="w-6 h-6 rounded-full object-cover border border-amber-400 flex-shrink-0">
+                          <div class="min-w-0">
+                            <span class="font-bold text-slate-200 block truncate">${t.teamName}</span>
+                            <span class="text-[9px] text-slate-400 font-mono">PIN: ${t.pin} | ${completed} Mandatory | ${bonusCount} Bonuses</span>
+                          </div>
+                        </div>
+                        <button onclick="deleteTeamFromRace('${race.code}', '${tDoc.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] font-bold bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20 flex-shrink-0">Remove Team</button>
                       </div>
                     `;
                   }).join('')}
@@ -450,21 +761,30 @@
       } catch (e) {
         console.error("Error loading races:", e);
       }
-    }
+    };
 
-    // ORGANISER DELETE TEAM
+    window.deleteRace = async function(raceCode) {
+      if (!confirm(`Are you sure you want to delete Race "${raceCode}" and all its teams?`)) return;
+      try {
+        await deleteDoc(doc(window.db, "races", raceCode));
+        alert("Race deleted successfully.");
+        loadAdminRaces();
+      } catch (e) {
+        alert("Error deleting race: " + e.message);
+      }
+    };
+
     window.deleteTeamFromRace = async function(raceCode, teamId) {
-      if (!confirm("Are you sure you want to remove this team from the race?")) return;
+      if (!confirm("Are you sure you want to remove this team?")) return;
       try {
         await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-        alert("Team removed.");
+        alert("Team removed from race.");
         loadAdminRaces();
       } catch (e) {
         alert("Error deleting team: " + e.message);
       }
     };
 
-    // ORGANISER DELETE CHECKPOINT
     window.deleteCheckpoint = async function(raceCode, cpId) {
       try {
         const raceRef = doc(window.db, "races", raceCode);
@@ -473,14 +793,13 @@
 
         const updatedCps = (raceSnap.data().checkpoints || []).filter(c => c.id !== cpId);
         await updateDoc(raceRef, { checkpoints: updatedCps });
-        alert("Checkpoint removed.");
+        alert("Stop removed from race.");
         loadAdminRaces();
       } catch (e) {
-        alert("Error removing checkpoint: " + e.message);
+        alert("Error removing stop: " + e.message);
       }
     };
 
-    // TEAM JOIN / PIN VERIFICATION
     window.joinOrResumeTeam = async function() {
       const code = document.getElementById('input-race-code').value.trim().toUpperCase();
       const teamName = document.getElementById('input-team-name').value.trim();
@@ -488,21 +807,22 @@
       const photoFile = document.getElementById('input-team-photo').files[0];
 
       if (!code || !teamName || !pin || pin.length < 4) {
-        return alert("Please enter race code, team name, and a 4-digit PIN.");
+        return alert("Please enter the Race Code, Team Name, and 4-digit PIN.");
       }
 
       try {
-        const raceSnap = await getDoc(doc(window.db, "races", code));
-        if (!raceSnap.exists()) return alert("Invalid race code.");
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+        if (!raceSnap.exists()) return alert(`Race code "${code}" does not exist.`);
 
-        const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
+        const teamId = teamName.toLowerCase().replace(/[^a-z0-9]/g, '_');
         const teamRef = doc(window.db, "races", code, "teams", teamId);
         const teamSnap = await getDoc(teamRef);
 
-        let photoUrl = "https://via.placeholder.com/50?text=" + encodeURIComponent(teamName);
+        let finalPhotoUrl = null;
 
         if (photoFile) {
-          photoUrl = await new Promise((res) => {
+          finalPhotoUrl = await new Promise((res) => {
             const reader = new FileReader();
             reader.onload = e => res(e.target.result);
             reader.readAsDataURL(photoFile);
@@ -510,116 +830,405 @@
         }
 
         if (teamSnap.exists()) {
+          // Team already exists - authenticating with PIN
           const existingData = teamSnap.data();
           if (existingData.pin !== pin) {
-            return alert("Incorrect Team PIN! This team name is registered with another PIN.");
+            return alert("Incorrect PIN! A team with this name already exists in this race. Please enter the correct PIN.");
           }
+
+          // Retain existing avatar if no new file uploaded
+          if (!finalPhotoUrl) {
+            finalPhotoUrl = existingData.photoUrl || ("https://via.placeholder.com/50?text=" + encodeURIComponent(teamName));
+          } else {
+            await updateDoc(teamRef, { photoUrl: finalPhotoUrl });
+          }
+
+          alert(`Welcome back, ${existingData.teamName}! Logged in successfully.`);
+          activeTeamData = { ...existingData, id: teamId, photoUrl: finalPhotoUrl };
         } else {
-          await setDoc(teamRef, {
+          // New team registration
+          const newPhoto = finalPhotoUrl || ("https://via.placeholder.com/50?text=" + encodeURIComponent(teamName));
+          const newTeamObj = {
             teamName: teamName,
             pin: pin,
-            photoUrl: photoUrl,
+            photoUrl: newPhoto,
             completedCheckpoints: [],
-            claimedBonus: [],
+            claimedBonus: [], // array of { cpId, photoProof }
             startTime: null,
             endTime: null
-          });
+          };
+
+          await setDoc(teamRef, newTeamObj);
+          alert(`Team "${teamName}" registered successfully! Your PIN is ${pin}. Use this PIN to log back in anytime.`);
+          activeTeamData = { ...newTeamObj, id: teamId };
         }
 
         activeRaceCode = code;
-        activeTeamName = teamName;
+        document.getElementById('user-status-text').innerText = `Team Mode: ${activeTeamData.teamName} (${code})`;
 
-        document.getElementById('display-team-name').innerText = teamName;
+        document.getElementById('display-team-name').innerText = activeTeamData.teamName;
         document.getElementById('display-race-title').innerText = "Race: " + raceSnap.data().title;
-        document.getElementById('team-display-avatar').src = photoUrl;
+        document.getElementById('team-display-avatar').src = activeTeamData.photoUrl;
+        
         document.getElementById('team-join-card').classList.add('hidden');
         document.getElementById('team-active-dashboard').classList.remove('hidden');
 
+        startTimerClock();
         renderTeamPortal(raceSnap.data().checkpoints || []);
       } catch (err) {
-        alert("Error entering portal: " + err.message);
+        alert("Error accessing portal: " + err.message);
       }
     };
 
+    window.leaveTeamSession = function() {
+      if (!confirm("Exit team session? You can log back in anytime using your Race Code, Team Name and PIN.")) return;
+      activeTeamData = null;
+      activeRaceCode = null;
+      if (timerInterval) clearInterval(timerInterval);
+      document.getElementById('user-status-text').innerText = window.auth.currentUser ? `Organiser Mode: ${window.auth.currentUser.email}` : "Not logged in";
+      document.getElementById('team-join-card').classList.remove('hidden');
+      document.getElementById('team-active-dashboard').classList.add('hidden');
+    };
+
+    async function refreshTeamData() {
+      if (!activeRaceCode || !activeTeamData) return;
+      try {
+        const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamData.id));
+        const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+        if (teamSnap.exists() && raceSnap.exists()) {
+          activeTeamData = { ...teamSnap.data(), id: activeTeamData.id };
+          renderTeamPortal(raceSnap.data().checkpoints || []);
+        }
+      } catch (e) {
+        console.error("Error refreshing team data:", e);
+      }
+    }
+
     function renderTeamPortal(checkpoints) {
+      if (!activeTeamData) return;
+
       const gpsList = document.getElementById('team-gps-checkpoints');
       const bonusList = document.getElementById('team-bonus-checkpoints');
 
       const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
       const bonus = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
 
-      document.getElementById('display-progress-ratio').innerText = `0/${mandatory.length}`;
+      const completedCps = activeTeamData.completedCheckpoints || [];
+      const claimedBonus = activeTeamData.claimedBonus || [];
 
-      gpsList.innerHTML = mandatory.map(cp => `
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
-          <div>
-            <p class="font-bold text-slate-200">📍 ${cp.name}</p>
-            <p class="text-[10px] text-slate-500">GPS Mandatory Stop</p>
-          </div>
-          <button onclick="checkInGps('${cp.id}')" class="px-3 py-1 bg-amber-400 text-slate-950 font-bold rounded-lg text-xs">GPS Check In</button>
-        </div>
-      `).join('');
+      document.getElementById('display-progress-ratio').innerText = `${completedCps.length}/${mandatory.length}`;
+      document.getElementById('mandatory-count-badge').innerText = `${mandatory.length - completedCps.length} Pending`;
+      document.getElementById('bonus-count-badge').innerText = `${claimedBonus.length} Claimed`;
 
-      bonusList.innerHTML = bonus.map(cp => `
-        <div class="p-3 bg-slate-900 rounded-xl border border-amber-500/20 flex justify-between items-center">
-          <div>
-            <p class="font-bold text-amber-300">⭐ ${cp.name}</p>
-            <p class="text-[10px] text-amber-400/80">Bonus Deduction: -${cp.bonusMinDeduction || 10}m</p>
-          </div>
-          <label class="px-3 py-1 bg-amber-500/20 text-amber-300 font-bold rounded-lg text-xs border border-amber-500/40 cursor-pointer">
-            📷 Upload Photo
-            <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
-          </label>
-        </div>
-      `).join('');
+      // Update timer summary
+      let totalBonusMinutes = 0;
+      claimedBonus.forEach(b => {
+        const matchingCp = bonus.find(c => c.id === b.cpId);
+        if (matchingCp) totalBonusMinutes += (matchingCp.bonusMinDeduction || 10);
+      });
+      document.getElementById('display-time-bonus-summary').innerText = `Bonuses Claimed: -${totalBonusMinutes} mins | Pending Mandatory: ${mandatory.length - completedCps.length}`;
+
+      // Render mandatory list
+      if (mandatory.length === 0) {
+        gpsList.innerHTML = `<p class="text-slate-500 italic text-[11px]">No mandatory stops configured for this race yet.</p>`;
+      } else {
+        gpsList.innerHTML = mandatory.map(cp => {
+          const isDone = completedCps.includes(cp.id);
+          return `
+            <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'} flex justify-between items-center">
+              <div class="pr-2 min-w-0">
+                <p class="font-bold ${isDone ? 'text-emerald-400' : 'text-slate-200'} truncate">${isDone ? '✓' : '📍'} ${cp.name}</p>
+                <p class="text-[10px] text-slate-400">${cp.park || 'Disney World'} | ${cp.desc || 'Mandatory GPS Stop'}</p>
+              </div>
+              ${isDone 
+                ? `<span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-bold rounded-lg text-xs border border-emerald-500/30 flex-shrink-0">Completed</span>`
+                : `<button onclick="checkInGps('${cp.id}')" class="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs flex-shrink-0 shadow">Check In</button>`
+              }
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render bonus challenges list
+      if (bonus.length === 0) {
+        bonusList.innerHTML = `<p class="text-slate-500 italic text-[11px]">No bonus photo challenges in this race.</p>`;
+      } else {
+        bonusList.innerHTML = bonus.map(cp => {
+          const bonusObj = claimedBonus.find(b => b.cpId === cp.id);
+          const isClaimed = !!bonusObj;
+          return `
+            <div class="p-3 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-400 bg-amber-950/20' : 'border-amber-500/20'} flex justify-between items-center">
+              <div class="pr-2 min-w-0">
+                <p class="font-bold ${isClaimed ? 'text-amber-300' : 'text-amber-200'} truncate">⭐ ${cp.name}</p>
+                <p class="text-[10px] text-amber-400/80">Time Bonus: -${cp.bonusMinDeduction || 10} mins (${cp.park || 'Disney'})</p>
+              </div>
+              ${isClaimed 
+                ? `<div class="flex items-center space-x-2 flex-shrink-0">
+                    <img src="${bonusObj.photoProof}" class="w-7 h-7 rounded object-cover border border-amber-400">
+                    <span class="px-2 py-1 bg-amber-400/20 text-amber-300 font-bold rounded-lg text-xs border border-amber-400/30">Claimed</span>
+                  </div>`
+                : `<label class="px-3 py-1 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-bold rounded-lg text-xs cursor-pointer flex-shrink-0 shadow">
+                    📷 Proof Photo
+                    <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}', this)">
+                  </label>`
+              }
+            </div>
+          `;
+        }).join('');
+      }
     }
 
-    window.checkInGps = function(cpId) {
-      alert("Checked in via GPS!");
-    };
-
-    window.uploadBonusPhoto = function(cpId) {
-      alert("Photo uploaded successfully! Bonus time deduction claimed.");
-    };
-
-    window.startTeamRace = function() {
-      alert("Race started! Clock is running.");
-    };
-
-    window.endTeamRace = function() {
-      alert("Race finished! Your results have been submitted to the leaderboard.");
-    };
-
-    // LEADERBOARD
-    window.loadLeaderboard = async function() {
-      const code = document.getElementById('leaderboard-search-code').value.trim().toUpperCase();
-      if (!code) return alert("Enter race code.");
+    window.checkInGps = async function(cpId) {
+      if (!activeTeamData || !activeRaceCode) return;
 
       try {
+        const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamData.id);
+        await updateDoc(teamRef, {
+          completedCheckpoints: arrayUnion(cpId)
+        });
+        alert("GPS Location Checked In!");
+        refreshTeamData();
+      } catch (e) {
+        alert("Error completing GPS stop: " + e.message);
+      }
+    };
+
+    window.uploadBonusPhoto = async function(cpId, inputEl) {
+      if (!inputEl.files || !inputEl.files[0]) return;
+      if (!activeTeamData || !activeRaceCode) return;
+
+      const file = inputEl.files[0];
+      try {
+        const photoProof = await new Promise((res) => {
+          const reader = new FileReader();
+          reader.onload = e => res(e.target.result);
+          reader.readAsDataURL(file);
+        });
+
+        const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamData.id);
+        const existingClaimed = activeTeamData.claimedBonus || [];
+        const filtered = existingClaimed.filter(b => b.cpId !== cpId);
+        filtered.push({ cpId: cpId, photoProof: photoProof });
+
+        await updateDoc(teamRef, { claimedBonus: filtered });
+        alert("Bonus Photo Proof Uploaded! Bonus time deduction claimed.");
+        refreshTeamData();
+      } catch (e) {
+        alert("Error uploading photo proof: " + e.message);
+      }
+    };
+
+    window.startTeamRace = async function() {
+      if (!activeTeamData || !activeRaceCode) return;
+
+      if (activeTeamData.startTime) {
+        return alert("Race timer is already running for your team!");
+      }
+
+      try {
+        const nowIso = new Date().toISOString();
+        const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamData.id);
+        await updateDoc(teamRef, { startTime: nowIso, endTime: null });
+        activeTeamData.startTime = nowIso;
+        activeTeamData.endTime = null;
+        alert("Race timer STARTED! Good luck racers!");
+        startTimerClock();
+      } catch (e) {
+        alert("Error starting race: " + e.message);
+      }
+    };
+
+    window.endTeamRace = async function() {
+      if (!activeTeamData || !activeRaceCode) return;
+
+      if (!activeTeamData.startTime) {
+        return alert("You must start the race before finishing!");
+      }
+
+      if (activeTeamData.endTime) {
+        return alert("Your team has already finished the race!");
+      }
+
+      if (!confirm("Are you sure you want to finish the race now? Your completion time will be locked.")) return;
+
+      try {
+        const endIso = new Date().toISOString();
+        const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamData.id);
+        await updateDoc(teamRef, { endTime: endIso });
+        activeTeamData.endTime = endIso;
+        alert("FINISH LINE! Your official race completion time has been recorded.");
+        startTimerClock();
+      } catch (e) {
+        alert("Error finishing race: " + e.message);
+      }
+    };
+
+    function startTimerClock() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      const timerDisplay = document.getElementById('display-elapsed-time');
+      if (!timerDisplay) return;
+
+      timerInterval = setInterval(() => {
+        if (!activeTeamData || !activeTeamData.startTime) {
+          timerDisplay.innerText = "00:00:00";
+          return;
+        }
+
+        const startMs = new Date(activeTeamData.startTime).getTime();
+        const endMs = activeTeamData.endTime ? new Date(activeTeamData.endTime).getTime() : Date.now();
+        const elapsedSec = Math.max(0, Math.floor((endMs - startMs) / 1000));
+
+        const h = Math.floor(elapsedSec / 3600).toString().padStart(2, '0');
+        const m = Math.floor((elapsedSec % 3600) / 60).toString().padStart(2, '0');
+        const s = (elapsedSec % 60).toString().padStart(2, '0');
+
+        timerDisplay.innerText = `${h}:${m}:${s}`;
+      }, 1000);
+    }
+
+    window.loadLeaderboard = async function() {
+      const code = document.getElementById('leaderboard-search-code').value.trim().toUpperCase();
+      if (!code) return alert("Please enter a Race Code to view standings.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+        if (!raceSnap.exists()) {
+          document.getElementById('leaderboard-list').innerHTML = `<p class="text-rose-400 font-bold">Race code "${code}" not found.</p>`;
+          return;
+        }
+
+        const allCheckpoints = raceSnap.data().checkpoints || [];
+        const mandatoryCps = allCheckpoints.filter(c => c.type !== 'BONUS_PHOTO');
+        const bonusCps = allCheckpoints.filter(c => c.type === 'BONUS_PHOTO');
+
         const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
         const listEl = document.getElementById('leaderboard-list');
 
         if (teamsSnap.empty) {
-          listEl.innerHTML = "No teams registered yet for this race.";
+          listEl.innerHTML = `<div class="p-4 text-center bg-slate-900 rounded-xl text-slate-400">No teams registered for race code "${code}" yet.</div>`;
           return;
         }
 
+        let teams = [];
+        teamsSnap.forEach(tDoc => {
+          const t = tDoc.data();
+          const doneMandatory = (t.completedCheckpoints || []).length;
+          const totalMandatory = mandatoryCps.length;
+          const missedMandatory = Math.max(0, totalMandatory - doneMandatory);
+          
+          // Deductions & penalties
+          let bonusDeductionsMin = 0;
+          (t.claimedBonus || []).forEach(b => {
+            const match = bonusCps.find(c => c.id === b.cpId);
+            if (match) bonusDeductionsMin += (match.bonusMinDeduction || 10);
+          });
+
+          let penaltyMin = missedMandatory * 60; // 60 mins penalty per missed stop
+
+          // Calculate elapsed time
+          let elapsedSec = 0;
+          let isFinished = false;
+          let isStarted = false;
+
+          if (t.startTime) {
+            isStarted = true;
+            const startMs = new Date(t.startTime).getTime();
+            const endMs = t.endTime ? new Date(t.endTime).getTime() : Date.now();
+            elapsedSec = Math.max(0, Math.floor((endMs - startMs) / 1000));
+            if (t.endTime) isFinished = true;
+          }
+
+          // Adjusted time in seconds: elapsedSec + penalties - bonuses
+          const adjustedSec = Math.max(0, elapsedSec + (penaltyMin * 60) - (bonusDeductionsMin * 60));
+
+          teams.push({
+            ...t,
+            id: tDoc.id,
+            doneMandatory,
+            totalMandatory,
+            missedMandatory,
+            bonusDeductionsMin,
+            penaltyMin,
+            elapsedSec,
+            adjustedSec,
+            isFinished,
+            isStarted
+          });
+        });
+
+        // Ranking sort: finished teams sorted by adjusted time, then racing teams by completed stops
+        teams.sort((a, b) => {
+          if (a.isFinished && !b.isFinished) return -1;
+          if (!a.isFinished && b.isFinished) return 1;
+          if (a.isFinished && b.isFinished) return a.adjustedSec - b.adjustedSec;
+          return b.doneMandatory - a.doneMandatory;
+        });
+
+        function formatSec(sec) {
+          const h = Math.floor(sec / 3600);
+          const m = Math.floor((sec % 3600) / 60);
+          const s = sec % 60;
+          return `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+        }
+
         let html = '';
-        teamsSnap.forEach(docSnap => {
-          const t = docSnap.data();
+        teams.forEach((t, idx) => {
+          const rank = idx + 1;
+          let medalEmoji = `#${rank}`;
+          if (rank === 1) medalEmoji = "🥇";
+          if (rank === 2) medalEmoji = "🥈";
+          if (rank === 3) medalEmoji = "🥉";
+
+          const bonusCount = (t.claimedBonus || []).length;
+
           html += `
-            <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
-              <div class="flex items-center space-x-2">
-                <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover">
-                <div>
-                  <p class="font-bold text-slate-200">${t.teamName}</p>
-                  <p class="text-[10px] text-amber-400">PIN Protected</p>
+            <div class="p-3.5 bg-slate-900 rounded-xl border ${rank === 1 ? 'border-amber-400/60 bg-amber-950/10' : 'border-slate-800'} space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 min-w-0 pr-2">
+                  <span class="text-base font-black text-amber-400 w-6 text-center flex-shrink-0">${medalEmoji}</span>
+                  <img src="${t.photoUrl || 'https://via.placeholder.com/36'}" class="w-9 h-9 rounded-full object-cover border border-amber-400 flex-shrink-0 shadow">
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-100 text-sm truncate">${t.teamName}</p>
+                    <div class="flex items-center space-x-2 text-[10px]">
+                      ${t.isFinished 
+                        ? `<span class="bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">FINISHED</span>` 
+                        : (t.isStarted 
+                          ? `<span class="bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">RACING</span>` 
+                          : `<span class="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">NOT STARTED</span>`
+                        )
+                      }
+                      <span class="text-slate-400 font-bold">${t.doneMandatory}/${t.totalMandatory} GPS Stops</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-right flex-shrink-0">
+                  <span class="text-xs font-mono font-bold text-amber-300 block">${t.isStarted ? formatSec(t.adjustedSec) : '--'}</span>
+                  <span class="text-[9px] text-slate-400 block uppercase">Adjusted Time</span>
                 </div>
               </div>
-              <span class="font-mono text-amber-300 font-bold">Progress: Active</span>
+
+              <!-- TIMING BREAKDOWN -->
+              <div class="pt-2 border-t border-slate-800/80 grid grid-cols-3 gap-1 text-[10px] text-slate-400 text-center">
+                <div class="bg-slate-950 p-1 rounded">
+                  <span class="text-slate-500 block text-[9px]">RAW TIME</span>
+                  <span class="font-mono font-bold text-slate-200">${t.isStarted ? formatSec(t.elapsedSec) : '--'}</span>
+                </div>
+                <div class="bg-slate-950 p-1 rounded">
+                  <span class="text-emerald-400 block text-[9px]">BONUSES</span>
+                  <span class="font-mono font-bold text-emerald-300">-${t.bonusDeductionsMin}m (${bonusCount})</span>
+                </div>
+                <div class="bg-slate-950 p-1 rounded">
+                  <span class="text-rose-400 block text-[9px]">PENALTIES</span>
+                  <span class="font-mono font-bold text-rose-300">+${t.penaltyMin}m</span>
+                </div>
+              </div>
             </div>
           `;
         });
+
         listEl.innerHTML = html;
       } catch (e) {
         alert("Error loading leaderboard: " + e.message);
