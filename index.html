@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,8 +9,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     .hidden { display: none !important; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-card-accent { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.2); }
   </style>
+
+  <!-- INSTANT GUARANTEED LOADER DISMISSAL -->
   <script>
     function forceDismissLoader() {
       var loader = document.getElementById('loading-screen');
@@ -20,7 +24,7 @@
     setTimeout(forceDismissLoader, 1500);
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans pb-12">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans pb-12 antialiased selection:bg-amber-500 selection:text-slate-950">
 
   <!-- LOADING OVERLAY -->
   <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center">
@@ -28,10 +32,10 @@
       <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-amber-400"></div>
       <i class="fa-solid fa-wand-magic-sparkles text-xl text-amber-300 absolute"></i>
     </div>
-    <h2 class="text-xl font-bold text-amber-400">Race Across Disney</h2>
-    <p class="text-xs text-slate-400 mt-2">Loading app...</p>
-    <button onclick="forceDismissLoader()" class="mt-4 px-3 py-1 bg-slate-800 text-xs text-amber-400 rounded border border-amber-500/30">
-      Tap to continue
+    <h2 class="text-xl font-bold text-amber-400 tracking-wide">Race Across Disney</h2>
+    <p class="text-xs text-slate-400 mt-2">Loading race operations...</p>
+    <button onclick="forceDismissLoader()" class="mt-4 px-3 py-1 bg-slate-800 text-xs text-amber-400 rounded border border-amber-500/30 active:scale-95 transition">
+      Tap to enter
     </button>
   </div>
 
@@ -39,15 +43,18 @@
   <div id="app-container" class="w-full max-w-md mx-auto flex-1 flex flex-col hidden p-4">
     
     <!-- HEADER -->
-    <header class="glass-card rounded-2xl p-4 mb-4 text-center shadow-xl border-amber-500/20">
-      <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
-        RACE ACROSS DISNEY
-      </h1>
-      <p id="user-status-text" class="text-xs text-slate-400 mt-1">Not logged in</p>
+    <header class="glass-card rounded-2xl p-4 mb-4 text-center shadow-2xl border-amber-500/20">
+      <div class="flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-castle text-amber-400 text-lg"></i>
+        <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+          RACE ACROSS DISNEY
+        </h1>
+      </div>
+      <p id="user-status-text" class="text-xs text-slate-400 mt-1 font-medium">Not logged in</p>
     </header>
 
     <!-- NAVIGATION TABS -->
-    <div class="flex bg-slate-900/80 p-1 rounded-xl mb-4 border border-slate-800 shadow-inner">
+    <div class="flex bg-slate-900/90 p-1.5 rounded-xl mb-4 border border-slate-800 shadow-inner">
       <button id="tab-btn-team" onclick="showTab('team')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow">
         <i class="fa-solid fa-users mr-1.5"></i> Team Portal
       </button>
@@ -58,126 +65,244 @@
 
     <!-- TAB 1: TEAM PORTAL -->
     <div id="tab-team" class="space-y-4">
-      <div class="glass-card rounded-2xl p-5 border-slate-800">
+      
+      <!-- JOIN RACE CARD -->
+      <div id="card-join-race" class="glass-card rounded-2xl p-5 border-slate-800">
         <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-flag-checkered mr-2"></i>Join a Race</h2>
-        <p class="text-xs text-slate-400 mb-4">Enter the race code provided by the organiser.</p>
+        <p class="text-xs text-slate-400 mb-4">Enter the race code provided by your organiser.</p>
         
         <div class="space-y-3">
           <div>
-            <label class="block text-xs text-slate-400 mb-1 font-semibold">RACE CODE</label>
-            <input type="text" id="input-race-code" placeholder="MK2026" maxlength="8" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-center text-lg uppercase tracking-widest font-mono text-amber-300 focus:outline-none focus:border-amber-400">
+            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wider">Race Code</label>
+            <input type="text" id="input-race-code" placeholder="MK2026" maxlength="8" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-center text-lg uppercase tracking-widest font-mono text-amber-300 focus:outline-none focus:border-amber-400">
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1 font-semibold">TEAM NAME</label>
-            <input type="text" id="input-team-name" placeholder="Team 1" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wider">Team Name</label>
+            <input type="text" id="input-team-name" placeholder="Space Mountain Adventurers" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400">
           </div>
-          <button onclick="joinRaceTeam()" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black rounded-xl shadow-lg transition transform active:scale-95 text-sm uppercase tracking-wide">
-            ENTER RACE
+          <button onclick="joinRaceTeam()" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black rounded-xl shadow-lg transition transform active:scale-95 text-sm uppercase tracking-wide flex items-center justify-center space-x-2">
+            <span>ENTER RACE</span>
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
       <!-- ACTIVE RACE PANEL -->
-      <div id="team-active-dashboard" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
-        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+      <div id="team-active-dashboard" class="glass-card-accent rounded-2xl p-5 border-amber-500/30 hidden space-y-4 shadow-2xl">
+        
+        <!-- DASHBOARD TOP BAR -->
+        <div class="flex justify-between items-start pb-3 border-b border-slate-800">
           <div>
-            <h3 id="display-team-name" class="font-bold text-amber-300 text-lg">Team Name</h3>
-            <p id="display-race-title" class="text-xs text-slate-400">Race: ---</p>
+            <span class="text-[10px] font-bold text-amber-400/80 uppercase tracking-widest">ACTIVE TEAM</span>
+            <h3 id="display-team-name" class="font-extrabold text-slate-100 text-lg leading-tight">Team Name</h3>
+            <p id="display-race-title" class="text-xs text-slate-400 mt-0.5">Race: ---</p>
           </div>
           <div class="text-right">
-            <span id="display-team-score" class="text-2xl font-black text-amber-400">0</span>
-            <span class="block text-[10px] text-slate-400">POINTS</span>
+            <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Progress</span>
+            <div id="display-progress-ratio" class="text-2xl font-black text-amber-400 font-mono">0/0</div>
           </div>
         </div>
 
-        <div class="space-y-2">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Race Checkpoints</h4>
-          <div id="team-checkpoints-list" class="space-y-2 text-xs text-slate-400">
-            Enter a race code above to load checkpoints.
+        <!-- RACE TIMER & CONTROLS -->
+        <div id="race-timer-section" class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 text-center space-y-3">
+          <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-800/80 pb-2">
+            <span><i class="fa-solid fa-stopwatch text-amber-400 mr-1.5"></i>Live Timer</span>
+            <span id="race-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-400">Not Started</span>
+          </div>
+
+          <div id="display-timer" class="text-3xl font-black font-mono text-amber-300 tracking-wider">
+            00:00:00
+          </div>
+
+          <!-- START / FINISH BUTTONS -->
+          <div class="pt-1">
+            <button id="btn-start-race" onclick="startRaceTimer()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl shadow-lg transition active:scale-95 text-xs uppercase tracking-wider flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-play"></i>
+              <span>START RACE</span>
+            </button>
+
+            <button id="btn-finish-race" onclick="finishRaceConfirm()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl shadow-lg transition active:scale-95 text-xs uppercase tracking-wider hidden flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-flag-checkered"></i>
+              <span>END RACE & SUBMIT RESULTS</span>
+            </button>
           </div>
         </div>
+
+        <!-- MANDATORY CHECKPOINTS -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider">
+              <i class="fa-solid fa-location-dot text-amber-400 mr-1.5"></i>Mandatory Checkpoints
+            </h4>
+            <span class="text-[10px] text-rose-400 font-semibold">+60m per missed</span>
+          </div>
+          <div id="team-required-checkpoints-list" class="space-y-2 text-xs">
+            <p class="text-slate-500 italic text-center py-2">Start the race to unlock checkpoints.</p>
+          </div>
+        </div>
+
+        <!-- BONUS CHECKPOINTS -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-extrabold text-amber-300 uppercase tracking-wider">
+              <i class="fa-solid fa-star text-amber-400 mr-1.5"></i>Optional Bonus Challenges
+            </h4>
+            <span class="text-[10px] text-emerald-400 font-semibold">Time Deductions</span>
+          </div>
+          <div id="team-bonus-checkpoints-list" class="space-y-2 text-xs">
+            <p class="text-slate-500 italic text-center py-2">No bonus challenges available.</p>
+          </div>
+        </div>
+
       </div>
+
+      <!-- FINISH RACE SUMMARY MODAL / CARD -->
+      <div id="race-results-summary" class="glass-card rounded-2xl p-5 border-emerald-500/40 hidden space-y-4 shadow-2xl">
+        <div class="text-center pb-3 border-b border-slate-800">
+          <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 text-xl border border-emerald-500/30">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <h3 class="font-extrabold text-emerald-300 text-lg">Race Finished!</h3>
+          <p class="text-xs text-slate-400">Official Result Breakdown</p>
+        </div>
+
+        <div class="space-y-2.5 text-xs font-mono">
+          <div class="flex justify-between p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400">RAW ELAPSED TIME:</span>
+            <span id="summary-raw-time" class="font-bold text-slate-100">00:00:00</span>
+          </div>
+
+          <div class="flex justify-between p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <div class="text-slate-400">
+              <span>MANDATORY PROGRESS:</span>
+              <span id="summary-progress-text" class="block text-[10px] text-slate-500">(0/0 Completed)</span>
+            </div>
+            <span id="summary-missed-count" class="font-bold text-rose-400">0 Missed</span>
+          </div>
+
+          <div class="flex justify-between p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <div class="text-slate-400">
+              <span>PENALTIES ADDED:</span>
+              <span id="summary-penalty-rate" class="block text-[10px] text-rose-400/80">(+60 mins per missed)</span>
+            </div>
+            <span id="summary-penalties" class="font-bold text-rose-400">+0 mins</span>
+          </div>
+
+          <div class="flex justify-between p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400">BONUS DEDUCTIONS:</span>
+            <span id="summary-bonuses" class="font-bold text-emerald-400">-0 mins</span>
+          </div>
+
+          <div class="p-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/10 rounded-xl border border-amber-500/40 text-center mt-4">
+            <span class="block text-[10px] text-amber-300 font-sans font-bold uppercase tracking-widest">FINAL OFFICIAL TIME</span>
+            <span id="summary-final-time" class="text-2xl font-black text-amber-300 tracking-wider">00:00:00</span>
+          </div>
+        </div>
+
+        <button onclick="resetTeamState()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs uppercase tracking-wider transition">
+          Back to Team Portal
+        </button>
+      </div>
+
     </div>
 
     <!-- TAB 2: ORGANISER PORTAL -->
     <div id="tab-admin" class="space-y-4 hidden">
-      <!-- LOGIN CARD -->
+      
+      <!-- ADMIN LOGIN CARD -->
       <div id="admin-login-card" class="glass-card rounded-2xl p-5 border-slate-800">
-        <h2 class="text-base font-bold text-indigo-300 mb-1"><i class="fa-solid fa-lock mr-2"></i>Organiser Login</h2>
-        <p class="text-xs text-slate-400 mb-4">Log in with your Firebase account.</p>
+        <h2 class="text-base font-bold text-indigo-300 mb-1"><i class="fa-solid fa-user-shield mr-2"></i>Organiser Login</h2>
+        <p class="text-xs text-slate-400 mb-4">Log in to create races and manage checkpoints.</p>
         
         <div class="space-y-3">
           <div>
-            <label class="block text-xs text-slate-400 mb-1 font-semibold">EMAIL</label>
-            <input type="email" id="admin-email" placeholder="admin@example.com" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-400">
+            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wider">Email</label>
+            <input type="email" id="admin-email" placeholder="organiser@disney.com" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-400">
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1 font-semibold">PASSWORD</label>
+            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wider">Password</label>
             <input type="password" id="admin-password" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-400">
           </div>
-          <button onclick="handleAdminLogin()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 text-sm uppercase">
+          <button onclick="handleAdminLogin()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 text-sm uppercase tracking-wider">
             SIGN IN TO DASHBOARD
           </button>
         </div>
       </div>
 
       <!-- ORGANISER DASHBOARD -->
-      <div id="admin-dashboard-card" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
+      <div id="admin-dashboard-card" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-5">
         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h3 class="font-bold text-indigo-300"><i class="fa-solid fa-gauge-high mr-2"></i>Race Control</h3>
-          <button onclick="handleAdminLogout()" class="text-xs bg-rose-500/20 text-rose-300 px-3 py-1 rounded-lg border border-rose-500/30 hover:bg-rose-500/30">Logout</button>
+          <h3 class="font-bold text-indigo-300"><i class="fa-solid fa-sliders mr-2"></i>Race Control Center</h3>
+          <button onclick="handleAdminLogout()" class="text-xs bg-rose-500/20 text-rose-300 px-3 py-1 rounded-lg border border-rose-500/30 hover:bg-rose-500/30 transition">Logout</button>
         </div>
 
-        <!-- CREATE RACE FORM -->
+        <!-- 1. CREATE RACE FORM -->
         <div class="space-y-3 pb-4 border-b border-slate-800">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race</h4>
+          <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider">1. Create New Race</h4>
           <div>
-            <label class="block text-[10px] text-slate-400 mb-1">RACE TITLE</label>
-            <input type="text" id="new-race-title" placeholder="e.g. Magic Kingdom Chase" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+            <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Race Title</label>
+            <input type="text" id="new-race-title" placeholder="Magic Kingdom Rush" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
           </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-1">6-CHAR RACE CODE</label>
-            <input type="text" id="new-race-code" placeholder="MK2026" maxlength="6" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono focus:outline-none focus:border-indigo-400">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Race Code</label>
+              <input type="text" id="new-race-code" placeholder="MK2026" maxlength="6" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono focus:outline-none focus:border-indigo-400">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Missed CP Penalty</label>
+              <input type="number" id="new-race-penalty" value="60" placeholder="60" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+            </div>
           </div>
-          <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+          <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow active:scale-95">
             + CREATE RACE
           </button>
         </div>
 
-        <!-- ADD CHECKPOINT FORM -->
+        <!-- 2. ADD CHECKPOINT FORM -->
         <div class="space-y-3 pb-4 border-b border-slate-800">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoint to Race</h4>
+          <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider">2. Add Checkpoint / Bonus</h4>
           <div>
-            <label class="block text-[10px] text-slate-400 mb-1">SELECT RACE CODE</label>
+            <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Target Race Code</label>
             <input type="text" id="cp-race-code" placeholder="MK2026" maxlength="6" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono focus:outline-none focus:border-indigo-400">
           </div>
-          <div class="grid grid-cols-3 gap-2">
-            <div class="col-span-2">
-              <label class="block text-[10px] text-slate-400 mb-1">CHECKPOINT NAME</label>
-              <input type="text" id="cp-name" placeholder="Space Mountain" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Checkpoint Name</label>
+            <input type="text" id="cp-name" placeholder="Photo with Mickey / Space Mountain" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Type</label>
+              <select id="cp-type" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-400">
+                <option value="required">Mandatory Checkpoint</option>
+                <option value="bonus">Bonus Optional Challenge</option>
+              </select>
             </div>
             <div>
-              <label class="block text-[10px] text-slate-400 mb-1">POINTS</label>
-              <input type="number" id="cp-points" placeholder="50" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+              <label class="block text-[10px] text-slate-400 mb-1 uppercase font-semibold">Time Deduction (Mins)</label>
+              <input type="number" id="cp-time-modifier" placeholder="10" value="0" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
             </div>
           </div>
-          <button onclick="addCheckpointToRace()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
-            + ADD CHECKPOINT
+
+          <button onclick="addCheckpointToRace()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow active:scale-95">
+            + ADD CHECKPOINT TO RACE
           </button>
         </div>
 
-        <!-- ACTIVE RACES LIST -->
+        <!-- 3. ACTIVE RACES LIST -->
         <div>
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Active Races & Checkpoints</h4>
-          <div id="admin-race-list" class="text-xs text-slate-400 space-y-2">
+          <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider mb-2">Active Races Overview</h4>
+          <div id="admin-race-list" class="text-xs text-slate-400 space-y-3">
             Loading active races...
           </div>
         </div>
+
       </div>
     </div>
 
   </div>
 
+  <!-- NAVIGATION LOGIC SCRIPT -->
   <script>
     function showTab(tabName) {
       var teamTab = document.getElementById('tab-team');
@@ -199,6 +324,7 @@
     }
   </script>
 
+  <!-- FIREBASE & CORE GAME LOGIC MODULE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -213,9 +339,15 @@
       appId: "1:925599894622:web:74ac71c8d88e46316a78cf"
     };
 
-    let activeRaceCode = null;
+    // ACTIVE TEAM STATE
+    let activeRaceData = null;
     let activeTeamName = null;
-    let activeTeamScore = 0;
+    let completedCheckpoints = new Set();
+    let completedBonuses = new Map(); // id -> deduction minutes
+
+    let timerInterval = null;
+    let raceStartTime = null;
+    let raceEndTime = null;
 
     try {
       const app = initializeApp(firebaseConfig);
@@ -245,6 +377,7 @@
       forceDismissLoader();
     }
 
+    // ORGANISER: LOGIN & LOGOUT
     window.handleAdminLogin = async function() {
       const email = document.getElementById('admin-email').value.trim();
       const pass = document.getElementById('admin-password').value.trim();
@@ -261,15 +394,19 @@
       signOut(window.auth);
     };
 
+    // ORGANISER: CREATE RACE
     window.createNewRace = async function() {
       const title = document.getElementById('new-race-title').value.trim();
       const code = document.getElementById('new-race-code').value.trim().toUpperCase();
-      if (!title || !code) return alert("Please fill in both race title and code.");
+      const penalty = parseInt(document.getElementById('new-race-penalty').value) || 60;
+
+      if (!title || !code) return alert("Please enter a race title and code.");
 
       try {
         await setDoc(doc(window.db, "races", code), {
           title: title,
           code: code,
+          missedPenaltyMins: penalty,
           checkpoints: [],
           createdAt: new Date().toISOString()
         });
@@ -283,72 +420,81 @@
       }
     };
 
+    // ORGANISER: ADD CHECKPOINT / BONUS
     window.addCheckpointToRace = async function() {
       const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
-      const cpName = document.getElementById('cp-name').value.trim();
-      const cpPoints = parseInt(document.getElementById('cp-points').value) || 10;
+      const name = document.getElementById('cp-name').value.trim();
+      const type = document.getElementById('cp-type').value;
+      const deduction = parseInt(document.getElementById('cp-time-modifier').value) || 0;
 
-      if (!code || !cpName) return alert("Please specify the race code and checkpoint name.");
+      if (!code || !name) return alert("Please enter race code and checkpoint name.");
 
       try {
         const raceRef = doc(window.db, "races", code);
         const raceSnap = await getDoc(raceRef);
 
-        if (!raceSnap.exists()) {
-          return alert(`Race with code "${code}" does not exist.`);
-        }
+        if (!raceSnap.exists()) return alert(`Race code "${code}" does not exist.`);
 
         const newCp = {
           id: 'cp_' + Date.now(),
-          name: cpName,
-          points: cpPoints
+          name: name,
+          type: type, // 'required' or 'bonus'
+          timeDeductionMins: deduction
         };
 
         await updateDoc(raceRef, {
           checkpoints: arrayUnion(newCp)
         });
 
-        alert(`Added "${cpName}" (${cpPoints} pts) to Race ${code}!`);
+        alert(`Added ${type === 'bonus' ? 'Bonus' : 'Mandatory Checkpoint'}: "${name}"`);
         document.getElementById('cp-name').value = '';
-        document.getElementById('cp-points').value = '';
         loadAdminRaces();
       } catch (err) {
         alert("Error adding checkpoint: " + err.message);
       }
     };
 
+    // ORGANISER: LOAD RACES OVERVIEW
     async function loadAdminRaces() {
       try {
         const querySnapshot = await getDocs(collection(window.db, "races"));
         const listEl = document.getElementById('admin-race-list');
         if (querySnapshot.empty) {
-          listEl.innerHTML = "No active races found in database.";
+          listEl.innerHTML = "<p class='italic text-slate-500'>No active races configured yet.</p>";
           return;
         }
 
         let html = '';
         querySnapshot.forEach((docSnap) => {
           const race = docSnap.data();
-          const cpCount = race.checkpoints ? race.checkpoints.length : 0;
-          
+          const cps = race.checkpoints || [];
+          const requiredCount = cps.filter(c => c.type === 'required' || !c.type).length;
+          const bonusCount = cps.filter(c => c.type === 'bonus').length;
+
           html += `
-            <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
+            <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
               <div class="flex justify-between items-center">
                 <div>
-                  <p class="font-bold text-amber-300">${race.title}</p>
-                  <p class="text-[10px] text-slate-400 font-mono">CODE: ${race.code}</p>
+                  <p class="font-bold text-amber-300 text-sm">${race.title}</p>
+                  <p class="text-[10px] text-slate-400 font-mono">CODE: ${race.code} | PENALTY: +${race.missedPenaltyMins || 60}m per missed</p>
                 </div>
-                <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cpCount} Checkpoints</span>
+                <div class="text-right">
+                  <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">${requiredCount} Mandatory</span>
+                  <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 ml-1">${bonusCount} Bonus</span>
+                </div>
               </div>
           `;
 
-          if (race.checkpoints && race.checkpoints.length > 0) {
-            html += `<div class="pl-2 border-l border-slate-800 space-y-1 mt-1">`;
-            race.checkpoints.forEach(cp => {
-              html += `<div class="flex justify-between text-[11px] text-slate-400">
-                <span>📍 ${cp.name}</span>
-                <span class="text-amber-400 font-bold">+${cp.points} pts</span>
-              </div>`;
+          if (cps.length > 0) {
+            html += `<div class="pl-2 border-l border-slate-800 space-y-1 mt-2">`;
+            cps.forEach(cp => {
+              const isBonus = cp.type === 'bonus';
+              html += `
+                <div class="flex justify-between text-[11px] ${isBonus ? 'text-emerald-300' : 'text-slate-300'}">
+                  <span>${isBonus ? '⭐ Bonus: ' : '📍 '}${cp.name}</span>
+                  <span>${isBonus ? `-${cp.timeDeductionMins || 0}m bonus` : 'Mandatory'}</span>
+                </div>
+              `;
             });
             html += `</div>`;
           }
@@ -362,6 +508,7 @@
       }
     }
 
+    // TEAM: JOIN RACE
     window.joinRaceTeam = async function() {
       const code = document.getElementById('input-race-code').value.trim().toUpperCase();
       const teamName = document.getElementById('input-team-name').value.trim();
@@ -372,67 +519,204 @@
         const raceRef = doc(window.db, "races", code);
         const raceSnap = await getDoc(raceRef);
 
-        if (!raceSnap.exists()) {
-          return alert("Race code not found! Please verify with your organiser.");
-        }
+        if (!raceSnap.exists()) return alert("Race code not found! Please check with your organiser.");
 
-        activeRaceCode = code;
+        activeRaceData = raceSnap.data();
         activeTeamName = teamName;
-        activeTeamScore = 0;
+        completedCheckpoints.clear();
+        completedBonuses.clear();
 
-        const raceData = raceSnap.data();
         document.getElementById('display-team-name').innerText = teamName;
-        document.getElementById('display-race-title').innerText = "Race: " + raceData.title;
-        document.getElementById('display-team-score').innerText = activeTeamScore;
+        document.getElementById('display-race-title').innerText = "Race: " + activeRaceData.title;
+        
+        document.getElementById('card-join-race').classList.add('hidden');
         document.getElementById('team-active-dashboard').classList.remove('hidden');
 
-        renderTeamCheckpoints(raceData.checkpoints || []);
-        alert(`Joined race: ${raceData.title}!`);
+        updateProgressUI();
+        renderTeamCheckpoints();
       } catch (err) {
         alert("Error joining race: " + err.message);
       }
     };
 
-    function renderTeamCheckpoints(checkpoints) {
-      const listEl = document.getElementById('team-checkpoints-list');
-      if (!checkpoints || checkpoints.length === 0) {
-        listEl.innerHTML = `<p class="italic text-slate-500">No checkpoints created for this race yet.</p>`;
-        return;
+    // TEAM: RENDER CHECKPOINT LISTS
+    function renderTeamCheckpoints() {
+      const requiredList = document.getElementById('team-required-checkpoints-list');
+      const bonusList = document.getElementById('team-bonus-checkpoints-list');
+
+      const cps = activeRaceData.checkpoints || [];
+      const requiredCps = cps.filter(c => c.type === 'required' || !c.type);
+      const bonusCps = cps.filter(c => c.type === 'bonus');
+
+      const isRaceActive = raceStartTime !== null && raceEndTime === null;
+
+      // Render Required Checkpoints
+      if (requiredCps.length === 0) {
+        requiredList.innerHTML = `<p class="italic text-slate-500 py-1">No mandatory checkpoints created yet.</p>`;
+      } else {
+        let reqHtml = '';
+        requiredCps.forEach(cp => {
+          const isDone = completedCheckpoints.has(cp.id);
+          reqHtml += `
+            <div id="cp-card-${cp.id}" class="p-3 ${isDone ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-slate-900 border-slate-800'} rounded-xl border flex justify-between items-center transition">
+              <div>
+                <p class="font-bold ${isDone ? 'text-emerald-300 line-through' : 'text-slate-200'}">📍 ${cp.name}</p>
+                <p class="text-[10px] text-slate-400">Mandatory Checkpoint</p>
+              </div>
+              ${isDone ? 
+                `<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check-circle mr-1"></i>Done</span>` :
+                `<button onclick="toggleCheckpoint('${cp.id}')" ${!isRaceActive ? 'disabled' : ''} class="px-3 py-1.5 ${isRaceActive ? 'bg-amber-400 hover:bg-amber-300 text-slate-950' : 'bg-slate-800 text-slate-500'} font-bold rounded-lg text-xs transition active:scale-95">
+                  Check In
+                </button>`
+              }
+            </div>
+          `;
+        });
+        requiredList.innerHTML = reqHtml;
       }
 
-      let html = '';
-      checkpoints.forEach(cp => {
-        html += `
-          <div id="cp-card-${cp.id}" class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex justify-between items-center">
-            <div>
-              <p class="font-bold text-slate-200 text-xs">📍 ${cp.name}</p>
-              <p class="text-[10px] text-amber-400 font-semibold">+${cp.points} Points</p>
+      // Render Bonus Checkpoints
+      if (bonusCps.length === 0) {
+        bonusList.innerHTML = `<p class="italic text-slate-500 py-1">No bonus challenges available.</p>`;
+      } else {
+        let bonusHtml = '';
+        bonusCps.forEach(cp => {
+          const isDone = completedBonuses.has(cp.id);
+          bonusHtml += `
+            <div id="cp-card-${cp.id}" class="p-3 ${isDone ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-slate-900 border-slate-800'} rounded-xl border flex justify-between items-center transition">
+              <div>
+                <p class="font-bold ${isDone ? 'text-emerald-300' : 'text-amber-200'}">⭐ ${cp.name}</p>
+                <p class="text-[10px] text-emerald-400 font-semibold">-${cp.timeDeductionMins || 0} Minutes Penalty Reduction</p>
+              </div>
+              ${isDone ?
+                `<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-star mr-1"></i>Claimed</span>` :
+                `<button onclick="toggleBonus('${cp.id}', ${cp.timeDeductionMins || 0})" ${!isRaceActive ? 'disabled' : ''} class="px-3 py-1.5 ${isRaceActive ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-slate-800 text-slate-500'} font-bold rounded-lg text-xs transition active:scale-95">
+                  Claim Bonus
+                </button>`
+              }
             </div>
-            <button onclick="checkInTeam('${cp.id}', ${cp.points}, '${cp.name}')" class="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs shadow transition active:scale-95">
-              Check In
-            </button>
-          </div>
-        `;
-      });
-      listEl.innerHTML = html;
+          `;
+        });
+        bonusList.innerHTML = bonusHtml;
+      }
     }
 
-    window.checkInTeam = function(cpId, points, cpName) {
-      activeTeamScore += points;
-      document.getElementById('display-team-score').innerText = activeTeamScore;
+    // TOGGLE CHECK-IN
+    window.toggleCheckpoint = function(cpId) {
+      if (!raceStartTime || raceEndTime) return alert("Start the race timer first!");
+      completedCheckpoints.add(cpId);
+      updateProgressUI();
+      renderTeamCheckpoints();
+    };
+
+    window.toggleBonus = function(cpId, deductionMins) {
+      if (!raceStartTime || raceEndTime) return alert("Start the race timer first!");
+      completedBonuses.set(cpId, deductionMins);
+      renderTeamCheckpoints();
+    };
+
+    function updateProgressUI() {
+      const cps = activeRaceData.checkpoints || [];
+      const requiredCps = cps.filter(c => c.type === 'required' || !c.type);
+      const ratioEl = document.getElementById('display-progress-ratio');
+      ratioEl.innerText = `${completedCheckpoints.size}/${requiredCps.length}`;
+    }
+
+    // TIMER LOGIC
+    window.startRaceTimer = function() {
+      raceStartTime = new Date();
+      document.getElementById('btn-start-race').classList.add('hidden');
+      document.getElementById('btn-finish-race').classList.remove('hidden');
       
-      const card = document.getElementById(`cp-card-${cpId}`);
-      if (card) {
-        card.className = "p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/30 flex justify-between items-center opacity-75";
-        card.innerHTML = `
-          <div>
-            <p class="font-bold text-emerald-300 text-xs">✓ ${cpName}</p>
-            <p class="text-[10px] text-emerald-400/80">Completed (+${points} pts)</p>
-          </div>
-          <span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check-circle mr-1"></i>Done</span>
-        `;
+      const badge = document.getElementById('race-status-badge');
+      badge.innerText = "Race In Progress";
+      badge.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+
+      timerInterval = setInterval(updateLiveTimer, 1000);
+      renderTeamCheckpoints();
+    };
+
+    function updateLiveTimer() {
+      if (!raceStartTime) return;
+      const now = new Date();
+      const diffMs = now - raceStartTime;
+      document.getElementById('display-timer').innerText = formatMsToHMS(diffMs);
+    }
+
+    function formatMsToHMS(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      return [hours, minutes, seconds]
+        .map(v => v < 10 ? "0" + v : v)
+        .join(":");
+    }
+
+    // END RACE & CALCULATE RESULTS
+    window.finishRaceConfirm = function() {
+      const cps = activeRaceData.checkpoints || [];
+      const requiredCps = cps.filter(c => c.type === 'required' || !c.type);
+      const missedCount = requiredCps.length - completedCheckpoints.size;
+
+      if (missedCount > 0) {
+        const penaltyRate = activeRaceData.missedPenaltyMins || 60;
+        const confirmEnd = confirm(`You have ${missedCount} uncompleted mandatory checkpoint(s).\n\nEnding the race now will apply a penalty of +${missedCount * penaltyRate} minutes (+${penaltyRate}m each).\n\nAre you sure you want to finish?`);
+        if (!confirmEnd) return;
       }
-      alert(`Checked in at ${cpName}! Awarded +${points} points.`);
+
+      finishRace();
+    };
+
+    function finishRace() {
+      raceEndTime = new Date();
+      clearInterval(timerInterval);
+
+      const rawMs = raceEndTime - raceStartTime;
+      const cps = activeRaceData.checkpoints || [];
+      const requiredCps = cps.filter(c => c.type === 'required' || !c.type);
+      const missedCount = requiredCps.length - completedCheckpoints.size;
+      const penaltyRate = activeRaceData.missedPenaltyMins || 60;
+      const totalPenaltyMins = missedCount * penaltyRate;
+
+      let totalBonusMins = 0;
+      completedBonuses.forEach(val => totalBonusMins += val);
+
+      // Final ms = Raw ms + Penalties(ms) - Bonuses(ms)
+      const adjustedMs = Math.max(0, rawMs + (totalPenaltyMins * 60 * 1000) - (totalBonusMins * 60 * 1000));
+
+      // Fill summary UI
+      document.getElementById('summary-raw-time').innerText = formatMsToHMS(rawMs);
+      document.getElementById('summary-progress-text').innerText = `(${completedCheckpoints.size}/${requiredCps.length} Completed)`;
+      document.getElementById('summary-missed-count').innerText = `${missedCount} Missed`;
+      document.getElementById('summary-penalties').innerText = `+${totalPenaltyMins} mins`;
+      document.getElementById('summary-bonuses').innerText = `-${totalBonusMins} mins`;
+      document.getElementById('summary-final-time').innerText = formatMsToHMS(adjustedMs);
+
+      document.getElementById('team-active-dashboard').classList.add('hidden');
+      document.getElementById('race-results-summary').classList.remove('hidden');
+    }
+
+    window.resetTeamState = function() {
+      document.getElementById('race-results-summary').classList.add('hidden');
+      document.getElementById('card-join-race').classList.remove('hidden');
+      
+      // Reset variables
+      activeRaceData = null;
+      activeTeamName = null;
+      completedCheckpoints.clear();
+      completedBonuses.clear();
+      raceStartTime = null;
+      raceEndTime = null;
+      clearInterval(timerInterval);
+
+      document.getElementById('display-timer').innerText = "00:00:00";
+      document.getElementById('btn-start-race').classList.remove('hidden');
+      document.getElementById('btn-finish-race').classList.add('hidden');
+      const badge = document.getElementById('race-status-badge');
+      badge.innerText = "Not Started";
+      badge.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-400";
     };
   </script>
 </body>
