@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -339,7 +340,7 @@
 
     <!-- JS Logic -->
     <script>
-        window.switchTab = function(tabName) {
+        function switchTab(tabName) {
             ['race', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
@@ -349,15 +350,15 @@
                     btn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2";
                 }
             });
-        };
+        }
 
         let isRegisterMode = false;
-        window.toggleAuthMode = function() {
+        function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
-        };
+        }
 
         const DISNEY_PRESETS = [
             { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom" },
@@ -417,7 +418,7 @@
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
         ];
 
-        window.renderOrgPicker = function() {
+        function renderOrgPicker() {
             const container = document.getElementById('org-checkpoint-picker');
             const query = (document.getElementById('org-search-input')?.value || "").toLowerCase();
             
@@ -441,7 +442,7 @@
                 }
             });
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        };
+        }
         setTimeout(renderOrgPicker, 500);
     </script>
 
@@ -470,6 +471,7 @@
             window.db = getFirestore(app);
 
             onAuthStateChanged(window.auth, (user) => {
+                const statusText = document.getElementById('user-status-text');
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
@@ -527,7 +529,7 @@
                 startTimerTicker();
             } catch (e) {
                 console.error("Failed to restore session:", e);
-                window.logoutTeam();
+                logoutTeam();
             }
         }
 
@@ -958,7 +960,7 @@
             alert("Race finished! Final results submitted to the leaderboard.");
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            window.switchTab('leaderboard');
+            switchTab('leaderboard');
             document.getElementById('leaderboard-code-input').value = activeRaceCode;
             loadLeaderboard();
         };
@@ -1076,3 +1078,4 @@
     </script>
 </body>
 </html>
+
