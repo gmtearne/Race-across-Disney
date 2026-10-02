@@ -1,189 +1,280 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Race Across Disney</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome for Disney & Nav Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .disney-gradient {
-      background: linear-gradient(135deg, #1e1b4b 0%, #311b92 40%, #4a148c 70%, #880e4f 100%);
-    }
-    .gold-gradient {
-      background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
-    }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
     .hidden { display: none !important; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center pb-12">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- LOADING OVERLAY WITH FALLBACK SAFETY TIMER -->
-  <div id="loading-screen" class="fixed inset-0 disney-gradient z-50 flex flex-col items-center justify-center p-6 text-center">
+  <!-- LOADING OVERLAY WITH GUARANTEED TIMEOUT -->
+  <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
     <div class="relative flex items-center justify-center mb-6">
-      <div class="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-yellow-400 border-solid"></div>
-      <i class="fa-solid fa-wand-magic-sparkles text-2xl text-yellow-300 absolute"></i>
+      <div class="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-amber-400"></div>
+      <i class="fa-solid fa-wand-magic-sparkles text-2xl text-amber-300 absolute"></i>
     </div>
-    <h2 class="text-2xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-indigo-200">
-      RACE ACROSS DISNEY
-    </h2>
-    <p id="loading-status" class="text-xs text-indigo-200 mt-2 font-medium">Connecting to Disney Magic Network...</p>
+    <h2 class="text-2xl font-bold tracking-wide text-amber-400">Race Across Disney</h2>
+    <p id="loading-status" class="text-sm text-slate-400 mt-2">Connecting race operations...</p>
     
-    <button id="force-dismiss" onclick="dismissLoader('Manual override requested.')" class="mt-8 px-5 py-2.5 bg-slate-800/80 hover:bg-slate-700/80 text-xs font-semibold text-yellow-300 border border-yellow-500/30 rounded-xl shadow-lg transition hidden">
-      <i class="fa-solid fa-bolt mr-2"></i> Bypass Loading Screen
+    <button id="manual-bypass-btn" onclick="hideLoader('Manual user bypass')" class="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-amber-400 border border-amber-500/30 rounded-lg shadow transition">
+      Tap here if stuck loading
     </button>
   </div>
 
-  <!-- HEADER -->
-  <header class="w-full disney-gradient border-b border-indigo-500/30 shadow-2xl sticky top-0 z-40">
-    <div class="max-w-xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-slate-950 font-black shadow-lg">
-          <i class="fa-solid fa-castle text-lg"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-black tracking-wider text-yellow-300 uppercase leading-none">Race Across Disney</h1>
-          <p class="text-[10px] font-semibold text-indigo-200 tracking-widest uppercase mt-0.5">Live Interactive Dashboard</p>
-        </div>
-      </div>
-      <div id="user-status-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700">
-        Guest
-      </div>
-    </div>
+  <!-- MAIN APPLICATION UI -->
+  <div id="app-container" class="w-full max-w-md mx-auto flex-1 flex flex-col hidden p-4 pb-12">
+    
+    <!-- HEADER -->
+    <header class="glass-card rounded-2xl p-4 mb-4 text-center shadow-xl border-amber-500/20">
+      <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+        RACE ACROSS DISNEY
+      </h1>
+      <p id="user-status-text" class="text-xs text-slate-400 mt-1">Not logged in</p>
+    </header>
 
-    <!-- MAIN NAV TABS -->
-    <div class="max-w-xl mx-auto flex border-t border-indigo-900/50 bg-slate-950/40 backdrop-blur-md">
-      <button id="tab-team" onclick="switchTab('team')" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider text-yellow-400 border-b-2 border-yellow-400 transition flex items-center justify-center space-x-2">
-        <i class="fa-solid fa-flag-checkered"></i>
-        <span>Team Portal</span>
+    <!-- NAVIGATION TABS -->
+    <div class="flex bg-slate-900/80 p-1 rounded-xl mb-4 border border-slate-800 shadow-inner">
+      <button id="tab-btn-team" onclick="showTab('team')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow">
+        <i class="fa-solid fa-users mr-1.5"></i> Team Portal
       </button>
-      <button id="tab-admin" onclick="switchTab('admin')" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center justify-center space-x-2">
-        <i class="fa-solid fa-user-gear"></i>
-        <span>Organiser</span>
+      <button id="tab-btn-admin" onclick="showTab('admin')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200">
+        <i class="fa-solid fa-user-gear mr-1.5"></i> Organiser
       </button>
     </div>
-  </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="w-full max-w-xl px-4 mt-6">
-
-    <!-- TEAM PORTAL VIEW -->
-    <section id="view-team" class="space-y-6">
-      
-      <!-- JOIN RACE FORM -->
-      <div id="team-join-card" class="glass-card rounded-2xl p-6 shadow-xl border border-indigo-500/20">
-        <div class="text-center mb-6">
-          <span class="px-3 py-1 bg-yellow-400/10 text-yellow-300 text-xs font-bold rounded-full border border-yellow-400/20">
-            <i class="fa-solid fa-ticket mr-1"></i> Enter Race
-          </span>
-          <h2 class="text-xl font-bold text-white mt-3">Join a Disney Race</h2>
-          <p class="text-xs text-slate-400 mt-1">Enter your 6-digit race code provided by the organiser.</p>
-        </div>
-
-        <form onsubmit="joinRace(event)" class="space-y-4">
+    <!-- TAB 1: TEAM PORTAL -->
+    <div id="tab-team" class="space-y-4">
+      <div class="glass-card rounded-2xl p-5 border-slate-800">
+        <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-flag-checkered mr-2"></i>Join a Race</h2>
+        <p class="text-xs text-slate-400 mb-4">Enter the 6-character race code provided by the organiser.</p>
+        
+        <div class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Team Name</label>
-            <input type="text" id="join-team-name" required placeholder="e.g. Magic Kingdom Cruisers" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-yellow-400">
+            <label class="block text-xs text-slate-400 mb-1 font-semibold">RACE CODE</label>
+            <input type="text" id="input-race-code" placeholder="e.g. DISNEY" maxlength="8" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-center text-lg uppercase tracking-widest font-mono text-amber-300 focus:outline-none focus:border-amber-400">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">6-Digit Race Code</label>
-            <input type="text" id="join-race-code" required maxlength="6" placeholder="DISNEY" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-center text-xl font-black uppercase tracking-widest text-yellow-400 focus:outline-none focus:border-yellow-400">
+            <label class="block text-xs text-slate-400 mb-1 font-semibold">TEAM NAME</label>
+            <input type="text" id="input-team-name" placeholder="Your Team Name" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400">
           </div>
-          <button type="submit" class="w-full py-3.5 gold-gradient text-slate-950 font-extrabold rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition text-sm uppercase tracking-wider">
-            Start Racing
+          <button onclick="joinRaceTeam()" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black rounded-xl shadow-lg transition transform active:scale-95 text-sm uppercase tracking-wide">
+            Enter Race
           </button>
-        </form>
-      </div>
-
-      <!-- ACTIVE TEAM DASHBOARD -->
-      <div id="team-active-card" class="space-y-6 hidden">
-        <!-- TEAM HERO SCOREBOARD -->
-        <div class="disney-gradient rounded-2xl p-6 shadow-2xl border border-indigo-500/30 relative overflow-hidden">
-          <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl text-white pointer-events-none">
-            <i class="fa-solid fa-trophy"></i>
-          </div>
-          <div class="flex justify-between items-start">
-            <div>
-              <span id="active-race-title" class="text-xs font-bold text-yellow-300 tracking-wider uppercase">Race Title</span>
-              <h2 id="active-team-name" class="text-2xl font-black text-white mt-0.5">Team Name</h2>
-            </div>
-            <button onclick="leaveTeamRace()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-900/50 px-2.5 py-1 rounded-lg border border-slate-700">
-              Exit
-            </button>
-          </div>
-
-          <div class="mt-6 flex items-baseline space-x-2">
-            <span id="active-team-score" class="text-4xl font-black text-yellow-300">0</span>
-            <span class="text-xs font-bold text-indigo-200 uppercase tracking-widest">Points Accumulated</span>
-          </div>
-        </div>
-
-        <!-- TEAM CHECKPOINTS LIST -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
-          <div class="flex justify-between items-center">
-            <h3 class="text-sm font-extrabold uppercase tracking-wider text-yellow-400 flex items-center gap-2">
-              <i class="fa-solid fa-location-dot"></i> Checkpoints
-            </h3>
-            <span id="checkpoint-count" class="text-xs text-slate-400 font-semibold">0 completed</span>
-          </div>
-
-          <div id="team-checkpoints-container" class="space-y-3">
-            <div class="p-4 bg-slate-900/60 rounded-xl text-center text-xs text-slate-400">Loading checkpoints...</div>
-          </div>
-        </div>
-
-        <!-- TEAM BONUS CHALLENGES -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
-          <h3 class="text-sm font-extrabold uppercase tracking-wider text-yellow-400 flex items-center gap-2">
-            <i class="fa-solid fa-star"></i> Bonus Challenges
-          </h3>
-          <div id="team-bonuses-container" class="space-y-3">
-            <div class="p-4 bg-slate-900/60 rounded-xl text-center text-xs text-slate-400">Loading bonus challenges...</div>
-          </div>
-        </div>
-
-        <!-- LIVE SCOREBOARD -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
-          <h3 class="text-sm font-extrabold uppercase tracking-wider text-yellow-400 flex items-center gap-2">
-            <i class="fa-solid fa-ranking-star"></i> Live Standings
-          </h3>
-          <div id="team-scoreboard-container" class="space-y-2">
-            <div class="p-4 bg-slate-900/60 rounded-xl text-center text-xs text-slate-400">Loading standings...</div>
-          </div>
         </div>
       </div>
 
-    </section>
-
-    <!-- ORGANISER PORTAL VIEW -->
-    <section id="view-admin" class="space-y-6 hidden">
-
-      <!-- ORGANISER LOGIN FORM -->
-      <div id="admin-login-card" class="glass-card rounded-2xl p-6 shadow-xl border border-indigo-500/20">
-        <div class="text-center mb-6">
-          <span class="px-3 py-1 bg-indigo-500/10 text-indigo-300 text-xs font-bold rounded-full border border-indigo-500/20">
-            <i class="fa-solid fa-lock mr-1"></i> Organiser Authentication
-          </span>
-          <h2 class="text-xl font-bold text-white mt-3">Organiser Portal</h2>
-          <p class="text-xs text-slate-400 mt-1">Log in with your Firebase credentials to create and manage races.</p>
-        </div>
-
-        <form onsubmit="adminLogin(event)" class="space-y-4">
+      <!-- TEAM ACTIVE RACE DASHBOARD (Hidden until joined) -->
+      <div id="team-active-dashboard" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
           <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
-            <input type="email" id="admin-email" required placeholder="organiser@disneyrace.com" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-400">
+            <h3 id="display-team-name" class="font-bold text-amber-300 text-lg">Team Name</h3>
+            <p id="display-race-code" class="text-xs text-slate-400">Code: ------</p>
+          </div>
+          <div class="text-right">
+            <span id="display-team-score" class="text-2xl font-black text-amber-400">0</span>
+            <span class="block text-[10px] text-slate-400">POINTS</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Checkpoints</h4>
+          <div id="team-checkpoints-list" class="space-y-2 text-xs text-slate-400">
+            No active checkpoints loaded.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ORGANISER PORTAL -->
+    <div id="tab-admin" class="space-y-4 hidden">
+      <!-- LOGIN CARD -->
+      <div id="admin-login-card" class="glass-card rounded-2xl p-5 border-slate-800">
+        <h2 class="text-base font-bold text-amber-300 mb-1"><i class="fa-solid fa-lock mr-2"></i>Organiser Login</h2>
+        <p class="text-xs text-slate-400 mb-4">Log in with your Firebase admin credentials.</p>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 font-semibold">EMAIL</label>
+            <input type="email" id="admin-email" placeholder="admin@example.com" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 font-semibold">PASSWORD</label>
+            <input type="password" id="admin-password" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+          </div>
+          <button onclick="handleAdminLogin()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 text-sm">
+            Login
+          </button>
+        </div>
+      </div>
+
+      <!-- ORGANISER DASHBOARD (Hidden until logged in) -->
+      <div id="admin-dashboard-card" class="glass-card rounded-2xl p-5 border-slate-800 hidden space-y-4">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h3 class="font-bold text-indigo-300"><i class="fa-solid fa-gauge-high mr-2"></i>Race Control</h3>
+          <button onclick="handleAdminLogout()" class="text-xs text-rose-400 hover:underline">Logout</button>
+        </div>
+
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Create New Race</h4>
+          <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs">
+          <input type="text" id="new-race-code" placeholder="6-Char Join Code (e.g. DISNEY)" maxlength="6" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs uppercase font-mono">
+          <button onclick="createNewRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition">
+            Create Race
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FIREBASE MODULES -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
+      authDomain: "raceacrossdisney.firebaseapp.com",
+      projectId: "raceacrossdisney",
+      storageBucket: "raceacrossdisney.firebasestorage.app",
+      messagingSenderId: "925599894622",
+      appId: "1:925599894622:web:74ac71c8d88e46316a78cf"
+    };
+
+    // 1. HARD TIMEOUT GUARANTEE (2.5 SECONDS MAX)
+    window.hideLoader = function(reason) {
+      const loader = document.getElementById('loading-screen');
+      const app = document.getElementById('app-container');
+      if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+        app.classList.remove('hidden');
+        console.log("Loader dismissed:", reason);
+      }
+    };
+
+    // Force loader off after 2.5s no matter what
+    setTimeout(() => {
+      window.hideLoader("Automatic 2.5s Timeout Guarantee");
+    }, 2500);
+
+    // 2. INITIALIZE FIREBASE SAFELY
+    try {
+      const app = initializeApp(firebaseConfig);
+      window.auth = getAuth(app);
+      window.db = getFirestore(app);
+
+      onAuthStateChanged(window.auth, (user) => {
+        const statusText = document.getElementById('user-status-text');
+        const loginCard = document.getElementById('admin-login-card');
+        const adminDashboard = document.getElementById('admin-dashboard-card');
+
+        if (user) {
+          statusText.innerText = `Organiser: ${user.email}`;
+          if (loginCard) loginCard.classList.add('hidden');
+          if (adminDashboard) adminDashboard.classList.remove('hidden');
+        } else {
+          statusText.innerText = "Not logged in";
+          if (loginCard) loginCard.classList.remove('hidden');
+          if (adminDashboard) adminDashboard.classList.add('hidden');
+        }
+      });
+      
+      // Dismiss immediately once initialized
+      window.hideLoader("Firebase loaded successfully");
+    } catch (err) {
+      console.error("Firebase init error:", err);
+      window.hideLoader("Firebase failed with error");
+    }
+
+    // 3. TAB SWITCHER
+    window.showTab = function(tabName) {
+      const teamTab = document.getElementById('tab-team');
+      const adminTab = document.getElementById('tab-admin');
+      const btnTeam = document.getElementById('tab-btn-team');
+      const btnAdmin = document.getElementById('tab-btn-admin');
+
+      if (tabName === 'team') {
+        teamTab.classList.remove('hidden');
+        adminTab.classList.add('hidden');
+        btnTeam.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow";
+        btnAdmin.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+      } else {
+        adminTab.classList.remove('hidden');
+        teamTab.classList.add('hidden');
+        btnAdmin.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-amber-400 bg-slate-800 shadow";
+        btnTeam.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+      }
+    };
+
+    // 4. ADMIN ACTIONS
+    window.handleAdminLogin = async function() {
+      const email = document.getElementById('admin-email').value.trim();
+      const pass = document.getElementById('admin-password').value.trim();
+      if (!email || !pass) return alert("Please enter email and password.");
+
+      try {
+        await signInWithEmailAndPassword(window.auth, email, pass);
+        alert("Authenticated as Organiser!");
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
+    };
+
+    window.handleAdminLogout = function() {
+      signOut(window.auth);
+    };
+
+    window.createNewRace = async function() {
+      const title = document.getElementById('new-race-title').value.trim();
+      const code = document.getElementById('new-race-code').value.trim().toUpperCase();
+      if (!title || !code) return alert("Please fill in race title and 6-character code.");
+
+      try {
+        await setDoc(doc(window.db, "races", code), {
+          title: title,
+          code: code,
+          createdAt: new Date().toISOString()
+        });
+        alert(`Race "${title}" created with code ${code}!`);
+      } catch (err) {
+        alert("Error creating race: " + err.message);
+      }
+    };
+
+    // 5. TEAM ACTIONS
+    window.joinRaceTeam = async function() {
+      const code = document.getElementById('input-race-code').value.trim().toUpperCase();
+      const teamName = document.getElementById('input-team-name').value.trim();
+
+      if (!code || !teamName) return alert("Please enter both race code and team name.");
+
+      try {
+        const raceRef = doc(window.db, "races", code);
+        const raceSnap = await getDoc(raceRef);
+
+        if (!raceSnap.exists()) {
+          return alert("Race code not found! Make sure your organiser has created it.");
+        }
+
+        document.getElementById('display-team-name').innerText = teamName;
+        document.getElementById('display-race-code').innerText = "Race: " + raceSnap.data().title;
+        document.getElementById('team-active-dashboard').classList.remove('hidden');
+        alert(`Joined race: ${raceSnap.data().title}!`);
+      } catch (err) {
+        alert("Error joining race: " + err.message);
+      }
+    };
+  </script>
+</body>
+</html>
+-none focus:border-indigo-400">
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Password</label>
