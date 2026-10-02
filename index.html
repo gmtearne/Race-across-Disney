@@ -341,12 +341,12 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h3 class="text-base font-bold text-white text-center">Outside Proximity Radius</h3>
-            <p id="manual-modal-reason" class="text-xs text-slate-300 text-center">You are further than 500 meters from this checkpoint. If you are certain you are at the correct location, you can confirm manually. Your coordinates will be flagged for organiser review.</p>
+            <p id="manual-modal-reason" class="text-xs text-slate-300 text-center">You are further than 500 meters from this checkpoint. If you are certain you are at the correct location, you can confirm manually. Your coordinates will be recorded for organiser review.</p>
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">
+                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer">
                     Cancel
                 </button>
-                <button id="modal-confirm-btn" onclick="" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow">
+                <button id="modal-confirm-btn" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow cursor-pointer">
                     Confirm & Submit
                 </button>
             </div>
@@ -373,6 +373,10 @@
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
+        }
+
+        function closeManualModal() {
+            document.getElementById('manual-confirm-modal').classList.add('hidden');
         }
 
         const DISNEY_PRESETS = [
@@ -459,10 +463,6 @@
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
         }
         setTimeout(renderOrgPicker, 500);
-
-        function closeManualModal() {
-            document.getElementById('manual-confirm-modal').classList.add('hidden');
-        }
     </script>
 
     <!-- Firebase SDK Logic -->
@@ -490,6 +490,7 @@
             window.db = getFirestore(app);
 
             onAuthStateChanged(window.auth, (user) => {
+                const statusText = document.getElementById('user-status-text');
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
@@ -899,7 +900,7 @@
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Completed' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow cursor-pointer">
                                 GPS Check In
                             </button>
                         `}
@@ -926,7 +927,7 @@
             }).join('');
         }
 
-        // GEOFENCE VERIFICATION & CHECK-IN LOGIC
+        // GEOFENCE VERIFICATION & CHECK-IN LOGIC (Attached safely to window)
         window.verifyGpsAndCheckIn = function(cpId, targetLat, targetLng) {
             if (!navigator.geolocation) {
                 return promptManualOverride(cpId, 0, 0, "Geolocation is not supported by your browser.");
@@ -1036,7 +1037,7 @@
             alert("Race finished! Final results submitted to the leaderboard.");
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
             loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            window.switchTab('leaderboard');
+            switchTab('leaderboard');
             document.getElementById('leaderboard-code-input').value = activeRaceCode;
             loadLeaderboard();
         };
