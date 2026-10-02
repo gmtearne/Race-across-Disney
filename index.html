@@ -191,9 +191,6 @@
                             <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                             Mandatory GPS Checkpoints
                         </h3>
-                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-location-crosshairs"></i> Check GPS Distance
-                        </button>
                     </div>
                     <div id="team-checkpoints-list" class="space-y-3"></div>
                 </div>
@@ -337,6 +334,25 @@
 
     </main>
 
+    <!-- MANUAL CONFIRMATION MODAL -->
+    <div id="manual-confirm-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center text-xl mx-auto border border-amber-500/30">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-base font-bold text-white text-center">Cannot Locate You at This Stop</h3>
+            <p class="text-xs text-slate-300 text-center">We couldn't verify your GPS proximity to this checkpoint. If you're sure you're in the right place, you can manually confirm your location (your coordinates will be recorded for organiser verification).</p>
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="closeManualModal()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">
+                    Keep Hunting
+                </button>
+                <button id="modal-confirm-btn" onclick="" class="py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition shadow">
+                    Confirm Location
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Logic -->
     <script>
         function switchTab(tabName) {
@@ -443,6 +459,10 @@
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
         }
         setTimeout(renderOrgPicker, 500);
+
+        function closeManualModal() {
+            document.getElementById('manual-confirm-modal').classList.add('hidden');
+        }
     </script>
 
     <!-- Firebase SDK Logic -->
@@ -489,7 +509,6 @@
                 }
             });
 
-            // Check for persisted local storage session on page load
             const savedRaceCode = localStorage.getItem('rad_race_code');
             const savedTeamId = localStorage.getItem('rad_team_id');
             if (savedRaceCode && savedTeamId) {
@@ -705,7 +724,7 @@
                                         const t = tDoc.data();
                                         return `
                                             <div class="flex justify-between items-center text-[10px] bg-slate-950 p-1.5 rounded border border-slate-800">
-                                                <span class="font-bold text-slate-200">${t.teamName} (PIN:${t.pin})</span>
+                                                <span class="font-bold text-slate-200">${t.teamName} (PIN: ${t.pin})</span>
                                                 <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline">Delete</button>
                                             </div>
                                         `;
@@ -736,7 +755,6 @@
             loadAdminRaces();
         };
 
-        // TEAM JOIN / PIN RESUME LOGIN WITH PERSISTENT SESSION
         window.joinOrResumeTeam = async function() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
@@ -784,6 +802,8 @@
                         photoUrl: photoUrl,
                         completedCheckpoints: [],
                         claimedBonus: [],
+                        bonusProofPhotos: {},
+                        manualCoords: {},
                         startTime: null,
                         endTime: null
                     });
@@ -792,11 +812,9 @@
                 activeRaceCode = code;
                 activeTeamId = teamId;
 
-                // Save to localStorage so refresh doesn't log out
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
 
-                // Update UI state & auto-populate leaderboard race code
                 document.getElementById('active-team-name').innerText = teamName;
                 document.getElementById('active-team-racecode').innerText = code;
                 document.getElementById('active-team-avatar').src = photoUrl;
@@ -879,8 +897,8 @@
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Completed' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="checkInGps('${cp.id}')" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
-                                GPS Check In
+                            <button onclick="verifyGpsAndCheckIn('${cp.id}', ${cp.lat \vert{}\vert{} 28.4177},${cp.lng || -81.5812})" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                                Check In
                             </button>
                         `}
                     </div>
@@ -906,24 +924,83 @@
             }).join('');
         }
 
-        window.refreshTeamDashboard = async function() {
-            if (!activeRaceCode) return;
-            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            loadTeamDashboardData(raceSnap.data().checkpoints || []);
-            alert("GPS proximity verified! Check-in updated.");
+        // TRUE GPS HAFERSINE DISTANCE VERIFICATION WITH FALLBACK
+        window.verifyGpsAndCheckIn = function(cpId, targetLat, targetLng) {
+            if (!navigator.geolocation) {
+                return promptManualOverride(cpId, "Geolocation not supported by browser.");
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+
+                    // Haversine formula calculation (Distance in kilometers)
+                    const R = 6371; // Earth radius in km
+                    const dLat = (targetLat - userLat) * Math.PI / 180;
+                    const dLng = (targetLng - userLng) * Math.PI / 180;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                              Math.cos(userLat * Math.PI / 180) * Math.cos(targetLat * Math.PI / 180) *
+                              Math.sin(dLng/2) * Math.sin(dLng/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    const distanceKm = R * c;
+                    const distanceMeters = distanceKm * 1000;
+
+                    // Allow check-in if within 500 meters (generous geofence for theme park accuracy)
+                    if (distanceMeters <= 500) {
+                        await executeCheckIn(cpId, { lat: userLat, lng: userLng, verified: true });
+                    } else {
+                        promptManualOverride(cpId, `You are approx ${Math.round(distanceMeters)}m away from this checkpoint.`);
+                    }
+                },
+                (error) => {
+                    promptManualOverride(cpId, "Could not retrieve your GPS location (" + error.message + ").");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         };
 
-        window.checkInGps = async function(cpId) {
+        function promptManualOverride(cpId, reason) {
+            const modal = document.getElementById('manual-confirm-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('modal-confirm-btn').onclick = function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                            closeManualModal();
+                            await executeCheckIn(cpId, { lat: pos.coords.latitude, lng: pos.coords.longitude, verified: false, reason: reason });
+                        },
+                        async () => {
+                            closeManualModal();
+                            await executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
+                        }
+                    );
+                } else {
+                    closeManualModal();
+                    executeCheckIn(cpId, { lat: 0, lng: 0, verified: false, reason: reason });
+                }
+            };
+        }
+
+        async function executeCheckIn(cpId, coordData) {
             const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
             const teamSnap = await getDoc(teamRef);
-            const completed = teamSnap.data().completedCheckpoints || [];
+            const data = teamSnap.data();
+            const completed = data.completedCheckpoints || [];
+            const manualCoords = data.manualCoords || {};
+
             if (!completed.includes(cpId)) {
                 completed.push(cpId);
-                await updateDoc(teamRef, { completedCheckpoints: completed });
+                manualCoords[cpId] = coordData;
+                await updateDoc(teamRef, {
+                    completedCheckpoints: completed,
+                    manualCoords: manualCoords
+                });
                 const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
                 loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                alert(coordData.verified ? "GPS verified! Check-in successful." : "Manual location confirmed and recorded for organiser verification.");
             }
-        };
+        }
 
         window.uploadBonusPhoto = async function(cpId) {
             const file = event.target.files[0];
@@ -931,12 +1008,20 @@
 
             const reader = new FileReader();
             reader.onload = async function(e) {
+                const base64Img = e.target.result;
                 const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
                 const teamSnap = await getDoc(teamRef);
-                const claimed = teamSnap.data().claimedBonus || [];
+                const data = teamSnap.data();
+                const claimed = data.claimedBonus || [];
+                const proofPhotos = data.bonusProofPhotos || {};
+
                 if (!claimed.includes(cpId)) {
                     claimed.push(cpId);
-                    await updateDoc(teamRef, { claimedBonus: claimed });
+                    proofPhotos[cpId] = base64Img;
+                    await updateDoc(teamRef, {
+                        claimedBonus: claimed,
+                        bonusProofPhotos: proofPhotos
+                    });
                     const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
                     loadTeamDashboardData(raceSnap.data().checkpoints || []);
                     alert("Photo proof uploaded successfully! Time deduction claimed.");
@@ -984,6 +1069,7 @@
             }, 1000);
         }
 
+        // LEADERBOARD WITH PROOF PHOTO BADGES UNDERNEATH
         window.loadLeaderboard = async function() {
             const code = document.getElementById('leaderboard-code-input').value.trim().toUpperCase();
             if (!code) return alert("Please enter a race code.");
@@ -1047,17 +1133,29 @@
                     const mins = Math.floor(displayMin % 60);
                     const timeStr = `${hrs}h ${mins}m`;
 
+                    const proofPhotosObj = t.bonusProofPhotos || {};
+                    const proofThumbnails = Object.values(proofPhotosObj).map(imgUrl => `
+                        <a href="${imgUrl}" target="_blank" class="block w-6 h-6 rounded overflow-hidden border border-amber-400/50 hover:scale-110 transition shadow">
+                            <img src="${imgUrl}" class="w-full h-full object-cover">
+                        </a>
+                    `).join('');
+
                     html += `
                         <tr class="hover:bg-slate-800/40 transition">
-                            <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
-                            <td class="p-3 flex items-center gap-2.5">
-                                <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
-                                <span class="font-bold text-white">${t.teamName}</span>
+                            <td class="p-3 font-bold text-disneyGold align-top">#${index + 1}</td>
+                            <td class="p-3 align-top">
+                                <div class="flex items-center gap-2.5">
+                                    <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
+                                    <div>
+                                        <span class="font-bold text-white block">${t.teamName}</span>
+                                        ${proofThumbnails ? `<div class="flex flex-wrap gap-1 mt-1.5">${proofThumbnails}</div>` : ''}
+                                    </div>
+                                </div>
                             </td>
-                            <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
-                            <td class="p-3 text-center text-amber-400 font-semibold">⭐ ${t.bonusCount}</td>
-                            <td class="p-3 text-right font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${timeStr}</td>
-                            <td class="p-3 text-center">
+                            <td class="p-3 text-center font-mono font-bold text-slate-200 align-top">${t.progressCount}/${mandatory.length}</td>
+                            <td class="p-3 text-center text-amber-400 font-semibold align-top">⭐ ${t.bonusCount}</td>
+                            <td class="p-3 text-right font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'} align-top">${timeStr}</td>
+                            <td class="p-3 text-center align-top">
                                 <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
                                     ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
                                 </span>
