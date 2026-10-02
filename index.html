@@ -5,172 +5,324 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Race Across Disney</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        disney: {
+                            purple: '#1E1035',
+                            card: '#291847',
+                            gold: '#FFD700',
+                            goldHover: '#E6C200',
+                            accent: '#9D4EDD',
+                            lightBg: '#F4F0FF',
+                            lightCard: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        title: ['Cinzel', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
     
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #120924 0%, #1E1035 50%, #0D051A 100%);
             min-height: 100vh;
-            color: #f8fafc;
+            color: #F3F4F6;
         }
-        .disney-font {
-            font-family: 'Montserrat', sans-serif;
+        
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.25);
         }
+
+        .gold-border {
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .gold-text-gradient {
+            background: linear-gradient(135deg, #FFF099 0%, #FFD700 50%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         .glass-panel {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .glass-card {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(41, 24, 71, 0.7);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .disney-gradient-btn {
-            background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%);
-            transition: all 0.3s ease;
-        }
-        .disney-gradient-btn:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-            box-shadow: 0 10px 20px -5px rgba(236, 72, 153, 0.4);
-        }
-        .gold-glow {
-            box-shadow: 0 0 25px rgba(234, 179, 8, 0.3);
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
+
+        .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.5);
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 8, 30, 0.5);
         }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.5);
-            border-radius: 3px;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(157, 78, 221, 0.5);
+            border-radius: 4px;
         }
     </style>
 </head>
-<body class="pb-12 text-slate-100 selection:bg-purple-500 selection:text-white">
+<body class="custom-scrollbar flex flex-col min-h-screen">
 
-    <div id="app" class="max-w-4xl mx-auto px-4 py-6">
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none"></div>
 
-        <!-- Header -->
-        <header class="text-center mb-8 relative">
-            <div class="inline-block p-2 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-500 mb-3 shadow-lg gold-glow">
-                <div class="bg-slate-900 rounded-full p-4">
-                    <i class="fa-solid font-bold fa-castle text-3xl text-amber-400"></i>
+    <header class="glass-panel sticky top-0 z-40 border-b border-white/10 px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" id="header-logo">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-disney-purple text-xl font-bold shadow-md">
+                    <i class="fa-solid font-bold fa-crown"></i>
+                </div>
+                <div>
+                    <h1 class="font-title font-bold text-lg md:text-xl tracking-wider gold-text-gradient">RACE ACROSS DISNEY</h1>
+                    <p class="text-[10px] text-purple-300 tracking-widest uppercase">Live Event Portal</p>
                 </div>
             </div>
-            <h1 class="text-3xl sm:text-5xl font-extrabold disney-font tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 drop-shadow">
-                RACE ACROSS DISNEY
-            </h1>
-            <p class="text-slate-400 text-sm sm:text-base mt-2 font-medium">Ultimate Theme Park Scavenger Challenge</p>
+
+            <div class="flex items-center gap-3">
+                <span id="user-badge" class="hidden md:inline-block px-3 py-1 rounded-full text-xs font-semibold bg-purple-900/60 border border-purple-500/30 text-purple-200">
+                    Guest
+                </span>
+                <button id="logout-btn" class="hidden text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                    <i class="fa-solid font-bold fa-right-from-bracket"></i>
+                    <span>Leave / Exit</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <section id="view-auth" class="min-h-[80vh] flex flex-col justify-center items-center py-6">
+            <div class="w-full max-w-md">
+                
+                <!-- Title Card -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex p-4 bg-purple-900/40 rounded-full border border-yellow-400/30 mb-3 gold-glow">
+                        <i class="fa-solid fa-flag-checkered text-3xl text-yellow-400"></i>
+                    </div>
+                    <h2 class="font-title text-3xl font-extrabold gold-text-gradient mb-1">WELCOME RACERS</h2>
+                    <p class="text-sm text-purple-200/80">Enter a race code to join, or sign in as an organiser</p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex rounded-xl bg-purple-950/80 p-1 mb-6 border border-purple-800/40">
+                    <button id="tab-join" class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-amber-400 text-disney-purple shadow-md">
+                        <i class="fa-solid fa-users mr-1.5"></i> Join Team
+                    </button>
+                    <button id="tab-organiser" class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-purple-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-user-gear mr-1.5"></i> Organiser
+                    </button>
+                </div>
+
+                <!-- Join Team Card -->
+                <div id="card-join-team" class="glass-panel p-6 rounded-2xl gold-border shadow-2xl">
+                    <form id="form-join-team" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-purple-300 mb-1">6-Digit Race Code</label>
+                            <input type="text" id="join-code" required maxlength="6" placeholder="e.g. MK2026" 
+                                class="w-full px-4 py-3 bg-purple-950/90 border border-purple-600/50 rounded-xl font-mono text-center text-2xl uppercase tracking-widest text-amber-300 focus:outline-none focus:border-amber-400 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-purple-300 mb-1">Your Team Name</label>
+                            <input type="text" id="join-team-name" required placeholder="e.g. Magic Kingdom Explorers" 
+                                class="w-full px-4 py-3 bg-purple-950/90 border border-purple-600/50 rounded-xl text-white placeholder-purple-400/50 focus:outline-none focus:border-amber-400 transition">
+                        </div>
+                        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-disney-purple font-bold rounded-xl shadow-lg hover:shadow-yellow-500/20 transition-all transform active:scale-95 flex justify-center items-center gap-2">
+                            <span>ENTER THE RACE</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Organiser Login Card -->
+                <div id="card-organiser-auth" class="glass-panel p-6 rounded-2xl gold-border shadow-2xl hidden">
+                    <form id="form-organiser-auth" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-purple-300 mb-1">Organiser Email</label>
+                            <input type="email" id="org-email" required placeholder="organiser@disneyrace.com" 
+                                class="w-full px-4 py-3 bg-purple-950/90 border border-purple-600/50 rounded-xl text-white placeholder-purple-400/50 focus:outline-none focus:border-amber-400 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-purple-300 mb-1">Password</label>
+                            <input type="password" id="org-password" required placeholder="••••••••" 
+                                class="w-full px-4 py-3 bg-purple-950/90 border border-purple-600/50 rounded-xl text-white placeholder-purple-400/50 focus:outline-none focus:border-amber-400 transition">
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                            <button type="submit" id="btn-org-login" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md transition-all text-sm">
+                                Login
+                            </button>
+                            <button type="button" id="btn-org-signup" class="flex-1 py-3 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-500/40 text-purple-200 font-bold rounded-xl transition-all text-sm">
+                                Register
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="view-organiser" class="hidden space-y-6">
             
-            <!-- Auth Status Banner -->
-            <div id="authStatusBanner" class="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="authIndicator"></span>
-                <span id="authStatusText">Connecting to Disney Magic...</span>
-            </div>
-        </header>
-
-        <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none"></div>
-
-        <!-- MAIN VIEW CONTAINER -->
-        <main id="viewContainer">
-            <!-- Loading Screen -->
-            <div id="loadingView" class="glass-panel rounded-2xl p-12 text-center my-8">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent mb-4"></div>
-                <p class="text-slate-300 font-medium">Initializing Race Operations...</p>
-            </div>
-
-            <!-- Login / Mode Selection View -->
-            <div id="loginView" class="hidden glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Team Join Section -->
-                    <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-700/50 flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-2 bg-pink-500/20 text-pink-400 rounded-lg">
-                                    <i class="fa-solid fa-users text-xl"></i>
-                                </div>
-                                <h2 class="text-xl font-bold disney-font text-white">Join as Team</h2>
-                            </div>
-                            <p class="text-sm text-slate-400 mb-6">Enter the 6-character Join Code provided by your Race Admin to access your team dashboard.</p>
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Team Join Code</label>
-                                    <input type="text" id="teamCodeInput" placeholder="e.g. MICKEY" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-center text-lg font-bold tracking-widest text-amber-300 uppercase focus:outline-none focus:border-pink-500 transition">
-                                </div>
-                                <button onclick="joinTeamWithCode()" class="w-full disney-gradient-btn py-3 rounded-lg font-bold text-white shadow-lg flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-flag-checkered"></i> Join Race Dashboard
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Admin Auth Section -->
-                    <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-700/50 flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-2 bg-purple-500/20 text-purple-400 rounded-lg">
-                                    <i class="fa-solid fa-user-shield text-xl"></i>
-                                </div>
-                                <h2 class="text-xl font-bold disney-font text-white">Admin Console</h2>
-                            </div>
-                            <p class="text-sm text-slate-400 mb-6">Sign in with Admin credentials to configure checkpoints, assign wildcards, and monitor live progress.</p>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <input type="email" id="adminEmail" placeholder="Admin Email" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500">
-                                </div>
-                                <div>
-                                    <input type="password" id="adminPassword" placeholder="Admin Password" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 pt-2">
-                                    <button onclick="adminLogin()" class="bg-purple-600 hover:bg-purple-500 text-white py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-right-to-bracket"></i> Login
-                                    </button>
-                                    <button onclick="adminSignUp()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-lg text-sm font-semibold transition">
-                                        Register
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Dashboard Header Bar -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-purple-950/80 p-5 rounded-2xl border border-purple-700/40">
+                <div>
+                    <h2 class="font-title text-2xl font-bold text-amber-300">Organiser Control Center</h2>
+                    <p class="text-xs text-purple-300">Manage race parameters, checkpoints, wildcards, and live team tracking</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-open-create-race" class="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-disney-purple font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md">
+                        <i class="fa-solid fa-plus-circle"></i> Create New Race
+                    </button>
                 </div>
             </div>
 
-            <div id="teamView" class="hidden space-y-6">
-                <!-- Team Status Header -->
-                <div class="glass-panel rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <span id="teamParkBadge" class="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Magic Kingdom</span>
-                        <h2 id="teamNameHeader" class="text-2xl sm:text-3xl font-extrabold disney-font text-white mt-1">Team Mickey</h2>
-                        <p class="text-xs text-slate-400 mt-1">Join Code: <span id="teamCodeDisplay" class="font-mono text-amber-300 font-bold">---</span></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
-                            <div class="text-xs text-slate-400">Total Score</div>
-                            <div id="teamScoreDisplay" class="text-2xl font-black text-amber-400 disney-font">0 pts</div>
+            <!-- Race Selector / Status Header -->
+            <div id="org-active-race-banner" class="glass-panel p-5 rounded-2xl border border-yellow-500/30 hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2.5 py-1 rounded-md bg-amber-400/20 text-amber-300 font-mono font-bold border border-amber-400/40" id="org-race-code-display">CODE</span>
+                            <h3 id="org-race-title-display" class="text-xl font-bold text-white">Selected Race Name</h3>
+                            <span id="org-race-status-pill" class="text-[10px] px-2 py-0.5 rounded uppercase font-bold bg-green-500/20 text-green-300 border border-green-500/30">Active</span>
                         </div>
-                        <button onclick="leaveTeam()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-xl border border-slate-700 text-xs">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <p id="org-race-rules-display" class="text-xs text-purple-300">Transport: Buses, Monorail, Skyliner allowed</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="btn-toggle-race-status" class="px-3 py-2 bg-purple-800 hover:bg-purple-700 text-purple-100 rounded-xl text-xs font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-pause"></i> Pause/Resume
+                        </button>
+                        <button id="btn-delete-race" class="px-3 py-2 bg-red-900/40 hover:bg-red-800/60 text-red-300 border border-red-500/30 rounded-xl text-xs font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Delete Race
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Team Progress Grid -->
+            <!-- Organiser Management Tabs -->
+            <div class="flex flex-wrap gap-2 border-b border-purple-800/50 pb-2">
+                <button class="org-tab-btn px-4 py-2 text-xs font-bold rounded-xl bg-amber-400 text-disney-purple" data-tab="org-tab-leaderboard">
+                    <i class="fa-solid fa-trophy mr-1"></i> Live Leaderboard & Teams
+                </button>
+                <button class="org-tab-btn px-4 py-2 text-xs font-bold rounded-xl bg-purple-900/50 text-purple-300 hover:text-white" data-tab="org-tab-checkpoints">
+                    <i class="fa-solid fa-map-location-dot mr-1"></i> Checkpoints
+                </button>
+                <button class="org-tab-btn px-4 py-2 text-xs font-bold rounded-xl bg-purple-900/50 text-purple-300 hover:text-white" data-tab="org-tab-wildcards">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Wildcards & Penalties
+                </button>
+            </div>
+
+            <!-- TAB 1: LIVE LEADERBOARD & TEAMS -->
+            <div id="org-tab-leaderboard" class="org-tab-content space-y-4">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-ranking-star"></i> Team Rankings & Adjustments
+                        </h3>
+                        <span class="text-xs text-purple-300">Real-time Firestore Sync</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-purple-950/80 text-purple-300 uppercase font-semibold border-b border-purple-800">
+                                <tr>
+                                    <th class="p-3">Rank</th>
+                                    <th class="p-3">Team Name</th>
+                                    <th class="p-3">Points</th>
+                                    <th class="p-3">Checkpoints Completed</th>
+                                    <th class="p-3">Penalties / Bonuses</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="org-leaderboard-tbody" class="divide-y divide-purple-900/50 text-purple-100">
+                                <tr>
+                                    <td colspan="6" class="p-4 text-center text-purple-400">No active teams registered for this race yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CHECKPOINT MANAGEMENT -->
+            <div id="org-tab-checkpoints" class="org-tab-content hidden space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left 2 Cols: Checkpoints & Wildcards -->
-                    <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Add Checkpoint Form -->
+                    <div class="glass-panel p-5 rounded-2xl border border-purple-700/50 h-fit space-y-3">
+                        <h3 class="font-bold text-md text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i> Add Checkpoint
+                        </h3>
+                        <form id="form-add-checkpoint" class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Checkpoint Title</label>
+                                <input type="text" id="cp-title" required placeholder="e.g. Cinderella Castle Photo" class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Points</label>
+                                    <input type="number" id="cp-points" required value="50" class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Park/Area</label>
+                                    <input type="text" id="cp-area" required placeholder="Magic Kingdom" class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Hint / Clue</label>
+                                <textarea id="cp-hint" rows="2" placeholder="Find the plaque in front of the hub..." class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Transport Constraint</label>
+                                <input type="text" id="cp-transport" placeholder="Monorail Only / On Foot" class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-disney-purple font-bold rounded-xl text-xs shadow transition">
+                                Save Checkpoint
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Checkpoint List -->
+                    <div class="lg:col-span-2 glass-panel p-5 rounded-2xl space-y-3">
+                        <h3 class="font-bold text-md text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check"></i> Configured Checkpoints
+                        </h3>
+                        <div id="org-checkpoint-list" class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                            <p class="text-xs text-purple-400">Select a race or create checkpoints to populate.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 3: WILDCARDS & PENALTIES -->
+            <div id="org-tab-wildcards" class="org-tab-content hidden space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Add Wildcard Form -->
+                    <div class="glass-panel p-5 rounded-2xl border border-purple-700/50 h-fit space-y-3">
+                        <h3 class="font-bold text-md text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> Add Wildcard / Modifier
+                        </h3>
+                        <form id="form-add-wildcard" class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold uppercase text-purple-300 mb-1">Title</label>
+                                <input type="text" id="wc-title" required placeholder="e.g. Wear Mickey Ears Selfie" class="w-full px-3 py-2 bg-purple-950/90 border border-purple-700 rounded-lg text-xs text-white">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+     <div class="lg:col-span-2 space-y-6">
                         <!-- Checkpoints List -->
                         <div class="glass-panel rounded-2xl p-6">
                             <div class="flex items-center justify-between mb-4">
