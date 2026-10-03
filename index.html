@@ -2023,7 +2023,7 @@
             );
         };
 
-        async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
+         async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
             const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
@@ -2034,10 +2034,20 @@
 
             if (triviaSettings && triviaSettings.enabled && locTrivia) {
                 let triggerTrivia = false;
+                
                 if (triviaSettings.frequency === 'every') {
                     triggerTrivia = true;
                 } else if (triviaSettings.frequency === 'random') {
-                    triggerTrivia = Math.random() < 0.5;
+                    const mandatoryCount = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length || 10;
+                    const targetCount = triviaSettings.randomCount || 3;
+                    
+                    // Calculate true dynamic probability percentage per check-in (capped between 10% and 90%)
+                    let probability = targetCount / mandatoryCount;
+                    if (probability > 0.9) probability = 0.9;
+                    if (probability < 0.1) probability = 0.1;
+
+                    // Roll independent dice for this specific check-in
+                    triggerTrivia = Math.random() < probability;
                 }
 
                 if (triggerTrivia) {
@@ -2066,6 +2076,7 @@
             await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0);
             alert("Check-in successful!");
         }
+
 
         window.submitTriviaAnswer = async function(selected, correct) {
             document.getElementById('trivia-modal').classList.add('hidden');
