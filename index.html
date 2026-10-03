@@ -128,11 +128,10 @@
                 </div>
             </div>
             
-            <!-- Stacked Top-Right Layout (Pic + Name on top, Organiser underneath) -->
+            <!-- Stacked Top-Right Layout (Image Only + Organiser underneath) -->
             <div class="flex flex-col items-end gap-1.5 shrink-0">
-                <div id="nav-team-badge" class="hidden items-center gap-2">
-                    <img id="nav-team-avatar" src="" class="w-6 h-6 rounded-full object-cover border border-white/40 shadow shrink-0 hidden">
-                    <span id="nav-team-name" class="text-white text-xs font-bold max-w-[120px] sm:max-w-[160px] truncate"></span>
+                <div id="nav-team-badge" class="hidden items-center">
+                    <img id="nav-team-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-white/40 shadow shrink-0 hidden">
                 </div>
                 <span id="nav-org-badge" class="hidden text-[10px] bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 px-2.5 py-0.5 rounded-full font-semibold">Organiser</span>
             </div>
@@ -737,6 +736,13 @@
 
     <!-- JS Logic -->
     <script>
+        // Default Silhouette SVG Data-URI
+        const DEFAULT_AVATAR = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#94a3b8">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+            </svg>
+        `);
+
         function switchTab(tabName) {
             ['race', 'maps', 'rules', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
@@ -1103,9 +1109,11 @@
                     return;
                 }
 
+                const avatarUrl = tData.photoUrl || DEFAULT_AVATAR;
+
                 document.getElementById('active-team-name').innerText = tData.teamName;
                 document.getElementById('active-team-racecode').innerText = code;
-                document.getElementById('active-team-avatar').src = tData.photoUrl;
+                document.getElementById('active-team-avatar').src = avatarUrl;
                 document.getElementById('team-status-banner').classList.remove('hidden');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
@@ -1113,8 +1121,7 @@
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = tData.photoUrl;
-                document.getElementById('nav-team-name').innerText = tData.teamName;
+                document.getElementById('nav-team-avatar').src = avatarUrl;
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
@@ -1541,11 +1548,12 @@
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const checkinDetails = t.checkinDetails || {};
+                                        const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                                         return `
                                             <div class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1.5">
                                                 <div class="flex justify-between items-center">
                                                     <div class="flex items-center gap-2">
-                                                        <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
+                                                        <img src="${teamAvatar}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
                                                         <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
                                                         <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
                                                             ${t.isApproved ? 'Approved' : 'Pending Approval'}
@@ -1720,6 +1728,7 @@
                         scoreDisplay = `<span class="font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${hrs}h ${mins}m</span>`;
                     }
 
+                    const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                     const bonusPhotos = t.bonusPhotos || {};
                     let badgeHtml = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
                     if (Object.keys(bonusPhotos).length > 0) {
@@ -1736,7 +1745,7 @@
                         <tr class="hover:bg-slate-800/40 transition">
                             <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
                             <td class="p-3 flex items-center gap-2.5">
-                                <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
+                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
                                 <span class="font-bold text-white">${t.teamName}</span>
                             </td>
                             <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
@@ -1855,7 +1864,7 @@
                 const teamRef = doc(window.db, "races", code, "teams", teamId);
                 const teamSnap = await getDoc(teamRef);
 
-                let photoUrl = "https://via.placeholder.com/50?text=" + encodeURIComponent(teamName);
+                let photoUrl = DEFAULT_AVATAR;
                 
                 if (teamSnap.exists()) {
                     const data = teamSnap.data();
@@ -1898,6 +1907,7 @@
 
                 const currentTeamSnap = await getDoc(teamRef);
                 const tData = currentTeamSnap.data();
+                const activeAvatarUrl = tData.photoUrl || DEFAULT_AVATAR;
 
                 if (!tData.isApproved) {
                     document.getElementById('login-prompt-card').classList.add('hidden');
@@ -1909,18 +1919,15 @@
 
                 document.getElementById('active-team-name').innerText = teamName;
                 document.getElementById('active-team-racecode').innerText = code;
-                document.getElementById('active-team-avatar').src = photoUrl;
+                document.getElementById('active-team-avatar').src = activeAvatarUrl;
                 document.getElementById('team-status-banner').classList.remove('hidden');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
-                document.getElementById('nav-team-badge').classList.remove('flex');
-                document.getElementById('nav-team-badge').classList.add('flex');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = photoUrl;
-                document.getElementById('nav-team-name').innerText = teamName;
+                document.getElementById('nav-team-avatar').src = activeAvatarUrl;
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
