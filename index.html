@@ -2038,9 +2038,11 @@
                     }
                 } else {
                     statusBadgeOrButton = `
-                        <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
-                            GPS Check In
-                        </button>
+                        <div class="flex justify-end w-full sm:w-auto">
+                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                                GPS Check In
+                            </button>
+                        </div>
                     `;
                 }
 
