@@ -75,8 +75,8 @@
     <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('race')">
-                <div class="w-10 h-10 rounded-full bg-disneyGold flex items-center justify-center text-slate-900 font-bold text-xl shadow-md">
-                    <i class="fa-solid font-disney fa-wand-magic-sparkles"></i>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40">
+                    <i class="fa-solid fa-compass"></i>
                 </div>
                 <div>
                     <h1 class="font-disney font-bold text-xl tracking-wide text-white drop-shadow">The Amazing Mouse Race</h1>
@@ -425,35 +425,39 @@
                         </div>
                     </div>
 
-                    <!-- Game Mode Toggle Section with Tooltips -->
+                    <!-- Game Mode Toggle Section with Clickable Info -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                         <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label class="relative flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition">
-                                <div class="flex items-center space-x-2.5">
-                                    <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                    <span class="font-bold text-xs text-white">Speed Race</span>
+                            
+                            <!-- Speed Race Option -->
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                <div class="flex items-center justify-between">
+                                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                                        <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                        <span class="font-bold text-xs text-white">Speed Race</span>
+                                    </label>
+                                    <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
                                 </div>
-                                <div class="group relative cursor-help">
-                                    <span class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600">?</span>
-                                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-[11px] text-slate-200 rounded-lg shadow-xl border border-slate-700 z-20">
-                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time.
-                                    </div>
+                                <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                    First team to complete all checkpoints wins! Ranked purely by total elapsed time.
                                 </div>
-                            </label>
+                            </div>
 
-                            <label class="relative flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition">
-                                <div class="flex items-center space-x-2.5">
-                                    <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                    <span class="font-bold text-xs text-white">Scavenger Hunt</span>
+                            <!-- Scavenger Hunt Option -->
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                <div class="flex items-center justify-between">
+                                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                                        <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                        <span class="font-bold text-xs text-white">Scavenger Hunt</span>
+                                    </label>
+                                    <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
                                 </div>
-                                <div class="group relative cursor-help">
-                                    <span class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600">?</span>
-                                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-[11px] text-slate-200 rounded-lg shadow-xl border border-slate-700 z-20">
-                                        Teams collect points for checkpoints visited within a time limit. Higher score wins!
-                                    </div>
+                                <div id="scavenger-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                    Teams collect points for checkpoints visited within a time limit. Higher score wins!
                                 </div>
-                            </label>
+                            </div>
+
                         </div>
                     </div>
 
@@ -609,6 +613,14 @@
             document.getElementById('new-race-code').value = result;
         }
         setTimeout(generateRandomRaceCode, 300);
+
+        // Clickable info toggle for mode descriptions
+        window.toggleModeInfo = function(elementId) {
+            const infoBox = document.getElementById(elementId);
+            if (infoBox) {
+                infoBox.classList.toggle('hidden');
+            }
+        };
 
         // Dynamic points handling in creation form
         document.addEventListener('DOMContentLoaded', () => {
