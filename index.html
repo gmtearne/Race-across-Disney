@@ -75,7 +75,7 @@
 
     <!-- Checkpoint Info / Hint Modal -->
     <div id="checkpoint-info-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+        <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                 <h3 id="cp-modal-title" class="font-bold text-sm text-disneyGold flex items-center gap-2">
                     <i class="fa-solid fa-map-pin"></i> Checkpoint Details
@@ -86,6 +86,10 @@
             </div>
             <div class="space-y-3">
                 <p id="cp-modal-desc" class="text-xs text-slate-300 leading-relaxed"></p>
+                <div id="cp-modal-transit-box" class="hidden p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-1.5 text-xs">
+                    <div class="font-bold text-disneyGold flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> Transit & Route Advice:</div>
+                    <p id="cp-modal-transit-text" class="text-slate-300 leading-relaxed"></p>
+                </div>
                 <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
                     <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
                 </div>
@@ -273,7 +277,7 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for enhanced hints/maps (Easy/Medium).</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -581,12 +585,12 @@
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
                                 <span class="font-bold text-xs text-white">Easy</span>
-                                <span class="text-[9px] text-slate-400">Pins + Transit Hints</span>
+                                <span class="text-[9px] text-slate-400">Pins + Detailed Transit</span>
                             </label>
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
                                 <span class="font-bold text-xs text-white">Medium</span>
-                                <span class="text-[9px] text-slate-400">Area Hint Modals</span>
+                                <span class="text-[9px] text-slate-400">Specific Park Lands</span>
                             </label>
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
@@ -915,61 +919,61 @@
         };
 
         const DISNEY_PRESETS = [
-            { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom" },
-            { name: "Space Mountain", lat: 28.4191, lng: -81.5812, type: "GPS", park: "Magic Kingdom" },
-            { name: "Haunted Mansion", lat: 28.4187, lng: -81.5830, type: "GPS", park: "Magic Kingdom" },
-            { name: "Big Thunder Mountain Railroad", lat: 28.4201, lng: -81.5842, type: "GPS", park: "Magic Kingdom" },
-            { name: "Pirates of the Caribbean", lat: 28.4182, lng: -81.5841, type: "GPS", park: "Magic Kingdom" },
-            { name: "Tiana's Bayou Adventure", lat: 28.4190, lng: -81.5845, type: "GPS", park: "Magic Kingdom" },
-            { name: "Seven Dwarfs Mine Train", lat: 28.4205, lng: -81.5818, type: "GPS", park: "Magic Kingdom" },
-            { name: "Peter Pan's Flight", lat: 28.4198, lng: -81.5822, type: "GPS", park: "Magic Kingdom" },
-            { name: "It's a Small World", lat: 28.4212, lng: -81.5828, type: "GPS", park: "Magic Kingdom" },
-            { name: "Dumbo the Flying Elephant", lat: 28.4220, lng: -81.5810, type: "GPS", park: "Magic Kingdom" },
-            { name: "Jungle Cruise", lat: 28.4175, lng: -81.5835, type: "GPS", park: "Magic Kingdom" },
-            { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.4188, lng: -81.5798, type: "GPS", park: "Magic Kingdom" },
-            { name: "Tron Lightcycle / Run", lat: 28.4215, lng: -81.5795, type: "GPS", park: "Magic Kingdom" },
-            { name: "Mad Tea Party", lat: 28.4210, lng: -81.5815, type: "GPS", park: "Magic Kingdom" },
-            { name: "Enchanted Tiki Room", lat: 28.4178, lng: -81.5840, type: "GPS", park: "Magic Kingdom" },
+            { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
+            { name: "Space Mountain", lat: 28.4191, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+            { name: "Haunted Mansion", lat: 28.4187, lng: -81.5830, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
+            { name: "Big Thunder Mountain Railroad", lat: 28.4201, lng: -81.5842, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
+            { name: "Pirates of the Caribbean", lat: 28.4182, lng: -81.5841, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
+            { name: "Tiana's Bayou Adventure", lat: 28.4190, lng: -81.5845, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
+            { name: "Seven Dwarfs Mine Train", lat: 28.4205, lng: -81.5818, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+            { name: "Peter Pan's Flight", lat: 28.4198, lng: -81.5822, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+            { name: "It's a Small World", lat: 28.4212, lng: -81.5828, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+            { name: "Dumbo the Flying Elephant", lat: 28.4220, lng: -81.5810, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)" },
+            { name: "Jungle Cruise", lat: 28.4175, lng: -81.5835, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
+            { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.4188, lng: -81.5798, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+            { name: "Tron Lightcycle / Run", lat: 28.4215, lng: -81.5795, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+            { name: "Mad Tea Party", lat: 28.4210, lng: -81.5815, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+            { name: "Enchanted Tiki Room", lat: 28.4178, lng: -81.5840, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
             
-            { name: "Spaceship Earth", lat: 28.3753, lng: -81.5494, type: "GPS", park: "Epcot" },
-            { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3732, lng: -81.5490, type: "GPS", park: "Epcot" },
-            { name: "Test Track", lat: 28.3721, lng: -81.5460, type: "GPS", park: "Epcot" },
-            { name: "Soarin' Around the World", lat: 28.3770, lng: -81.5540, type: "GPS", park: "Epcot" },
-            { name: "Frozen Ever After (Norway)", lat: 28.3712, lng: -81.5492, type: "GPS", park: "Epcot" },
-            { name: "Remy's Ratatouille Adventure (France)", lat: 28.3705, lng: -81.5520, type: "GPS", park: "Epcot" },
-            { name: "The American Adventure", lat: 28.3685, lng: -81.5510, type: "GPS", park: "Epcot" },
-            { name: "Mission: SPACE", lat: 28.3742, lng: -81.5468, type: "GPS", park: "Epcot" },
-            { name: "The Seas with Nemo & Friends", lat: 28.3775, lng: -81.5532, type: "GPS", park: "Epcot" },
-            { name: "Gran Fiesta Tour (Mexico)", lat: 28.3720, lng: -81.5535, type: "GPS", park: "Epcot" },
-            { name: "Japan Pavilion Torii Gate", lat: 28.3690, lng: -81.5480, type: "GPS", park: "Epcot" },
-            { name: "United Kingdom Rose & Crown", lat: 28.3680, lng: -81.5495, type: "GPS", park: "Epcot" },
+            { name: "Spaceship Earth", lat: 28.3753, lng: -81.5494, type: "GPS", park: "Epcot", land: "World Celebration" },
+            { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3732, lng: -81.5490, type: "GPS", park: "Epcot", land: "World Discovery" },
+            { name: "Test Track", lat: 28.3721, lng: -81.5460, type: "GPS", park: "Epcot", land: "World Discovery" },
+            { name: "Soarin' Around the World", lat: 28.3770, lng: -81.5540, type: "GPS", park: "Epcot", land: "World Nature" },
+            { name: "Frozen Ever After (Norway)", lat: 28.3712, lng: -81.5492, type: "GPS", park: "Epcot", land: "World Showcase (Norway)" },
+            { name: "Remy's Ratatouille Adventure (France)", lat: 28.3705, lng: -81.5520, type: "GPS", park: "Epcot", land: "World Showcase (France)" },
+            { name: "The American Adventure", lat: 28.3685, lng: -81.5510, type: "GPS", park: "Epcot", land: "World Showcase (America)" },
+            { name: "Mission: SPACE", lat: 28.3742, lng: -81.5468, type: "GPS", park: "Epcot", land: "World Discovery" },
+            { name: "The Seas with Nemo & Friends", lat: 28.3775, lng: -81.5532, type: "GPS", park: "Epcot", land: "World Nature" },
+            { name: "Gran Fiesta Tour (Mexico)", lat: 28.3720, lng: -81.5535, type: "GPS", park: "Epcot", land: "World Showcase (Mexico)" },
+            { name: "Japan Pavilion Torii Gate", lat: 28.3690, lng: -81.5480, type: "GPS", park: "Epcot", land: "World Showcase (Japan)" },
+            { name: "United Kingdom Rose & Crown", lat: 28.3680, lng: -81.5495, type: "GPS", park: "Epcot", land: "World Showcase (United Kingdom)" },
             
-            { name: "Twilight Zone Tower of Terror", lat: 28.3565, lng: -81.5606, type: "GPS", park: "Hollywood Studios" },
-            { name: "Rock 'n' Roller Coaster", lat: 28.3562, lng: -81.5612, type: "GPS", park: "Hollywood Studios" },
-            { name: "Star Wars: Rise of the Resistance", lat: 28.3533, lng: -81.5583, type: "GPS", park: "Hollywood Studios" },
-            { name: "Millennium Falcon: Smugglers Run", lat: 28.3530, lng: -81.5590, type: "GPS", park: "Hollywood Studios" },
-            { name: "Toy Story Mania!", lat: 28.3551, lng: -81.5620, type: "GPS", park: "Hollywood Studios" },
-            { name: "Slinky Dog Dash", lat: 28.3542, lng: -81.5630, type: "GPS", park: "Hollywood Studios" },
-            { name: "Mickey & Minnie's Runaway Railway", lat: 28.3570, lng: -81.5580, type: "GPS", park: "Hollywood Studios" },
-            { name: "Hollywood Brown Derby", lat: 28.3568, lng: -81.5592, type: "GPS", park: "Hollywood Studios" },
-            { name: "Alien Swirling Saucers", lat: 28.3548, lng: -81.5638, type: "GPS", park: "Hollywood Studios" },
-            { name: "Star Tours – The Adventures Continue", lat: 28.3540, lng: -81.5575, type: "GPS", park: "Hollywood Studios" },
+            { name: "Twilight Zone Tower of Terror", lat: 28.3565, lng: -81.5606, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+            { name: "Rock 'n' Roller Coaster", lat: 28.3562, lng: -81.5612, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+            { name: "Star Wars: Rise of the Resistance", lat: 28.3533, lng: -81.5583, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
+            { name: "Millennium Falcon: Smugglers Run", lat: 28.3530, lng: -81.5590, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
+            { name: "Toy Story Mania!", lat: 28.3551, lng: -81.5620, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+            { name: "Slinky Dog Dash", lat: 28.3542, lng: -81.5630, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+            { name: "Mickey & Minnie's Runaway Railway", lat: 28.3570, lng: -81.5580, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard" },
+            { name: "Hollywood Brown Derby", lat: 28.3568, lng: -81.5592, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard" },
+            { name: "Alien Swirling Saucers", lat: 28.3548, lng: -81.5638, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+            { name: "Star Tours – The Adventures Continue", lat: 28.3540, lng: -81.5575, type: "GPS", park: "Hollywood Studios", land: "Echo Lake" },
             
-            { name: "Avatar Flight of Passage", lat: 28.3553, lng: -81.5907, type: "GPS", park: "Animal Kingdom" },
-            { name: "Expedition Everest", lat: 28.3582, lng: -81.5880, type: "GPS", park: "Animal Kingdom" },
-            { name: "Kilimanjaro Safaris", lat: 28.3610, lng: -81.5921, type: "GPS", park: "Animal Kingdom" },
-            { name: "DINOSAUR", lat: 28.3521, lng: -81.5872, type: "GPS", park: "Animal Kingdom" },
-            { name: "Tree of Life Roots", lat: 28.3590, lng: -81.5900, type: "GPS", park: "Animal Kingdom" },
-            { name: "Na'vi River Journey", lat: 28.3550, lng: -81.5912, type: "GPS", park: "Animal Kingdom" },
-            { name: "Kali River Rapids", lat: 28.3575, lng: -81.5892, type: "GPS", park: "Animal Kingdom" },
-            { name: "Festival of the Lion King", lat: 28.3562, lng: -81.5860, type: "GPS", park: "Animal Kingdom" },
-            { name: "Gorilla Falls Exploration Trail", lat: 28.3620, lng: -81.5930, type: "GPS", park: "Animal Kingdom" },
+            { name: "Avatar Flight of Passage", lat: 28.3553, lng: -81.5907, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
+            { name: "Expedition Everest", lat: 28.3582, lng: -81.5880, type: "GPS", park: "Animal Kingdom", land: "Asia" },
+            { name: "Kilimanjaro Safaris", lat: 28.3610, lng: -81.5921, type: "GPS", park: "Animal Kingdom", land: "Africa" },
+            { name: "DINOSAUR", lat: 28.3521, lng: -81.5872, type: "GPS", park: "Animal Kingdom", land: "Dinoland U.S.A." },
+            { name: "Tree of Life Roots", lat: 28.3590, lng: -81.5900, type: "GPS", park: "Animal Kingdom", land: "Discovery Island" },
+            { name: "Na'vi River Journey", lat: 28.3550, lng: -81.5912, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
+            { name: "Kali River Rapids", lat: 28.3575, lng: -81.5892, type: "GPS", park: "Animal Kingdom", land: "Asia" },
+            { name: "Festival of the Lion King", lat: 28.3562, lng: -81.5860, type: "GPS", park: "Animal Kingdom", land: "Africa" },
+            { name: "Gorilla Falls Exploration Trail", lat: 28.3620, lng: -81.5930, type: "GPS", park: "Animal Kingdom", land: "Africa" },
             
-            { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
-            { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
-            { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
-            { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
-            { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
+            { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
+            { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
+            { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "All Parks" },
+            { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Dining Locations" },
+            { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Transportation Hubs" }
         ];
 
         window.renderOrgPicker = function() {
@@ -1231,7 +1235,8 @@
                     lng: p.lng || -81.5812,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney"
+                    park: p.park || "Disney",
+                    land: p.land || "General Area"
                 }));
 
                 await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
@@ -1280,7 +1285,8 @@
                     lng: p.lng || -81.5812,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney"
+                    park: p.park || "Disney",
+                    land: p.land || "General Area"
                 }));
 
                 await updateDoc(raceRef, { checkpoints: combined });
@@ -1314,7 +1320,8 @@
                     lng: p.lng || -81.5812,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney"
+                    park: p.park || "Disney",
+                    land: p.land || "General Area"
                 };
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
@@ -1365,7 +1372,8 @@
                     lng: lng,
                     points: type === 'BONUS_PHOTO' ? bonusMinDeduction : defaultPts,
                     bonusMinDeduction: bonusMinDeduction,
-                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Stop"
+                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Stop",
+                    land: "Custom Area"
                 };
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
@@ -1930,10 +1938,28 @@
             document.getElementById('nav-team-badge').classList.add('hidden');
         };
 
-        window.openCheckpointModal = function(cpName, cpPark, lat, lng, difficulty) {
+        function getDetailedTransitAdvice(parkName) {
+            const park = (parkName || "").toLowerCase();
+            if (park.includes("magic kingdom")) {
+                return "Magic Kingdom can be reached via Disney Resort Buses from any resort hotel. If arriving via Transportation and Ticket Center (TTC), take the Resort Monorail or the Ferryboat. From Epcot, take the Monorail transfer via the TTC.";
+            } else if (park.includes("epcot")) {
+                return "Epcot can be reached via bus from any resort, or by using the Disney Skyliner from eligible resorts (Caribbean Beach, Art of Animation, Pop Century, Riviera) and Hollywood Studios. You can also take the Monorail from Magic Kingdom/TTC or Friendship boats from the Epcot resort area (BoardWalk, Yacht & Beach Club).";
+            } else if (park.includes("hollywood studios")) {
+                return "Disney's Hollywood Studios can be reached via resort buses from any hotel, the Disney Skyliner network (transfer via Caribbean Beach), or Friendship water boats from Epcot resort hotels and the BoardWalk.";
+            } else if (park.includes("animal kingdom")) {
+                return "Disney's Animal Kingdom is accessible exclusively via complimentary Disney Resort Buses from any resort hotel or park transfer hub.";
+            } else if (park.includes("springs") || park.includes("bonus")) {
+                return "Disney Springs is not reachable directly via park-to-park buses! First, take a resort bus from any theme park to a nearby resort hotel (or Disney Springs transfer hub), and transfer to a Disney Springs bus.";
+            }
+            return "Use complimentary Disney Resort Buses, Monorails, Skyliner routes, or watercraft available across property. Remember: paid ride-shares and taxis are strictly prohibited!";
+        }
+
+        window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty) {
             const modal = document.getElementById('checkpoint-info-modal');
             const titleEl = document.getElementById('cp-modal-title');
             const descEl = document.getElementById('cp-modal-desc');
+            const transitBox = document.getElementById('cp-modal-transit-box');
+            const transitText = document.getElementById('cp-modal-transit-text');
             const extraBox = document.getElementById('cp-modal-extra');
             const iframeEl = document.getElementById('cp-modal-iframe');
 
@@ -1943,14 +1969,18 @@
 
             if (difficulty === 'medium') {
                 titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
-                descEl.innerHTML = `Area Clue: Located in <strong>${cpPark}</strong>. Use your park knowledge and physical signage to navigate here!`;
+                descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'General Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
+                transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
             } else {
                 // Easy mode
-                titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Hint: ${cpName}`;
-                descEl.innerHTML = `Park: <strong>${cpPark}</strong>. Use the embedded map pin below to locate the attraction. Free Disney transportation recommended!`;
-                extraBox.classList.remove('hidden');
+                titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
+                descEl.innerHTML = `Park: <strong>${cpPark}</strong> (${cpLand || 'General Area'}). Use the embedded map pin below and review the transit advice before moving.`;
                 
+                transitText.innerText = getDetailedTransitAdvice(cpPark);
+                transitBox.classList.remove('hidden');
+
+                extraBox.classList.remove('hidden');
                 const bboxDelta = 0.005;
                 const minLon = (lng - bboxDelta).toFixed(4);
                 const minLat = (lat - bboxDelta).toFixed(4);
@@ -2073,9 +2103,9 @@
                 
                 let hintText = "";
                 if (difficulty === 'easy') {
-                    hintText = `Map pin enabled + Transit hint available`;
+                    hintText = `Map pin + Detailed transit info`;
                 } else if (difficulty === 'medium') {
-                    hintText = `Area clue modal (Click to view)`;
+                    hintText = `Specific park land hint (Click)`;
                 } else {
                     hintText = `Blind navigation (Locked)`;
                 }
@@ -2116,7 +2146,7 @@
                     `;
                 }
 
-                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
+                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'General Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                 const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
                 const subtitleContent = difficulty === 'hard' 
