@@ -128,12 +128,14 @@
                 </div>
             </div>
             
-            <!-- Stacked Top-Right Layout (Image Only + Organiser underneath) -->
-            <div class="flex flex-col items-end gap-1.5 shrink-0">
+            <!-- Top-Right Controls: Team Photo & Organiser Settings Cog -->
+            <div class="flex items-center gap-2.5 shrink-0">
                 <div id="nav-team-badge" class="hidden items-center">
-                    <img id="nav-team-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-white/40 shadow shrink-0 hidden">
+                    <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <span id="nav-org-badge" class="hidden text-[10px] bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 px-2.5 py-0.5 rounded-full font-semibold">Organiser</span>
+                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Organiser Dashboard">
+                    <i class="fa-solid fa-gear text-xs"></i>
+                </button>
             </div>
         </div>
         
@@ -1067,18 +1069,18 @@
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
-                const orgBadge = document.getElementById('nav-org-badge');
+                const orgCog = document.getElementById('nav-org-cog');
 
                 if (user) {
                     if (orgEmailDisplay) orgEmailDisplay.innerText = `Logged in as: ${user.email}`;
                     if (authCard) authCard.classList.add('hidden');
                     if (adminDashboard) adminDashboard.classList.remove('hidden');
-                    if (orgBadge) orgBadge.classList.remove('hidden');
+                    if (orgCog) orgCog.classList.remove('hidden');
                     loadAdminRaces();
                 } else {
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
-                    if (orgBadge) orgBadge.classList.add('hidden');
+                    if (orgCog) orgCog.classList.add('hidden');
                 }
             });
 
