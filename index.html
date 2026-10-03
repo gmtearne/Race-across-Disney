@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- External Trivia Database -->
+    <script src="trivia-data.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -68,6 +70,21 @@
             <button onclick="closeImageModal()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close Preview
             </button>
+        </div>
+    </div>
+
+    <!-- Trivia Popup Modal -->
+    <div id="trivia-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
+                    <i class="fa-solid fa-brain"></i> Checkpoint Trivia Challenge!
+                </h3>
+            </div>
+            <div class="space-y-4">
+                <p id="trivia-question-text" class="text-sm font-semibold text-white leading-relaxed"></p>
+                <div id="trivia-options" class="space-y-2"></div>
+            </div>
         </div>
     </div>
 
@@ -483,7 +500,7 @@
                         </div>
                     </div>
 
-                                        <!-- Trivia Challenge Settings -->
+                    <!-- Trivia Challenge Option -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
                         <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
                         <div class="flex gap-4">
@@ -508,7 +525,6 @@
                             </div>
                         </div>
                     </div>
-                    
 
                     <!-- Default Checkpoint Points Configuration -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
@@ -641,7 +657,6 @@
         }
         setTimeout(generateRandomRaceCode, 300);
 
-        // Clickable info toggle for mode descriptions
         window.toggleModeInfo = function(elementId) {
             const infoBox = document.getElementById(elementId);
             if (infoBox) {
@@ -649,7 +664,16 @@
             }
         };
 
-        // Dynamic points handling in creation form
+        window.toggleTriviaSettings = function() {
+            const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
+            document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
+        };
+
+        window.toggleTriviaFreq = function() {
+            const freq = document.getElementById('trivia-frequency').value;
+            document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             const radioRace = document.getElementById('create-mode-race');
             const radioScavenger = document.getElementById('create-mode-scavenger');
@@ -882,6 +906,14 @@
         window.activeTeamId = null;
         let timerInterval = null;
 
+        let pendingCheckInCpId = null;
+        let pendingCheckInBtn = null;
+        let pendingCheckInLat = null;
+        let pendingCheckInLng = null;
+        let pendingCheckInDist = null;
+        let pendingCheckInIsManual = false;
+        let pendingCheckInNote = "";
+
         try {
             const app = initializeApp(firebaseConfig);
             window.auth = getAuth(app);
@@ -992,14 +1024,13 @@
             signOut(window.auth);
         };
 
-                window.createNewRace = async function() {
+        window.createNewRace = async function() {
             const title = document.getElementById('new-race-title').value.trim();
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
             const defaultPoints = parseInt(document.getElementById('create-default-points').value) || (gameMode === 'scavenger' ? 10 : 0);
             
-            // Capture Trivia options
             const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
             const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
@@ -1039,7 +1070,6 @@
                 alert("Error creating race: " + err.message);
             }
         };
-
 
         window.onOrgRaceSelected = function() {
             const selectedCode = document.getElementById('org-race-select').value;
@@ -1481,8 +1511,10 @@
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const claimed = t.claimedBonus || [];
+                    const triviaBonusPts = isScavenger ? (t.triviaBonus || 0) : 0;
+                    const triviaTimeDed = !isScavenger ? (t.triviaBonus || 0) : 0;
                     
-                    let totalPoints = 0;
+                    let totalPoints = triviaBonusPts;
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
                         if (match) {
@@ -1499,7 +1531,7 @@
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = missedCount * 60;
 
-                    let bonusMinDeduction = 0;
+                    let bonusMinDeduction = triviaTimeDed;
                     claimed.forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
@@ -1709,6 +1741,7 @@
                         checkinDetails: {},
                         claimedBonus: [],
                         bonusPhotos: {},
+                        triviaBonus: 0,
                         startTime: null,
                         endTime: null
                     });
@@ -1790,12 +1823,14 @@
             const bonus = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
             const completedIds = tData.completedCheckpoints || [];
             const claimedBonus = tData.claimedBonus || [];
+            const triviaBonusPts = isScavenger ? (tData.triviaBonus || 0) : 0;
+            const triviaTimeDed = !isScavenger ? (tData.triviaBonus || 0) : 0;
 
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
                 
-                let currentPoints = 0;
+                let currentPoints = triviaBonusPts;
                 completedIds.forEach(cpId => {
                     const match = mandatory.find(m => m.id === cpId);
                     if (match) currentPoints += (match.points !== undefined ? match.points : 0);
@@ -1809,7 +1844,7 @@
                 document.getElementById('score-progress-label').innerText = "Stops Progress";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
                 
-                let totalDeductionMin = 0;
+                let totalDeductionMin = triviaTimeDed;
                 bonus.forEach(b => {
                     if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
                 });
@@ -1929,8 +1964,7 @@
                 alert("Geolocation is not supported by your browser.");
                 const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
                 if (forceManual) {
-                    await saveCheckInRecord(cpId, null, null, null, true, "Not Supported");
-                    alert("Manual check-in recorded for organiser review.");
+                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
                 return;
             }
@@ -1969,19 +2003,10 @@
                     const userLng = position.coords.longitude;
                     const distance = calculateDistance(userLat, userLng, targetCp.lat, targetCp.lng);
                     const ALLOWED_RADIUS_METERS = 150;
+                    const isManual = distance > ALLOWED_RADIUS_METERS;
 
-                    if (distance <= ALLOWED_RADIUS_METERS) {
-                        await saveCheckInRecord(cpId, userLat, userLng, Math.round(distance), false, "GPS Verified");
-                        alert(`Check-in successful! Verified within range (${Math.round(distance)}m).`);
-                    } else {
-                        const confirmed = confirm(
-                            `You appear to be outside the check-in area for "${targetCp.name}" (approximately ${Math.round(distance)}m away).\n\nWould you still like to manually record your check-in for the organiser to review?`
-                        );
-
-                        if (confirmed) {
-                            await saveCheckInRecord(cpId, userLat, userLng, Math.round(distance), true, "Manual Override (Outside Range)");
-                            alert("Manual check-in recorded for organiser review.");
-                        }
+                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override?`)) {
+                        await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
                     }
                 },
                 async (error) => {
@@ -1989,29 +2014,92 @@
                         btn.innerText = originalText;
                         btn.disabled = false;
                     }
-
-                    let errMessage = "Unable to retrieve GPS location.";
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errMessage = "Location permission was denied. Please enable location permissions in your browser settings.";
-                    } else if (error.code === error.POSITION_UNAVAILABLE) {
-                        errMessage = "Location information is unavailable.";
-                    } else if (error.code === error.TIMEOUT) {
-                        errMessage = "Location request timed out.";
-                    }
-
-                    alert(errMessage);
-
-                    const forceManual = confirm("Do you want to submit a manual check-in anyway for organiser review?");
-                    if (forceManual) {
-                        await saveCheckInRecord(cpId, null, null, null, true, errMessage);
-                        alert("Manual check-in recorded for organiser review.");
+                    alert("Unable to retrieve GPS location.");
+                    if (confirm("Submit a manual check-in anyway?")) {
+                        await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
                     }
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         };
 
-        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note) {
+        async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
+            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceData = raceSnap.data();
+            const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
+            
+            const triviaSettings = raceData.trivia;
+            const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
+            const locTrivia = cp ? triviaDb[cp.name] : null;
+
+            if (triviaSettings && triviaSettings.enabled && locTrivia) {
+                let triggerTrivia = false;
+                if (triviaSettings.frequency === 'every') {
+                    triggerTrivia = true;
+                } else if (triviaSettings.frequency === 'random') {
+                    triggerTrivia = Math.random() < 0.5;
+                }
+
+                if (triggerTrivia) {
+                    const difficulty = (raceData.difficulty || 'easy').toLowerCase();
+                    const qData = locTrivia[difficulty] || locTrivia.easy;
+
+                    if (qData) {
+                        pendingCheckInCpId = cpId;
+                        pendingCheckInBtn = btnElement;
+                        pendingCheckInLat = lat;
+                        pendingCheckInLng = lng;
+                        pendingCheckInDist = distance;
+                        pendingCheckInIsManual = isManual;
+                        pendingCheckInNote = note;
+
+                        document.getElementById('trivia-question-text').innerText = qData.q;
+                        document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
+                            <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
+                        `).join('');
+                        document.getElementById('trivia-modal').classList.remove('hidden');
+                        return;
+                    }
+                }
+            }
+
+            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0);
+            alert("Check-in successful!");
+        }
+
+        window.submitTriviaAnswer = async function(selected, correct) {
+            document.getElementById('trivia-modal').classList.add('hidden');
+            
+            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceData = raceSnap.data();
+            const isScavenger = raceData.gameMode === 'scavenger';
+
+            let triviaBonus = 0;
+            if (selected === correct) {
+                if (isScavenger) {
+                    triviaBonus = 1; // +1 point
+                    alert("Correct answer! You earned +1 bonus point!");
+                } else {
+                    triviaBonus = 5; // -5 minutes deduction
+                    alert("Correct answer! You earned a 5-minute time deduction!");
+                }
+            } else {
+                alert("Incorrect answer! Check-in recorded with no bonus.");
+            }
+
+            await saveCheckInRecord(
+                pendingCheckInCpId, 
+                pendingCheckInLat, 
+                pendingCheckInLng, 
+                pendingCheckInDist, 
+                pendingCheckInIsManual, 
+                pendingCheckInNote + (selected === correct ? " (Trivia Correct)" : " (Trivia Incorrect)"),
+                triviaBonus
+            );
+            alert("Check-in successful!");
+        };
+
+        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0) {
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
             const teamSnap = await getDoc(teamRef);
             const tData = teamSnap.data();
@@ -2031,9 +2119,12 @@
                 note: note
             };
 
+            const currentTriviaBonus = (tData.triviaBonus || 0) + triviaBonus;
+
             await updateDoc(teamRef, {
                 completedCheckpoints: completed,
-                checkinDetails: checkinDetails
+                checkinDetails: checkinDetails,
+                triviaBonus: currentTriviaBonus
             });
 
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
@@ -2117,16 +2208,6 @@
         window.filterOrgCheckpoints = function() {
             renderOrgPicker();
         };
-                window.toggleTriviaSettings = function() {
-            const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
-            document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
-        };
-
-        window.toggleTriviaFreq = function() {
-            const freq = document.getElementById('trivia-frequency').value;
-            document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
-        };
-        
     </script>
 </body>
 </html>
