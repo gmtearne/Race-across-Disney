@@ -435,27 +435,11 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
                             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints, Custom Stops & Ending Location</h4>
-                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, edit bonus values, or choose final destination.</p>
+                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, or edit bonus values below.</p>
                         </div>
                         <select id="org-race-select" onchange="onOrgRaceSelected()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-52 focus:outline-none">
                             <option value="">-- Select Your Race --</option>
                         </select>
-                    </div>
-
-                    <!-- Designated Final Location Selector -->
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
-                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
-                        </label>
-                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
-                        <div class="space-y-2">
-                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                            </select>
-                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
-                                Set Final Stop
-                            </button>
-                        </div>
                     </div>
 
                     <!-- Add Custom Checkpoint Section with Map Search -->
@@ -506,6 +490,22 @@
                             <input type="text" id="org-search-input" onkeyup="filterOrgCheckpoints()" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none">
                         </div>
                         <div id="org-checkpoint-picker" class="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
+                    </div>
+
+                    <!-- Designated Final Location Selector (Moved below checkpoints) -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2 mt-4">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
+                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
+                        </label>
+                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
+                        <div class="space-y-2">
+                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                            </select>
+                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
+                                Set Final Stop
+                            </button>
+                        </div>
                     </div>
                 </div>
 
