@@ -1732,20 +1732,6 @@
                         await updateDoc(teamRef, { photoUrl: photoUrl });
                     }
                 } else {
-                    let assignedTriviaCpIds = [];
-                    const raceData = raceSnap.data();
-                    if (raceData.trivia && raceData.trivia.enabled) {
-                        const mandatoryCps = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
-                        const count = Math.min(raceData.trivia.randomCount || 3, mandatoryCps.length);
-                        
-                        if (raceData.trivia.frequency === 'every') {
-                            assignedTriviaCpIds = mandatoryCps.map(c => c.id);
-                        } else {
-                            const shuffled = [...mandatoryCps].sort(() => 0.5 - Math.random());
-                            assignedTriviaCpIds = shuffled.slice(0, count).map(c => c.id);
-                        }
-                    }
-
                     await setDoc(teamRef, {
                         teamName: teamName,
                         pin: pin,
@@ -1756,7 +1742,6 @@
                         claimedBonus: [],
                         bonusPhotos: {},
                         triviaBonus: 0,
-                        assignedTrivia: assignedTriviaCpIds,
                         startTime: null,
                         endTime: null
                     });
@@ -1979,7 +1964,7 @@
                 alert("Geolocation is not supported by your browser.");
                 const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
                 if (forceManual) {
-                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported", btnElement);
+                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
                 return;
             }
@@ -2039,8 +2024,6 @@
         };
 
         async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            const tData = teamSnap.data();
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
             const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
@@ -2049,28 +2032,34 @@
             const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
             const locTrivia = cp ? triviaDb[cp.name] : null;
 
-            const assignedTrivia = tData.assignedTrivia || [];
-            const triggerTrivia = triviaSettings && triviaSettings.enabled && locTrivia && assignedTrivia.includes(cpId);
+            if (triviaSettings && triviaSettings.enabled && locTrivia) {
+                let triggerTrivia = false;
+                if (triviaSettings.frequency === 'every') {
+                    triggerTrivia = true;
+                } else if (triviaSettings.frequency === 'random') {
+                    triggerTrivia = Math.random() < 0.5;
+                }
 
-            if (triggerTrivia) {
-                const difficulty = (raceData.difficulty || 'easy').toLowerCase();
-                const qData = locTrivia[difficulty] || locTrivia.easy;
+                if (triggerTrivia) {
+                    const difficulty = (raceData.difficulty || 'easy').toLowerCase();
+                    const qData = locTrivia[difficulty] || locTrivia.easy;
 
-                if (qData) {
-                    pendingCheckInCpId = cpId;
-                    pendingCheckInBtn = btnElement;
-                    pendingCheckInLat = lat;
-                    pendingCheckInLng = lng;
-                    pendingCheckInDist = distance;
-                    pendingCheckInIsManual = isManual;
-                    pendingCheckInNote = note;
+                    if (qData) {
+                        pendingCheckInCpId = cpId;
+                        pendingCheckInBtn = btnElement;
+                        pendingCheckInLat = lat;
+                        pendingCheckInLng = lng;
+                        pendingCheckInDist = distance;
+                        pendingCheckInIsManual = isManual;
+                        pendingCheckInNote = note;
 
-                    document.getElementById('trivia-question-text').innerText = qData.q;
-                    document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
-                        <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
-                    `).join('');
-                    document.getElementById('trivia-modal').classList.remove('hidden');
-                    return;
+                        document.getElementById('trivia-question-text').innerText = qData.q;
+                        document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
+                            <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
+                        `).join('');
+                        document.getElementById('trivia-modal').classList.remove('hidden');
+                        return;
+                    }
                 }
             }
 
