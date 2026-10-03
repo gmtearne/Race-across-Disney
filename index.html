@@ -114,6 +114,9 @@
             <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
                 <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
             </button>
+            <button onclick="switchTab('maps')" id="tab-btn-maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-map"></i> <span>Park Maps</span>
+            </button>
             <button onclick="switchTab('rules')" id="tab-btn-rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-book-open"></i> <span>Rules</span>
             </button>
@@ -239,15 +242,18 @@
                     </div>
                 </div>
 
-                <!-- Assigned Checkpoints -->
+                <!-- Assigned Checkpoints with Custom Route Reordering -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
-                            Checkpoints & Navigation
-                        </h3>
-                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-rotate"></i> Refresh Status
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
+                                Checkpoints & Custom Route Planner
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in.</p>
+                        </div>
+                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
                     </div>
                     <div id="team-checkpoints-list" class="space-y-3"></div>
@@ -268,7 +274,74 @@
 
         </section>
 
-        <!-- ================= TAB 2: RULES ================= -->
+        <!-- ================= TAB 2: PARK MAPS ================= -->
+        <section id="tab-maps" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
+                            <i class="fa-solid fa-map text-disneyGold"></i> Digital Park & Resort Maps
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
+                    </div>
+                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3 py-1 rounded-full border border-disneyBlue/40 self-start sm:self-auto font-medium">
+                        <i class="fa-solid fa-compass-drafting mr-1"></i> Paper Map Tools
+                    </span>
+                </div>
+
+                <!-- Park Selector Tabs -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
+                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
+                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
+                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
+                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
+                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
+                </div>
+
+                <!-- Map Viewer Box -->
+                <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
+                            <i class="fa-solid fa-location-pin text-disneyPink"></i> Magic Kingdom Park Map View
+                        </h3>
+                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3 py-1.5 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
+                        </a>
+                    </div>
+                    
+                    <!-- Embedded OpenStreetMap Iframe -->
+                    <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                        <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
+                    </div>
+                    <p id="map-desc-text" class="text-xs text-slate-400 italic">
+                        Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
+                    </p>
+                </div>
+
+                <!-- Transit & Paper Map Tips -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-compass"></i> Strategic Planning Tip
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: RULES ================= -->
         <section id="tab-rules" class="hidden space-y-6">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
                 <div class="border-b border-slate-700 pb-4">
@@ -352,7 +425,7 @@
             </div>
         </section>
 
-        <!-- ================= TAB 3: LEADERBOARD ================= -->
+        <!-- ================= TAB 4: LEADERBOARD ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
@@ -390,7 +463,7 @@
             </div>
         </section>
 
-        <!-- ================= TAB 4: ORGANISER DASHBOARD ================= -->
+        <!-- ================= TAB 5: ORGANISER DASHBOARD ================= -->
         <section id="tab-organizer" class="hidden space-y-6">
             
             <!-- Firebase Auth Card -->
@@ -636,7 +709,7 @@
     <!-- JS Logic -->
     <script>
         function switchTab(tabName) {
-            ['race', 'rules', 'leaderboard', 'organizer'].forEach(t => {
+            ['race', 'maps', 'rules', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (t === tabName) {
@@ -649,6 +722,34 @@
                 loadLeaderboard();
             }
         }
+
+        const MAP_LOCATIONS = {
+            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
+            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
+            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
+            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
+            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
+            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+        };
+
+        window.switchMapArea = function(areaKey) {
+            const mapData = MAP_LOCATIONS[areaKey];
+            if (!mapData) return;
+
+            ['mk', 'epcot', 'hs', 'ak', 'ds', 'resorts'].forEach(k => {
+                const btn = document.getElementById(`map-btn-${k}`);
+                if (k === areaKey) {
+                    btn.className = "py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow";
+                } else {
+                    btn.className = "py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
+                }
+            });
+
+            document.getElementById('map-title-display').innerHTML = `<i class="fa-solid fa-location-pin text-disneyPink"></i> ${mapData.title}`;
+            document.getElementById('map-iframe').src = mapData.url;
+            document.getElementById('map-external-link').href = mapData.link;
+            document.getElementById('map-desc-text').innerText = mapData.desc;
+        };
 
         function generateRandomRaceCode() {
             const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
@@ -1741,6 +1842,7 @@
                         photoUrl: photoUrl,
                         isApproved: false,
                         completedCheckpoints: [],
+                        customRouteOrder: [],
                         checkinDetails: {},
                         claimedBonus: [],
                         bonusPhotos: {},
@@ -1830,6 +1932,18 @@
             const triviaBonusPts = isScavenger ? (tData.triviaBonus || 0) : 0;
             const triviaTimeDed = !isScavenger ? (tData.triviaBonus || 0) : 0;
 
+            let customOrder = tData.customRouteOrder || [];
+            let orderedMandatory = [];
+            customOrder.forEach(id => {
+                const found = mandatory.find(m => m.id === id);
+                if (found) orderedMandatory.push(found);
+            });
+            mandatory.forEach(m => {
+                if (!orderedMandatory.some(o => o.id === m.id)) {
+                    orderedMandatory.push(m);
+                }
+            });
+
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
@@ -1890,7 +2004,7 @@
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
-            document.getElementById('team-checkpoints-list').innerHTML = mandatory.map(cp => {
+            document.getElementById('team-checkpoints-list').innerHTML = orderedMandatory.map((cp, idx) => {
                 const isDone = completedIds.includes(cp.id);
                 const isFinal = finalCheckpointId === cp.id;
                 const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
@@ -1930,13 +2044,26 @@
                     `;
                 }
 
+                let reorderButtons = '';
+                if (!isDone) {
+                    reorderButtons = `
+                        <div class="flex flex-col gap-1">
+                            <button onclick="moveCheckpointOrder(${idx}, -1)" title="Move Up" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
+                            <button onclick="moveCheckpointOrder(${idx}, 1)" title="Move Down" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
-                                📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
-                            </p>
-                            <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span></p>
+                        <div class="flex items-center gap-3">
+                            ${reorderButtons}
+                            <div>
+                                <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
+                                    <span class="text-disneyGold font-mono mr-1">#${idx + 1}</span> 📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
+                                </p>
+                                <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span></p>
+                            </div>
                         </div>
                         <div>${statusBadgeOrButton}</div>
                     </div>
@@ -1968,6 +2095,32 @@
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
+        };
+
+        window.moveCheckpointOrder = async function(index, direction) {
+            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            if (!raceSnap.exists()) return;
+            const checkpoints = raceSnap.data().checkpoints || [];
+            const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
+
+            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+            const teamSnap = await getDoc(teamRef);
+            const tData = teamSnap.data();
+
+            let currentOrder = tData.customRouteOrder || [];
+            if (currentOrder.length === 0) {
+                currentOrder = mandatory.map(m => m.id);
+            }
+
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= currentOrder.length) return;
+
+            const temp = currentOrder[index];
+            currentOrder[index] = currentOrder[newIndex];
+            currentOrder[newIndex] = temp;
+
+            await updateDoc(teamRef, { customRouteOrder: currentOrder });
+            loadTeamDashboardData(raceSnap.data());
         };
 
         window.undoManualCheckIn = async function(cpId) {
