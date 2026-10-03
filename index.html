@@ -485,7 +485,7 @@
 
                 <!-- Active Races Overview -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races, Team Approvals & GPS Review Logs</h4>
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals & GPS Review Logs</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
             </div>
@@ -521,7 +521,6 @@
             document.getElementById('custom-bonus-fields').classList.toggle('hidden', type === 'GPS');
         }
 
-        // Helper function to compress images before saving to fix the 1MB Firestore limit
         function compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.7) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -554,7 +553,6 @@
             });
         }
 
-        // Free map coordinate lookup using OpenStreetMap Nominatim API
         window.searchLocationCoordinates = async function() {
             const query = document.getElementById('custom-cp-name').value.trim();
             const statusText = document.getElementById('search-status-text');
@@ -675,7 +673,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -807,10 +805,20 @@
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
             if (!title || !code) return alert("Please enter both race title and 6-character code.");
 
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return alert("You must be logged in as an organiser.");
+
             try {
+                // Check if race code already exists globally
+                const existingSnap = await getDoc(doc(window.db, "races", code));
+                if (existingSnap.exists()) {
+                    return alert("This race code is already in use. Please choose a unique 6-character code.");
+                }
+
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
+                    organizerId: currentUser.uid, // Tag race with specific organiser ID
                     checkpoints: [],
                     finalCheckpointId: null,
                     createdAt: new Date().toISOString()
@@ -825,12 +833,14 @@
 
         window.addPresetLocationsToRace = async function() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const currentUser = window.auth.currentUser;
             if (!code) return alert("Please enter the race code.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return alert("Race code not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
 
                 const existing = raceSnap.data().checkpoints || [];
                 const newCps = DISNEY_PRESETS.map((p, idx) => ({
@@ -853,6 +863,7 @@
 
         window.addRandomLocationsToRace = async function() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const currentUser = window.auth.currentUser;
             if (!code) return alert("Please enter the race code.");
             const countStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
             if (!countStr) return;
@@ -862,6 +873,7 @@
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return alert("Race code not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
 
                 const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
                 const shuffled = [...gpsOnly].sort(() => 0.5 - Math.random());
@@ -888,12 +900,14 @@
 
         window.addSinglePresetToRace = async function(idx) {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const currentUser = window.auth.currentUser;
             if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return alert("Race code not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
 
                 const p = DISNEY_PRESETS[idx];
                 const newCp = {
@@ -918,6 +932,8 @@
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             const name = document.getElementById('custom-cp-name').value.trim();
             const type = document.getElementById('custom-cp-type').value;
+            const currentUser = window.auth.currentUser;
+
             if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
             if (!name) return alert("Please enter a checkpoint name.");
 
@@ -939,6 +955,7 @@
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return alert("Race code not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
 
                 const newCp = {
                     id: 'cp_custom_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -965,12 +982,14 @@
 
         window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
             const val = parseInt(newValueStr);
+            const currentUser = window.auth.currentUser;
             if (isNaN(val) || val < 0) return;
 
             try {
                 const raceRef = doc(window.db, "races", raceCode);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return;
+                if (raceSnap.data().organizerId !== currentUser.uid) return;
 
                 const cps = raceSnap.data().checkpoints || [];
                 const updatedCps = cps.map(cp => {
@@ -989,10 +1008,15 @@
         window.saveFinalLocation = async function() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             const finalCpId = document.getElementById('org-final-cp-select').value;
+            const currentUser = window.auth.currentUser;
             if (!code) return alert("Please enter the race code.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
+                const raceSnap = await getDoc(raceRef);
+                if (!raceSnap.exists()) return alert("Race code not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+
                 await updateDoc(raceRef, { finalCheckpointId: finalCpId || null });
                 alert("Designated final ending location updated successfully!");
                 loadAdminRaces();
@@ -1002,13 +1026,19 @@
         };
 
         async function loadAdminRaces() {
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+
             try {
-                const querySnapshot = await getDocs(collection(window.db, "races"));
+                // Query only races created by the currently logged-in organiser ID
+                const q = query(collection(window.db, "races"), where("organizerId", "==", currentUser.uid));
+                const querySnapshot = await getDocs(q);
                 const listEl = document.getElementById('admin-race-list');
                 const finalSelectEl = document.getElementById('org-final-cp-select');
                 
                 if (querySnapshot.empty) {
-                    listEl.innerHTML = "No active races found in database.";
+                    listEl.innerHTML = "You haven't created any races yet.";
+                    finalSelectEl.innerHTML = '<option value="">-- Create a race above first --</option>';
                     return;
                 }
 
@@ -1089,7 +1119,7 @@
                                                             <div class="p-1 rounded ${info.isManual ? 'bg-amber-950/30 border border-amber-500/30 text-amber-300' : 'bg-slate-900 text-slate-300'} flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
                                                                 <span class="font-medium">📍 ${cpName}</span>
                                                                 <span class="flex items-center gap-2">
-                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
+                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
                                                                     <span class="text-[9px] text-slate-400 font-mono">${info.latitude ? info.latitude.toFixed(4) + ', ' + info.longitude.toFixed(4) : ''}</span>
                                                                 </span>
                                                             </div>
@@ -1124,7 +1154,11 @@
         document.getElementById('cp-race-code')?.addEventListener('input', loadAdminRaces);
 
         window.approveTeam = async function(raceCode, teamId) {
+            const currentUser = window.auth.currentUser;
             try {
+                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
                 alert("Team approved successfully!");
                 loadAdminRaces();
@@ -1134,9 +1168,11 @@
         };
 
         window.deleteCheckpoint = async function(raceCode, cpId) {
+            const currentUser = window.auth.currentUser;
             const raceRef = doc(window.db, "races", raceCode);
             const raceSnap = await getDoc(raceRef);
-            if (!raceSnap.exists()) return;
+            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
             const data = raceSnap.data();
             const updated = (data.checkpoints || []).filter(c => c.id !== cpId);
             
@@ -1150,12 +1186,20 @@
         };
 
         window.deleteTeam = async function(raceCode, teamId) {
+            const currentUser = window.auth.currentUser;
+            const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
             if (!confirm("Are you sure you want to remove this team?")) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
             loadAdminRaces();
         };
 
         window.deleteEntireRace = async function(raceCode) {
+            const currentUser = window.auth.currentUser;
+            const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
             if (!confirm(`Are you sure you want to delete the entire race (${raceCode})? This will also remove all registered teams and logs permanently.`)) return;
             
             try {
