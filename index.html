@@ -73,6 +73,29 @@
         </div>
     </div>
 
+    <!-- Checkpoint Info / Hint Modal -->
+    <div id="checkpoint-info-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 id="cp-modal-title" class="font-bold text-sm text-disneyGold flex items-center gap-2">
+                    <i class="fa-solid fa-map-pin"></i> Checkpoint Details
+                </h3>
+                <button onclick="closeCheckpointInfoModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <p id="cp-modal-desc" class="text-xs text-slate-300 leading-relaxed"></p>
+                <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                    <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
+                </div>
+            </div>
+            <button onclick="closeCheckpointInfoModal()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
+                Close
+            </button>
+        </div>
+    </div>
+
     <!-- Trivia Popup Modal -->
     <div id="trivia-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
@@ -250,7 +273,7 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -563,12 +586,12 @@
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
                                 <span class="font-bold text-xs text-white">Medium</span>
-                                <span class="text-[9px] text-slate-400">No Pins, Route List</span>
+                                <span class="text-[9px] text-slate-400">Area Hint Modals</span>
                             </label>
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
                                 <span class="font-bold text-xs text-white">Hard</span>
-                                <span class="text-[9px] text-slate-400">Blind Navigation</span>
+                                <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
                             </label>
                         </div>
                     </div>
@@ -810,6 +833,11 @@
             document.getElementById('modal-image-element').src = '';
         };
 
+        window.closeCheckpointInfoModal = function() {
+            document.getElementById('checkpoint-info-modal').classList.add('hidden');
+            document.getElementById('cp-modal-iframe').src = '';
+        };
+
         let isRegisterMode = false;
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
@@ -944,7 +972,7 @@
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
         ];
 
-        function renderOrgPicker() {
+        window.renderOrgPicker = function() {
             const container = document.getElementById('org-checkpoint-picker');
             const query = (document.getElementById('org-search-input')?.value || "").toLowerCase();
             
@@ -968,7 +996,7 @@
                 }
             });
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        }
+        };
         setTimeout(renderOrgPicker, 500);
 
         window.shareRaceCode = function(code, title) {
@@ -1902,6 +1930,38 @@
             document.getElementById('nav-team-badge').classList.add('hidden');
         };
 
+        window.openCheckpointModal = function(cpName, cpPark, lat, lng, difficulty) {
+            const modal = document.getElementById('checkpoint-info-modal');
+            const titleEl = document.getElementById('cp-modal-title');
+            const descEl = document.getElementById('cp-modal-desc');
+            const extraBox = document.getElementById('cp-modal-extra');
+            const iframeEl = document.getElementById('cp-modal-iframe');
+
+            if (difficulty === 'hard') {
+                return; // Hard mode is not clickable
+            }
+
+            if (difficulty === 'medium') {
+                titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
+                descEl.innerHTML = `Area Clue: Located in <strong>${cpPark}</strong>. Use your park knowledge and physical signage to navigate here!`;
+                extraBox.classList.add('hidden');
+            } else {
+                // Easy mode
+                titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Hint: ${cpName}`;
+                descEl.innerHTML = `Park: <strong>${cpPark}</strong>. Use the embedded map pin below to locate the attraction. Free Disney transportation recommended!`;
+                extraBox.classList.remove('hidden');
+                
+                const bboxDelta = 0.005;
+                const minLon = (lng - bboxDelta).toFixed(4);
+                const minLat = (lat - bboxDelta).toFixed(4);
+                const maxLon = (lng + bboxDelta).toFixed(4);
+                const maxLat = (lat + bboxDelta).toFixed(4);
+                iframeEl.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
+            }
+
+            modal.classList.remove('hidden');
+        };
+
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) return;
@@ -1917,9 +1977,9 @@
             document.getElementById('team-dashboard-active').classList.remove('hidden');
 
             const isScavenger = raceData.gameMode === 'scavenger';
-            const difficulty = (raceData.difficulty || 'easy').toUpperCase();
+            const difficulty = (raceData.difficulty || 'easy').toLowerCase();
 
-            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty} Tier)` : `Speed Race (${difficulty} Tier)`;
+            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty.toUpperCase()} Tier)` : `Speed Race (${difficulty.toUpperCase()} Tier)`;
 
             const checkpoints = raceData.checkpoints || [];
             const finalCheckpointId = raceData.finalCheckpointId;
@@ -2012,12 +2072,12 @@
                 const isManualOverride = detail && detail.isManual;
                 
                 let hintText = "";
-                if (difficulty === 'EASY') {
+                if (difficulty === 'easy') {
                     hintText = `Map pin enabled + Transit hint available`;
-                } else if (difficulty === 'MEDIUM') {
-                    hintText = `Route list view (No direct pin)`;
+                } else if (difficulty === 'medium') {
+                    hintText = `Area clue modal (Click to view)`;
                 } else {
-                    hintText = `Blind navigation (Clue only)`;
+                    hintText = `Blind navigation (Locked)`;
                 }
 
                 let statusBadgeOrButton = '';
@@ -2056,15 +2116,22 @@
                     `;
                 }
 
+                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
+                const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
+
+                const subtitleContent = difficulty === 'hard' 
+                    ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
+                    : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
+
                 return `
-                    <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div ${clickAction} class="p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             ${reorderButtons}
                             <div>
                                 <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
                                     <span class="text-disneyGold font-mono mr-1">#${idx + 1}</span> 📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
                                 </p>
-                                <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span></p>
+                                <p class="text-[10px] text-slate-400">${subtitleContent}</p>
                             </div>
                         </div>
                         <div>${statusBadgeOrButton}</div>
