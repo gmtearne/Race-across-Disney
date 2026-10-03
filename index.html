@@ -76,14 +76,17 @@
         </div>
         
         <!-- Tab Navigation Bar -->
-        <div class="flex justify-around bg-slate-950/40 border-t border-white/5 text-xs font-semibold">
-            <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60">
+        <div class="flex justify-around bg-slate-950/40 border-t border-white/5 text-xs font-semibold overflow-x-auto">
+            <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
                 <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
             </button>
-            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2">
+            <button onclick="switchTab('rules')" id="tab-btn-rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-book-open"></i> <span>Rules</span>
+            </button>
+            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-trophy"></i> <span>Leaderboard</span>
             </button>
-            <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2">
+            <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
             </button>
         </div>
@@ -225,7 +228,93 @@
 
         </section>
 
-        <!-- ================= TAB 2: LEADERBOARD ================= -->
+        <!-- ================= TAB 2: RULES ================= -->
+        <section id="tab-rules" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4">
+                    <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
+                        <i class="fa-solid fa-book-open text-disneyGold"></i> Race Rules & Guidelines
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Read carefully before starting your journey across Disney property!</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <!-- Rule Card 1 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                            <i class="fa-solid fa-stopwatch"></i> Objective
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            The primary goal is to complete all assigned mandatory checkpoints as quickly as possible. Your final adjusted time determines your ranking.
+                        </p>
+                    </div>
+
+                    <!-- Rule Card 2 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
+                            <i class="fa-solid fa-bus"></i> Transportation
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
+                        </p>
+                    </div>
+
+                    <!-- Rule Card 3 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                            <i class="fa-solid fa-route"></i> Checkpoint Order
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Checkpoints can be completed in <strong>any order</strong> you choose. Plan your route strategically to optimize transit connections between parks and resorts.
+                        </p>
+                    </div>
+
+                    <!-- Rule Card 4 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Penalties
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            All <strong>missed checkpoints</strong> will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
+                        </p>
+                    </div>
+
+                    <!-- Rule Card 5 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                            <i class="fa-solid fa-star"></i> Bonus Challenges
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Bonus checkpoints are entirely optional and will improve your overall time via deductions. There are <strong>no penalties</strong> for missing bonus checkpoints.
+                        </p>
+                    </div>
+
+                    <!-- Rule Card 6 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                            <i class="fa-solid fa-ban"></i> Route Planning Restriction
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. Rely on physical park layouts and signage!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- GPS Warning Box -->
+                <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
+                    <div class="font-bold text-amber-300 flex items-center gap-2">
+                        <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for organizer review. 
+                        <br><br>
+                        <em>Tip: Always take a photo on your phone's camera roll for your own reference if you believe you are physically standing in the correct location but GPS signal is weak.</em>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: LEADERBOARD ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
@@ -261,7 +350,7 @@
             </div>
         </section>
 
-        <!-- ================= TAB 3: ORGANISER DASHBOARD ================= -->
+        <!-- ================= TAB 4: ORGANISER DASHBOARD ================= -->
         <section id="tab-organizer" class="hidden space-y-6">
             
             <!-- Firebase Auth Card -->
@@ -352,13 +441,13 @@
     <!-- JS Logic -->
     <script>
         function switchTab(tabName) {
-            ['race', 'leaderboard', 'organizer'].forEach(t => {
+            ['race', 'rules', 'leaderboard', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (t === tabName) {
-                    btn.className = "flex-1 py-2.5 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60";
+                    btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
                 } else {
-                    btn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2";
+                    btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
                 }
             });
         }
@@ -770,7 +859,7 @@
                                                             <div class="p-1 rounded ${info.isManual ? 'bg-amber-950/30 border border-amber-500/30 text-amber-300' : 'bg-slate-900 text-slate-300'} flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
                                                                 <span class="font-medium">📍 ${cpName}</span>
                                                                 <span class="flex items-center gap-2">
-                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
+                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
                                                                     <span class="text-[9px] text-slate-400 font-mono">${info.latitude ? info.latitude.toFixed(4) + ', ' + info.longitude.toFixed(4) : ''}</span>
                                                                 </span>
                                                             </div>
@@ -980,10 +1069,9 @@
                 startBtn.disabled = true;
                 startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50";
                 
-                // Disable finish button once race finished has been pressed
                 finishBtn.disabled = true;
                 finishBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
-                finishBtn.innerHTML = '<i class="fa-solid fa-check"><i> Race Finished';
+                finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
             } else if (tData.startTime) {
                 pill.innerText = "In Progress";
                 pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
@@ -1266,7 +1354,7 @@
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = missedCount * 60;
+                    const penaltyMin = missedCount * 60; // 60 min penalty per missed checkpoint
 
                     let bonusMinDeduction = 0;
                     (t.claimedBonus || []).forEach(bId => {
