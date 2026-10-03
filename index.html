@@ -553,8 +553,43 @@
                         </select>
                     </div>
 
-                    <!-- Add Custom Checkpoint Section with Map Search -->
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3">
+                    <!-- A. Randomly Generate Stops (Top) -->
+                    <button onclick="addRandomLocationsToRace()" class="w-full py-2.5 bg-disneyPurple hover:bg-purple-800 text-white font-bold text-xs rounded-xl transition shadow">
+                        🎲 Randomly Generate Stops
+                    </button>
+
+                    <!-- B. Checkpoint List & Search -->
+                    <div class="space-y-2 pt-2">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="org-search-input" onkeyup="filterOrgCheckpoints()" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none">
+                        </div>
+                        <div id="org-checkpoint-picker" class="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
+                    </div>
+
+                    <!-- C. Add All 50+ Disney Locations -->
+                    <button onclick="addPresetLocationsToRace()" class="w-full py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                        + Add All 50 Disney Locations
+                    </button>
+
+                    <!-- D. Designated Final Location Selector -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2 mt-4">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
+                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
+                        </label>
+                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
+                        <div class="space-y-2">
+                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                            </select>
+                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
+                                Set Final Stop
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- E. Add Custom Checkpoint Section with Map Search (Bottom) -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3 mt-4">
                         <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                             <i class="fa-solid fa-plus-circle mr-1"></i> Add Custom Checkpoint or Bonus
                         </h5>
@@ -586,38 +621,6 @@
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button onclick="addPresetLocationsToRace()" class="py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
-                            + Add All 50 Disney Locations
-                        </button>
-                        <button onclick="addRandomLocationsToRace()" class="py-2.5 bg-disneyPurple hover:bg-purple-800 text-white font-bold text-xs rounded-xl transition shadow">
-                            🎲 Randomly Generate Stops
-                        </button>
-                    </div>
-
-                    <div class="space-y-2 pt-2">
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                            <input type="text" id="org-search-input" onkeyup="filterOrgCheckpoints()" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none">
-                        </div>
-                        <div id="org-checkpoint-picker" class="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
-                    </div>
-
-                    <!-- Designated Final Location Selector -->
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2 mt-4">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
-                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
-                        </label>
-                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
-                        <div class="space-y-2">
-                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                            </select>
-                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
-                                Set Final Stop
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Active Races Overview -->
@@ -1117,11 +1120,11 @@
             
             const gpsCountStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
             if (gpsCountStr === null) return;
-            const gpsCount = parseInt(gpsCountStr) || 10;
+            const gpsCount = (gpsCountStr.trim() === "" || isNaN(parseInt(gpsCountStr))) ? 10 : parseInt(gpsCountStr);
 
             const bonusCountStr = prompt("How many bonus photo checkpoints to randomly include?", "5");
             if (bonusCountStr === null) return;
-            const bonusCount = parseInt(bonusCountStr) || 5;
+            const bonusCount = (bonusCountStr.trim() === "" || isNaN(parseInt(bonusCountStr))) ? 5 : parseInt(bonusCountStr);
 
             try {
                 const raceRef = doc(window.db, "races", code);
