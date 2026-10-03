@@ -347,9 +347,11 @@
                         </h2>
                         <p class="text-xs text-slate-400">Displays raw elapsed time during the race. Official adjusted times (penalties & bonuses) apply upon finishing.</p>
                     </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="leaderboard-code-input" placeholder="RACE CODE" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold w-28 focus:outline-none">
-                        <button onclick="loadLeaderboard()" class="px-4 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition">Load</button>
+                    <div class="flex gap-2 items-center">
+                        <select id="leaderboard-code-select" onchange="loadLeaderboard()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-mono text-disneyGold w-48 focus:outline-none">
+                            <option value="">-- Select Entered Race --</option>
+                        </select>
+                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition">Load</button>
                     </div>
                 </div>
 
@@ -366,7 +368,7 @@
                             </tr>
                         </thead>
                         <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                            <tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Enter a race code above and click load to view standings.</td></tr>
+                            <tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Select a race above to view standings.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -414,9 +416,14 @@
                 <!-- 1. Create New Race -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
                     <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        <input type="text" id="new-race-code" placeholder="6-Char Code (e.g. MK2026)" maxlength="6" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <div class="flex gap-1.5">
+                            <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
+                            <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
+                                <i class="fa-solid fa-dice"></i>
+                            </button>
+                        </div>
                     </div>
                     <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
                         + Create Race Event
@@ -428,9 +435,11 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
                             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints, Custom Stops & Ending Location</h4>
-                            <p class="text-[11px] text-slate-400">Select pre-sets, add custom stops, edit bonus values, or choose final destination.</p>
+                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, edit bonus values, or choose final destination.</p>
                         </div>
-                        <input type="text" id="cp-race-code" placeholder="RACE CODE" maxlength="6" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-28 text-center focus:outline-none">
+                        <select id="org-race-select" onchange="onOrgRaceSelected()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-52 focus:outline-none">
+                            <option value="">-- Select Your Race --</option>
+                        </select>
                     </div>
 
                     <!-- Designated Final Location Selector -->
@@ -522,9 +531,23 @@
                     btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
                 }
             });
+            if (tabName === 'leaderboard') {
+                populateTeamLeaderboardDropdown();
+            }
         }
 
-        // Safe Image Modal Handler Functions
+        // Generate random unique 6-character code
+        function generateRandomRaceCode() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excludes similar looking chars like I, O, 0, 1
+            let result = "";
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('new-race-code').value = result;
+        }
+        // Auto generate on page load
+        setTimeout(generateRandomRaceCode, 300);
+
         window.openImageModal = function(base64Data) {
             document.getElementById('modal-image-element').src = base64Data;
             document.getElementById('image-modal').classList.remove('hidden');
@@ -780,8 +803,6 @@
                 document.getElementById('nav-team-avatar').src = tData.photoUrl;
                 document.getElementById('nav-team-name').innerText = tData.teamName;
 
-                document.getElementById('leaderboard-code-input').value = code;
-
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
             } catch (e) {
@@ -831,7 +852,7 @@
         window.createNewRace = async function() {
             const title = document.getElementById('new-race-title').value.trim();
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
-            if (!title || !code) return alert("Please enter both race title and 6-character code.");
+            if (!title || !code) return alert("Please enter a race title and generate a code.");
 
             const currentUser = window.auth.currentUser;
             if (!currentUser) return alert("You must be logged in as an organiser.");
@@ -839,7 +860,7 @@
             try {
                 const existingSnap = await getDoc(doc(window.db, "races", code));
                 if (existingSnap.exists()) {
-                    return alert("This race code is already in use. Please choose a unique 6-character code.");
+                    return alert("This race code was randomly generated as a duplicate. Please hit the dice icon to generate a new unique code.");
                 }
 
                 await setDoc(doc(window.db, "races", code), {
@@ -851,23 +872,29 @@
                     createdAt: new Date().toISOString()
                 });
                 alert(`Race "${title}" created successfully with code ${code}!`);
-                document.getElementById('cp-race-code').value = code;
+                document.getElementById('new-race-title').value = '';
+                generateRandomRaceCode();
                 loadAdminRaces();
             } catch (err) {
                 alert("Error creating race: " + err.message);
             }
         };
 
+        window.onOrgRaceSelected = function() {
+            const selectedCode = document.getElementById('org-race-select').value;
+            loadAdminRaces(selectedCode);
+        };
+
         window.addPresetLocationsToRace = async function() {
-            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const code = document.getElementById('org-race-select').value;
             const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please enter the race code.");
+            if (!code) return alert("Please select a race from the dropdown first.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+                if (!raceSnap.exists()) return alert("Race not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 const existing = raceSnap.data().checkpoints || [];
                 const newCps = DISNEY_PRESETS.map((p, idx) => ({
@@ -882,16 +909,16 @@
 
                 await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
                 alert("Successfully added all 50+ Disney locations and bonus challenges!");
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (e) {
                 alert("Error: " + e.message);
             }
         };
 
         window.addRandomLocationsToRace = async function() {
-            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const code = document.getElementById('org-race-select').value;
             const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please enter the race code.");
+            if (!code) return alert("Please select a race from the dropdown first.");
             const countStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
             if (!countStr) return;
             const count = parseInt(countStr) || 10;
@@ -899,8 +926,8 @@
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+                if (!raceSnap.exists()) return alert("Race not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
                 const shuffled = [...gpsOnly].sort(() => 0.5 - Math.random());
@@ -919,22 +946,22 @@
 
                 await updateDoc(raceRef, { checkpoints: combined });
                 alert(`Successfully generated ${selected.length} random stops and all photo bonus challenges!`);
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (e) {
                 alert("Error: " + e.message);
             }
         };
 
         window.addSinglePresetToRace = async function(idx) {
-            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const code = document.getElementById('org-race-select').value;
             const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
+            if (!code) return alert("Please select a race from the dropdown first.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+                if (!raceSnap.exists()) return alert("Race not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 const p = DISNEY_PRESETS[idx];
                 const newCp = {
@@ -949,19 +976,19 @@
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
                 alert(`Added "${p.name}" to race ${code}!`);
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (e) {
                 alert("Error: " + e.message);
             }
         };
 
         window.addCustomCheckpointToRace = async function() {
-            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const code = document.getElementById('org-race-select').value;
             const name = document.getElementById('custom-cp-name').value.trim();
             const type = document.getElementById('custom-cp-type').value;
             const currentUser = window.auth.currentUser;
 
-            if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
+            if (!code) return alert("Please select a race from the dropdown first.");
             if (!name) return alert("Please enter a checkpoint name.");
 
             let lat = 28.4177;
@@ -981,8 +1008,8 @@
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+                if (!raceSnap.exists()) return alert("Race not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 const newCp = {
                     id: 'cp_custom_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -1001,7 +1028,7 @@
                 document.getElementById('custom-cp-lng').value = '';
                 document.getElementById('search-status-text').innerText = "Type a place name & click to auto-fetch coords";
                 document.getElementById('search-status-text').className = "text-[10px] text-slate-400 self-center";
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (e) {
                 alert("Error adding custom checkpoint: " + e.message);
             }
@@ -1033,26 +1060,26 @@
         };
 
         window.saveFinalLocation = async function() {
-            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const code = document.getElementById('org-race-select').value;
             const finalCpId = document.getElementById('org-final-cp-select').value;
             const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please enter the race code.");
+            if (!code) return alert("Please select a race from the dropdown first.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race code not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("You do not have permission to modify this race.");
+                if (!raceSnap.exists()) return alert("Race not found.");
+                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 await updateDoc(raceRef, { finalCheckpointId: finalCpId || null });
                 alert("Designated final ending location updated successfully!");
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (e) {
                 alert("Error updating final location: " + e.message);
             }
         };
 
-        async function loadAdminRaces() {
+        async function loadAdminRaces(preferredCode = null) {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
 
@@ -1060,16 +1087,19 @@
                 const q = query(collection(window.db, "races"), where("organizerId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 const listEl = document.getElementById('admin-race-list');
+                const raceSelectEl = document.getElementById('org-race-select');
                 const finalSelectEl = document.getElementById('org-final-cp-select');
                 
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "You haven't created any races yet.";
-                    finalSelectEl.innerHTML = '<option value="">-- Create a race above first --</option>';
+                    raceSelectEl.innerHTML = '<option value="">-- No Races Found --</option>';
+                    finalSelectEl.innerHTML = '<option value="">-- Select a race above first --</option>';
                     return;
                 }
 
-                const currentCodeInput = document.getElementById('cp-race-code').value.trim().toUpperCase();
+                let raceDropdownHtml = '<option value="">-- Select Your Race --</option>';
                 let activeRaceDataForSelect = null;
+                const chosenCode = preferredCode || raceSelectEl.value;
 
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
@@ -1077,7 +1107,10 @@
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
 
-                    if (race.code === currentCodeInput) {
+                    const isSelected = race.code === chosenCode ? 'selected' : '';
+                    raceDropdownHtml += `<option value="${race.code}" ${isSelected}>${race.title} (${race.code})</option>`;
+
+                    if (race.code === chosenCode) {
                         activeRaceDataForSelect = race;
                     }
 
@@ -1161,6 +1194,7 @@
                     `;
                 }
                 listEl.innerHTML = html;
+                raceSelectEl.innerHTML = raceDropdownHtml;
 
                 if (activeRaceDataForSelect) {
                     let selectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
@@ -1170,14 +1204,39 @@
                     });
                     finalSelectEl.innerHTML = selectHtml;
                 } else {
-                    finalSelectEl.innerHTML = '<option value="">-- Enter valid Race Code above first --</option>';
+                    finalSelectEl.innerHTML = '<option value="">-- Select a race from dropdown above --</option>';
                 }
             } catch (e) {
                 console.error(e);
             }
         }
 
-        document.getElementById('cp-race-code')?.addEventListener('input', loadAdminRaces);
+        async function populateTeamLeaderboardDropdown() {
+            const selectEl = document.getElementById('leaderboard-code-select');
+            if (!selectEl) return;
+
+            try {
+                const querySnapshot = await getDocs(collection(window.db, "races"));
+                if (querySnapshot.empty) {
+                    selectEl.innerHTML = '<option value="">-- No Races Available --</option>';
+                    return;
+                }
+
+                let html = '<option value="">-- Select Race --</option>';
+                for (const docSnap of querySnapshot.docs) {
+                    const race = docSnap.data();
+                    html += `<option value="${race.code}">${race.title} (${race.code})</option>`;
+                }
+                selectEl.innerHTML = html;
+
+                if (activeRaceCode) {
+                    selectEl.value = activeRaceCode;
+                    loadLeaderboard();
+                }
+            } catch (e) {
+                console.error("Error loading leaderboard races:", e);
+            }
+        }
 
         window.approveTeam = async function(raceCode, teamId) {
             const currentUser = window.auth.currentUser;
@@ -1187,7 +1246,7 @@
 
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
                 alert("Team approved successfully!");
-                loadAdminRaces();
+                loadAdminRaces(raceCode);
             } catch (e) {
                 alert("Error approving team: " + e.message);
             }
@@ -1208,7 +1267,7 @@
             }
 
             await updateDoc(raceRef, updates);
-            loadAdminRaces();
+            loadAdminRaces(raceCode);
         };
 
         window.deleteTeam = async function(raceCode, teamId) {
@@ -1218,7 +1277,7 @@
 
             if (!confirm("Are you sure you want to remove this team?")) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-            loadAdminRaces();
+            loadAdminRaces(raceCode);
         };
 
         window.deleteEntireRace = async function(raceCode) {
@@ -1319,8 +1378,6 @@
 
                 const currentTeamSnap = await getDoc(teamRef);
                 const tData = currentTeamSnap.data();
-
-                document.getElementById('leaderboard-code-input').value = code;
 
                 if (!tData.isApproved) {
                     document.getElementById('login-prompt-card').classList.add('hidden');
@@ -1658,7 +1715,7 @@
             alert("Race finished! Final results submitted to the leaderboard.");
             loadTeamDashboardData(raceData);
             switchTab('leaderboard');
-            document.getElementById('leaderboard-code-input').value = activeRaceCode;
+            document.getElementById('leaderboard-code-select').value = activeRaceCode;
             loadLeaderboard();
         };
 
@@ -1683,8 +1740,8 @@
         }
 
         window.loadLeaderboard = async function() {
-            const code = document.getElementById('leaderboard-code-input').value.trim().toUpperCase();
-            if (!code) return alert("Please enter a race code.");
+            const code = document.getElementById('leaderboard-code-select').value;
+            if (!code) return alert("Please select a race from the dropdown.");
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", code));
@@ -1750,7 +1807,6 @@
                     if (Object.keys(bonusPhotos).length > 0) {
                         badgeHtml += `<div class="flex gap-1 mt-1">`;
                         for (const [bId, imgUrl] of Object.entries(bonusPhotos)) {
-                            // Safe click handler using openImageModal instead of an href link navigation
                             const safeString = imgUrl.replace(/'/g, "\\'");
                             badgeHtml += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-lg object-cover border-2 border-disneyGold hover:scale-110 transition shadow"></button>`;
                         }
