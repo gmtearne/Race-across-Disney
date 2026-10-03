@@ -117,22 +117,24 @@
 
     <!-- Navbar -->
     <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('race')">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
                     <i class="fa-solid fa-compass"></i>
                 </div>
-                <div>
-                    <h1 class="font-disney font-bold text-xl tracking-wide text-white drop-shadow">The Amazing Mouse Race</h1>
-                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium">Magic Kingdom & Beyond</p>
+                <div class="min-w-0">
+                    <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
+                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span id="nav-team-badge" class="hidden sm:inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/25">
-                    <img id="nav-team-avatar" src="" class="w-5 h-5 rounded-full object-cover hidden">
-                    <span id="nav-team-name" class="text-white"></span>
-                </span>
-                <span id="nav-org-badge" class="hidden text-xs bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 px-3 py-1.5 rounded-full">Organiser</span>
+            
+            <!-- Stacked Top-Right Layout (Pic + Name on top, Organiser underneath) -->
+            <div class="flex flex-col items-end gap-1.5 shrink-0">
+                <div id="nav-team-badge" class="hidden items-center gap-2">
+                    <img id="nav-team-avatar" src="" class="w-6 h-6 rounded-full object-cover border border-white/40 shadow shrink-0 hidden">
+                    <span id="nav-team-name" class="text-white text-xs font-bold max-w-[120px] sm:max-w-[160px] truncate"></span>
+                </div>
+                <span id="nav-org-badge" class="hidden text-[10px] bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 px-2.5 py-0.5 rounded-full font-semibold">Organiser</span>
             </div>
         </div>
         
@@ -1914,6 +1916,8 @@
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
+                document.getElementById('nav-team-badge').classList.remove('flex');
+                document.getElementById('nav-team-badge').classList.add('flex');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').src = photoUrl;
                 document.getElementById('nav-team-name').innerText = teamName;
@@ -2149,7 +2153,6 @@
                 const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                 const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
-                // Dashboard card subtitle shows park name only (omits land on dashboard per requirement, but keeps it for modals)
                 const subtitleContent = difficulty === 'hard' 
                     ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
                     : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
