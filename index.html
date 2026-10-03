@@ -483,6 +483,33 @@
                         </div>
                     </div>
 
+                                        <!-- Trivia Challenge Settings -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
+                        <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                                <input type="radio" name="trivia_toggle" value="off" checked onchange="toggleTriviaSettings()" class="text-disneyGold">
+                                <span>Off</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                                <input type="radio" name="trivia_toggle" value="on" onchange="toggleTriviaSettings()" class="text-disneyGold">
+                                <span>On</span>
+                            </label>
+                        </div>
+                        <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
+                            <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
+                            <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                <option value="every">Every Check-in</option>
+                                <option value="random">Random Check-ins</option>
+                            </select>
+                            <div id="trivia-random-count-box" class="hidden pt-1">
+                                <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
+                                <input type="number" id="trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            </div>
+                        </div>
+                    </div>
+                    
+
                     <!-- Default Checkpoint Points Configuration -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                         <div class="flex justify-between items-center mb-1.5">
@@ -965,12 +992,17 @@
             signOut(window.auth);
         };
 
-        window.createNewRace = async function() {
+                window.createNewRace = async function() {
             const title = document.getElementById('new-race-title').value.trim();
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
             const defaultPoints = parseInt(document.getElementById('create-default-points').value) || (gameMode === 'scavenger' ? 10 : 0);
+            
+            // Capture Trivia options
+            const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
+            const triviaFreq = document.getElementById('trivia-frequency').value;
+            const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
 
             if (!title || !code) return alert("Please enter a race title and generate a code.");
 
@@ -989,6 +1021,11 @@
                     gameMode: gameMode,
                     difficulty: difficulty,
                     defaultPoints: defaultPoints,
+                    trivia: {
+                        enabled: triviaToggle === 'on',
+                        frequency: triviaFreq,
+                        randomCount: triviaCount
+                    },
                     organizerId: currentUser.uid,
                     checkpoints: [],
                     finalCheckpointId: null,
@@ -1002,6 +1039,7 @@
                 alert("Error creating race: " + err.message);
             }
         };
+
 
         window.onOrgRaceSelected = function() {
             const selectedCode = document.getElementById('org-race-select').value;
@@ -2079,6 +2117,16 @@
         window.filterOrgCheckpoints = function() {
             renderOrgPicker();
         };
+                window.toggleTriviaSettings = function() {
+            const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
+            document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
+        };
+
+        window.toggleTriviaFreq = function() {
+            const freq = document.getElementById('trivia-frequency').value;
+            document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
+        };
+        
     </script>
 </body>
 </html>
