@@ -351,7 +351,9 @@
                         <select id="leaderboard-code-select" onchange="loadLeaderboard()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-mono text-disneyGold w-48 focus:outline-none">
                             <option value="">-- Select Entered Race --</option>
                         </select>
-                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition">Load</button>
+                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
                     </div>
                 </div>
 
@@ -536,16 +538,14 @@
             }
         }
 
-        // Generate random unique 6-character code
         function generateRandomRaceCode() {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excludes similar looking chars like I, O, 0, 1
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
             let result = "";
             for (let i = 0; i < 6; i++) {
                 result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             document.getElementById('new-race-code').value = result;
         }
-        // Auto generate on page load
         setTimeout(generateRandomRaceCode, 300);
 
         window.openImageModal = function(base64Data) {
@@ -874,7 +874,7 @@
                 alert(`Race "${title}" created successfully with code ${code}!`);
                 document.getElementById('new-race-title').value = '';
                 generateRandomRaceCode();
-                loadAdminRaces();
+                loadAdminRaces(code);
             } catch (err) {
                 alert("Error creating race: " + err.message);
             }
@@ -919,9 +919,14 @@
             const code = document.getElementById('org-race-select').value;
             const currentUser = window.auth.currentUser;
             if (!code) return alert("Please select a race from the dropdown first.");
-            const countStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
-            if (!countStr) return;
-            const count = parseInt(countStr) || 10;
+            
+            const gpsCountStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
+            if (gpsCountStr === null) return;
+            const gpsCount = parseInt(gpsCountStr) || 10;
+
+            const bonusCountStr = prompt("How many bonus photo checkpoints to randomly include?", "5");
+            if (bonusCountStr === null) return;
+            const bonusCount = parseInt(bonusCountStr) || 5;
 
             try {
                 const raceRef = doc(window.db, "races", code);
@@ -930,11 +935,14 @@
                 if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
                 const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
-                const shuffled = [...gpsOnly].sort(() => 0.5 - Math.random());
-                const selected = shuffled.slice(0, count);
+                const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random());
+                const selectedGps = shuffledGps.slice(0, gpsCount);
 
-                const bonuses = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
-                const combined = [...selected, ...bonuses].map((p, idx) => ({
+                const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
+                const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random());
+                const selectedBonus = shuffledBonus.slice(0, bonusCount);
+
+                const combined = [...selectedGps, ...selectedBonus].map((p, idx) => ({
                     id: 'cp_rand_' + Date.now() + '_' + idx,
                     name: p.name,
                     type: p.type || "GPS",
@@ -945,7 +953,7 @@
                 }));
 
                 await updateDoc(raceRef, { checkpoints: combined });
-                alert(`Successfully generated ${selected.length} random stops and all photo bonus challenges!`);
+                alert(`Successfully generated ${selectedGps.length} mandatory GPS stops and ${selectedBonus.length} bonus challenges!`);
                 loadAdminRaces(code);
             } catch (e) {
                 alert("Error: " + e.message);
@@ -1229,6 +1237,7 @@
                 }
                 selectEl.innerHTML = html;
 
+                // Automatically load active team's race code if available
                 if (activeRaceCode) {
                     selectEl.value = activeRaceCode;
                     loadLeaderboard();
