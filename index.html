@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Race Across Disney</title>
+    <title>The Amazing Mouse Race: Magic Kingdom & Beyond</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -79,8 +79,8 @@
                     <i class="fa-solid font-disney fa-wand-magic-sparkles"></i>
                 </div>
                 <div>
-                    <h1 class="font-disney font-bold text-xl tracking-wide text-white drop-shadow">Race Across Disney</h1>
-                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium">Scavenger & GPS Challenge</p>
+                    <h1 class="font-disney font-bold text-xl tracking-wide text-white drop-shadow">The Amazing Mouse Race</h1>
+                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium">Magic Kingdom & Beyond</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -190,22 +190,22 @@
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold">Live Race Status</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold" id="dashboard-mode-label">Live Race Status</span>
                             <div class="flex items-baseline gap-3 mt-1">
                                 <span id="elapsed-time-display" class="font-mono text-3xl sm:text-4xl font-bold text-white tracking-wider">00:00:00</span>
                                 <span id="race-status-pill" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold">Not Started</span>
                             </div>
                         </div>
 
-                        <!-- Progress Ratio -->
+                        <!-- Progress Ratio / Score -->
                         <div class="flex items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
                             <div class="text-center px-2">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Stops Progress</p>
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
                                 <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
                             </div>
                             <div class="h-8 w-px bg-slate-700"></div>
                             <div class="text-center px-2">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonus Deductions</p>
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonuses / Pts</p>
                                 <p id="deduction-total" class="text-2xl font-bold text-emerald-400 font-mono">-0m</p>
                             </div>
                         </div>
@@ -227,7 +227,7 @@
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
-                            Mandatory GPS Checkpoints
+                            Checkpoints & Navigation
                         </h3>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
                             <i class="fa-solid fa-rotate"></i> Refresh Status
@@ -243,7 +243,7 @@
                             <i class="fa-solid fa-camera-retro text-disneyGold"></i>
                             Bonus Photo Challenges
                         </h3>
-                        <p class="text-xs text-slate-400">Upload photo proof to claim time deductions from your final race total!</p>
+                        <p class="text-xs text-slate-400">Upload photo proof to claim bonuses or time deductions from your final score!</p>
                     </div>
                     <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
@@ -268,7 +268,7 @@
                             <i class="fa-solid fa-stopwatch"></i> Objective
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            The primary goal is to complete all assigned mandatory checkpoints as quickly as possible. Your final adjusted time determines your ranking.
+                            Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
                         </p>
                     </div>
 
@@ -298,7 +298,7 @@
                             <i class="fa-solid fa-triangle-exclamation"></i> Penalties
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            All <strong>missed checkpoints</strong> will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
+                            All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
                         </p>
                     </div>
 
@@ -308,7 +308,7 @@
                             <i class="fa-solid fa-star"></i> Bonus Challenges
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            Bonus checkpoints are entirely optional and will improve your overall time via deductions. There are <strong>no penalties</strong> for missing bonus checkpoints.
+                            Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
                         </p>
                     </div>
 
@@ -330,8 +330,6 @@
                     </div>
                     <p class="text-slate-300 leading-relaxed">
                         When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for organizer review. 
-                        <br><br>
-                        <em>Tip: Always take a photo on your phone's camera roll for your own reference if you believe you are physically standing in the correct location but GPS signal is weak.</em>
                     </p>
                 </div>
             </div>
@@ -361,9 +359,9 @@
                             <tr>
                                 <th class="p-3">Rank</th>
                                 <th class="p-3">Team</th>
-                                <th class="p-3 text-center">Progress</th>
+                                <th class="p-3 text-center" id="lb-col-metric">Progress</th>
                                 <th class="p-3 text-center">Bonuses & Proofs</th>
-                                <th class="p-3 text-right">Time</th>
+                                <th class="p-3 text-right" id="lb-col-score">Time / Points</th>
                                 <th class="p-3 text-center">Status</th>
                             </tr>
                         </thead>
@@ -414,8 +412,9 @@
                 </div>
 
                 <!-- 1. Create New Race -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race</h4>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race Settings</h4>
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                         <div class="flex gap-1.5">
@@ -425,6 +424,71 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Game Mode Toggle Section with Tooltips -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                        <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="relative flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                    <span class="font-bold text-xs text-white">Speed Race</span>
+                                </div>
+                                <div class="group relative cursor-help">
+                                    <span class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600">?</span>
+                                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-[11px] text-slate-200 rounded-lg shadow-xl border border-slate-700 z-20">
+                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time.
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="relative flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                    <span class="font-bold text-xs text-white">Scavenger Hunt</span>
+                                </div>
+                                <div class="group relative cursor-help">
+                                    <span class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600">?</span>
+                                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-[11px] text-slate-200 rounded-lg shadow-xl border border-slate-700 z-20">
+                                        Teams collect points for checkpoints visited within a time limit. Higher score wins!
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Navigation & Hint Difficulty -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                        <label class="block text-xs font-bold text-slate-300 mb-2">Navigation & Hint Difficulty</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
+                                <span class="font-bold text-xs text-white">Easy</span>
+                                <span class="text-[9px] text-slate-400">Pins + Transit Hints</span>
+                            </label>
+                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
+                                <span class="font-bold text-xs text-white">Medium</span>
+                                <span class="text-[9px] text-slate-400">No Pins, Route List</span>
+                            </label>
+                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
+                                <span class="font-bold text-xs text-white">Hard</span>
+                                <span class="text-[9px] text-slate-400">Blind Navigation</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Default Checkpoint Points Configuration -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-xs font-bold text-slate-300">Default Checkpoint Points</label>
+                            <span id="create-mode-indicator" class="text-[10px] text-disneyGold font-medium">Speed Race Mode (0 pts default)</span>
+                        </div>
+                        <input type="number" id="create-default-points" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-disneyGold">
+                        <p class="text-[10px] text-slate-400 mt-1">Points can be overridden per individual checkpoint below.</p>
+                    </div>
+
                     <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
                         + Create Race Event
                     </button>
@@ -435,7 +499,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
                             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints, Custom Stops & Ending Location</h4>
-                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, or edit bonus values below.</p>
+                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, or edit points/bonus values below.</p>
                         </div>
                         <select id="org-race-select" onchange="onOrgRaceSelected()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-52 focus:outline-none">
                             <option value="">-- Select Your Race --</option>
@@ -451,7 +515,7 @@
                             <input type="text" id="custom-cp-name" placeholder="Location Name (e.g. Hurley Burley)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                             <select id="custom-cp-type" onchange="toggleCustomFields()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                 <option value="GPS">Mandatory (Requires GPS)</option>
-                                <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time)</option>
+                                <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time/Pts)</option>
                             </select>
                         </div>
                         <div id="custom-gps-fields" class="space-y-2">
@@ -467,7 +531,7 @@
                             </div>
                         </div>
                         <div id="custom-bonus-fields" class="hidden">
-                            <label class="block text-[10px] text-slate-400 mb-1">Time Bonus Deduction (Minutes)</label>
+                            <label class="block text-[10px] text-slate-400 mb-1">Time Deduction / Bonus Points</label>
                             <input type="number" id="custom-cp-bonus" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                         </div>
                         <button onclick="addCustomCheckpointToRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
@@ -545,6 +609,29 @@
             document.getElementById('new-race-code').value = result;
         }
         setTimeout(generateRandomRaceCode, 300);
+
+        // Dynamic points handling in creation form
+        document.addEventListener('DOMContentLoaded', () => {
+            const radioRace = document.getElementById('create-mode-race');
+            const radioScavenger = document.getElementById('create-mode-scavenger');
+            const pointsInput = document.getElementById('create-default-points');
+            const modeIndicator = document.getElementById('create-mode-indicator');
+
+            function updateCreateModeDefaults() {
+                if (radioScavenger.checked) {
+                    pointsInput.value = 10;
+                    modeIndicator.textContent = "Scavenger Hunt Mode (10 pts default - fully editable)";
+                } else {
+                    pointsInput.value = 0;
+                    modeIndicator.textContent = "Speed Race Mode (0 pts default)";
+                }
+            }
+
+            if (radioRace && radioScavenger) {
+                radioRace.addEventListener('change', updateCreateModeDefaults);
+                radioScavenger.addEventListener('change', updateCreateModeDefaults);
+            }
+        });
 
         window.openImageModal = function(base64Data) {
             document.getElementById('modal-image-element').src = base64Data;
@@ -717,14 +804,13 @@
         }
         setTimeout(renderOrgPicker, 500);
 
-        // Share Race Functionality
         window.shareRaceCode = function(code, title) {
-            const shareText = `Join my race "${title}" on Race Across Disney! Use Race Code: ${code}`;
+            const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
             const shareUrl = window.location.href.split('#')[0];
 
             if (navigator.share) {
                 navigator.share({
-                    title: `Race Across Disney - ${title}`,
+                    title: `The Amazing Mouse Race - ${title}`,
                     text: shareText,
                     url: shareUrl,
                 }).catch((err) => console.log('Share canceled or failed:', err));
@@ -870,6 +956,10 @@
         window.createNewRace = async function() {
             const title = document.getElementById('new-race-title').value.trim();
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
+            const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
+            const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
+            const defaultPoints = parseInt(document.getElementById('create-default-points').value) || (gameMode === 'scavenger' ? 10 : 0);
+
             if (!title || !code) return alert("Please enter a race title and generate a code.");
 
             const currentUser = window.auth.currentUser;
@@ -884,6 +974,9 @@
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
+                    gameMode: gameMode,
+                    difficulty: difficulty,
+                    defaultPoints: defaultPoints,
                     organizerId: currentUser.uid,
                     checkpoints: [],
                     finalCheckpointId: null,
@@ -914,13 +1007,17 @@
                 if (!raceSnap.exists()) return alert("Race not found.");
                 if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
-                const existing = raceSnap.data().checkpoints || [];
+                const raceData = raceSnap.data();
+                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
+                const existing = raceData.checkpoints || [];
+
                 const newCps = DISNEY_PRESETS.map((p, idx) => ({
                     id: 'cp_' + Date.now() + '_' + idx,
                     name: p.name,
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 }));
@@ -952,6 +1049,9 @@
                 if (!raceSnap.exists()) return alert("Race not found.");
                 if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
+                const raceData = raceSnap.data();
+                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
+
                 const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
                 const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random());
                 const selectedGps = shuffledGps.slice(0, gpsCount);
@@ -966,6 +1066,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 }));
@@ -989,6 +1090,9 @@
                 if (!raceSnap.exists()) return alert("Race not found.");
                 if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
 
+                const raceData = raceSnap.data();
+                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
+
                 const p = DISNEY_PRESETS[idx];
                 const newCp = {
                     id: 'cp_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -996,6 +1100,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 };
@@ -1017,25 +1122,28 @@
             if (!code) return alert("Please select a race from the dropdown first.");
             if (!name) return alert("Please enter a checkpoint name.");
 
-            let lat = 28.4177;
-            let lng = -81.5812;
-            let bonusMinDeduction = 10;
-
-            if (type === 'GPS') {
-                const latInput = parseFloat(document.getElementById('custom-cp-lat').value);
-                const lngInput = parseFloat(document.getElementById('custom-cp-lng').value);
-                if (!isNaN(latInput)) lat = latInput;
-                if (!isNaN(lngInput)) lng = lngInput;
-            } else {
-                const bonusInput = parseInt(document.getElementById('custom-cp-bonus').value);
-                if (!isNaN(bonusInput)) bonusMinDeduction = bonusInput;
-            }
-
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists()) return alert("Race not found.");
                 if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
+
+                const raceData = raceSnap.data();
+                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
+
+                let lat = 28.4177;
+                let lng = -81.5812;
+                let bonusMinDeduction = 10;
+
+                if (type === 'GPS') {
+                    const latInput = parseFloat(document.getElementById('custom-cp-lat').value);
+                    const lngInput = parseFloat(document.getElementById('custom-cp-lng').value);
+                    if (!isNaN(latInput)) lat = latInput;
+                    if (!isNaN(lngInput)) lng = lngInput;
+                } else {
+                    const bonusInput = parseInt(document.getElementById('custom-cp-bonus').value);
+                    if (!isNaN(bonusInput)) bonusMinDeduction = bonusInput;
+                }
 
                 const newCp = {
                     id: 'cp_custom_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -1043,6 +1151,7 @@
                     type: type,
                     lat: lat,
                     lng: lng,
+                    points: type === 'BONUS_PHOTO' ? bonusMinDeduction : defaultPts,
                     bonusMinDeduction: bonusMinDeduction,
                     park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Stop"
                 };
@@ -1060,6 +1169,30 @@
             }
         };
 
+        window.updateCheckpointPoints = async function(raceCode, cpId, newPointsStr) {
+            const val = parseInt(newPointsStr);
+            const currentUser = window.auth.currentUser;
+            if (isNaN(val)) return;
+
+            try {
+                const raceRef = doc(window.db, "races", raceCode);
+                const raceSnap = await getDoc(raceRef);
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
+                const cps = raceSnap.data().checkpoints || [];
+                const updatedCps = cps.map(cp => {
+                    if (cp.id === cpId) {
+                        return { ...cp, points: val };
+                    }
+                    return cp;
+                });
+
+                await updateDoc(raceRef, { checkpoints: updatedCps });
+            } catch (e) {
+                console.error("Error updating checkpoint points:", e);
+            }
+        };
+
         window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
             const val = parseInt(newValueStr);
             const currentUser = window.auth.currentUser;
@@ -1068,13 +1201,12 @@
             try {
                 const raceRef = doc(window.db, "races", raceCode);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return;
-                if (raceSnap.data().organizerId !== currentUser.uid) return;
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
                 const cps = raceSnap.data().checkpoints || [];
                 const updatedCps = cps.map(cp => {
                     if (cp.id === cpId) {
-                        return { ...cp, bonusMinDeduction: val };
+                        return { ...cp, bonusMinDeduction: val, points: val };
                     }
                     return cp;
                 });
@@ -1141,13 +1273,15 @@
                     }
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
+                    const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
+                    const diffLabel = race.difficulty ? race.difficulty.toUpperCase() : 'EASY';
 
                     html += `
                         <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="font-bold text-white text-xs">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-[10px] ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code}</p>
+                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel}</p>
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
@@ -1165,9 +1299,12 @@
                                     <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
+                                            <span class="flex items-center gap-1 text-[10px] text-disneyGold">
+                                                Pts: <input type="number" value="${cp.points !== undefined ? cp.points : (race.gameMode === 'scavenger' ? 10 : 0)}" onchange="updateCheckpointPoints('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
+                                            </span>
                                             ${cp.type === 'BONUS_PHOTO' ? `
                                                 <span class="flex items-center gap-1 text-[10px] text-amber-400">
-                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono"> m
+                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
                                                 </span>
                                             ` : ''}
                                         </div>
@@ -1244,6 +1381,8 @@
             const badgeEl = document.getElementById('active-leaderboard-code-badge');
             const subtitleEl = document.getElementById('leaderboard-subtitle');
             const tbody = document.getElementById('leaderboard-rows');
+            const colMetric = document.getElementById('lb-col-metric');
+            const colScore = document.getElementById('lb-col-score');
 
             const targetCode = window.activeRaceCode;
             if (!targetCode) {
@@ -1254,7 +1393,6 @@
             }
 
             badgeEl.innerText = targetCode;
-            subtitleEl.innerText = `Displaying live standings for race code: ${targetCode}`;
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
@@ -1264,6 +1402,17 @@
                 }
 
                 const raceData = raceSnap.data();
+                const isScavenger = raceData.gameMode === 'scavenger';
+                subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
+
+                if (isScavenger) {
+                    colMetric.innerText = "Stops";
+                    colScore.innerText = "Total Score";
+                } else {
+                    colMetric.innerText = "Progress";
+                    colScore.innerText = "Time";
+                }
+
                 const mandatory = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (raceData.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
 
@@ -1281,11 +1430,27 @@
 
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
+                    const claimed = t.claimedBonus || [];
+                    
+                    let totalPoints = 0;
+                    completed.forEach(cpId => {
+                        const match = mandatory.find(m => m.id === cpId);
+                        if (match) {
+                            totalPoints += (match.points !== undefined ? match.points : 0);
+                        }
+                    });
+                    claimed.forEach(bId => {
+                        const match = bonuses.find(b => b.id === bId);
+                        if (match) {
+                            totalPoints += (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10));
+                        }
+                    });
+
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = missedCount * 60;
 
                     let bonusMinDeduction = 0;
-                    (t.claimedBonus || []).forEach(bId => {
+                    claimed.forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
                     });
@@ -1297,26 +1462,39 @@
                         rawElapsedMin = (end - start) / 60000;
                     }
 
+                    t.totalPoints = totalPoints;
                     t.rawMin = rawElapsedMin;
                     t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
                     t.progressCount = completed.length;
-                    t.bonusCount = (t.claimedBonus || []).length;
+                    t.bonusCount = claimed.length;
                 });
 
-                teamList.sort((a, b) => {
-                    if (a.endTime && !b.endTime) return -1;
-                    if (!a.endTime && b.endTime) return 1;
-                    if (a.endTime && b.endTime) return a.adjustedMin - b.adjustedMin;
-                    if (b.progressCount !== a.progressCount) return b.progressCount - a.progressCount;
-                    return a.rawMin - b.rawMin;
-                });
+                if (isScavenger) {
+                    teamList.sort((a, b) => {
+                        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                        return a.rawMin - b.rawMin;
+                    });
+                } else {
+                    teamList.sort((a, b) => {
+                        if (a.endTime && !b.endTime) return -1;
+                        if (!a.endTime && b.endTime) return 1;
+                        if (a.endTime && b.endTime) return a.adjustedMin - b.adjustedMin;
+                        if (b.progressCount !== a.progressCount) return b.progressCount - a.progressCount;
+                        return a.rawMin - b.rawMin;
+                    });
+                }
 
                 let html = '';
                 teamList.forEach((t, index) => {
-                    const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
-                    const hrs = Math.floor(displayMin / 60);
-                    const mins = Math.floor(displayMin % 60);
-                    const timeStr = `${hrs}h ${mins}m`;
+                    let scoreDisplay = "";
+                    if (isScavenger) {
+                        scoreDisplay = `<span class="font-mono font-bold text-disneyGold text-base">${t.totalPoints} pts</span>`;
+                    } else {
+                        const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
+                        const hrs = Math.floor(displayMin / 60);
+                        const mins = Math.floor(displayMin % 60);
+                        scoreDisplay = `<span class="font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${hrs}h ${mins}m</span>`;
+                    }
 
                     const bonusPhotos = t.bonusPhotos || {};
                     let badgeHtml = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
@@ -1339,7 +1517,7 @@
                             </td>
                             <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
                             <td class="p-3 text-center text-amber-400 font-semibold">${badgeHtml}</td>
-                            <td class="p-3 text-right font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${timeStr}</td>
+                            <td class="p-3 text-right">${scoreDisplay}</td>
                             <td class="p-3 text-center">
                                 <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
                                     ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
@@ -1550,6 +1728,11 @@
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.remove('hidden');
 
+            const isScavenger = raceData.gameMode === 'scavenger';
+            const difficulty = (raceData.difficulty || 'easy').toUpperCase();
+
+            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty} Tier)` : `Speed Race (${difficulty} Tier)`;
+
             const checkpoints = raceData.checkpoints || [];
             const finalCheckpointId = raceData.finalCheckpointId;
 
@@ -1558,13 +1741,30 @@
             const completedIds = tData.completedCheckpoints || [];
             const claimedBonus = tData.claimedBonus || [];
 
-            document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
-            
-            let totalDeductionMin = 0;
-            bonus.forEach(b => {
-                if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
-            });
-            document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
+            if (isScavenger) {
+                document.getElementById('score-progress-label').innerText = "Stops Completed";
+                document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
+                
+                let currentPoints = 0;
+                completedIds.forEach(cpId => {
+                    const match = mandatory.find(m => m.id === cpId);
+                    if (match) currentPoints += (match.points !== undefined ? match.points : 0);
+                });
+                claimedBonus.forEach(bId => {
+                    const match = bonus.find(b => b.id === bId);
+                    if (match) currentPoints += (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10));
+                });
+                document.getElementById('deduction-total').innerText = `${currentPoints} pts`;
+            } else {
+                document.getElementById('score-progress-label').innerText = "Stops Progress";
+                document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
+                
+                let totalDeductionMin = 0;
+                bonus.forEach(b => {
+                    if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
+                });
+                document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
+            }
 
             const pill = document.getElementById('race-status-pill');
             const startBtn = document.getElementById('btn-start-race');
@@ -1604,13 +1804,24 @@
             document.getElementById('team-checkpoints-list').innerHTML = mandatory.map(cp => {
                 const isDone = completedIds.includes(cp.id);
                 const isFinal = finalCheckpointId === cp.id;
+                const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
+                
+                let hintText = "";
+                if (difficulty === 'EASY') {
+                    hintText = `Map pin enabled + Transit hint available`;
+                } else if (difficulty === 'MEDIUM') {
+                    hintText = `Route list view (No direct pin)`;
+                } else {
+                    hintText = `Blind navigation (Clue only)`;
+                }
+
                 return `
                     <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-700/80'} flex justify-between items-center">
                         <div>
                             <p class="font-bold text-xs ${isDone ? 'text-emerald-300' : 'text-white'}">
                                 📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
                             </p>
-                            <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Checked In' : 'Mandatory GPS Stop'}</p>
+                            <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span></p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
                             <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
@@ -1628,7 +1839,7 @@
                     <div class="p-3 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center">
                         <div>
                             <p class="font-bold text-xs text-amber-300">⭐ ${cp.name}</p>
-                            <p class="text-[10px] text-amber-400/80">Time Deduction: -${deductionVal}m</p>
+                            <p class="text-[10px] text-amber-400/80">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
                         </div>
                         ${isClaimed ? '<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>' : `
                             <label class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg text-xs border border-amber-500/40 cursor-pointer transition">
@@ -1801,7 +2012,7 @@
 
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
-            alert("Photo proof uploaded successfully! Time deduction claimed.");
+            alert("Photo proof uploaded successfully! Bonus/deduction claimed.");
         };
 
         window.startTeamRace = async function() {
