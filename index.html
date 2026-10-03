@@ -262,10 +262,10 @@
                     <!-- Rule Card 3 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                            <i class="fa-solid fa-route"></i> Checkpoint Order
+                            <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose. Plan your route strategically to optimize transit connections between parks and resorts.
+                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your organiser has designated a specific ending location. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
                         </p>
                     </div>
 
@@ -400,14 +400,30 @@
                     </button>
                 </div>
 
-                <!-- 2. Add Checkpoints -->
+                <!-- 2. Add Checkpoints & Ending Location -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints (50 Pre-populated Disney Locations)</h4>
-                            <p class="text-[11px] text-slate-400">Select active stops or generate random routes.</p>
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints & Set Ending Location</h4>
+                            <p class="text-[11px] text-slate-400">Select active stops, choose an optional final destination, or generate random routes.</p>
                         </div>
                         <input type="text" id="cp-race-code" placeholder="RACE CODE" maxlength="6" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-28 text-center focus:outline-none">
+                    </div>
+
+                    <!-- Designated Final Location Selector -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
+                            <i class="fa-solid flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
+                        </label>
+                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
+                        <div class="flex gap-2">
+                            <select id="org-final-cp-select" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                            </select>
+                            <button onclick="saveFinalLocation()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition">
+                                Set Final Stop
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -633,7 +649,7 @@
 
                 document.getElementById('leaderboard-code-input').value = code;
 
-                loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
             } catch (e) {
                 console.error("Failed to restore session:", e);
@@ -689,6 +705,7 @@
                     title: title,
                     code: code,
                     checkpoints: [],
+                    finalCheckpointId: null,
                     createdAt: new Date().toISOString()
                 });
                 alert(`Race "${title}" created successfully with code ${code}!`);
@@ -790,14 +807,35 @@
             }
         };
 
+        window.saveFinalLocation = async function() {
+            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const finalCpId = document.getElementById('org-final-cp-select').value;
+            if (!code) return alert("Please enter the race code.");
+
+            try {
+                const raceRef = doc(window.db, "races", code);
+                await updateDoc(raceRef, { finalCheckpointId: finalCpId || null });
+                alert("Designated final ending location updated successfully!");
+                loadAdminRaces();
+            } catch (e) {
+                alert("Error updating final location: " + e.message);
+            }
+        };
+
         async function loadAdminRaces() {
             try {
                 const querySnapshot = await getDocs(collection(window.db, "races"));
                 const listEl = document.getElementById('admin-race-list');
+                const finalSelectEl = document.getElementById('org-final-cp-select');
+                
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "No active races found in database.";
                     return;
                 }
+
+                // Update final location dropdown based on cp-race-code input
+                const currentCodeInput = document.getElementById('cp-race-code').value.trim().toUpperCase();
+                let activeRaceDataForSelect = null;
 
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
@@ -805,11 +843,17 @@
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
 
+                    if (race.code === currentCodeInput) {
+                        activeRaceDataForSelect = race;
+                    }
+
+                    const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
+
                     html += `
                         <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <p class="font-bold text-white text-xs">${race.title}</p>
+                                    <p class="font-bold text-white text-xs">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-[10px] ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
                                     <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code}</p>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -823,7 +867,7 @@
                             <div class="space-y-1 pl-2 border-l border-slate-700 max-h-32 overflow-y-auto">
                                 ${cps.map(cp => `
                                     <div class="flex justify-between items-center text-[10px] text-slate-400">
-                                        <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name}</span>
+                                        <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name} ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
                                         <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300">Remove</button>
                                     </div>
                                 `).join('')}
@@ -875,10 +919,25 @@
                     `;
                 }
                 listEl.innerHTML = html;
+
+                // Populate final location dropdown
+                if (activeRaceDataForSelect) {
+                    let selectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
+                    (activeRaceDataForSelect.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').forEach(cp => {
+                        const isSelected = activeRaceDataForSelect.finalCheckpointId === cp.id ? 'selected' : '';
+                        selectHtml += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park})</option>`;
+                    });
+                    finalSelectEl.innerHTML = selectHtml;
+                } else {
+                    finalSelectEl.innerHTML = '<option value="">-- Enter valid Race Code above first --</option>';
+                }
             } catch (e) {
                 console.error(e);
             }
         }
+
+        // Listen to changes on cp-race-code to update dropdown options instantly
+        document.getElementById('cp-race-code')?.addEventListener('input', loadAdminRaces);
 
         window.approveTeam = async function(raceCode, teamId) {
             try {
@@ -894,8 +953,15 @@
             const raceRef = doc(window.db, "races", raceCode);
             const raceSnap = await getDoc(raceRef);
             if (!raceSnap.exists()) return;
-            const updated = (raceSnap.data().checkpoints || []).filter(c => c.id !== cpId);
-            await updateDoc(raceRef, { checkpoints: updated });
+            const data = raceSnap.data();
+            const updated = (data.checkpoints || []).filter(c => c.id !== cpId);
+            
+            let updates = { checkpoints: updated };
+            if (data.finalCheckpointId === cpId) {
+                updates.finalCheckpointId = null; // Clear final if deleted
+            }
+
+            await updateDoc(raceRef, updates);
             loadAdminRaces();
         };
 
@@ -968,11 +1034,11 @@
                         teamName: teamName,
                         pin: pin,
                         photoUrl: photoUrl,
-                        isApproved: false, // Requires organiser approval by default
+                        isApproved: false,
                         completedCheckpoints: [],
                         checkinDetails: {},
                         claimedBonus: [],
-                        bonusPhotos: {}, // Stores bonus challenge photo proofs
+                        bonusPhotos: {},
                         startTime: null,
                         endTime: null
                     });
@@ -981,7 +1047,6 @@
                 activeRaceCode = code;
                 activeTeamId = teamId;
 
-                // Save to localStorage so refresh doesn't log out
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
 
@@ -998,7 +1063,6 @@
                     return;
                 }
 
-                // Update UI state
                 document.getElementById('active-team-name').innerText = teamName;
                 document.getElementById('active-team-racecode').innerText = code;
                 document.getElementById('active-team-avatar').src = photoUrl;
@@ -1012,7 +1076,7 @@
                 document.getElementById('nav-team-avatar').src = photoUrl;
                 document.getElementById('nav-team-name').innerText = teamName;
 
-                loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
             } catch (e) {
                 alert("Error joining race: " + e.message);
@@ -1032,7 +1096,7 @@
             document.getElementById('nav-team-badge').classList.add('hidden');
         };
 
-        async function loadTeamDashboardData(checkpoints) {
+        async function loadTeamDashboardData(raceData) {
             const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId));
             if (!teamSnap.exists()) return;
             const tData = teamSnap.data();
@@ -1045,6 +1109,9 @@
 
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.remove('hidden');
+
+            const checkpoints = raceData.checkpoints || [];
+            const finalCheckpointId = raceData.finalCheckpointId;
 
             const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
             const bonus = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
@@ -1094,12 +1161,20 @@
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
+            // Check if final checkpoint rule is violated on finishing
+            if (finalCheckpointId && !completedIds.includes(finalCheckpointId) && completedIds.length > 0) {
+                // Warning note if user has completed other stops but not the final one
+            }
+
             document.getElementById('team-checkpoints-list').innerHTML = mandatory.map(cp => {
                 const isDone = completedIds.includes(cp.id);
+                const isFinal = finalCheckpointId === cp.id;
                 return `
                     <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-700/80'} flex justify-between items-center">
                         <div>
-                            <p class="font-bold text-xs ${isDone ? 'text-emerald-300' : 'text-white'}">📍 ${cp.name}</p>
+                            <p class="font-bold text-xs ${isDone ? 'text-emerald-300' : 'text-white'}">
+                                📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
+                            </p>
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isDone ? 'Checked In' : 'Mandatory GPS Stop'}</p>
                         </div>
                         ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
@@ -1133,7 +1208,7 @@
         window.refreshTeamDashboard = async function() {
             if (!activeRaceCode) return;
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+            loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
         };
 
@@ -1180,9 +1255,21 @@
 
                     const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
                     if (!raceSnap.exists()) return alert("Race not found.");
-                    const checkpoints = raceSnap.data().checkpoints || [];
+                    const raceData = raceSnap.data();
+                    const checkpoints = raceData.checkpoints || [];
                     const targetCp = checkpoints.find(c => c.id === cpId);
                     if (!targetCp) return alert("Checkpoint not found.");
+
+                    // Validate if organizer set a final checkpoint and if rule is being broken
+                    if (raceData.finalCheckpointId && cpId !== raceData.finalCheckpointId) {
+                        const completed = (await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId))).data().completedCheckpoints || [];
+                        const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
+                        // If all mandatory stops EXCEPT the final one are done, ensure final is done last
+                        const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
+                        if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
+                            alert("Organiser Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
+                        }
+                    }
 
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
@@ -1256,7 +1343,7 @@
             });
 
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+            loadTeamDashboardData(raceSnap.data());
         }
 
         window.uploadBonusPhoto = async function(cpId) {
@@ -1282,7 +1369,7 @@
                 });
 
                 const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-                loadTeamDashboardData(raceSnap.data().checkpoints || []);
+                loadTeamDashboardData(raceSnap.data());
                 alert("Photo proof uploaded successfully! Time deduction claimed.");
             };
             reader.readAsDataURL(file);
@@ -1293,15 +1380,28 @@
             await updateDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId), { startTime: now });
             alert("Race started! Your timer is now locked and running.");
             const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+            loadTeamDashboardData(raceSnap.data());
         };
 
         window.finishTeamRace = async function() {
+            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
+            const raceData = raceSnap.data();
+            const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId));
+            const tData = teamSnap.data();
+
+            // Validate final location rule if set by organiser
+            if (raceData.finalCheckpointId) {
+                const completed = tData.completedCheckpoints || [];
+                if (!completed.includes(raceData.finalCheckpointId)) {
+                    alert("Organiser Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
+                    return;
+                }
+            }
+
             const now = new Date().toISOString();
             await updateDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId), { endTime: now });
             alert("Race finished! Final results submitted to the leaderboard.");
-            const raceSnap = await getDoc(doc(window.db, "races", activeRaceCode));
-            loadTeamDashboardData(raceSnap.data().checkpoints || []);
+            loadTeamDashboardData(raceData);
             switchTab('leaderboard');
             document.getElementById('leaderboard-code-input').value = activeRaceCode;
             loadLeaderboard();
@@ -1390,7 +1490,6 @@
                     const mins = Math.floor(displayMin % 60);
                     const timeStr = `${hrs}h ${mins}m`;
 
-                    // Generate bonus proof badges with images
                     const bonusPhotos = t.bonusPhotos || {};
                     let badgeHtml = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
                     if (Object.keys(bonusPhotos).length > 0) {
