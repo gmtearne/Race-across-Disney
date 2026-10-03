@@ -1732,25 +1732,6 @@
                         await updateDoc(teamRef, { photoUrl: photoUrl });
                     }
                 } else {
-                    const raceData = raceSnap.data();
-                    let assignedTriviaCpIds = [];
-
-                    if (raceData.trivia && raceData.trivia.enabled) {
-                        const mandatoryCps = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
-                        const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
-
-                        // Only pick checkpoints that actually exist in your trivia-data.js database!
-                        const validTriviaCps = mandatoryCps.filter(c => triviaDb[c.name]);
-                        const count = Math.min(raceData.trivia.randomCount || 3, validTriviaCps.length);
-
-                        if (raceData.trivia.frequency === 'every') {
-                            assignedTriviaCpIds = validTriviaCps.map(c => c.id);
-                        } else if (raceData.trivia.frequency === 'random') {
-                            const shuffled = [...validTriviaCps].sort(() => 0.5 - Math.random());
-                            assignedTriviaCpIds = shuffled.slice(0, count).map(c => c.id);
-                        }
-                    }
-
                     await setDoc(teamRef, {
                         teamName: teamName,
                         pin: pin,
@@ -1761,7 +1742,6 @@
                         claimedBonus: [],
                         bonusPhotos: {},
                         triviaBonus: 0,
-                        assignedTrivia: assignedTriviaCpIds,
                         startTime: null,
                         endTime: null
                     });
@@ -1984,7 +1964,7 @@
                 alert("Geolocation is not supported by your browser.");
                 const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
                 if (forceManual) {
-                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported", btnElement);
+                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
                 return;
             }
@@ -2044,8 +2024,6 @@
         };
 
         async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            const tData = teamSnap.data();
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
             const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
@@ -2054,15 +2032,12 @@
             const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
             const locTrivia = cp ? triviaDb[cp.name] : null;
 
-            const assignedTrivia = tData.assignedTrivia || [];
-            let triggerTrivia = false;
-
             if (triviaSettings && triviaSettings.enabled && locTrivia) {
+                let triggerTrivia = false;
                 if (triviaSettings.frequency === 'every') {
                     triggerTrivia = true;
                 } else if (triviaSettings.frequency === 'random') {
-                    // Check if this specific checkpoint was randomly pre-assigned to this team
-                    triggerTrivia = assignedTrivia.includes(cpId);
+                    triggerTrivia = Math.random() < 0.5;
                 }
 
                 if (triggerTrivia) {
