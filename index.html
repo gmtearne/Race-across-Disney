@@ -277,7 +277,7 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for enhanced hints/maps (Easy/Medium).</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -585,7 +585,7 @@
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
                                 <span class="font-bold text-xs text-white">Easy</span>
-                                <span class="text-[9px] text-slate-400">Pins + Detailed Transit</span>
+                                <span class="text-[9px] text-slate-400">Pins + Transit</span>
                             </label>
                             <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                 <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
@@ -989,7 +989,7 @@
                                 <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
                                 <div>
                                     <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
+                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land || 'General'}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
                                 </div>
                             </div>
                             <button onclick="addSinglePresetToRace(${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
@@ -1236,7 +1236,7 @@
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney",
-                    land: p.land || "General Area"
+                    land: p.land || "Attraction Area"
                 }));
 
                 await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
@@ -1286,7 +1286,7 @@
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney",
-                    land: p.land || "General Area"
+                    land: p.land || "Attraction Area"
                 }));
 
                 await updateDoc(raceRef, { checkpoints: combined });
@@ -1321,7 +1321,7 @@
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney",
-                    land: p.land || "General Area"
+                    land: p.land || "Attraction Area"
                 };
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
@@ -1372,8 +1372,8 @@
                     lng: lng,
                     points: type === 'BONUS_PHOTO' ? bonusMinDeduction : defaultPts,
                     bonusMinDeduction: bonusMinDeduction,
-                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Stop",
-                    land: "Custom Area"
+                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Location",
+                    land: "Attraction Area"
                 };
 
                 await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
@@ -1969,13 +1969,13 @@
 
             if (difficulty === 'medium') {
                 titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
-                descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'General Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
+                descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'Park Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
             } else {
                 // Easy mode
                 titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
-                descEl.innerHTML = `Park: <strong>${cpPark}</strong> (${cpLand || 'General Area'}). Use the embedded map pin below and review the transit advice before moving.`;
+                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
                 
                 transitText.innerText = getDetailedTransitAdvice(cpPark);
                 transitBox.classList.remove('hidden');
@@ -2146,9 +2146,10 @@
                     `;
                 }
 
-                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'General Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
+                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                 const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
+                // Dashboard card only shows park name (or hidden entirely on hard)
                 const subtitleContent = difficulty === 'hard' 
                     ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
                     : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
@@ -2483,7 +2484,7 @@
             }
 
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
+            await updateDoc(doc(window.db, "r_aces", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now }); // note: updated path fix
             alert("Race finished! Final results submitted to the leaderboard.");
             loadTeamDashboardData(raceData);
             switchTab('leaderboard');
