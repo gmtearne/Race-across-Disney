@@ -400,30 +400,55 @@
                     </button>
                 </div>
 
-                <!-- 2. Add Checkpoints & Ending Location -->
+                <!-- 2. Add Checkpoints, Custom Stops & Ending Location -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints & Set Ending Location</h4>
-                            <p class="text-[11px] text-slate-400">Select active stops, choose an optional final destination, or generate random routes.</p>
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints, Custom Stops & Ending Location</h4>
+                            <p class="text-[11px] text-slate-400">Select pre-sets, add custom stops, edit bonus values, or choose final destination.</p>
                         </div>
                         <input type="text" id="cp-race-code" placeholder="RACE CODE" maxlength="6" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-28 text-center focus:outline-none">
                     </div>
 
-                    <!-- Designated Final Location Selector -->
+                    <!-- Designated Final Location Selector (Stacked vertically) -->
                     <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2">
                         <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
-                            <i class="fa-solid flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
+                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
                         </label>
                         <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
-                        <div class="flex gap-2">
-                            <select id="org-final-cp-select" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <div class="space-y-2">
+                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                 <option value="">-- No Mandatory Final Location (Any Order) --</option>
                             </select>
-                            <button onclick="saveFinalLocation()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition">
+                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
                                 Set Final Stop
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Add Custom Checkpoint Section -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3">
+                        <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                            <i class="fa-solid fa-plus-circle mr-1"></i> Add Custom Checkpoint or Bonus
+                        </h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="text" id="custom-cp-name" placeholder="Location Name (e.g. Resort Lobby)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            <select id="custom-cp-type" onchange="toggleCustomFields()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="GPS">Mandatory (Requires GPS)</option>
+                                <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time)</option>
+                            </select>
+                        </div>
+                        <div id="custom-gps-fields" class="grid grid-cols-2 gap-2">
+                            <input type="number" step="any" id="custom-cp-lat" placeholder="Latitude (e.g. 28.4194)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            <input type="number" step="any" id="custom-cp-lng" placeholder="Longitude (e.g. -81.5812)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        </div>
+                        <div id="custom-bonus-fields" class="hidden">
+                            <label class="block text-[10px] text-slate-400 mb-1">Time Bonus Deduction (Minutes)</label>
+                            <input type="number" id="custom-cp-bonus" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        </div>
+                        <button onclick="addCustomCheckpointToRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+                            + Add Custom Checkpoint to Race
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -474,6 +499,12 @@
             document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
             document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
             document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
+        }
+
+        function toggleCustomFields() {
+            const type = document.getElementById('custom-cp-type').value;
+            document.getElementById('custom-gps-fields').classList.toggle('hidden', type === 'BONUS_PHOTO');
+            document.getElementById('custom-bonus-fields').classList.toggle('hidden', type === 'GPS');
         }
 
         const DISNEY_PRESETS = [
@@ -605,7 +636,6 @@
                 }
             });
 
-            // Check for persisted local storage session on page load
             const savedRaceCode = localStorage.getItem('rad_race_code');
             const savedTeamId = localStorage.getItem('rad_team_id');
             if (savedRaceCode && savedTeamId) {
@@ -626,7 +656,6 @@
                 activeRaceCode = code;
                 activeTeamId = teamId;
 
-                // Check approval status
                 if (!tData.isApproved) {
                     document.getElementById('login-prompt-card').classList.add('hidden');
                     document.getElementById('team-pending-card').classList.remove('hidden');
@@ -807,6 +836,74 @@
             }
         };
 
+        window.addCustomCheckpointToRace = async function() {
+            const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
+            const name = document.getElementById('custom-cp-name').value.trim();
+            const type = document.getElementById('custom-cp-type').value;
+            if (!code) return alert("Please specify the race code at the top of the checkpoint section.");
+            if (!name) return alert("Please enter a checkpoint name.");
+
+            let lat = 28.4177;
+            let lng = -81.5812;
+            let bonusMinDeduction = 0;
+
+            if (type === 'GPS') {
+                const latInput = parseFloat(document.getElementById('custom-cp-lat').value);
+                const lngInput = parseFloat(document.getElementById('custom-cp-lng').value);
+                if (!isNaN(latInput)) lat = latInput;
+                if (!isNaN(lngInput)) lng = lngInput;
+            } else {
+                const bonusInput = parseInt(document.getElementById('custom-cp-bonus').value);
+                if (!isNaN(bonusInput)) bonusMinDeduction = bonusInput;
+            }
+
+            try {
+                const raceRef = doc(window.db, "races", code);
+                const raceSnap = await getDoc(raceRef);
+                if (!raceSnap.exists()) return alert("Race code not found.");
+
+                const newCp = {
+                    id: 'cp_custom_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+                    name: name,
+                    type: type,
+                    lat: lat,
+                    lng: lng,
+                    bonusMinDeduction: bonusMinDeduction,
+                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Stop"
+                };
+
+                await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
+                alert(`Custom checkpoint "${name}" added successfully!`);
+                document.getElementById('custom-cp-name').value = '';
+                loadAdminRaces();
+            } catch (e) {
+                alert("Error adding custom checkpoint: " + e.message);
+            }
+        };
+
+        window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
+            const val = parseInt(newValueStr);
+            if (isNaN(val) || val < 0) return;
+
+            try {
+                const raceRef = doc(window.db, "races", raceCode);
+                const raceSnap = await getDoc(raceRef);
+                if (!raceSnap.exists()) return;
+
+                const cps = raceSnap.data().checkpoints || [];
+                const updatedCps = cps.map(cp => {
+                    if (cp.id === cpId) {
+                        return { ...cp, bonusMinDeduction: val };
+                    }
+                    return cp;
+                });
+
+                await updateDoc(raceRef, { checkpoints: updatedCps });
+            } catch (e) {
+                console.error("Error updating bonus value:", e);
+            }
+        };
+
         window.saveFinalLocation = async function() {
             const code = document.getElementById('cp-race-code').value.trim().toUpperCase();
             const finalCpId = document.getElementById('org-final-cp-select').value;
@@ -833,7 +930,6 @@
                     return;
                 }
 
-                // Update final location dropdown based on cp-race-code input
                 const currentCodeInput = document.getElementById('cp-race-code').value.trim().toUpperCase();
                 let activeRaceDataForSelect = null;
 
@@ -864,11 +960,18 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-1 pl-2 border-l border-slate-700 max-h-32 overflow-y-auto">
+                            <div class="space-y-1.5 pl-2 border-l border-slate-700 max-h-48 overflow-y-auto">
                                 ${cps.map(cp => `
-                                    <div class="flex justify-between items-center text-[10px] text-slate-400">
-                                        <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name} ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
-                                        <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300">Remove</button>
+                                    <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
+                                            ${cp.type === 'BONUS_PHOTO' ? `
+                                                <span class="flex items-center gap-1 text-[10px] text-amber-400">
+                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction || 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono"> m
+                                                </span>
+                                            ` : ''}
+                                        </div>
+                                        <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300 font-bold px-2 py-0.5 text-[10px]">Remove</button>
                                     </div>
                                 `).join('')}
                             </div>
@@ -903,7 +1006,7 @@
                                                             <div class="p-1 rounded ${info.isManual ? 'bg-amber-950/30 border border-amber-500/30 text-amber-300' : 'bg-slate-900 text-slate-300'} flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
                                                                 <span class="font-medium">📍 ${cpName}</span>
                                                                 <span class="flex items-center gap-2">
-                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
+                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠️️ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
                                                                     <span class="text-[9px] text-slate-400 font-mono">${info.latitude ? info.latitude.toFixed(4) + ', ' + info.longitude.toFixed(4) : ''}</span>
                                                                 </span>
                                                             </div>
@@ -920,7 +1023,6 @@
                 }
                 listEl.innerHTML = html;
 
-                // Populate final location dropdown
                 if (activeRaceDataForSelect) {
                     let selectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
                     (activeRaceDataForSelect.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').forEach(cp => {
@@ -936,7 +1038,6 @@
             }
         }
 
-        // Listen to changes on cp-race-code to update dropdown options instantly
         document.getElementById('cp-race-code')?.addEventListener('input', loadAdminRaces);
 
         window.approveTeam = async function(raceCode, teamId) {
@@ -958,7 +1059,7 @@
             
             let updates = { checkpoints: updated };
             if (data.finalCheckpointId === cpId) {
-                updates.finalCheckpointId = null; // Clear final if deleted
+                updates.finalCheckpointId = null;
             }
 
             await updateDoc(raceRef, updates);
@@ -988,7 +1089,6 @@
             }
         };
 
-        // TEAM JOIN / PIN RESUME LOGIN WITH PERSISTENT SESSION
         window.joinOrResumeTeam = async function() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
@@ -1161,11 +1261,6 @@
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
-            // Check if final checkpoint rule is violated on finishing
-            if (finalCheckpointId && !completedIds.includes(finalCheckpointId) && completedIds.length > 0) {
-                // Warning note if user has completed other stops but not the final one
-            }
-
             document.getElementById('team-checkpoints-list').innerHTML = mandatory.map(cp => {
                 const isDone = completedIds.includes(cp.id);
                 const isFinal = finalCheckpointId === cp.id;
@@ -1212,9 +1307,8 @@
             alert("Dashboard refreshed.");
         };
 
-        // Haversine formula for distance calculation in meters
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Earth radius in meters
+            const R = 6371e3;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -1260,11 +1354,9 @@
                     const targetCp = checkpoints.find(c => c.id === cpId);
                     if (!targetCp) return alert("Checkpoint not found.");
 
-                    // Validate if organizer set a final checkpoint and if rule is being broken
                     if (raceData.finalCheckpointId && cpId !== raceData.finalCheckpointId) {
                         const completed = (await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId))).data().completedCheckpoints || [];
                         const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
-                        // If all mandatory stops EXCEPT the final one are done, ensure final is done last
                         const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
                         if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
                             alert("Organiser Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
@@ -1389,7 +1481,6 @@
             const teamSnap = await getDoc(doc(window.db, "races", activeRaceCode, "teams", activeTeamId));
             const tData = teamSnap.data();
 
-            // Validate final location rule if set by organiser
             if (raceData.finalCheckpointId) {
                 const completed = tData.completedCheckpoints || [];
                 if (!completed.includes(raceData.finalCheckpointId)) {
@@ -1454,7 +1545,7 @@
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = missedCount * 60; // 60 min penalty per missed checkpoint
+                    const penaltyMin = missedCount * 60;
 
                     let bonusMinDeduction = 0;
                     (t.claimedBonus || []).forEach(bId => {
