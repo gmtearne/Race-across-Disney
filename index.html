@@ -1825,6 +1825,7 @@
             const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
             const bonus = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
             const completedIds = tData.completedCheckpoints || [];
+            const checkinDetails = tData.checkinDetails || {};
             const claimedBonus = tData.claimedBonus || [];
             const triviaBonusPts = isScavenger ? (tData.triviaBonus || 0) : 0;
             const triviaTimeDed = !isScavenger ? (tData.triviaBonus || 0) : 0;
@@ -1893,6 +1894,8 @@
                 const isDone = completedIds.includes(cp.id);
                 const isFinal = finalCheckpointId === cp.id;
                 const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
+                const detail = checkinDetails[cp.id];
+                const isManualOverride = detail && detail.isManual;
                 
                 let hintText = "";
                 if (difficulty === 'EASY') {
@@ -1903,19 +1906,39 @@
                     hintText = `Blind navigation (Clue only)`;
                 }
 
+                let statusBadgeOrButton = '';
+                if (isDone) {
+                    if (isManualOverride) {
+                        statusBadgeOrButton = `
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 font-bold">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Manual Check-in
+                                </span>
+                                <button onclick="undoManualCheckIn('${cp.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition shadow">
+                                    <i class="fa-solid fa-rotate-left mr-1"></i> Undo / Retry
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        statusBadgeOrButton = '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>';
+                    }
+                } else {
+                    statusBadgeOrButton = `
+                        <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                            GPS Check In
+                        </button>
+                    `;
+                }
+
                 return `
-                    <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-700/80'} flex justify-between items-center">
+                    <div class="p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <p class="font-bold text-xs ${isDone ? 'text-emerald-300' : 'text-white'}">
+                            <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
                                 📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
                             </p>
                             <p class="text-[10px] text-slate-400">${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span></p>
                         </div>
-                        ${isDone ? '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>' : `
-                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
-                                GPS Check In
-                            </button>
-                        `}
+                        <div>${statusBadgeOrButton}</div>
                     </div>
                 `;
             }).join('');
@@ -1945,6 +1968,32 @@
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
+        };
+
+        window.undoManualCheckIn = async function(cpId) {
+            if (!confirm("Are you sure you want to undo this manual check-in? This will remove your completion status for this stop so you can retry when you reach the correct location.")) return;
+
+            try {
+                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                const teamSnap = await getDoc(teamRef);
+                if (!teamSnap.exists()) return;
+                const tData = teamSnap.data();
+
+                const completed = (tData.completedCheckpoints || []).filter(id => id !== cpId);
+                const checkinDetails = tData.checkinDetails || {};
+                delete checkinDetails[cpId];
+
+                await updateDoc(teamRef, {
+                    completedCheckpoints: completed,
+                    checkinDetails: checkinDetails
+                });
+
+                const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+                loadTeamDashboardData(raceSnap.data());
+                alert("Manual check-in undone successfully. You can now try checking in again!");
+            } catch (e) {
+                alert("Error undoing check-in: " + e.message);
+            }
         };
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -2008,7 +2057,7 @@
                     const ALLOWED_RADIUS_METERS = 150;
                     const isManual = distance > ALLOWED_RADIUS_METERS;
 
-                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override?`)) {
+                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override? (Note: You can undo this later if you realize you were in the wrong spot).`)) {
                         await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
                     }
                 },
