@@ -67,7 +67,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <span id="nav-team-badge" class="hidden sm:inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/20">
+                <span id="nav-team-badge" class="hidden sm:inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/25">
                     <img id="nav-team-avatar" src="" class="w-5 h-5 rounded-full object-cover hidden">
                     <span id="nav-team-name" class="text-white"></span>
                 </span>
@@ -97,13 +97,19 @@
         <!-- Active Team Banner -->
         <div id="team-status-banner" class="hidden mb-6 bg-slate-800/90 border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
             <div class="flex items-center gap-3">
-                <img id="active-team-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold">
+                <div class="relative group cursor-pointer" title="Click to update team avatar">
+                    <img id="active-team-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold">
+                    <label class="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold cursor-pointer">
+                        <i class="fa-solid fa-camera"></i>
+                        <input type="file" accept="image/*" class="hidden" onchange="updateTeamAvatar(this)">
+                    </label>
+                </div>
                 <div>
                     <div class="flex items-center gap-2">
                         <h2 id="active-team-name" class="font-bold text-lg text-white"></h2>
                         <span class="text-xs bg-disneyBlue/30 text-blue-300 px-2 py-0.5 rounded-full border border-disneyBlue/40">Active Team</span>
                     </div>
-                    <p class="text-xs text-slate-400">Race Code: <span id="active-team-racecode" class="font-mono text-disneyGold font-bold">---</span></p>
+                    <p class="text-xs text-slate-400">Race Code: <span id="active-team-racecode" class="font-mono text-disneyGold font-bold">---</span> <span class="text-[10px] text-slate-500 ml-2">(Click avatar to change)</span></p>
                 </div>
             </div>
             <div class="flex gap-2">
@@ -558,10 +564,10 @@
             { name: "Festival of the Lion King", lat: 28.3562, lng: -81.5860, type: "GPS", park: "Animal Kingdom" },
             { name: "Gorilla Falls Exploration Trail", lat: 28.3620, lng: -81.5930, type: "GPS", park: "Animal Kingdom" },
             
-            { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 15, park: "Bonus Challenge" },
+            { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
             { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
             { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
-            { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 5, park: "Bonus Challenge" },
+            { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" },
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge" }
         ];
 
@@ -761,7 +767,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
-                    bonusMinDeduction: p.bonusMinDeduction || 0,
+                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 }));
 
@@ -796,7 +802,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
-                    bonusMinDeduction: p.bonusMinDeduction || 0,
+                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 }));
 
@@ -824,7 +830,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
-                    bonusMinDeduction: p.bonusMinDeduction || 0,
+                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney"
                 };
 
@@ -845,7 +851,7 @@
 
             let lat = 28.4177;
             let lng = -81.5812;
-            let bonusMinDeduction = 0;
+            let bonusMinDeduction = 10; // Default 10 min for custom bonus
 
             if (type === 'GPS') {
                 const latInput = parseFloat(document.getElementById('custom-cp-lat').value);
@@ -967,7 +973,7 @@
                                             <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
                                             ${cp.type === 'BONUS_PHOTO' ? `
                                                 <span class="flex items-center gap-1 text-[10px] text-amber-400">
-                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction || 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono"> m
+                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono"> m
                                                 </span>
                                             ` : ''}
                                         </div>
@@ -986,6 +992,7 @@
                                             <div class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1.5">
                                                 <div class="flex justify-between items-center">
                                                     <div class="flex items-center gap-2">
+                                                        <img src="${t.photoUrl || 'https://via.placeholder.com/30'}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
                                                         <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
                                                         <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
                                                             ${t.isApproved ? 'Approved' : 'Pending Approval'}
@@ -1087,6 +1094,29 @@
             } catch (e) {
                 alert("Error deleting race: " + e.message);
             }
+        };
+
+        // Allow teams to update their avatar anytime post-registration
+        window.updateTeamAvatar = async function(inputElement) {
+            const file = inputElement.files[0];
+            if (!file || !activeRaceCode || !activeTeamId) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const newPhotoUrl = e.target.result;
+                try {
+                    const teamRef = doc(window.db, "races", activeRaceCode, "teams", activeTeamId);
+                    await updateDoc(teamRef, { photoUrl: newPhotoUrl });
+
+                    document.getElementById('active-team-avatar').src = newPhotoUrl;
+                    document.getElementById('nav-team-avatar').src = newPhotoUrl;
+                    document.getElementById('nav-team-avatar').classList.remove('hidden');
+                    alert("Team avatar updated successfully!");
+                } catch (err) {
+                    alert("Error updating avatar: " + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
         };
 
         window.joinOrResumeTeam = async function() {
@@ -1222,7 +1252,7 @@
             
             let totalDeductionMin = 0;
             bonus.forEach(b => {
-                if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction || 10);
+                if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
             });
             document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
 
@@ -1283,11 +1313,12 @@
 
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
+                const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
                 return `
                     <div class="p-3 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center">
                         <div>
                             <p class="font-bold text-xs text-amber-300">⭐ ${cp.name}</p>
-                            <p class="text-[10px] text-amber-400/80">Time Deduction: -${cp.bonusMinDeduction || 10}m</p>
+                            <p class="text-[10px] text-amber-400/80">Time Deduction: -${deductionVal}m</p>
                         </div>
                         ${isClaimed ? '<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>' : `
                             <label class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg text-xs border border-amber-500/40 cursor-pointer transition">
@@ -1550,7 +1581,7 @@
                     let bonusMinDeduction = 0;
                     (t.claimedBonus || []).forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
-                        if (match) bonusMinDeduction += (match.bonusMinDeduction || 10);
+                        if (match) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
                     });
 
                     let rawElapsedMin = 0;
