@@ -989,7 +989,7 @@
                                 <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
                                 <div>
                                     <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land || 'General'}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
+                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
                                 </div>
                             </div>
                             <button onclick="addSinglePresetToRace(${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
@@ -2149,7 +2149,7 @@
                 const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                 const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
-                // Dashboard card only shows park name (or hidden entirely on hard)
+                // Dashboard card subtitle shows park name only (omits land on dashboard per requirement, but keeps it for modals)
                 const subtitleContent = difficulty === 'hard' 
                     ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
                     : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
@@ -2484,7 +2484,7 @@
             }
 
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "r_aces", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now }); // note: updated path fix
+            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
             alert("Race finished! Final results submitted to the leaderboard.");
             loadTeamDashboardData(raceData);
             switchTab('leaderboard');
