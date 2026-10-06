@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SortableJS for Touch-Friendly Drag and Drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- External Trivia Database -->
     <script src="trivia-data.js"></script>
     <script>
@@ -47,6 +49,18 @@
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748b;
+        }
+        /* Sortable ghost & placeholder styling */
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #334155 !important;
+        }
+        .sortable-chosen {
+            background: #1e293b !important;
+            border-color: #FFB800 !important;
+        }
+        .sortable-fallback {
+            opacity: 1 !important;
         }
         .hidden { display: none !important; }
     </style>
@@ -135,7 +149,7 @@
                 </div>
                 <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Organiser Dashboard">
                     <i class="fa-solid fa-gear text-xs"></i>
-                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900">0</span>
+                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
                 </button>
             </div>
         </div>
@@ -152,7 +166,7 @@
                 <i class="fa-solid fa-book-open"></i> <span>Rules</span>
             </button>
             <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-trophy"></i> <span>Leaderboard</span>
+                <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
             </button>
             <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
@@ -273,7 +287,7 @@
                     </div>
                 </div>
 
-                <!-- Assigned Checkpoints with Custom Route Reordering -->
+                <!-- Assigned Checkpoints with Drag and Drop Reordering -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
                         <div>
@@ -281,7 +295,7 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Use the up/down arrows to plan your desired route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -456,13 +470,14 @@
             </div>
         </section>
 
-        <!-- ================= TAB 4: LEADERBOARD ================= -->
+        <!-- ================= TAB 4: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
+            <!-- Leaderboard Card -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
                     <div>
                         <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
+                            <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard & Race Portal
                         </h2>
                         <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
                     </div>
@@ -491,6 +506,30 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Live Team Chat Box -->
+            <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
+                        <i class="fa-solid fa-comments"></i> Live Team Chat
+                    </h3>
+                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
+                </div>
+                
+                <!-- Messages Container -->
+                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
+                    <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
+                </div>
+
+                <!-- Input Box -->
+                <div id="chat-input-box" class="flex gap-2">
+                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                    <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                </div>
+                <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
             </div>
         </section>
 
@@ -715,7 +754,6 @@
 
     <!-- JS Logic -->
     <script>
-        // Default Silhouette SVG Data-URI
         const DEFAULT_AVATAR = "data:image/svg+xml;utf8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#94a3b8">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
@@ -734,6 +772,7 @@
             });
             if (tabName === 'leaderboard') {
                 loadLeaderboard();
+                initChatListener();
             }
         }
 
@@ -836,8 +875,6 @@
             };
 
             let html = '';
-
-            // 1. GPS Locations Header & Subsections by Park
             html += `<div class="p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
 
             parks.forEach(parkName => {
@@ -871,7 +908,6 @@
                 }
             });
 
-            // 2. Bonus Locations Section
             const bonusItems = DISNEY_PRESETS.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
             if (bonusItems.length > 0) {
                 html += `
@@ -1042,7 +1078,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -1056,6 +1092,7 @@
         window.activeRaceCode = null;
         window.activeTeamId = null;
         let timerInterval = null;
+        let chatUnsubscribe = null;
 
         let pendingCheckInCpId = null;
         let pendingCheckInBtn = null;
@@ -1280,6 +1317,7 @@
                     gameMode: gameMode,
                     difficulty: difficulty,
                     defaultPoints: defaultPoints,
+                    chatEnabled: true,
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -1293,7 +1331,7 @@
                 alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
                 document.getElementById('new-race-title').value = '';
                 generateRandomRaceCode();
-                loadAdminRaces(code);
+                loadAdminRaces();
             } catch (err) {
                 alert("Error creating race: " + err.message);
             }
@@ -1323,21 +1361,17 @@
             }
         };
 
-        window.saveFinalLocation = async function(code) {
-            const finalCpId = document.getElementById(`org-final-cp-${code}`).value;
+        window.toggleChatSetting = async function(raceCode, checkbox) {
             const currentUser = window.auth.currentUser;
-
             try {
-                const raceRef = doc(window.db, "races", code);
+                const raceRef = doc(window.db, "races", raceCode);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
-                await updateDoc(raceRef, { finalCheckpointId: finalCpId || null });
-                alert("Designated final ending location updated successfully!");
-                loadAdminRaces(code);
+                await updateDoc(raceRef, { chatEnabled: checkbox.checked });
+                alert(`Live team chat is now ${checkbox.checked ? 'ENABLED' : 'DISABLED'}.`);
             } catch (e) {
-                alert("Error updating final location: " + e.message);
+                alert("Error updating chat setting: " + e.message);
             }
         };
 
@@ -1362,16 +1396,11 @@
                     const race = docSnap.data();
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
+                    const isChatEnabled = race.chatEnabled !== false;
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
                     const diffLabel = race.difficulty ? race.difficulty.toUpperCase() : 'EASY';
-
-                    let finalSelectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
-                    cps.filter(c => c.type !== 'BONUS_PHOTO').forEach(cp => {
-                        const isSelected = race.finalCheckpointId === cp.id ? 'selected' : '';
-                        finalSelectHtml += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park})</option>`;
-                    });
 
                     teamsSnap.forEach(tDoc => {
                         if (!tDoc.data().isApproved) totalPendingTeams++;
@@ -1395,6 +1424,12 @@
                                 </div>
                             </div>
 
+                            <!-- Chat Moderation Toggle -->
+                            <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
+                                <span class="font-semibold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Live Team Chat:</span>
+                                <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
+                            </div>
+
                             <div class="space-y-1.5 pl-2 border-l border-slate-700 max-h-48 overflow-y-auto">
                                 ${cps.map(cp => `
                                     <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
@@ -1416,7 +1451,6 @@
                                 <div class="space-y-1.5">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
-                                        const checkinDetails = t.checkinDetails || {};
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                                         return `
                                             <div class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1.5">
@@ -1613,6 +1647,114 @@
             }
         };
 
+        // Live Chat Realtime Integration
+        function initChatListener() {
+            if (chatUnsubscribe) chatUnsubscribe();
+            const targetCode = window.activeRaceCode;
+            const container = document.getElementById('chat-messages-container');
+            const inputBox = document.getElementById('chat-input-box');
+            const disabledNotice = document.getElementById('chat-disabled-notice');
+            const statusIndicator = document.getElementById('chat-status-indicator');
+
+            if (!targetCode) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">Join a race team to participate in live chat.</p>`;
+                return;
+            }
+
+            const raceRef = doc(window.db, "races", targetCode);
+            getDoc(raceRef).then(raceSnap => {
+                if (!raceSnap.exists()) return;
+                const isChatEnabled = raceSnap.data().chatEnabled !== false;
+
+                if (!isChatEnabled) {
+                    inputBox.classList.add('hidden');
+                    disabledNotice.classList.remove('hidden');
+                    statusIndicator.innerText = "Disabled";
+                    statusIndicator.className = "text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30";
+                } else {
+                    inputBox.classList.remove('hidden');
+                    disabledNotice.classList.add('hidden');
+                    statusIndicator.innerText = "Active";
+                    statusIndicator.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30";
+                }
+            });
+
+            const chatQuery = query(collection(window.db, "races", targetCode, "chat"), orderBy("timestamp", "asc"));
+            chatUnsubscribe = onSnapshot(chatQuery, (snapshot) => {
+                if (snapshot.empty) {
+                    container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">No messages yet. Say hello to other teams!</p>`;
+                    return;
+                }
+
+                let html = '';
+                const currentUser = window.auth.currentUser;
+                const isOrg = !!currentUser;
+
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const msgId = docSnap.id;
+                    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    const avatar = msg.avatar || DEFAULT_AVATAR;
+
+                    html += `
+                        <div class="flex items-start justify-between gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800">
+                            <div class="flex items-start gap-2 min-w-0">
+                                <img src="${avatar}" class="w-7 h-7 rounded-full object-cover border border-disneyGold shrink-0">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-disneyGold text-[11px] truncate">${msg.teamName}</span>
+                                        <span class="text-[9px] text-slate-500 shrink-0">${timeStr}</span>
+                                    </div>
+                                    <p class="text-slate-200 text-xs break-words">${msg.message}</p>
+                                </div>
+                            </div>
+                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msgId}')" class="text-rose-400 hover:text-rose-300 text-[10px] p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        window.sendChatMessage = async function() {
+            const input = document.getElementById('chat-message-input');
+            const text = input.value.trim();
+            if (!text || !window.activeRaceCode || !window.activeTeamId) return;
+
+            try {
+                const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+                if (!teamSnap.exists()) return;
+                const tData = teamSnap.data();
+
+                await addDoc(collection(window.db, "races", window.activeRaceCode, "chat"), {
+                    teamName: tData.teamName,
+                    avatar: tData.photoUrl || DEFAULT_AVATAR,
+                    message: text,
+                    timestamp: new Date().toISOString()
+                });
+                input.value = '';
+            } catch (e) {
+                alert("Error sending message: " + e.message);
+            }
+        };
+
+        window.handleChatKeypress = function(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        };
+
+        window.deleteChatMessage = async function(raceCode, msgId) {
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+            try {
+                await deleteDoc(doc(window.db, "races", raceCode, "chat", msgId));
+            } catch (e) {
+                alert("Error deleting message: " + e.message);
+            }
+        };
+
         window.approveTeam = async function(raceCode, teamId) {
             const currentUser = window.auth.currentUser;
             try {
@@ -1790,6 +1932,7 @@
             localStorage.removeItem('rad_race_code');
             localStorage.removeItem('rad_team_id');
             clearInterval(timerInterval);
+            if (chatUnsubscribe) chatUnsubscribe();
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
             document.getElementById('team-pending-card').classList.add('hidden');
@@ -1994,16 +2137,6 @@
                     `;
                 }
 
-                let reorderButtons = '';
-                if (!isDone) {
-                    reorderButtons = `
-                        <div class="flex flex-col gap-1">
-                            <button onclick="moveCheckpointOrder(${idx}, -1)" title="Move Up" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
-                            <button onclick="moveCheckpointOrder(${idx}, 1)" title="Move Down" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
-                        </div>
-                    `;
-                }
-
                 const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                 const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
@@ -2012,12 +2145,14 @@
                     : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
 
                 return `
-                    <div ${clickAction} class="p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            ${reorderButtons}
+                            <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
+                                <i class="fa-solid fa-grip-vertical"></i>
+                            </div>
                             <div>
                                 <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
-                                    <span class="text-disneyGold font-mono mr-1">#${idx + 1}</span> 📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
+                                    📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
                                 </p>
                                 <p class="text-[10px] text-slate-400">${subtitleContent}</p>
                             </div>
@@ -2026,6 +2161,25 @@
                     </div>
                 `;
             }).join('');
+
+            // Initialize SortableJS for Touch & Mouse Drag-and-Drop
+            const listEl = document.getElementById('team-checkpoints-list');
+            if (listEl && !tData.endTime) {
+                Sortable.create(listEl, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    handle: '.cursor-grab',
+                    onEnd: async function () {
+                        const newOrder = [];
+                        listEl.querySelectorAll('.checkpoint-card').forEach(card => {
+                            newOrder.push(card.getAttribute('data-id'));
+                        });
+                        const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                        await updateDoc(teamRef, { customRouteOrder: newOrder });
+                    }
+                });
+            }
 
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
@@ -2052,32 +2206,6 @@
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
-        };
-
-        window.moveCheckpointOrder = async function(index, direction) {
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            if (!raceSnap.exists()) return;
-            const checkpoints = raceSnap.data().checkpoints || [];
-            const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
-
-            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await getDoc(teamRef);
-            const tData = teamSnap.data();
-
-            let currentOrder = tData.customRouteOrder || [];
-            if (currentOrder.length === 0) {
-                currentOrder = mandatory.map(m => m.id);
-            }
-
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= currentOrder.length) return;
-
-            const temp = currentOrder[index];
-            currentOrder[index] = currentOrder[newIndex];
-            currentOrder[newIndex] = temp;
-
-            await updateDoc(teamRef, { customRouteOrder: currentOrder });
-            loadTeamDashboardData(raceSnap.data());
         };
 
         window.undoManualCheckIn = async function(cpId) {
