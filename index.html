@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- External Trivia Database -->
     <script src="trivia-data.js"></script>
+    <!-- External Locations Database -->
+    <script src="locations-data.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -156,23 +158,40 @@
             </div>
         </div>
         
-        <!-- Tab Navigation Bar (Reordered per request) -->
-        <div class="flex justify-around bg-slate-950/40 border-t border-white/5 text-xs font-semibold overflow-x-auto">
-            <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
-                <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
-            </button>
-            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
-            </button>
-            <button onclick="switchTab('maps')" id="tab-btn-maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-map"></i> <span>Park Maps</span>
-            </button>
-            <button onclick="switchTab('rules')" id="tab-btn-rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-book-open"></i> <span>Rules</span>
-            </button>
-            <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
-            </button>
+        <!-- Dynamic Responsive Tab Navigation Bar -->
+        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold">
+            <!-- Hamburger Dropdown Overlay (Shown when tabs overflow) -->
+            <div id="nav-hamburger-dropdown" class="hidden absolute top-full left-0 w-64 bg-slate-900 border border-slate-700 shadow-2xl rounded-b-2xl z-50 flex flex-col p-2 space-y-1">
+                <div class="text-[10px] uppercase font-bold text-slate-400 px-3 py-1 border-b border-slate-800">More Navigation</div>
+                <div id="hamburger-items-container" class="space-y-1"></div>
+            </div>
+
+            <!-- Visible Tabs Bar -->
+            <div id="nav-tabs-container" class="flex items-center overflow-x-hidden">
+                <!-- Hamburger Trigger Button (Shown conditionally if overflow detected) -->
+                <button id="nav-hamburger-btn" onclick="toggleHamburgerMenu()" class="hidden py-2.5 px-3.5 text-disneyGold hover:bg-slate-900/80 transition flex items-center justify-center border-r border-white/10 shrink-0">
+                    <i class="fa-solid fa-bars text-sm"></i>
+                </button>
+
+                <!-- Standard Tabs List -->
+                <div id="visible-tabs-list" class="flex flex-1 overflow-x-auto custom-scrollbar">
+                    <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap min-w-[140px]">
+                        <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
+                    </button>
+                    <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[140px]">
+                        <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
+                    </button>
+                    <button onclick="switchTab('maps')" id="tab-btn-maps" data-tab="maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[120px]">
+                        <i class="fa-solid fa-map"></i> <span>Park Maps</span>
+                    </button>
+                    <button onclick="switchTab('rules')" id="tab-btn-rules" data-tab="rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[100px]">
+                        <i class="fa-solid fa-book-open"></i> <span>Rules</span>
+                    </button>
+                    <button onclick="switchTab('organizer')" id="tab-btn-organizer" data-tab="organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[170px]">
+                        <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -770,21 +789,111 @@
             document.getElementById('image-modal').classList.add('hidden');
         };
 
-        function switchTab(tabName) {
+        // Tab Persistence & Dynamic Navbar Management
+        let currentActiveTab = localStorage.getItem('rad_active_tab') || 'race';
+
+        window.switchTab = function(tabName) {
+            currentActiveTab = tabName;
+            localStorage.setItem('rad_active_tab', tabName);
+
             ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
-                const btn = document.getElementById(`tab-btn-${t}`);
-                if (t === tabName) {
-                    btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
-                } else {
-                    btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
+                const sec = document.getElementById(`tab-${t}`);
+                if (sec) sec.classList.toggle('hidden', t !== tabName);
+
+                // Update active tab buttons in main bar and hamburger menu
+                const btn = document.querySelector(`button[data-tab="${t}"]`);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = btn.className.replace('text-slate-400 hover:text-slate-200', 'text-disneyGold border-b-2 border-disneyGold bg-slate-900/60');
+                        if (!btn.classList.contains('text-disneyGold')) {
+                            btn.classList.add('text-disneyGold', 'border-b-2', 'border-disneyGold', 'bg-slate-900/60');
+                        }
+                    } else {
+                        btn.classList.remove('text-disneyGold', 'border-b-2', 'border-disneyGold', 'bg-slate-900/60');
+                        if (!btn.classList.contains('text-slate-400')) {
+                            btn.classList.add('text-slate-400', 'hover:text-slate-200');
+                        }
+                    }
                 }
             });
+
+            // Close hamburger menu on selection
+            const hamburgerDropdown = document.getElementById('nav-hamburger-dropdown');
+            if (hamburgerDropdown) hamburgerDropdown.classList.add('hidden');
+
             if (tabName === 'leaderboard') {
                 loadLeaderboard();
                 initChatListener();
             }
+
+            // Re-evaluate navbar layout fitting
+            setTimeout(evaluateNavbarOverflow, 50);
+        };
+
+        window.toggleHamburgerMenu = function() {
+            const dropdown = document.getElementById('nav-hamburger-dropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        };
+
+        // Evaluate whether tabs fit horizontally or need hamburger overflow
+        function evaluateNavbarOverflow() {
+            const container = document.getElementById('nav-tabs-container');
+            const list = document.getElementById('visible-tabs-list');
+            const hamburgerBtn = document.getElementById('nav-hamburger-btn');
+            const hamburgerItems = document.getElementById('hamburger-items-container');
+            if (!container || !list) return;
+
+            // All available tabs
+            const tabs = [
+                { id: 'race', label: 'Team Portal', icon: 'fa-flag-checkered' },
+                { id: 'leaderboard', label: 'Race Portal', icon: 'fa-trophy' },
+                { id: 'maps', label: 'Park Maps', icon: 'fa-map' },
+                { id: 'rules', label: 'Rules', icon: 'fa-book-open' },
+                { id: 'organizer', label: 'Organiser Dashboard', icon: 'fa-user-gear' }
+            ];
+
+            // Measure container width
+            const containerWidth = container.clientWidth - 50; // buffer
+            let cumulativeWidth = 0;
+            let visibleTabs = [];
+            let hiddenTabs = [];
+
+            // Approximate widths per tab character / padding
+            tabs.forEach((tab, index) => {
+                const approxWidth = tab.label.length * 10 + 45;
+                if (cumulativeWidth + approxWidth < containerWidth && index < 4) {
+                    visibleTabs.push(tab);
+                    cumulativeWidth += approxWidth;
+                } else {
+                    hiddenTabs.push(tab);
+                }
+            });
+
+            // If we have hidden tabs, show hamburger button
+            if (hiddenTabs.length > 0) {
+                hamburgerBtn.classList.remove('hidden');
+                hamburgerItems.innerHTML = hiddenTabs.map(t => `
+                    <button onclick="switchTab('${t.id}')" data-tab="${t.id}" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2 transition">
+                        <i class="fa-solid ${t.icon} text-disneyGold"></i> <span>${t.label}</span>
+                    </button>
+                `).join('');
+            } else {
+                hamburgerBtn.classList.add('hidden');
+                hamburgerItems.innerHTML = '';
+            }
+
+            // Render visible tabs in list
+            list.innerHTML = visibleTabs.map(t => {
+                const isActive = t.id === currentActiveTab;
+                return `
+                    <button onclick="switchTab('${t.id}')" data-tab="${t.id}" class="flex-1 py-2.5 px-3 text-center ${isActive ? 'text-disneyGold border-b-2 border-disneyGold bg-slate-900/60' : 'text-slate-400 hover:text-slate-200'} transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[120px]">
+                        <i class="fa-solid ${t.icon}"></i> <span>${t.label}</span>
+                    </button>
+                `;
+            }).join('');
         }
+
+        window.addEventListener('resize', evaluateNavbarOverflow);
 
         const MAP_LOCATIONS = {
             mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
@@ -876,6 +985,7 @@
             const container = document.getElementById('manual-checkbox-container');
             const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
 
+            const presets = window.DISNEY_PRESETS || [];
             const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
@@ -889,7 +999,7 @@
 
             parks.forEach(parkName => {
                 const theme = parkThemes[parkName];
-                const parkItems = DISNEY_PRESETS.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
                 
                 if (parkItems.length > 0) {
                     html += `
@@ -918,7 +1028,7 @@
                 }
             });
 
-            const bonusItems = DISNEY_PRESETS.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+            const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
             if (bonusItems.length > 0) {
                 html += `
                     <div class="mt-4 p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
@@ -969,26 +1079,27 @@
             const selectEl = document.getElementById('create-final-stop-select');
             if (!selectEl) return;
 
+            const presets = window.DISNEY_PRESETS || [];
             let candidateStops = [];
             if (creationPopMethod === 'preset') {
                 const parkVal = document.getElementById('preset-park-select').value;
                 if (parkVal === 'all') {
-                    candidateStops = DISNEY_PRESETS.filter(p => p.type !== 'BONUS_PHOTO');
+                    candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
                 } else if (parkVal === 'Bonus Challenge') {
                     candidateStops = [];
                 } else {
-                    candidateStops = DISNEY_PRESETS.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
+                    candidateStops = presets.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
                 }
             } else if (creationPopMethod === 'manual') {
                 const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
                 checkedBoxes.forEach(cb => {
-                    const p = DISNEY_PRESETS[parseInt(cb.value)];
-                    if (p.type !== 'BONUS_PHOTO') {
+                    const p = presets[parseInt(cb.value)];
+                    if (p && p.type !== 'BONUS_PHOTO') {
                         candidateStops.push(p);
                     }
                 });
             } else {
-                candidateStops = DISNEY_PRESETS.filter(p => p.type !== 'BONUS_PHOTO');
+                candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
             }
 
             let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
@@ -1004,65 +1115,9 @@
                 presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
             }
             updateCreationFinalStopDropdown();
+            // Initialize active tab from storage on page load
+            switchTab(currentActiveTab);
         });
-
-        const DISNEY_PRESETS = [
-            { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
-            { name: "Space Mountain", lat: 28.4191, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-            { name: "Haunted Mansion", lat: 28.4187, lng: -81.5830, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
-            { name: "Big Thunder Mountain Railroad", lat: 28.4201, lng: -81.5842, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-            { name: "Pirates of the Caribbean", lat: 28.4182, lng: -81.5841, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
-            { name: "Tiana's Bayou Adventure", lat: 28.4190, lng: -81.5845, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-            { name: "Seven Dwarfs Mine Train", lat: 28.4205, lng: -81.5818, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-            { name: "Peter Pan's Flight", lat: 28.4198, lng: -81.5822, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-            { name: "It's a Small World", lat: 28.4212, lng: -81.5828, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-            { name: "Dumbo the Flying Elephant", lat: 28.4220, lng: -81.5810, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)" },
-            { name: "Jungle Cruise", lat: 28.4175, lng: -81.5835, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
-            { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.4188, lng: -81.5798, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-            { name: "Tron Lightcycle / Run", lat: 28.4215, lng: -81.5795, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-            { name: "Mad Tea Party", lat: 28.4210, lng: -81.5815, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-            { name: "Enchanted Tiki Room", lat: 28.4178, lng: -81.5840, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
-            
-            { name: "Spaceship Earth", lat: 28.3753, lng: -81.5494, type: "GPS", park: "Epcot", land: "World Celebration" },
-            { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3732, lng: -81.5490, type: "GPS", park: "Epcot", land: "World Discovery" },
-            { name: "Test Track", lat: 28.3721, lng: -81.5460, type: "GPS", park: "Epcot", land: "World Discovery" },
-            { name: "Soarin' Around the World", lat: 28.3770, lng: -81.5540, type: "GPS", park: "Epcot", land: "World Nature" },
-            { name: "Frozen Ever After (Norway)", lat: 28.3712, lng: -81.5492, type: "GPS", park: "Epcot", land: "World Showcase (Norway)" },
-            { name: "Remy's Ratatouille Adventure (France)", lat: 28.3705, lng: -81.5520, type: "GPS", park: "Epcot", land: "World Showcase (France)" },
-            { name: "The American Adventure", lat: 28.3685, lng: -81.5510, type: "GPS", park: "Epcot", land: "World Showcase (America)" },
-            { name: "Mission: SPACE", lat: 28.3742, lng: -81.5468, type: "GPS", park: "Epcot", land: "World Discovery" },
-            { name: "The Seas with Nemo & Friends", lat: 28.3775, lng: -81.5532, type: "GPS", park: "Epcot", land: "World Nature" },
-            { name: "Gran Fiesta Tour (Mexico)", lat: 28.3720, lng: -81.5535, type: "GPS", park: "Epcot", land: "World Showcase (Mexico)" },
-            { name: "Japan Pavilion Torii Gate", lat: 28.3690, lng: -81.5480, type: "GPS", park: "Epcot", land: "World Showcase (Japan)" },
-            { name: "United Kingdom Rose & Crown", lat: 28.3680, lng: -81.5495, type: "GPS", park: "Epcot", land: "World Showcase (United Kingdom)" },
-            
-            { name: "Twilight Zone Tower of Terror", lat: 28.3565, lng: -81.5606, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-            { name: "Rock 'n' Roller Coaster", lat: 28.3562, lng: -81.5612, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-            { name: "Star Wars: Rise of the Resistance", lat: 28.3533, lng: -81.5583, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-            { name: "Millennium Falcon: Smugglers Run", lat: 28.3530, lng: -81.5590, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-            { name: "Toy Story Mania!", lat: 28.3551, lng: -81.5620, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-            { name: "Slinky Dog Dash", lat: 28.3542, lng: -81.5630, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-            { name: "Mickey & Minnie's Runaway Railway", lat: 28.3570, lng: -81.5580, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard" },
-            { name: "Hollywood Brown Derby", lat: 28.3568, lng: -81.5592, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard" },
-            { name: "Alien Swirling Saucers", lat: 28.3548, lng: -81.5638, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-            { name: "Star Tours – The Adventures Continue", lat: 28.3540, lng: -81.5575, type: "GPS", park: "Hollywood Studios", land: "Echo Lake" },
-            
-            { name: "Avatar Flight of Passage", lat: 28.3553, lng: -81.5907, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
-            { name: "Expedition Everest", lat: 28.3582, lng: -81.5880, type: "GPS", park: "Animal Kingdom", land: "Asia" },
-            { name: "Kilimanjaro Safaris", lat: 28.3610, lng: -81.5921, type: "GPS", park: "Animal Kingdom", land: "Africa" },
-            { name: "DINOSAUR", lat: 28.3521, lng: -81.5872, type: "GPS", park: "Animal Kingdom", land: "Dinoland U.S.A." },
-            { name: "Tree of Life Roots", lat: 28.3590, lng: -81.5900, type: "GPS", park: "Animal Kingdom", land: "Discovery Island" },
-            { name: "Na'vi River Journey", lat: 28.3550, lng: -81.5912, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
-            { name: "Kali River Rapids", lat: 28.3575, lng: -81.5892, type: "GPS", park: "Animal Kingdom", land: "Asia" },
-            { name: "Festival of the Lion King", lat: 28.3562, lng: -81.5860, type: "GPS", park: "Animal Kingdom", land: "Africa" },
-            { name: "Gorilla Falls Exploration Trail", lat: 28.3620, lng: -81.5930, type: "GPS", park: "Animal Kingdom", land: "Africa" },
-            
-            { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
-            { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
-            { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "All Parks" },
-            { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Dining Locations" },
-            { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Transportation Hubs" }
-        ];
 
         window.shareRaceCode = function(code, title) {
             const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
@@ -1245,16 +1300,17 @@
                     return alert("This race code was randomly generated as a duplicate. Please hit the dice icon to generate a new unique code.");
                 }
 
+                const presets = window.DISNEY_PRESETS || [];
                 let initialCps = [];
 
                 if (creationPopMethod === 'random') {
                     const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
                     const bonusReq = parseInt(document.getElementById('rand-bonus-count').value) || 3;
 
-                    const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
+                    const gpsOnly = presets.filter(p => p.type === 'GPS');
                     const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, gpsReq);
 
-                    const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
+                    const bonusOnly = presets.filter(p => p.type === 'BONUS_PHOTO');
                     const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, bonusReq);
 
                     initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
@@ -1274,7 +1330,7 @@
                         return alert("Please select at least one checkpoint manually!");
                     }
                     checkedBoxes.forEach((cb, idx) => {
-                        const p = DISNEY_PRESETS[parseInt(cb.value)];
+                        const p = presets[parseInt(cb.value)];
                         initialCps.push({
                             id: 'cp_man_' + Date.now() + '_' + idx,
                             name: p.name,
@@ -1289,9 +1345,9 @@
                     });
                 } else if (creationPopMethod === 'preset') {
                     const parkVal = document.getElementById('preset-park-select').value;
-                    let filtered = DISNEY_PRESETS;
+                    let filtered = presets;
                     if (parkVal !== 'all') {
-                        filtered = DISNEY_PRESETS.filter(p => p.park === parkVal);
+                        filtered = presets.filter(p => p.park === parkVal);
                     }
                     initialCps = filtered.map((p, idx) => ({
                         id: 'cp_pre_' + Date.now() + '_' + idx,
@@ -1311,7 +1367,7 @@
                     const finalSelectVal = document.getElementById('create-final-stop-select').value;
                     if (finalSelectVal && finalSelectVal.startsWith('stop_')) {
                         const stopIdx = parseInt(finalSelectVal.split('_')[1]);
-                        const targetPreset = DISNEY_PRESETS[stopIdx];
+                        const targetPreset = presets[stopIdx];
                         if (targetPreset) {
                             const matchedCp = initialCps.find(c => c.name === targetPreset.name);
                             if (matchedCp) {
@@ -2150,7 +2206,8 @@
                 } else {
                     statusBadgeOrButton = `
                         <div class="flex justify-end w-full sm:w-auto">
-                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                            <!-- onclick with stopPropagation prevents card modal click -->
+                            <button onclick="event.stopPropagation(); checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
                                 GPS Check In
                             </button>
                         </div>
@@ -2170,7 +2227,7 @@
                             <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
                                 <i class="fa-solid fa-grip-vertical"></i>
                             </div>
-                            <span class="font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
+                            <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
                             <div>
                                 <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
                                     📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
@@ -2183,7 +2240,7 @@
                 `;
             }).join('');
 
-            // Initialize SortableJS for Touch & Mouse Drag-and-Drop
+            // Initialize SortableJS for Touch & Mouse Drag-and-Drop with Instant Position Renumbering
             const listEl = document.getElementById('team-checkpoints-list');
             if (listEl && !tData.endTime) {
                 Sortable.create(listEl, {
@@ -2191,6 +2248,16 @@
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
                     handle: '.cursor-grab',
+                    onSort: function () {
+                        // Instantly renumber DOM elements immediately upon drag move
+                        const cards = listEl.querySelectorAll('.checkpoint-card');
+                        cards.forEach((card, index) => {
+                            const numSpan = card.querySelector('.checkpoint-number');
+                            if (numSpan) {
+                                numSpan.innerText = `#${index + 1}`;
+                            }
+                        });
+                    },
                     onEnd: async function () {
                         const newOrder = [];
                         listEl.querySelectorAll('.checkpoint-card').forEach(card => {
