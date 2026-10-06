@@ -133,8 +133,9 @@
                 <div id="nav-team-badge" class="hidden items-center">
                     <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Organiser Dashboard">
+                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Organiser Dashboard">
                     <i class="fa-solid fa-gear text-xs"></i>
+                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900">0</span>
                 </button>
             </div>
         </div>
@@ -629,7 +630,7 @@
                         </div>
                     </div>
 
-                    <!-- Hidden Default Checkpoint Points Configuration (Default 0 for speed, 10 for scavenger) -->
+                    <!-- Hidden Default Checkpoint Points Configuration -->
                     <input type="number" id="create-default-points" value="0" class="hidden">
 
                     <!-- Checkpoint Setup Options for Creation -->
@@ -660,7 +661,7 @@
                         <!-- 2. Manual Sub-box -->
                         <div id="pop-box-manual" class="hidden space-y-3 pt-2">
                             <div class="flex justify-between items-center">
-                                <span class="text-[11px] text-slate-300">Check the locations to include:</span>
+                                <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
                                 <div class="space-x-2">
                                     <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
                                     <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
@@ -670,7 +671,7 @@
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                                 <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
                             </div>
-                            <div id="manual-checkbox-container" class="max-h-52 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
+                            <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
                         </div>
 
                         <!-- 3. Preset Dropdown Sub-box -->
@@ -699,39 +700,6 @@
 
                     <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
                         + Create Race Event & Start
-                    </button>
-                </div>
-
-                <!-- Hidden Custom Checkpoint Box (Preserved for future use) -->
-                <div id="custom-checkpoint-box" class="hidden bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3">
-                    <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                        <i class="fa-solid fa-plus-circle mr-1"></i> Add Custom Checkpoint or Bonus
-                    </h5>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="text" id="custom-cp-name" placeholder="Location Name (e.g. Hurley Burley)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        <select id="custom-cp-type" onchange="toggleCustomFields()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="GPS">Mandatory (Requires GPS)</option>
-                            <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time/Pts)</option>
-                        </select>
-                    </div>
-                    <div id="custom-gps-fields" class="space-y-2">
-                        <div class="flex gap-2">
-                            <button type="button" onclick="searchLocationCoordinates()" id="search-coords-btn" class="px-3 py-2 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-[11px] rounded-xl transition whitespace-nowrap shadow">
-                                <i class="fa-solid fa-magnifying-glass-location mr-1"></i> Search Coords
-                            </button>
-                            <span id="search-status-text" class="text-[10px] text-slate-400 self-center">Type a place name & click to auto-fetch coords</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" step="any" id="custom-cp-lat" placeholder="Latitude (e.g. 28.4194)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            <input type="number" step="any" id="custom-cp-lng" placeholder="Longitude (e.g. -81.5812)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        </div>
-                    </div>
-                    <div id="custom-bonus-fields" class="hidden">
-                        <label class="block text-[10px] text-slate-400 mb-1">Time Deduction / Bonus Points</label>
-                        <input type="number" id="custom-cp-bonus" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    </div>
-                    <button onclick="addCustomCheckpointToRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
-                        + Add Custom Checkpoint to Race
                     </button>
                 </div>
 
@@ -859,28 +827,94 @@
             const container = document.getElementById('manual-checkbox-container');
             const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
 
+            const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
+            const parkThemes = {
+                "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
+                "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
+                "Hollywood Studios": { bg: "bg-purple-950/20", border: "border-purple-500/30", text: "text-purple-300", icon: "🎬" },
+                "Animal Kingdom": { bg: "bg-emerald-950/20", border: "border-emerald-500/30", text: "text-emerald-300", icon: "🦁" }
+            };
+
             let html = '';
-            DISNEY_PRESETS.forEach((p, idx) => {
-                if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
+
+            // 1. GPS Locations Header & Subsections by Park
+            html += `<div class="p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
+
+            parks.forEach(parkName => {
+                const theme = parkThemes[parkName];
+                const parkItems = DISNEY_PRESETS.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+                
+                if (parkItems.length > 0) {
                     html += `
-                        <label class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs cursor-pointer hover:border-disneyGold transition">
+                        <div class="ml-2 mt-2 p-2.5 rounded-xl border ${theme.border} ${theme.bg} space-y-2">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                                <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
+                                <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="text-[10px] ${theme.text} underline">Select All ${parkName}</button>
+                            </div>
+                            <div class="space-y-1.5">
+                    `;
+                    parkItems.forEach(p => {
+                        html += `
+                            <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
+                                    <span class="text-disneyGold">📍</span>
+                                    <div>
+                                        <p class="font-bold text-white">${p.name}</p>
+                                        <span class="text-[10px] text-slate-400">${p.land}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+            });
+
+            // 2. Bonus Locations Section
+            const bonusItems = DISNEY_PRESETS.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+            if (bonusItems.length > 0) {
+                html += `
+                    <div class="mt-4 p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
+                        <button type="button" onclick="selectBonusCheckboxes(true)" class="text-[10px] text-amber-300 underline font-normal">Select All Bonuses</button>
+                    </div>
+                    <div class="ml-2 mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-1.5">
+                `;
+                bonusItems.forEach(p => {
+                    html += `
+                        <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${idx}" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
-                                <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
+                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
+                                <span class="text-amber-400">⭐</span>
                                 <div>
                                     <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land})</span>
+                                    <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
                                 </div>
                             </div>
                         </label>
                     `;
-                }
-            });
+                });
+                html += `</div>`;
+            }
+
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
         };
 
         window.selectAllManualCheckboxes = function(selectState) {
             const checkboxes = document.querySelectorAll('input[name="manual_cp_checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectState);
+            updateCreationFinalStopDropdown();
+        };
+
+        window.selectParkCheckboxes = function(parkName, selectState) {
+            const checkboxes = document.querySelectorAll(`input[name="manual_cp_checkbox"][data-park="${parkName}"]`);
+            checkboxes.forEach(cb => cb.checked = selectState);
+            updateCreationFinalStopDropdown();
+        };
+
+        window.selectBonusCheckboxes = function(selectState) {
+            const checkboxes = document.querySelectorAll(`input[name="manual_cp_checkbox"][data-type="BONUS_PHOTO"]`);
             checkboxes.forEach(cb => cb.checked = selectState);
             updateCreationFinalStopDropdown();
         };
@@ -908,7 +942,6 @@
                     }
                 });
             } else {
-                // Random mode - show all potential stops for selection convenience
                 candidateStops = DISNEY_PRESETS.filter(p => p.type !== 'BONUS_PHOTO');
             }
 
@@ -1266,102 +1299,6 @@
             }
         };
 
-        window.toggleRaceEditBox = function(raceCode) {
-            const editBox = document.getElementById(`edit-box-${raceCode}`);
-            if (editBox) {
-                editBox.classList.toggle('hidden');
-                if (!editBox.classList.contains('hidden')) {
-                    renderOrgPickerForRace(raceCode);
-                }
-            }
-        };
-
-        window.renderOrgPickerForRace = function(raceCode) {
-            const container = document.getElementById(`org-picker-${raceCode}`);
-            const query = (document.getElementById(`org-search-${raceCode}`)?.value || "").toLowerCase();
-            
-            let html = '';
-            DISNEY_PRESETS.forEach((p, idx) => {
-                if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
-                    html += `
-                        <div class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
-                                <div>
-                                    <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
-                                </div>
-                            </div>
-                            <button onclick="addSinglePresetToRace('${raceCode}', ${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
-                                + Add
-                            </button>
-                        </div>
-                    `;
-                }
-            });
-            container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        };
-
-        window.filterOrgCheckpointsForRace = function(raceCode) {
-            renderOrgPickerForRace(raceCode);
-        };
-
-        window.addSinglePresetToRace = async function(code, idx) {
-            const currentUser = window.auth.currentUser;
-            try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
-
-                const raceData = raceSnap.data();
-                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
-
-                const p = DISNEY_PRESETS[idx];
-                const newCp = {
-                    id: 'cp_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-                    name: p.name,
-                    type: p.type || "GPS",
-                    lat: p.lat || 28.4177,
-                    lng: p.lng || -81.5812,
-                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
-                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney",
-                    land: p.land || "Attraction Area"
-                };
-
-                await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
-                alert(`Added "${p.name}" to race ${code}!`);
-                loadAdminRaces(code);
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        };
-
-        window.updateCheckpointPoints = async function(raceCode, cpId, newPointsStr) {
-            const val = parseInt(newPointsStr);
-            const currentUser = window.auth.currentUser;
-            if (isNaN(val)) return;
-
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                const cps = raceSnap.data().checkpoints || [];
-                const updatedCps = cps.map(cp => {
-                    if (cp.id === cpId) {
-                        return { ...cp, points: val };
-                    }
-                    return cp;
-                });
-
-                await updateDoc(raceRef, { checkpoints: updatedCps });
-            } catch (e) {
-                console.error("Error updating checkpoint points:", e);
-            }
-        };
-
         window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
             const val = parseInt(newValueStr);
             const currentUser = window.auth.currentUser;
@@ -1404,7 +1341,7 @@
             }
         };
 
-        async function loadAdminRaces(preferredCode = null) {
+        async function loadAdminRaces() {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
 
@@ -1415,9 +1352,11 @@
                 
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "You haven't created any races yet.";
+                    document.getElementById('nav-pending-badge').classList.add('hidden');
                     return;
                 }
 
+                let totalPendingTeams = 0;
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
                     const race = docSnap.data();
@@ -1434,6 +1373,10 @@
                         finalSelectHtml += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park})</option>`;
                     });
 
+                    teamsSnap.forEach(tDoc => {
+                        if (!tDoc.data().isApproved) totalPendingTeams++;
+                    });
+
                     html += `
                         <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
                             <div class="flex justify-between items-center">
@@ -1443,9 +1386,6 @@
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
-                                    <button onclick="toggleRaceEditBox('${race.code}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
-                                        <i class="fa-solid fa-pen-to-square"></i> Edit
-                                    </button>
                                     <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-disneyBlue hover:bg-blue-600 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
                                         <i class="fa-solid fa-share-nodes"></i> Share
                                     </button>
@@ -1455,45 +1395,11 @@
                                 </div>
                             </div>
 
-                            <!-- Expandable Edit Box for Checkpoints & Final Stop -->
-                            <div id="edit-box-${race.code}" class="hidden p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-3 mt-2">
-                                <div class="flex justify-between items-center">
-                                    <h5 class="text-xs font-bold text-amber-300"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit Checkpoints & Final Stop</h5>
-                                    <button onclick="toggleRaceEditBox('${race.code}')" class="text-slate-400 hover:text-white text-xs font-bold">Close Edit</button>
-                                </div>
-
-                                <!-- Designated Final Location Selector -->
-                                <div class="space-y-1">
-                                    <label class="block text-[11px] font-bold text-disneyGold uppercase">Designated Final Ending Location</label>
-                                    <div class="flex gap-2">
-                                        <select id="org-final-cp-${race.code}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
-                                            ${finalSelectHtml}
-                                        </select>
-                                        <button onclick="saveFinalLocation('${race.code}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow whitespace-nowrap">
-                                            Set Final
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Add Stops Search Picker -->
-                                <div class="space-y-2 pt-2 border-t border-slate-900">
-                                    <label class="block text-[11px] font-bold text-slate-300 uppercase">Add More Stops</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                        <input type="text" id="org-search-${race.code}" onkeyup="filterOrgCheckpointsForRace('${race.code}')" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
-                                    </div>
-                                    <div id="org-picker-${race.code}" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 pr-1"></div>
-                                </div>
-                            </div>
-
                             <div class="space-y-1.5 pl-2 border-l border-slate-700 max-h-48 overflow-y-auto">
                                 ${cps.map(cp => `
                                     <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
-                                            <span class="flex items-center gap-1 text-[10px] text-disneyGold">
-                                                Pts: <input type="number" value="${cp.points !== undefined ? cp.points : (race.gameMode === 'scavenger' ? 10 : 0)}" onchange="updateCheckpointPoints('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
-                                            </span>
                                             ${cp.type === 'BONUS_PHOTO' ? `
                                                 <span class="flex items-center gap-1 text-[10px] text-amber-400">
                                                     Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
@@ -1518,31 +1424,14 @@
                                                     <div class="flex items-center gap-2">
                                                         <img src="${teamAvatar}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
                                                         <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
-                                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
-                                                            ${t.isApproved ? 'Approved' : 'Pending Approval'}
+                                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'}">
+                                                            ${t.isApproved ? 'Approved' : 'Pending Approval 🔔'}
                                                         </span>
                                                     </div>
                                                     <div class="flex items-center gap-1.5">
                                                         ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px]">Approve</button>` : ''}
                                                         <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
                                                     </div>
-                                                </div>
-                                                <div class="text-[10px] text-slate-400 space-y-1 pt-1 border-t border-slate-900">
-                                                    <p class="font-semibold text-slate-300">Check-in Audit Logs:</p>
-                                                    ${Object.keys(checkinDetails).length === 0 ? '<span class="italic text-slate-500 block">No check-ins recorded yet.</span>' : ''}
-                                                    ${Object.entries(checkinDetails).map(([cpId, info]) => {
-                                                        const cpObj = cps.find(c => c.id === cpId);
-                                                        const cpName = cpObj ? cpObj.name : cpId;
-                                                        return `
-                                                            <div class="p-1 rounded ${info.isManual ? 'bg-amber-950/30 border border-amber-500/30 text-amber-300' : 'bg-slate-900 text-slate-300'} flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
-                                                                <span class="font-medium">📍 ${cpName}</span>
-                                                                <span class="flex items-center gap-2">
-                                                                    <strong class="${info.isManual ? 'text-amber-400' : 'text-emerald-400'}">${info.isManual ? '⚠ Manual Override (' + (info.distance ? info.distance + 'm away' : 'No GPS') + ')' : '✅ Verified (' + info.distance + 'm)'}</strong>
-                                                                    <span class="text-[9px] text-slate-400 font-mono">${info.latitude ? info.latitude.toFixed(4) + ', ' + info.longitude.toFixed(4) : ''}</span>
-                                                                </span>
-                                                            </div>
-                                                        `;
-                                                    }).join('')}
                                                 </div>
                                             </div>
                                         `;
@@ -1553,6 +1442,14 @@
                     `;
                 }
                 listEl.innerHTML = html;
+
+                const pendingBadge = document.getElementById('nav-pending-badge');
+                if (totalPendingTeams > 0) {
+                    pendingBadge.innerText = totalPendingTeams;
+                    pendingBadge.classList.remove('hidden');
+                } else {
+                    pendingBadge.classList.add('hidden');
+                }
             } catch (e) {
                 console.error(e);
             }
@@ -1724,7 +1621,7 @@
 
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
                 alert("Team approved successfully!");
-                loadAdminRaces(raceCode);
+                loadAdminRaces();
             } catch (e) {
                 alert("Error approving team: " + e.message);
             }
@@ -1745,7 +1642,7 @@
             }
 
             await updateDoc(raceRef, updates);
-            loadAdminRaces(raceCode);
+            loadAdminRaces();
         };
 
         window.deleteTeam = async function(raceCode, teamId) {
@@ -1755,7 +1652,7 @@
 
             if (!confirm("Are you sure you want to remove this team?")) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-            loadAdminRaces(raceCode);
+            loadAdminRaces();
         };
 
         window.deleteEntireRace = async function(raceCode) {
@@ -1926,7 +1823,7 @@
             const iframeEl = document.getElementById('cp-modal-iframe');
 
             if (difficulty === 'hard') {
-                return; // Hard mode is not clickable
+                return;
             }
 
             if (difficulty === 'medium') {
@@ -1935,7 +1832,6 @@
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
             } else {
-                // Easy mode
                 titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
                 descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
                 
@@ -2343,10 +2239,10 @@
             let triviaBonus = 0;
             if (selected === correct) {
                 if (isScavenger) {
-                    triviaBonus = 1; // +1 point
+                    triviaBonus = 1;
                     alert("Correct answer! You earned +1 bonus point!");
                 } else {
-                    triviaBonus = 5; // -5 minutes deduction
+                    triviaBonus = 5;
                     alert("Correct answer! You earned a 5-minute time deduction!");
                 }
             } else {
