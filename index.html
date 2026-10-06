@@ -52,7 +52,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-        /* Sortable ghost placeholder styling without shrinking dragged item */
+        /* Sortable ghost placeholder styling */
         .sortable-ghost {
             opacity: 0.2;
             background: #0f172a !important;
@@ -158,39 +158,36 @@
             </div>
         </div>
         
-        <!-- Dynamic Responsive Tab Navigation Bar -->
-        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold">
-            <!-- Hamburger Dropdown Overlay (Shown when tabs overflow) -->
-            <div id="nav-hamburger-dropdown" class="hidden absolute top-full left-0 w-64 bg-slate-900 border border-slate-700 shadow-2xl rounded-b-2xl z-50 flex flex-col p-2 space-y-1">
-                <div class="text-[10px] uppercase font-bold text-slate-400 px-3 py-1 border-b border-slate-800">More Navigation</div>
-                <div id="hamburger-items-container" class="space-y-1"></div>
+        <!-- Dynamic Hamburger & Tab Navigation Bar -->
+        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center">
+            <!-- Hamburger Menu Trigger (Shown when horizontal space overflows) -->
+            <div id="nav-hamburger-container" class="hidden shrink-0 px-3 border-r border-white/10 relative">
+                <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-bars text-sm"></i> <span>Menu</span>
+                </button>
+                <!-- Vertical Dropdown Overlay -->
+                <div id="mobile-menu-dropdown" class="hidden absolute top-full left-0 mt-1 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 space-y-1">
+                    <!-- Populated dynamically via JS overflow check -->
+                </div>
             </div>
 
-            <!-- Visible Tabs Bar -->
-            <div id="nav-tabs-container" class="flex items-center overflow-x-hidden">
-                <!-- Hamburger Trigger Button (Shown conditionally if overflow detected) -->
-                <button id="nav-hamburger-btn" onclick="toggleHamburgerMenu()" class="hidden py-2.5 px-3.5 text-disneyGold hover:bg-slate-900/80 transition flex items-center justify-center border-r border-white/10 shrink-0">
-                    <i class="fa-solid fa-bars text-sm"></i>
+            <!-- Visible Tabs Bar Container -->
+            <div id="navbar-tabs-container" class="flex flex-1 overflow-x-hidden">
+                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
+                    <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
                 </button>
-
-                <!-- Standard Tabs List -->
-                <div id="visible-tabs-list" class="flex flex-1 overflow-x-auto custom-scrollbar">
-                    <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap min-w-[140px]">
-                        <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
-                    </button>
-                    <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[140px]">
-                        <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
-                    </button>
-                    <button onclick="switchTab('maps')" id="tab-btn-maps" data-tab="maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[120px]">
-                        <i class="fa-solid fa-map"></i> <span>Park Maps</span>
-                    </button>
-                    <button onclick="switchTab('rules')" id="tab-btn-rules" data-tab="rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[100px]">
-                        <i class="fa-solid fa-book-open"></i> <span>Rules</span>
-                    </button>
-                    <button onclick="switchTab('organizer')" id="tab-btn-organizer" data-tab="organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[170px]">
-                        <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
-                    </button>
-                </div>
+                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
+                </button>
+                <button onclick="switchTab('maps')" id="tab-btn-maps" data-tab="maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-map"></i> <span>Park Maps</span>
+                </button>
+                <button onclick="switchTab('rules')" id="tab-btn-rules" data-tab="rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-book-open"></i> <span>Rules</span>
+                </button>
+                <button onclick="switchTab('organizer')" id="tab-btn-organizer" data-tab="organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
+                </button>
             </div>
         </div>
     </nav>
@@ -378,7 +375,7 @@
                 </div>
             </div>
 
-            <!-- Live Team Chat Box (Renamed to "Live Race Chat") -->
+            <!-- Live Team Chat Box -->
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
@@ -789,111 +786,106 @@
             document.getElementById('image-modal').classList.add('hidden');
         };
 
-        // Tab Persistence & Dynamic Navbar Management
-        let currentActiveTab = localStorage.getItem('rad_active_tab') || 'race';
-
-        window.switchTab = function(tabName) {
-            currentActiveTab = tabName;
-            localStorage.setItem('rad_active_tab', tabName);
-
+        // Tab Persistence on Refresh
+        function switchTab(tabName, saveState = true) {
             ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
-                const sec = document.getElementById(`tab-${t}`);
-                if (sec) sec.classList.toggle('hidden', t !== tabName);
+                const section = document.getElementById(`tab-${t}`);
+                if (section) section.classList.toggle('hidden', t !== tabName);
+            });
 
-                // Update active tab buttons in main bar and hamburger menu
-                const btn = document.querySelector(`button[data-tab="${t}"]`);
-                if (btn) {
-                    if (t === tabName) {
-                        btn.className = btn.className.replace('text-slate-400 hover:text-slate-200', 'text-disneyGold border-b-2 border-disneyGold bg-slate-900/60');
-                        if (!btn.classList.contains('text-disneyGold')) {
-                            btn.classList.add('text-disneyGold', 'border-b-2', 'border-disneyGold', 'bg-slate-900/60');
-                        }
+            // Update active styles across both visible bar and mobile dropdown
+            document.querySelectorAll('[data-tab]').forEach(btn => {
+                const isMatch = btn.getAttribute('data-tab') === tabName;
+                if (btn.tagName === 'BUTTON' && !btn.closest('#mobile-menu-dropdown')) {
+                    if (isMatch) {
+                        btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
                     } else {
-                        btn.classList.remove('text-disneyGold', 'border-b-2', 'border-disneyGold', 'bg-slate-900/60');
-                        if (!btn.classList.contains('text-slate-400')) {
-                            btn.classList.add('text-slate-400', 'hover:text-slate-200');
-                        }
+                        btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
                     }
                 }
             });
 
-            // Close hamburger menu on selection
-            const hamburgerDropdown = document.getElementById('nav-hamburger-dropdown');
-            if (hamburgerDropdown) hamburgerDropdown.classList.add('hidden');
+            if (saveState) {
+                localStorage.setItem('rad_active_tab', tabName);
+            }
 
             if (tabName === 'leaderboard') {
                 loadLeaderboard();
                 initChatListener();
             }
 
-            // Re-evaluate navbar layout fitting
-            setTimeout(evaluateNavbarOverflow, 50);
-        };
+            // Close mobile menu dropdown if open
+            const dropdown = document.getElementById('mobile-menu-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
 
-        window.toggleHamburgerMenu = function() {
-            const dropdown = document.getElementById('nav-hamburger-dropdown');
+        // Dynamic Responsive Navbar with Hamburger Overflow
+        const ALL_TABS = [
+            { id: 'race', name: 'Team Portal', icon: 'fa-flag-checkered' },
+            { id: 'leaderboard', name: 'Race Portal', icon: 'fa-trophy' },
+            { id: 'maps', name: 'Park Maps', icon: 'fa-map' },
+            { id: 'rules', name: 'Rules', icon: 'fa-book-open' },
+            { id: 'organizer', name: 'Organiser Dashboard', icon: 'fa-user-gear' }
+        ];
+
+        function initDynamicNavbar() {
+            const tabsContainer = document.getElementById('navbar-tabs-container');
+            const hamburgerContainer = document.getElementById('nav-hamburger-container');
+            const dropdown = document.getElementById('mobile-menu-dropdown');
+            if (!tabsContainer || !hamburgerContainer || !dropdown) return;
+
+            // Temporarily render all tabs in container to measure width
+            let html = '';
+            ALL_TABS.forEach(t => {
+                html += `
+                    <button onclick="switchTab('${t.id}')" id="tab-btn-${t.id}" data-tab="${t.id}" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid ${t.icon}"></i> <span>${t.name}</span>
+                    </button>
+                `;
+            });
+            tabsContainer.innerHTML = html;
+
+            // Re-apply active styling for current tab
+            const currentTab = localStorage.getItem('rad_active_tab') || 'race';
+            const activeBtn = document.getElementById(`tab-btn-${currentTab}`);
+            if (activeBtn) {
+                activeBtn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
+            }
+
+            // Check if container overflows or screen is compact (< 768px)
+            if (window.innerWidth < 768) {
+                hamburgerContainer.classList.remove('hidden');
+                // Hide tabs from horizontal bar and put them in mobile menu
+                tabsContainer.classList.add('hidden');
+                
+                let dropHtml = '';
+                ALL_TABS.forEach(t => {
+                    dropHtml += `
+                        <button onclick="switchTab('${t.id}')" data-tab="${t.id}" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
+                            <i class="fa-solid ${t.icon} text-disneyGold"></i> <span>${t.name}</span>
+                        </button>
+                    `;
+                });
+                dropdown.innerHTML = dropHtml;
+            } else {
+                hamburgerContainer.classList.add('hidden');
+                tabsContainer.classList.remove('hidden');
+            }
+        }
+
+        window.toggleMobileMenu = function() {
+            const dropdown = document.getElementById('mobile-menu-dropdown');
             if (dropdown) dropdown.classList.toggle('hidden');
         };
 
-        // Evaluate whether tabs fit horizontally or need hamburger overflow
-        function evaluateNavbarOverflow() {
-            const container = document.getElementById('nav-tabs-container');
-            const list = document.getElementById('visible-tabs-list');
-            const hamburgerBtn = document.getElementById('nav-hamburger-btn');
-            const hamburgerItems = document.getElementById('hamburger-items-container');
-            if (!container || !list) return;
-
-            // All available tabs
-            const tabs = [
-                { id: 'race', label: 'Team Portal', icon: 'fa-flag-checkered' },
-                { id: 'leaderboard', label: 'Race Portal', icon: 'fa-trophy' },
-                { id: 'maps', label: 'Park Maps', icon: 'fa-map' },
-                { id: 'rules', label: 'Rules', icon: 'fa-book-open' },
-                { id: 'organizer', label: 'Organiser Dashboard', icon: 'fa-user-gear' }
-            ];
-
-            // Measure container width
-            const containerWidth = container.clientWidth - 50; // buffer
-            let cumulativeWidth = 0;
-            let visibleTabs = [];
-            let hiddenTabs = [];
-
-            // Approximate widths per tab character / padding
-            tabs.forEach((tab, index) => {
-                const approxWidth = tab.label.length * 10 + 45;
-                if (cumulativeWidth + approxWidth < containerWidth && index < 4) {
-                    visibleTabs.push(tab);
-                    cumulativeWidth += approxWidth;
-                } else {
-                    hiddenTabs.push(tab);
-                }
-            });
-
-            // If we have hidden tabs, show hamburger button
-            if (hiddenTabs.length > 0) {
-                hamburgerBtn.classList.remove('hidden');
-                hamburgerItems.innerHTML = hiddenTabs.map(t => `
-                    <button onclick="switchTab('${t.id}')" data-tab="${t.id}" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2 transition">
-                        <i class="fa-solid ${t.icon} text-disneyGold"></i> <span>${t.label}</span>
-                    </button>
-                `).join('');
-            } else {
-                hamburgerBtn.classList.add('hidden');
-                hamburgerItems.innerHTML = '';
+        // Close mobile dropdown when clicking outside
+        window.addEventListener('click', (e) => {
+            const hamburgerContainer = document.getElementById('nav-hamburger-container');
+            const dropdown = document.getElementById('mobile-menu-dropdown');
+            if (hamburgerContainer && dropdown && !hamburgerContainer.contains(e.target)) {
+                dropdown.classList.add('hidden');
             }
-
-            // Render visible tabs in list
-            list.innerHTML = visibleTabs.map(t => {
-                const isActive = t.id === currentActiveTab;
-                return `
-                    <button onclick="switchTab('${t.id}')" data-tab="${t.id}" class="flex-1 py-2.5 px-3 text-center ${isActive ? 'text-disneyGold border-b-2 border-disneyGold bg-slate-900/60' : 'text-slate-400 hover:text-slate-200'} transition flex justify-center items-center gap-2 whitespace-nowrap min-w-[120px]">
-                        <i class="fa-solid ${t.icon}"></i> <span>${t.label}</span>
-                    </button>
-                `;
-            }).join('');
-        }
-
-        window.addEventListener('resize', evaluateNavbarOverflow);
+        });
 
         const MAP_LOCATIONS = {
             mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
@@ -984,8 +976,8 @@
         window.renderManualCheckboxList = function() {
             const container = document.getElementById('manual-checkbox-container');
             const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
-
             const presets = window.DISNEY_PRESETS || [];
+
             const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
@@ -1078,8 +1070,8 @@
         window.updateCreationFinalStopDropdown = function() {
             const selectEl = document.getElementById('create-final-stop-select');
             if (!selectEl) return;
-
             const presets = window.DISNEY_PRESETS || [];
+
             let candidateStops = [];
             if (creationPopMethod === 'preset') {
                 const parkVal = document.getElementById('preset-park-select').value;
@@ -1094,7 +1086,7 @@
                 const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
                 checkedBoxes.forEach(cb => {
                     const p = presets[parseInt(cb.value)];
-                    if (p && p.type !== 'BONUS_PHOTO') {
+                    if (p.type !== 'BONUS_PHOTO') {
                         candidateStops.push(p);
                     }
                 });
@@ -1115,8 +1107,17 @@
                 presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
             }
             updateCreationFinalStopDropdown();
-            // Initialize active tab from storage on page load
-            switchTab(currentActiveTab);
+
+            // Initialize dynamic navbar & restore saved tab state with a small delay for mobile layout settlement
+            setTimeout(() => {
+                initDynamicNavbar();
+                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+                switchTab(savedTab, false);
+            }, 50);
+        });
+
+        window.addEventListener('resize', () => {
+            initDynamicNavbar();
         });
 
         window.shareRaceCode = function(code, title) {
@@ -1284,6 +1285,7 @@
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
             const defaultPoints = gameMode === 'scavenger' ? 10 : 0;
+            const presets = window.DISNEY_PRESETS || [];
             
             const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
@@ -1300,7 +1302,6 @@
                     return alert("This race code was randomly generated as a duplicate. Please hit the dice icon to generate a new unique code.");
                 }
 
-                const presets = window.DISNEY_PRESETS || [];
                 let initialCps = [];
 
                 if (creationPopMethod === 'random') {
@@ -1713,7 +1714,7 @@
             }
         };
 
-        // Live Chat Realtime Integration with Team-Logged-In Check
+        // Live Chat Realtime Integration
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
             const targetCode = window.activeRaceCode;
@@ -1723,7 +1724,6 @@
             const disabledNotice = document.getElementById('chat-disabled-notice');
             const statusIndicator = document.getElementById('chat-status-indicator');
 
-            // Hide chat box entirely if not logged onto a team
             if (!targetCode || !window.activeTeamId) {
                 if (chatCard) chatCard.classList.add('hidden');
                 return;
@@ -1749,7 +1749,6 @@
                 }
             });
 
-            // Query chat messages sorted safely client-side to prevent missing index errors
             const chatColRef = collection(window.db, "races", targetCode, "chat");
             chatUnsubscribe = onSnapshot(chatColRef, (snapshot) => {
                 if (snapshot.empty) {
@@ -2205,9 +2204,8 @@
                     }
                 } else {
                     statusBadgeOrButton = `
-                        <div class="flex justify-end w-full sm:w-auto">
-                            <!-- onclick with stopPropagation prevents card modal click -->
-                            <button onclick="event.stopPropagation(); checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                        <div class="flex justify-end w-full sm:w-auto" onclick="event.stopPropagation()">
+                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
                                 GPS Check In
                             </button>
                         </div>
@@ -2240,7 +2238,7 @@
                 `;
             }).join('');
 
-            // Initialize SortableJS for Touch & Mouse Drag-and-Drop with Instant Position Renumbering
+            // Initialize SortableJS for Touch & Mouse Drag-and-Drop with Instant Renumbering
             const listEl = document.getElementById('team-checkpoints-list');
             if (listEl && !tData.endTime) {
                 Sortable.create(listEl, {
@@ -2248,20 +2246,14 @@
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
                     handle: '.cursor-grab',
-                    onSort: function () {
-                        // Instantly renumber DOM elements immediately upon drag move
-                        const cards = listEl.querySelectorAll('.checkpoint-card');
-                        cards.forEach((card, index) => {
+                    onEnd: async function () {
+                        const newOrder = [];
+                        listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
+                            newOrder.push(card.getAttribute('data-id'));
                             const numSpan = card.querySelector('.checkpoint-number');
                             if (numSpan) {
                                 numSpan.innerText = `#${index + 1}`;
                             }
-                        });
-                    },
-                    onEnd: async function () {
-                        const newOrder = [];
-                        listEl.querySelectorAll('.checkpoint-card').forEach(card => {
-                            newOrder.push(card.getAttribute('data-id'));
                         });
                         const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
                         await updateDoc(teamRef, { customRouteOrder: newOrder });
