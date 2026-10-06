@@ -50,12 +50,12 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-        /* Sortable ghost & placeholder styling */
+        /* Sortable ghost placeholder styling without shrinking dragged item */
         .sortable-ghost {
-            opacity: 0.3;
-            background: #1e293b !important;
+            opacity: 0.2;
+            background: #0f172a !important;
             border: 2px dashed #FFB800 !important;
-            height: 60px;
+            box-shadow: inset 0 0 10px rgba(255, 184, 0, 0.2);
         }
         .sortable-chosen {
             background: #1e293b !important;
@@ -156,19 +156,19 @@
             </div>
         </div>
         
-        <!-- Tab Navigation Bar -->
+        <!-- Tab Navigation Bar (Reordered per request) -->
         <div class="flex justify-around bg-slate-950/40 border-t border-white/5 text-xs font-semibold overflow-x-auto">
             <button onclick="switchTab('race')" id="tab-btn-race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
                 <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
+            </button>
+            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
             </button>
             <button onclick="switchTab('maps')" id="tab-btn-maps" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-map"></i> <span>Park Maps</span>
             </button>
             <button onclick="switchTab('rules')" id="tab-btn-rules" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-book-open"></i> <span>Rules</span>
-            </button>
-            <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
             </button>
             <button onclick="switchTab('organizer')" id="tab-btn-organizer" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-user-gear"></i> <span>Organiser Dashboard</span>
@@ -297,7 +297,7 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your route order before checking in. Click any checkpoint for hints/maps (Easy/Medium).</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your optimal route order. Click any checkpoint for hints/maps (Easy/Medium).</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -321,7 +321,70 @@
 
         </section>
 
-        <!-- ================= TAB 2: PARK MAPS ================= -->
+        <!-- ================= TAB 2: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
+        <section id="tab-leaderboard" class="hidden space-y-6">
+            <!-- Leaderboard Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
+                    <div>
+                        <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
+                        </h2>
+                        <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <span id="active-leaderboard-code-badge" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-mono text-disneyGold font-bold">---</span>
+                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Rank</th>
+                                <th class="p-3">Team</th>
+                                <th class="p-3 text-center" id="lb-col-metric">Progress</th>
+                                <th class="p-3 text-center">Bonuses & Proofs</th>
+                                <th class="p-3 text-right" id="lb-col-score">Time / Points</th>
+                                <th class="p-3 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
+                            <tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Live Team Chat Box (Renamed to "Live Race Chat") -->
+            <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
+                        <i class="fa-solid fa-comments"></i> Live Race Chat
+                    </h3>
+                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
+                </div>
+                
+                <!-- Messages Container -->
+                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
+                    <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
+                </div>
+
+                <!-- Input Box -->
+                <div id="chat-input-box" class="flex gap-2">
+                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                    <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                </div>
+                <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: PARK MAPS ================= -->
         <section id="tab-maps" class="hidden space-y-6">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
                 <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -388,7 +451,7 @@
             </div>
         </section>
 
-        <!-- ================= TAB 3: RULES ================= -->
+        <!-- ================= TAB 4: RULES ================= -->
         <section id="tab-rules" class="hidden space-y-6">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
                 <div class="border-b border-slate-700 pb-4">
@@ -469,69 +532,6 @@
                         When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for organizer review. 
                     </p>
                 </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 4: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
-        <section id="tab-leaderboard" class="hidden space-y-6">
-            <!-- Leaderboard Card -->
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
-                    <div>
-                        <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard & Race Portal
-                        </h2>
-                        <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
-                    </div>
-                    <div class="flex gap-2 items-center">
-                        <span id="active-leaderboard-code-badge" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-mono text-disneyGold font-bold">---</span>
-                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-                            <i class="fa-solid fa-rotate"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                            <tr>
-                                <th class="p-3">Rank</th>
-                                <th class="p-3">Team</th>
-                                <th class="p-3 text-center" id="lb-col-metric">Progress</th>
-                                <th class="p-3 text-center">Bonuses & Proofs</th>
-                                <th class="p-3 text-right" id="lb-col-score">Time / Points</th>
-                                <th class="p-3 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                            <tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Live Team Chat Box (Hidden if not logged onto a team) -->
-            <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                    <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
-                        <i class="fa-solid fa-comments"></i> Live Team Chat
-                    </h3>
-                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
-                </div>
-                
-                <!-- Messages Container -->
-                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
-                    <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
-                </div>
-
-                <!-- Input Box -->
-                <div id="chat-input-box" class="flex gap-2">
-                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
-                    <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
-                        <i class="fa-solid fa-paper-plane"></i> Send
-                    </button>
-                </div>
-                <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
             </div>
         </section>
 
@@ -771,7 +771,7 @@
         };
 
         function switchTab(tabName) {
-            ['race', 'maps', 'rules', 'leaderboard', 'organizer'].forEach(t => {
+            ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (t === tabName) {
