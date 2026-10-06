@@ -834,7 +834,6 @@
             const dropdown = document.getElementById('mobile-menu-dropdown');
             if (!tabsContainer || !hamburgerContainer || !dropdown) return;
 
-            // Temporarily render all tabs in container to measure width
             let html = '';
             ALL_TABS.forEach(t => {
                 html += `
@@ -845,17 +844,14 @@
             });
             tabsContainer.innerHTML = html;
 
-            // Re-apply active styling for current tab
             const currentTab = localStorage.getItem('rad_active_tab') || 'race';
             const activeBtn = document.getElementById(`tab-btn-${currentTab}`);
             if (activeBtn) {
                 activeBtn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
             }
 
-            // Check if container overflows or screen is compact (< 768px)
             if (window.innerWidth < 768) {
                 hamburgerContainer.classList.remove('hidden');
-                // Hide tabs from horizontal bar and put them in mobile menu
                 tabsContainer.classList.add('hidden');
                 
                 let dropHtml = '';
@@ -878,7 +874,6 @@
             if (dropdown) dropdown.classList.toggle('hidden');
         };
 
-        // Close mobile dropdown when clicking outside
         window.addEventListener('click', (e) => {
             const hamburgerContainer = document.getElementById('nav-hamburger-container');
             const dropdown = document.getElementById('mobile-menu-dropdown');
@@ -1108,7 +1103,6 @@
             }
             updateCreationFinalStopDropdown();
 
-            // Initialize dynamic navbar & restore saved tab state with a small delay for mobile layout settlement
             setTimeout(() => {
                 initDynamicNavbar();
                 const savedTab = localStorage.getItem('rad_active_tab') || 'race';
@@ -1235,6 +1229,9 @@
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
+                
+                // Initialize chat listener now that activeRaceCode & activeTeamId are confirmed
+                initChatListener();
             } catch (e) {
                 console.error("Failed to restore session:", e);
                 logoutTeam();
@@ -1969,6 +1966,9 @@
 
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
+                
+                // Trigger chat listener immediately upon successful login/resume
+                initChatListener();
 
                 const currentTeamSnap = await getDoc(teamRef);
                 const tData = currentTeamSnap.data();
