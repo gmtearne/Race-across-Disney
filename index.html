@@ -338,6 +338,18 @@
 
         <!-- ================= TAB 2: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
+            
+            <!-- Logged Out Notice Banner -->
+            <div id="leaderboard-login-notice" class="hidden bg-amber-950/40 border border-amber-500/40 p-4 rounded-2xl text-xs text-amber-200 flex items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-triangle-exclamation text-disneyGold text-base"></i>
+                    <span>Please log into your team/race to review leaderboard and chat.</span>
+                </div>
+                <button onclick="switchTab('race')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
+                    Go to Team Portal
+                </button>
+            </div>
+
             <!-- Leaderboard Card -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
@@ -588,180 +600,190 @@
                     </button>
                 </div>
 
-                <!-- Combined Create New Race & Initial Setup Card -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-5">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Create New Race & Select Checkpoints</h4>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        <div class="flex gap-1.5">
-                            <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
-                            <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
-                                <i class="fa-solid fa-dice"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Game Mode Toggle Section with Clickable Info -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                        <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            
-                            <!-- Speed Race Option -->
-                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
-                                <div class="flex items-center justify-between">
-                                    <label class="flex items-center space-x-2.5 cursor-pointer">
-                                        <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                        <span class="font-bold text-xs text-white">Speed Race</span>
-                                    </label>
-                                    <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
-                                </div>
-                                <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
-                                    First team to complete all checkpoints wins! Ranked purely by total elapsed time.
-                                </div>
+                <!-- Collapsible Create New Race Card -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                    <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
+                                <i class="fa-solid fa-plus text-xs"></i>
                             </div>
-
-                            <!-- Scavenger Hunt Option -->
-                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
-                                <div class="flex items-center justify-between">
-                                    <label class="flex items-center space-x-2.5 cursor-pointer">
-                                        <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                        <span class="font-bold text-xs text-white">Scavenger Hunt</span>
-                                    </label>
-                                    <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
-                                </div>
-                                <div id="scavenger-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
-                                    Teams collect points for checkpoints visited within a time limit. Higher score wins!
-                                </div>
-                            </div>
-
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create New Race / Hunt</span>
                         </div>
-                    </div>
-
-                    <!-- Navigation & Hint Difficulty -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                        <label class="block text-xs font-bold text-slate-300 mb-2">Navigation & Hint Difficulty</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
-                                <span class="font-bold text-xs text-white">Easy</span>
-                                <span class="text-[9px] text-slate-400">Pins + Transit</span>
-                            </label>
-                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
-                                <span class="font-bold text-xs text-white">Medium</span>
-                                <span class="text-[9px] text-slate-400">Specific Park Lands</span>
-                            </label>
-                            <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
-                                <span class="font-bold text-xs text-white">Hard</span>
-                                <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Trivia Challenge Option -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                        <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                <input type="radio" name="trivia_toggle" value="off" checked onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                <span>Off</span>
-                            </label>
-                            <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                <input type="radio" name="trivia_toggle" value="on" onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                <span>On</span>
-                            </label>
-                        </div>
-                        <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
-                            <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
-                            <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                <option value="every">Every Check-in</option>
-                                <option value="random">Random Check-ins</option>
-                            </select>
-                            <div id="trivia-random-count-box" class="hidden pt-1">
-                                <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
-                                <input type="number" id="trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Hidden Default Checkpoint Points Configuration -->
-                    <input type="number" id="create-default-points" value="0" class="hidden">
-
-                    <!-- Checkpoint Setup Options for Creation -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
-                            <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
-                            <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
-                        </div>
-
-                        <!-- 1. Random Sub-box -->
-                        <div id="pop-box-random" class="space-y-3 pt-2">
-                            <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
-                                    <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
-                                    <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2. Manual Sub-box -->
-                        <div id="pop-box-manual" class="hidden space-y-3 pt-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
-                                <div class="space-x-2">
-                                    <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
-                                    <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
-                                </div>
-                            </div>
-                            <div class="relative">
-                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
-                            </div>
-                            <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
-                        </div>
-
-                        <!-- 3. Preset Dropdown Sub-box -->
-                        <div id="pop-box-preset" class="hidden space-y-3 pt-2">
-                            <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                            <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
-                                <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
-                                <option value="Epcot">🌐 Epcot Park (All Stops)</option>
-                                <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
-                                <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
-                                <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Speed Race Final Stop Selector (Only shown for Speed Race) -->
-                    <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
-                        <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
-                        <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                            <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
-                        </select>
-                    </div>
-
-                    <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
-                        + Create Race Event & Start
+                        <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
+
+                    <div id="create-race-collapsible-box" class="hidden space-y-5 pt-4 border-t border-slate-700/80">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            <div class="flex gap-1.5">
+                                <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
+                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
+                                    <i class="fa-solid fa-dice"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Game Mode Toggle Section with Clickable Info -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                            <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                
+                                <!-- Speed Race Option -->
+                                <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                                            <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                            <span class="font-bold text-xs text-white">Speed Race</span>
+                                        </label>
+                                        <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
+                                    </div>
+                                    <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time.
+                                    </div>
+                                </div>
+
+                                <!-- Scavenger Hunt Option -->
+                                <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                                            <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                            <span class="font-bold text-xs text-white">Scavenger Hunt</span>
+                                        </label>
+                                        <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
+                                    </div>
+                                    <div id="scavenger-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                        Teams collect points for checkpoints visited within a time limit. Higher score wins!
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Navigation & Hint Difficulty -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                            <label class="block text-xs font-bold text-slate-300 mb-2">Default Base Difficulty</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                    <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
+                                    <span class="font-bold text-xs text-white">Easy</span>
+                                    <span class="text-[9px] text-slate-400">Pins + Transit</span>
+                                </label>
+                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                    <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
+                                    <span class="font-bold text-xs text-white">Medium</span>
+                                    <span class="text-[9px] text-slate-400">Specific Park Lands</span>
+                                </label>
+                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                    <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
+                                    <span class="font-bold text-xs text-white">Hard</span>
+                                    <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Trivia Challenge Option -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
+                            <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                                    <input type="radio" name="trivia_toggle" value="off" checked onchange="toggleTriviaSettings()" class="text-disneyGold">
+                                    <span>Off</span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                                    <input type="radio" name="trivia_toggle" value="on" onchange="toggleTriviaSettings()" class="text-disneyGold">
+                                    <span>On</span>
+                                </label>
+                            </div>
+                            <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
+                                <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
+                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                    <option value="every">Every Check-in</option>
+                                    <option value="random">Random Check-ins</option>
+                                </select>
+                                <div id="trivia-random-count-box" class="hidden pt-1">
+                                    <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
+                                    <input type="number" id="trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden Default Checkpoint Points Configuration -->
+                        <input type="number" id="create-default-points" value="0" class="hidden">
+
+                        <!-- Checkpoint Setup Options for Creation -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
+                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
+                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
+                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
+                            </div>
+
+                            <!-- 1. Random Sub-box -->
+                            <div id="pop-box-random" class="space-y-3 pt-2">
+                                <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
+                                        <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
+                                        <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Manual Sub-box -->
+                            <div id="pop-box-manual" class="hidden space-y-3 pt-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
+                                    <div class="space-x-2">
+                                        <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
+                                        <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                    <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
+                                </div>
+                                <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
+                            </div>
+
+                            <!-- 3. Preset Dropdown Sub-box -->
+                            <div id="pop-box-preset" class="hidden space-y-3 pt-2">
+                                <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
+                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                    <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
+                                    <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
+                                    <option value="Epcot">🌐 Epcot Park (All Stops)</option>
+                                    <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
+                                    <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
+                                    <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Speed Race Final Stop Selector (Only shown for Speed Race) -->
+                        <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
+                            <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
+                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                                <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
+                            </select>
+                        </div>
+
+                        <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
+                            + Create Race Event & Start
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Active Races Overview -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals & GPS Review Logs</h4>
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals & Per-Team Difficulty</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
             </div>
@@ -782,6 +804,18 @@
         };
         window.closeImageModal = function() {
             document.getElementById('image-modal').classList.add('hidden');
+        };
+
+        window.toggleCreateRaceCard = function() {
+            const box = document.getElementById('create-race-collapsible-box');
+            const icon = document.getElementById('create-race-toggle-icon');
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                icon.innerHTML = 'Collapse <i class="fa-solid fa-chevron-up ml-1"></i>';
+            } else {
+                box.classList.add('hidden');
+                icon.innerHTML = 'Expand <i class="fa-solid fa-chevron-down ml-1"></i>';
+            }
         };
 
         function switchTab(tabName, saveState = true) {
@@ -1139,9 +1173,21 @@
             const savedTeamId = localStorage.getItem('rad_team_id');
             if (savedRaceCode && savedTeamId) {
                 restoreSession(savedRaceCode, savedTeamId);
+            } else {
+                updateLeaderboardLoginNotice();
             }
         } catch (err) {
             console.error("Firebase Initialization Error:", err);
+        }
+
+        function updateLeaderboardLoginNotice() {
+            const noticeEl = document.getElementById('leaderboard-login-notice');
+            if (!noticeEl) return;
+            if (!window.activeRaceCode || !window.activeTeamId) {
+                noticeEl.classList.remove('hidden');
+            } else {
+                noticeEl.classList.add('hidden');
+            }
         }
 
         window.toggleAuthMode = function() {
@@ -1171,6 +1217,7 @@
                 const tData = teamSnap.data();
                 window.activeRaceCode = code;
                 window.activeTeamId = teamId;
+                updateLeaderboardLoginNotice();
 
                 if (!tData.isApproved) {
                     document.getElementById('login-prompt-card').classList.add('hidden');
@@ -1393,6 +1440,21 @@
             }
         };
 
+        window.updateTeamDifficultyOverride = async function(raceCode, teamId, newDifficulty) {
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
+                await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { difficultyOverride: newDifficulty });
+                alert("Team difficulty override updated successfully!");
+                loadAdminRaces();
+            } catch (e) {
+                alert("Error updating difficulty override: " + e.message);
+            }
+        };
+
         window.toggleChatSetting = async function(raceCode, checkbox) {
             const currentUser = window.auth.currentUser;
             try {
@@ -1426,13 +1488,14 @@
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
                     const race = docSnap.data();
+                    const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
                     const isChatEnabled = race.chatEnabled !== false;
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
-                    const diffLabel = race.difficulty ? race.difficulty.toUpperCase() : 'EASY';
+                    const diffLabel = raceBaseDiff.toUpperCase();
 
                     teamsSnap.forEach(tDoc => {
                         if (!tDoc.data().isApproved) totalPendingTeams++;
@@ -1443,7 +1506,7 @@
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="font-bold text-white text-xs">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-[10px] ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel}</p>
+                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code} | MODE: ${modeLabel} | BASE DIFF: ${diffLabel}</p>
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
@@ -1479,14 +1542,15 @@
                             </div>
 
                             <div class="pt-2 border-t border-slate-800">
-                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams & Approvals (${teamsSnap.size})</span>
+                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams, Approvals & Per-Team Difficulty (${teamsSnap.size})</span>
                                 <div class="space-y-1.5">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
+                                        const teamDiff = t.difficultyOverride || raceBaseDiff;
                                         return `
-                                            <div class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1.5">
-                                                <div class="flex justify-between items-center">
+                                            <div class="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-2">
+                                                <div class="flex justify-between items-center flex-wrap gap-2">
                                                     <div class="flex items-center gap-2">
                                                         <img src="${teamAvatar}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
                                                         <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
@@ -1498,6 +1562,14 @@
                                                         ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px]">Approve</button>` : ''}
                                                         <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
                                                     </div>
+                                                </div>
+                                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-900">
+                                                    <span>Difficulty Override:</span>
+                                                    <select onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-semibold text-[10px]">
+                                                        <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy (Base)</option>
+                                                        <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
+                                                        <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         `;
@@ -1546,6 +1618,7 @@
                 }
 
                 const raceData = raceSnap.data();
+                const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
                 subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
 
@@ -1643,6 +1716,9 @@
                     }
 
                     const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
+                    const teamDiff = t.difficultyOverride || raceBaseDiff;
+                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded uppercase font-semibold ml-1.5" title="Difficulty Override">${teamDiff} mode</span>` : '';
+
                     const bonusPhotos = t.bonusPhotos || {};
                     let badgeHtml = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
                     if (Object.keys(bonusPhotos).length > 0) {
@@ -1660,7 +1736,10 @@
                             <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
                             <td class="p-3 flex items-center gap-2.5">
                                 <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
-                                <span class="font-bold text-white">${t.teamName}</span>
+                                <div>
+                                    <span class="font-bold text-white">${t.teamName}</span>
+                                    ${diffBadge}
+                                </div>
                             </td>
                             <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
                             <td class="p-3 text-center text-amber-400 font-semibold">${badgeHtml}</td>
@@ -1930,6 +2009,7 @@
 
                 window.activeRaceCode = code;
                 window.activeTeamId = teamId;
+                updateLeaderboardLoginNotice();
 
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
@@ -1970,6 +2050,7 @@
         window.logoutTeam = function() {
             window.activeRaceCode = null;
             window.activeTeamId = null;
+            updateLeaderboardLoginNotice();
             localStorage.removeItem('rad_race_code');
             localStorage.removeItem('rad_team_id');
             clearInterval(timerInterval);
@@ -2049,7 +2130,7 @@
             document.getElementById('team-dashboard-active').classList.remove('hidden');
 
             const isScavenger = raceData.gameMode === 'scavenger';
-            const difficulty = (raceData.difficulty || 'easy').toLowerCase();
+            const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
 
             document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty.toUpperCase()} Tier)` : `Speed Race (${difficulty.toUpperCase()} Tier)`;
 
@@ -2361,6 +2442,8 @@
         async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
+            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            const tData = teamSnap.data();
             const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
             
             const triviaSettings = raceData.trivia;
@@ -2376,7 +2459,7 @@
                 }
 
                 if (triggerTrivia) {
-                    const difficulty = (raceData.difficulty || 'easy').toLowerCase();
+                    const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
                     const qData = locTrivia[difficulty] || locTrivia.easy;
 
                     if (qData) {
