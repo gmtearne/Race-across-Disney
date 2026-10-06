@@ -1703,10 +1703,9 @@
                 const raceData = raceSnap.data();
                 const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
-                const isHideBonuses = raceData.hideBonuses === true;
                 
-                const currentUser = window.auth.currentUser;
-                const isOrganiserLoggedIn = !!currentUser;
+                // Fixed: Hide bonuses for everyone (including logged-in organisers) when hideBonuses is true
+                const isHideBonuses = raceData.hideBonuses === true;
 
                 subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
 
@@ -1808,7 +1807,7 @@
                     const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded uppercase font-semibold ml-1.5" title="Difficulty Override">${teamDiff}</span>` : '';
 
                     let bonusDisplay = "";
-                    if (isHideBonuses && !isOrganiserLoggedIn) {
+                    if (isHideBonuses) {
                         bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by organiser">?</span>`;
                     } else {
                         const bonusPhotos = t.bonusPhotos || {};
