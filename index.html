@@ -531,9 +531,9 @@
                     </button>
                 </div>
 
-                <!-- 1. Create New Race -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Create New Race Settings</h4>
+                <!-- Combined Create New Race & Initial Setup Card -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-5">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Create New Race & Select Checkpoints</h4>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
@@ -636,94 +636,55 @@
                             <span id="create-mode-indicator" class="text-[10px] text-disneyGold font-medium">Speed Race Mode (0 pts default)</span>
                         </div>
                         <input type="number" id="create-default-points" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-disneyGold">
-                        <p class="text-[10px] text-slate-400 mt-1">Points can be overridden per individual checkpoint below.</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Points can be overridden per individual checkpoint later.</p>
                     </div>
 
-                    <button onclick="createNewRace()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
-                        + Create Race Event
+                    <!-- Checkpoint Setup Options for Creation -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button type="button" onclick="setCreationPopType('random')" id="pop-btn-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Randomly Generate Stops</button>
+                            <button type="button" onclick="setCreationPopType('all')" id="pop-btn-all" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">+ Add All 50 Disney Locations</button>
+                        </div>
+                        <p id="pop-status-desc" class="text-[11px] text-slate-400 italic">Currently selected: Randomly generate stops (10 GPS stops + 5 bonus challenges).</p>
+                    </div>
+
+                    <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
+                        + Create Race Event & Start
                     </button>
                 </div>
 
-                <!-- 2. Add Checkpoints, Custom Stops & Ending Location -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">2. Add Checkpoints, Custom Stops & Ending Location</h4>
-                            <p class="text-[11px] text-slate-400">Select a race from your dropdown, add custom stops, or edit points/bonus values below.</p>
-                        </div>
-                        <select id="org-race-select" onchange="onOrgRaceSelected()" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs uppercase font-mono text-disneyGold font-bold w-52 focus:outline-none">
-                            <option value="">-- Select Your Race --</option>
+                <!-- Hidden Custom Checkpoint Box (Preserved for future use) -->
+                <div id="custom-checkpoint-box" class="hidden bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3">
+                    <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-plus-circle mr-1"></i> Add Custom Checkpoint or Bonus
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" id="custom-cp-name" placeholder="Location Name (e.g. Hurley Burley)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <select id="custom-cp-type" onchange="toggleCustomFields()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="GPS">Mandatory (Requires GPS)</option>
+                            <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time/Pts)</option>
                         </select>
                     </div>
-
-                    <!-- A. Randomly Generate Stops (Top) -->
-                    <button onclick="addRandomLocationsToRace()" class="w-full py-2.5 bg-disneyPurple hover:bg-purple-800 text-white font-bold text-xs rounded-xl transition shadow">
-                        🎲 Randomly Generate Stops
-                    </button>
-
-                    <!-- B. Checkpoint List & Search -->
-                    <div class="space-y-2 pt-2">
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                            <input type="text" id="org-search-input" onkeyup="filterOrgCheckpoints()" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none">
-                        </div>
-                        <div id="org-checkpoint-picker" class="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
-                    </div>
-
-                    <!-- C. Add All 50+ Disney Locations -->
-                    <button onclick="addPresetLocationsToRace()" class="w-full py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
-                        + Add All 50 Disney Locations
-                    </button>
-
-                    <!-- D. Designated Final Location Selector -->
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2 mt-4">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">
-                            <i class="fa-solid fa-flag-checkered mr-1"></i> Designated Final Ending Location (Optional)
-                        </label>
-                        <p class="text-[11px] text-slate-400">If selected, this checkpoint must be completed last by teams.</p>
-                        <div class="space-y-2">
-                            <select id="org-final-cp-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                            </select>
-                            <button onclick="saveFinalLocation()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
-                                Set Final Stop
+                    <div id="custom-gps-fields" class="space-y-2">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="searchLocationCoordinates()" id="search-coords-btn" class="px-3 py-2 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-[11px] rounded-xl transition whitespace-nowrap shadow">
+                                <i class="fa-solid fa-magnifying-glass-location mr-1"></i> Search Coords
                             </button>
+                            <span id="search-status-text" class="text-[10px] text-slate-400 self-center">Type a place name & click to auto-fetch coords</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" step="any" id="custom-cp-lat" placeholder="Latitude (e.g. 28.4194)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            <input type="number" step="any" id="custom-cp-lng" placeholder="Longitude (e.g. -81.5812)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                         </div>
                     </div>
-
-                    <!-- E. Add Custom Checkpoint Section with Map Search (Bottom) -->
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-3 mt-4">
-                        <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                            <i class="fa-solid fa-plus-circle mr-1"></i> Add Custom Checkpoint or Bonus
-                        </h5>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <input type="text" id="custom-cp-name" placeholder="Location Name (e.g. Hurley Burley)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            <select id="custom-cp-type" onchange="toggleCustomFields()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="GPS">Mandatory (Requires GPS)</option>
-                                <option value="BONUS_PHOTO">Bonus Challenge (Photo & Bonus Time/Pts)</option>
-                            </select>
-                        </div>
-                        <div id="custom-gps-fields" class="space-y-2">
-                            <div class="flex gap-2">
-                                <button type="button" onclick="searchLocationCoordinates()" id="search-coords-btn" class="px-3 py-2 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-[11px] rounded-xl transition whitespace-nowrap shadow">
-                                    <i class="fa-solid fa-magnifying-glass-location mr-1"></i> Search Coords
-                                </button>
-                                <span id="search-status-text" class="text-[10px] text-slate-400 self-center">Type a place name & click to auto-fetch coords</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="number" step="any" id="custom-cp-lat" placeholder="Latitude (e.g. 28.4194)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                <input type="number" step="any" id="custom-cp-lng" placeholder="Longitude (e.g. -81.5812)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            </div>
-                        </div>
-                        <div id="custom-bonus-fields" class="hidden">
-                            <label class="block text-[10px] text-slate-400 mb-1">Time Deduction / Bonus Points</label>
-                            <input type="number" id="custom-cp-bonus" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        </div>
-                        <button onclick="addCustomCheckpointToRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
-                            + Add Custom Checkpoint to Race
-                        </button>
+                    <div id="custom-bonus-fields" class="hidden">
+                        <label class="block text-[10px] text-slate-400 mb-1">Time Deduction / Bonus Points</label>
+                        <input type="number" id="custom-cp-bonus" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                     </div>
-
+                    <button onclick="addCustomCheckpointToRace()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+                        + Add Custom Checkpoint to Race
+                    </button>
                 </div>
 
                 <!-- Active Races Overview -->
@@ -813,6 +774,24 @@
         window.toggleTriviaFreq = function() {
             const freq = document.getElementById('trivia-frequency').value;
             document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
+        };
+
+        let creationPopType = 'random';
+        window.setCreationPopType = function(type) {
+            creationPopType = type;
+            const btnRandom = document.getElementById('pop-btn-random');
+            const btnAll = document.getElementById('pop-btn-all');
+            const desc = document.getElementById('pop-status-desc');
+
+            if (type === 'random') {
+                btnRandom.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
+                btnAll.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
+                desc.innerText = "Currently selected: Randomly generate stops (10 GPS stops + 5 bonus challenges).";
+            } else {
+                btnAll.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
+                btnRandom.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
+                desc.innerText = "Currently selected: Add all 50+ Disney locations and bonus challenges.";
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -985,33 +964,6 @@
             { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Dining Locations" },
             { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Transportation Hubs" }
         ];
-
-        window.renderOrgPicker = function() {
-            const container = document.getElementById('org-checkpoint-picker');
-            const query = (document.getElementById('org-search-input')?.value || "").toLowerCase();
-            
-            let html = '';
-            DISNEY_PRESETS.forEach((p, idx) => {
-                if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
-                    html += `
-                        <div class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
-                                <div>
-                                    <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
-                                </div>
-                            </div>
-                            <button onclick="addSinglePresetToRace(${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
-                                + Add
-                            </button>
-                        </div>
-                    `;
-                }
-            });
-            container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        };
-        setTimeout(renderOrgPicker, 500);
 
         window.shareRaceCode = function(code, title) {
             const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
@@ -1193,6 +1145,40 @@
                     return alert("This race code was randomly generated as a duplicate. Please hit the dice icon to generate a new unique code.");
                 }
 
+                let initialCps = [];
+                if (creationPopType === 'all') {
+                    initialCps = DISNEY_PRESETS.map((p, idx) => ({
+                        id: 'cp_' + Date.now() + '_' + idx,
+                        name: p.name,
+                        type: p.type || "GPS",
+                        lat: p.lat || 28.4177,
+                        lng: p.lng || -81.5812,
+                        points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
+                        bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
+                        park: p.park || "Disney",
+                        land: p.land || "Attraction Area"
+                    }));
+                } else {
+                    // Random 10 GPS + 5 Bonus
+                    const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
+                    const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, 10);
+
+                    const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
+                    const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, 5);
+
+                    initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
+                        id: 'cp_rand_' + Date.now() + '_' + idx,
+                        name: p.name,
+                        type: p.type || "GPS",
+                        lat: p.lat || 28.4177,
+                        lng: p.lng || -81.5812,
+                        points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
+                        bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
+                        park: p.park || "Disney",
+                        land: p.land || "Attraction Area"
+                    }));
+                }
+
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
@@ -1205,11 +1191,11 @@
                         randomCount: triviaCount
                     },
                     organizerId: currentUser.uid,
-                    checkpoints: [],
+                    checkpoints: initialCps,
                     finalCheckpointId: null,
                     createdAt: new Date().toISOString()
                 });
-                alert(`Race "${title}" created successfully with code ${code}!`);
+                alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
                 document.getElementById('new-race-title').value = '';
                 generateRandomRaceCode();
                 loadAdminRaces(code);
@@ -1218,101 +1204,48 @@
             }
         };
 
-        window.onOrgRaceSelected = function() {
-            const selectedCode = document.getElementById('org-race-select').value;
-            loadAdminRaces(selectedCode);
-        };
-
-        window.addPresetLocationsToRace = async function() {
-            const code = document.getElementById('org-race-select').value;
-            const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please select a race from the dropdown first.");
-
-            try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
-
-                const raceData = raceSnap.data();
-                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
-                const existing = raceData.checkpoints || [];
-
-                const newCps = DISNEY_PRESETS.map((p, idx) => ({
-                    id: 'cp_' + Date.now() + '_' + idx,
-                    name: p.name,
-                    type: p.type || "GPS",
-                    lat: p.lat || 28.4177,
-                    lng: p.lng || -81.5812,
-                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
-                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney",
-                    land: p.land || "Attraction Area"
-                }));
-
-                await updateDoc(raceRef, { checkpoints: [...existing, ...newCps] });
-                alert("Successfully added all 50+ Disney locations and bonus challenges!");
-                loadAdminRaces(code);
-            } catch (e) {
-                alert("Error: " + e.message);
+        window.toggleRaceEditBox = function(raceCode) {
+            const editBox = document.getElementById(`edit-box-${raceCode}`);
+            if (editBox) {
+                editBox.classList.toggle('hidden');
+                if (!editBox.classList.contains('hidden')) {
+                    renderOrgPickerForRace(raceCode);
+                }
             }
         };
 
-        window.addRandomLocationsToRace = async function() {
-            const code = document.getElementById('org-race-select').value;
-            const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please select a race from the dropdown first.");
+        window.renderOrgPickerForRace = function(raceCode) {
+            const container = document.getElementById(`org-picker-${raceCode}`);
+            const query = (document.getElementById(`org-search-${raceCode}`)?.value || "").toLowerCase();
             
-            const gpsCountStr = prompt("How many mandatory GPS stops to randomly generate?", "10");
-            if (gpsCountStr === null) return;
-            const gpsCount = (gpsCountStr.trim() === "" || isNaN(parseInt(gpsCountStr))) ? 10 : parseInt(gpsCountStr);
-
-            const bonusCountStr = prompt("How many bonus photo checkpoints to randomly include?", "5");
-            if (bonusCountStr === null) return;
-            const bonusCount = (bonusCountStr.trim() === "" || isNaN(parseInt(bonusCountStr))) ? 5 : parseInt(bonusCountStr);
-
-            try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
-
-                const raceData = raceSnap.data();
-                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
-
-                const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
-                const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random());
-                const selectedGps = shuffledGps.slice(0, gpsCount);
-
-                const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
-                const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random());
-                const selectedBonus = shuffledBonus.slice(0, bonusCount);
-
-                const combined = [...selectedGps, ...selectedBonus].map((p, idx) => ({
-                    id: 'cp_rand_' + Date.now() + '_' + idx,
-                    name: p.name,
-                    type: p.type || "GPS",
-                    lat: p.lat || 28.4177,
-                    lng: p.lng || -81.5812,
-                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPts,
-                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                    park: p.park || "Disney",
-                    land: p.land || "Attraction Area"
-                }));
-
-                await updateDoc(raceRef, { checkpoints: combined });
-                alert(`Successfully generated ${selectedGps.length} mandatory GPS stops and ${selectedBonus.length} bonus challenges!`);
-                loadAdminRaces(code);
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
+            let html = '';
+            DISNEY_PRESETS.forEach((p, idx) => {
+                if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
+                    html += `
+                        <div class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
+                                <div>
+                                    <p class="font-bold text-white">${p.name}</p>
+                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land}) ${p.type === 'BONUS_PHOTO' ? `(Bonus -${p.bonusMinDeduction}m)` : '(GPS Stop)'}</span>
+                                </div>
+                            </div>
+                            <button onclick="addSinglePresetToRace('${raceCode}', ${idx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-[10px] transition">
+                                + Add
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+            container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
         };
 
-        window.addSinglePresetToRace = async function(idx) {
-            const code = document.getElementById('org-race-select').value;
-            const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please select a race from the dropdown first.");
+        window.filterOrgCheckpointsForRace = function(raceCode) {
+            renderOrgPickerForRace(raceCode);
+        };
 
+        window.addSinglePresetToRace = async function(code, idx) {
+            const currentUser = window.auth.currentUser;
             try {
                 const raceRef = doc(window.db, "races", code);
                 const raceSnap = await getDoc(raceRef);
@@ -1340,63 +1273,6 @@
                 loadAdminRaces(code);
             } catch (e) {
                 alert("Error: " + e.message);
-            }
-        };
-
-        window.addCustomCheckpointToRace = async function() {
-            const code = document.getElementById('org-race-select').value;
-            const name = document.getElementById('custom-cp-name').value.trim();
-            const type = document.getElementById('custom-cp-type').value;
-            const currentUser = window.auth.currentUser;
-
-            if (!code) return alert("Please select a race from the dropdown first.");
-            if (!name) return alert("Please enter a checkpoint name.");
-
-            try {
-                const raceRef = doc(window.db, "races", code);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists()) return alert("Race not found.");
-                if (raceSnap.data().organizerId !== currentUser.uid) return alert("Permission denied.");
-
-                const raceData = raceSnap.data();
-                const defaultPts = raceData.defaultPoints !== undefined ? raceData.defaultPoints : (raceData.gameMode === 'scavenger' ? 10 : 0);
-
-                let lat = 28.4177;
-                let lng = -81.5812;
-                let bonusMinDeduction = 10;
-
-                if (type === 'GPS') {
-                    const latInput = parseFloat(document.getElementById('custom-cp-lat').value);
-                    const lngInput = parseFloat(document.getElementById('custom-cp-lng').value);
-                    if (!isNaN(latInput)) lat = latInput;
-                    if (!isNaN(lngInput)) lng = lngInput;
-                } else {
-                    const bonusInput = parseInt(document.getElementById('custom-cp-bonus').value);
-                    if (!isNaN(bonusInput)) bonusMinDeduction = bonusInput;
-                }
-
-                const newCp = {
-                    id: 'cp_custom_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-                    name: name,
-                    type: type,
-                    lat: lat,
-                    lng: lng,
-                    points: type === 'BONUS_PHOTO' ? bonusMinDeduction : defaultPts,
-                    bonusMinDeduction: bonusMinDeduction,
-                    park: type === 'BONUS_PHOTO' ? "Bonus Challenge" : "Custom Location",
-                    land: "Attraction Area"
-                };
-
-                await updateDoc(raceRef, { checkpoints: arrayUnion(newCp) });
-                alert(`Custom checkpoint "${name}" added successfully!`);
-                document.getElementById('custom-cp-name').value = '';
-                document.getElementById('custom-cp-lat').value = '';
-                document.getElementById('custom-cp-lng').value = '';
-                document.getElementById('search-status-text').innerText = "Type a place name & click to auto-fetch coords";
-                document.getElementById('search-status-text').className = "text-[10px] text-slate-400 self-center";
-                loadAdminRaces(code);
-            } catch (e) {
-                alert("Error adding custom checkpoint: " + e.message);
             }
         };
 
@@ -1448,11 +1324,9 @@
             }
         };
 
-        window.saveFinalLocation = async function() {
-            const code = document.getElementById('org-race-select').value;
-            const finalCpId = document.getElementById('org-final-cp-select').value;
+        window.saveFinalLocation = async function(code) {
+            const finalCpId = document.getElementById(`org-final-cp-${code}`).value;
             const currentUser = window.auth.currentUser;
-            if (!code) return alert("Please select a race from the dropdown first.");
 
             try {
                 const raceRef = doc(window.db, "races", code);
@@ -1476,19 +1350,11 @@
                 const q = query(collection(window.db, "races"), where("organizerId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 const listEl = document.getElementById('admin-race-list');
-                const raceSelectEl = document.getElementById('org-race-select');
-                const finalSelectEl = document.getElementById('org-final-cp-select');
                 
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "You haven't created any races yet.";
-                    raceSelectEl.innerHTML = '<option value="">-- No Races Found --</option>';
-                    finalSelectEl.innerHTML = '<option value="">-- Select a race above first --</option>';
                     return;
                 }
-
-                let raceDropdownHtml = '<option value="">-- Select Your Race --</option>';
-                let activeRaceDataForSelect = null;
-                const chosenCode = preferredCode || raceSelectEl.value;
 
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
@@ -1496,16 +1362,15 @@
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
 
-                    const isSelected = race.code === chosenCode ? 'selected' : '';
-                    raceDropdownHtml += `<option value="${race.code}" ${isSelected}>${race.title} (${race.code})</option>`;
-
-                    if (race.code === chosenCode) {
-                        activeRaceDataForSelect = race;
-                    }
-
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
                     const diffLabel = race.difficulty ? race.difficulty.toUpperCase() : 'EASY';
+
+                    let finalSelectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
+                    cps.filter(c => c.type !== 'BONUS_PHOTO').forEach(cp => {
+                        const isSelected = race.finalCheckpointId === cp.id ? 'selected' : '';
+                        finalSelectHtml += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park})</option>`;
+                    });
 
                     html += `
                         <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
@@ -1516,12 +1381,46 @@
                                 </div>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
+                                    <button onclick="toggleRaceEditBox('${race.code}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </button>
                                     <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-disneyBlue hover:bg-blue-600 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
                                         <i class="fa-solid fa-share-nodes"></i> Share
                                     </button>
                                     <button onclick="deleteEntireRace('${race.code}')" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-[10px] font-semibold transition">
                                         <i class="fa-solid fa-trash mr-1"></i> Delete
                                     </button>
+                                </div>
+                            </div>
+
+                            <!-- Expandable Edit Box for Checkpoints & Final Stop -->
+                            <div id="edit-box-${race.code}" class="hidden p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-3 mt-2">
+                                <div class="flex justify-between items-center">
+                                    <h5 class="text-xs font-bold text-amber-300"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit Checkpoints & Final Stop</h5>
+                                    <button onclick="toggleRaceEditBox('${race.code}')" class="text-slate-400 hover:text-white text-xs font-bold">Close Edit</button>
+                                </div>
+
+                                <!-- Designated Final Location Selector -->
+                                <div class="space-y-1">
+                                    <label class="block text-[11px] font-bold text-disneyGold uppercase">Designated Final Ending Location</label>
+                                    <div class="flex gap-2">
+                                        <select id="org-final-cp-${race.code}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
+                                            ${finalSelectHtml}
+                                        </select>
+                                        <button onclick="saveFinalLocation('${race.code}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow whitespace-nowrap">
+                                            Set Final
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Add Stops Search Picker -->
+                                <div class="space-y-2 pt-2 border-t border-slate-900">
+                                    <label class="block text-[11px] font-bold text-slate-300 uppercase">Add More Stops</label>
+                                    <div class="relative">
+                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                        <input type="text" id="org-search-${race.code}" onkeyup="filterOrgCheckpointsForRace('${race.code}')" placeholder="Search attractions or bonus challenges..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
+                                    </div>
+                                    <div id="org-picker-${race.code}" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 pr-1"></div>
                                 </div>
                             </div>
 
@@ -1592,18 +1491,6 @@
                     `;
                 }
                 listEl.innerHTML = html;
-                raceSelectEl.innerHTML = raceDropdownHtml;
-
-                if (activeRaceDataForSelect) {
-                    let selectHtml = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
-                    (activeRaceDataForSelect.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').forEach(cp => {
-                        const isSelected = activeRaceDataForSelect.finalCheckpointId === cp.id ? 'selected' : '';
-                        selectHtml += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park})</option>`;
-                    });
-                    finalSelectEl.innerHTML = selectHtml;
-                } else {
-                    finalSelectEl.innerHTML = '<option value="">-- Select a race from dropdown above --</option>';
-                }
             } catch (e) {
                 console.error(e);
             }
@@ -2521,10 +2408,6 @@
                 document.getElementById('elapsed-time-display').innerText = `${hrs}:${mins}:${secs}`;
             }, 1000);
         }
-
-        window.filterOrgCheckpoints = function() {
-            renderOrgPicker();
-        };
     </script>
 </body>
 </html>
