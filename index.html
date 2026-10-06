@@ -160,7 +160,7 @@
         
         <!-- Dynamic Hamburger & Tab Navigation Bar -->
         <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center">
-            <!-- Hamburger Menu Trigger (Shown when horizontal space overflows) -->
+            <!-- Hamburger Menu Trigger (Only shown on small screens < 500px) -->
             <div id="nav-hamburger-container" class="hidden shrink-0 px-3 border-r border-white/10 relative">
                 <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
                     <i class="fa-solid fa-bars text-sm"></i> <span>Menu</span>
@@ -778,7 +778,6 @@
             </svg>
         `);
 
-        // Global Modal Close Functions
         window.closeCheckpointInfoModal = function() {
             document.getElementById('checkpoint-info-modal').classList.add('hidden');
         };
@@ -786,14 +785,12 @@
             document.getElementById('image-modal').classList.add('hidden');
         };
 
-        // Tab Persistence on Refresh
         function switchTab(tabName, saveState = true) {
             ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
                 if (section) section.classList.toggle('hidden', t !== tabName);
             });
 
-            // Update active styles across both visible bar and mobile dropdown
             document.querySelectorAll('[data-tab]').forEach(btn => {
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 if (btn.tagName === 'BUTTON' && !btn.closest('#mobile-menu-dropdown')) {
@@ -814,12 +811,10 @@
                 initChatListener();
             }
 
-            // Close mobile menu dropdown if open
             const dropdown = document.getElementById('mobile-menu-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
         }
 
-        // Dynamic Responsive Navbar with Hamburger Overflow
         const ALL_TABS = [
             { id: 'race', name: 'Team Portal', icon: 'fa-flag-checkered' },
             { id: 'leaderboard', name: 'Race Portal', icon: 'fa-trophy' },
@@ -850,8 +845,8 @@
                 activeBtn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
             }
 
-            // Only trigger hamburger if width is below 640px (sm breakpoint) or if horizontal overflow demands it
-            if (window.innerWidth < 640) {
+            // Lowered width threshold to 500px so Team Portal & Race Portal stay visible longer
+            if (window.innerWidth < 500) {
                 hamburgerContainer.classList.remove('hidden');
                 tabsContainer.classList.add('hidden');
                 
@@ -1154,6 +1149,7 @@
         window.activeTeamId = null;
         let timerInterval = null;
         let chatUnsubscribe = null;
+        let isRegisterMode = false; // Declared missing variable fix
 
         let pendingCheckInCpId = null;
         let pendingCheckInBtn = null;
@@ -1196,6 +1192,23 @@
             console.error("Firebase Initialization Error:", err);
         }
 
+        window.toggleAuthMode = function() {
+            isRegisterMode = !isRegisterMode;
+            const authTitle = document.getElementById('auth-title');
+            const authToggleBtn = document.getElementById('auth-toggle-btn');
+            const authSubmitBtn = document.getElementById('auth-submit-btn');
+
+            if (isRegisterMode) {
+                authTitle.innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Organiser Firebase Register`;
+                authToggleBtn.innerText = "Already have account? Sign In";
+                authSubmitBtn.innerText = "Register Organiser Account";
+            } else {
+                authTitle.innerHTML = `<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login`;
+                authToggleBtn.innerText = "Need account? Register";
+                authSubmitBtn.innerText = "Sign In to Dashboard";
+            }
+        };
+
         async function restoreSession(code, teamId) {
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", code));
@@ -1232,7 +1245,6 @@
                 startTimerTicker();
                 initChatListener();
 
-                // If user refreshed while on leaderboard, load leaderboard data immediately
                 if (localStorage.getItem('rad_active_tab') === 'leaderboard') {
                     loadLeaderboard();
                 }
@@ -1715,7 +1727,6 @@
             }
         };
 
-        // Live Chat Realtime Integration
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
             const targetCode = window.activeRaceCode;
