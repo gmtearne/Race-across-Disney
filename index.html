@@ -641,12 +641,57 @@
 
                     <!-- Checkpoint Setup Options for Creation -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <button type="button" onclick="setCreationPopType('random')" id="pop-btn-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Randomly Generate Stops</button>
-                            <button type="button" onclick="setCreationPopType('all')" id="pop-btn-all" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">+ Add All 50 Disney Locations</button>
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
+                            <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
+                            <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
                         </div>
-                        <p id="pop-status-desc" class="text-[11px] text-slate-400 italic">Currently selected: Randomly generate stops (10 GPS stops + 5 bonus challenges).</p>
+
+                        <!-- 1. Random Sub-box -->
+                        <div id="pop-box-random" class="space-y-3 pt-2">
+                            <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
+                                    <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
+                                    <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Manual Sub-box -->
+                        <div id="pop-box-manual" class="hidden space-y-3 pt-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] text-slate-300">Check the locations to include:</span>
+                                <div class="space-x-2">
+                                    <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
+                                    <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
+                            </div>
+                            <div id="manual-checkbox-container" class="max-h-52 overflow-y-auto custom-scrollbar space-y-1.5 pr-1"></div>
+                        </div>
+
+                        <!-- 3. Preset Dropdown Sub-box -->
+                        <div id="pop-box-preset" class="hidden space-y-3 pt-2">
+                            <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
+                            <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
+                                <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
+                                <option value="Epcot">🌐 Epcot Park (All Stops)</option>
+                                <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
+                                <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
+                                <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
+                            </select>
+                        </div>
                     </div>
 
                     <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
@@ -776,135 +821,53 @@
             document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
         };
 
-        let creationPopType = 'random';
-        window.setCreationPopType = function(type) {
-            creationPopType = type;
-            const btnRandom = document.getElementById('pop-btn-random');
-            const btnAll = document.getElementById('pop-btn-all');
-            const desc = document.getElementById('pop-status-desc');
-
-            if (type === 'random') {
-                btnRandom.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
-                btnAll.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
-                desc.innerText = "Currently selected: Randomly generate stops (10 GPS stops + 5 bonus challenges).";
-            } else {
-                btnAll.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
-                btnRandom.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
-                desc.innerText = "Currently selected: Add all 50+ Disney locations and bonus challenges.";
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const radioRace = document.getElementById('create-mode-race');
-            const radioScavenger = document.getElementById('create-mode-scavenger');
-            const pointsInput = document.getElementById('create-default-points');
-            const modeIndicator = document.getElementById('create-mode-indicator');
-
-            function updateCreateModeDefaults() {
-                if (radioScavenger.checked) {
-                    pointsInput.value = 10;
-                    modeIndicator.textContent = "Scavenger Hunt Mode (10 pts default - fully editable)";
+        let creationPopMethod = 'random';
+        window.switchPopMethod = function(method) {
+            creationPopMethod = method;
+            ['random', 'manual', 'preset'].forEach(m => {
+                const btn = document.getElementById(`pop-tab-${m}`);
+                const box = document.getElementById(`pop-box-${m}`);
+                if (m === method) {
+                    btn.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
+                    box.classList.remove('hidden');
                 } else {
-                    pointsInput.value = 0;
-                    modeIndicator.textContent = "Speed Race Mode (0 pts default)";
+                    btn.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
+                    box.classList.add('hidden');
                 }
-            }
-
-            if (radioRace && radioScavenger) {
-                radioRace.addEventListener('change', updateCreateModeDefaults);
-                radioScavenger.addEventListener('change', updateCreateModeDefaults);
-            }
-        });
-
-        window.openImageModal = function(base64Data) {
-            document.getElementById('modal-image-element').src = base64Data;
-            document.getElementById('image-modal').classList.remove('hidden');
-        };
-
-        window.closeImageModal = function() {
-            document.getElementById('image-modal').classList.add('hidden');
-            document.getElementById('modal-image-element').src = '';
-        };
-
-        window.closeCheckpointInfoModal = function() {
-            document.getElementById('checkpoint-info-modal').classList.add('hidden');
-            document.getElementById('cp-modal-iframe').src = '';
-        };
-
-        let isRegisterMode = false;
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('auth-title').innerHTML = isRegisterMode ? '<i class="fa-solid fa-user-plus mr-2"></i>Create Organiser Account' : '<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login';
-            document.getElementById('auth-submit-btn').innerText = isRegisterMode ? 'Register Account' : 'Sign In to Dashboard';
-            document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? 'Already have an account? Login' : 'Need account? Register';
-        }
-
-        function toggleCustomFields() {
-            const type = document.getElementById('custom-cp-type').value;
-            document.getElementById('custom-gps-fields').classList.toggle('hidden', type === 'BONUS_PHOTO');
-            document.getElementById('custom-bonus-fields').classList.toggle('hidden', type === 'GPS');
-        }
-
-        function compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.7) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > height) {
-                            if (width > maxWidth) {
-                                height *= maxWidth / width;
-                                width = maxWidth;
-                            }
-                        } else {
-                            if (height > maxHeight) {
-                                width *= maxHeight / height;
-                                height = maxHeight;
-                            }
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
             });
-        }
 
-        window.searchLocationCoordinates = async function() {
-            const query = document.getElementById('custom-cp-name').value.trim();
-            const statusText = document.getElementById('search-status-text');
-            if (!query) {
-                alert("Please type a location name first!");
-                return;
+            if (method === 'manual') {
+                renderManualCheckboxList();
             }
+        };
 
-            statusText.innerText = "Searching coordinates...";
-            statusText.className = "text-[10px] text-disneyGold self-center animate-pulse";
+        window.renderManualCheckboxList = function() {
+            const container = document.getElementById('manual-checkbox-container');
+            const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
 
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-
-                if (data && data.length > 0) {
-                    document.getElementById('custom-cp-lat').value = parseFloat(data[0].lat).toFixed(6);
-                    document.getElementById('custom-cp-lng').value = parseFloat(data[0].lon).toFixed(6);
-                    statusText.innerText = "✅ Found location successfully!";
-                    statusText.className = "text-[10px] text-emerald-400 self-center font-bold";
-                } else {
-                    statusText.innerText = "❌ Not found automatically. Please enter coords manually.";
-                    statusText.className = "text-[10px] text-rose-400 self-center";
+            let html = '';
+            DISNEY_PRESETS.forEach((p, idx) => {
+                if (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)) {
+                    html += `
+                        <label class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs cursor-pointer hover:border-disneyGold transition">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" name="manual_cp_checkbox" value="${idx}" class="text-disneyGold rounded">
+                                <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
+                                <div>
+                                    <p class="font-bold text-white">${p.name}</p>
+                                    <span class="text-[10px] text-slate-400">${p.park} (${p.land})</span>
+                                </div>
+                            </div>
+                        </label>
+                    `;
                 }
-            } catch (err) {
-                statusText.innerText = "⚠️ Network error searching. Enter coordinates manually.";
-                statusText.className = "text-[10px] text-amber-400 self-center";
-            }
+            });
+            container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
+        };
+
+        window.selectAllManualCheckboxes = function(selectState) {
+            const checkboxes = document.querySelectorAll('input[name="manual_cp_checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectState);
         };
 
         const DISNEY_PRESETS = [
@@ -1146,9 +1109,19 @@
                 }
 
                 let initialCps = [];
-                if (creationPopType === 'all') {
-                    initialCps = DISNEY_PRESETS.map((p, idx) => ({
-                        id: 'cp_' + Date.now() + '_' + idx,
+
+                if (creationPopMethod === 'random') {
+                    const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
+                    const bonusReq = parseInt(document.getElementById('rand-bonus-count').value) || 3;
+
+                    const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
+                    const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, gpsReq);
+
+                    const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
+                    const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, bonusReq);
+
+                    initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
+                        id: 'cp_rand_' + Date.now() + '_' + idx,
                         name: p.name,
                         type: p.type || "GPS",
                         lat: p.lat || 28.4177,
@@ -1158,16 +1131,33 @@
                         park: p.park || "Disney",
                         land: p.land || "Attraction Area"
                     }));
-                } else {
-                    // Random 10 GPS + 5 Bonus
-                    const gpsOnly = DISNEY_PRESETS.filter(p => p.type === 'GPS');
-                    const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, 10);
-
-                    const bonusOnly = DISNEY_PRESETS.filter(p => p.type === 'BONUS_PHOTO');
-                    const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, 5);
-
-                    initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
-                        id: 'cp_rand_' + Date.now() + '_' + idx,
+                } else if (creationPopMethod === 'manual') {
+                    const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
+                    if (checkedBoxes.length === 0) {
+                        return alert("Please select at least one checkpoint manually!");
+                    }
+                    checkedBoxes.forEach((cb, idx) => {
+                        const p = DISNEY_PRESETS[parseInt(cb.value)];
+                        initialCps.push({
+                            id: 'cp_man_' + Date.now() + '_' + idx,
+                            name: p.name,
+                            type: p.type || "GPS",
+                            lat: p.lat || 28.4177,
+                            lng: p.lng || -81.5812,
+                            points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
+                            bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
+                            park: p.park || "Disney",
+                            land: p.land || "Attraction Area"
+                        });
+                    });
+                } else if (creationPopMethod === 'preset') {
+                    const parkVal = document.getElementById('preset-park-select').value;
+                    let filtered = DISNEY_PRESETS;
+                    if (parkVal !== 'all') {
+                        filtered = DISNEY_PRESETS.filter(p => p.park === parkVal);
+                    }
+                    initialCps = filtered.map((p, idx) => ({
+                        id: 'cp_pre_' + Date.now() + '_' + idx,
                         name: p.name,
                         type: p.type || "GPS",
                         lat: p.lat || 28.4177,
