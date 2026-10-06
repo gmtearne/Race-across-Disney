@@ -52,8 +52,10 @@
         }
         /* Sortable ghost & placeholder styling */
         .sortable-ghost {
-            opacity: 0.4;
-            background: #334155 !important;
+            opacity: 0.3;
+            background: #1e293b !important;
+            border: 2px dashed #FFB800 !important;
+            height: 60px;
         }
         .sortable-chosen {
             background: #1e293b !important;
@@ -508,7 +510,7 @@
                 </div>
             </div>
 
-            <!-- Live Team Chat Box -->
+            <!-- Live Team Chat Box (Hidden if not logged onto a team) -->
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
@@ -759,6 +761,14 @@
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
             </svg>
         `);
+
+        // Global Modal Close Functions
+        window.closeCheckpointInfoModal = function() {
+            document.getElementById('checkpoint-info-modal').classList.add('hidden');
+        };
+        window.closeImageModal = function() {
+            document.getElementById('image-modal').classList.add('hidden');
+        };
 
         function switchTab(tabName) {
             ['race', 'maps', 'rules', 'leaderboard', 'organizer'].forEach(t => {
@@ -1078,7 +1088,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -1647,18 +1657,22 @@
             }
         };
 
-        // Live Chat Realtime Integration
+        // Live Chat Realtime Integration with Team-Logged-In Check
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
             const targetCode = window.activeRaceCode;
+            const chatCard = document.getElementById('team-chat-card');
             const container = document.getElementById('chat-messages-container');
             const inputBox = document.getElementById('chat-input-box');
             const disabledNotice = document.getElementById('chat-disabled-notice');
             const statusIndicator = document.getElementById('chat-status-indicator');
 
-            if (!targetCode) {
-                container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">Join a race team to participate in live chat.</p>`;
+            // Hide chat box entirely if not logged onto a team
+            if (!targetCode || !window.activeTeamId) {
+                if (chatCard) chatCard.classList.add('hidden');
                 return;
+            } else {
+                if (chatCard) chatCard.classList.remove('hidden');
             }
 
             const raceRef = doc(window.db, "races", targetCode);
@@ -1679,20 +1693,26 @@
                 }
             });
 
-            const chatQuery = query(collection(window.db, "races", targetCode, "chat"), orderBy("timestamp", "asc"));
-            chatUnsubscribe = onSnapshot(chatQuery, (snapshot) => {
+            // Query chat messages sorted safely client-side to prevent missing index errors
+            const chatColRef = collection(window.db, "races", targetCode, "chat");
+            chatUnsubscribe = onSnapshot(chatColRef, (snapshot) => {
                 if (snapshot.empty) {
                     container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">No messages yet. Say hello to other teams!</p>`;
                     return;
                 }
 
+                let messages = [];
+                snapshot.forEach(docSnap => {
+                    messages.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                messages.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
                 let html = '';
                 const currentUser = window.auth.currentUser;
                 const isOrg = !!currentUser;
 
-                snapshot.forEach(docSnap => {
-                    const msg = docSnap.data();
-                    const msgId = docSnap.id;
+                messages.forEach(msg => {
                     const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const avatar = msg.avatar || DEFAULT_AVATAR;
 
@@ -1708,7 +1728,7 @@
                                     <p class="text-slate-200 text-xs break-words">${msg.message}</p>
                                 </div>
                             </div>
-                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msgId}')" class="text-rose-400 hover:text-rose-300 text-[10px] p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msg.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </div>
                     `;
                 });
@@ -2150,6 +2170,7 @@
                             <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
                                 <i class="fa-solid fa-grip-vertical"></i>
                             </div>
+                            <span class="font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
                             <div>
                                 <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
                                     📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
