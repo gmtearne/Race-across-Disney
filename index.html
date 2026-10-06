@@ -408,7 +408,7 @@
                             <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your organiser has designated a specific ending location. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
+                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your organiser has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
                         </p>
                     </div>
 
@@ -554,7 +554,7 @@
                             <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                 <div class="flex items-center justify-between">
                                     <label class="flex items-center space-x-2.5 cursor-pointer">
-                                        <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                        <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
                                         <span class="font-bold text-xs text-white">Speed Race</span>
                                     </label>
                                     <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
@@ -568,7 +568,7 @@
                             <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                 <div class="flex items-center justify-between">
                                     <label class="flex items-center space-x-2.5 cursor-pointer">
-                                        <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
+                                        <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
                                         <span class="font-bold text-xs text-white">Scavenger Hunt</span>
                                     </label>
                                     <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
@@ -629,15 +629,8 @@
                         </div>
                     </div>
 
-                    <!-- Default Checkpoint Points Configuration -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                        <div class="flex justify-between items-center mb-1.5">
-                            <label class="block text-xs font-bold text-slate-300">Default Checkpoint Points</label>
-                            <span id="create-mode-indicator" class="text-[10px] text-disneyGold font-medium">Speed Race Mode (0 pts default)</span>
-                        </div>
-                        <input type="number" id="create-default-points" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-disneyGold">
-                        <p class="text-[10px] text-slate-400 mt-1">Points can be overridden per individual checkpoint later.</p>
-                    </div>
+                    <!-- Hidden Default Checkpoint Points Configuration (Default 0 for speed, 10 for scavenger) -->
+                    <input type="number" id="create-default-points" value="0" class="hidden">
 
                     <!-- Checkpoint Setup Options for Creation -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
@@ -692,6 +685,16 @@
                                 <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Speed Race Final Stop Selector (Only shown for Speed Race) -->
+                    <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
+                        <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
+                        <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                            <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
+                        </select>
                     </div>
 
                     <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
@@ -811,6 +814,16 @@
             }
         };
 
+        window.toggleGameModeSelection = function() {
+            const isScavenger = document.getElementById('create-mode-scavenger').checked;
+            const finalStopContainer = document.getElementById('speed-final-stop-container');
+            if (isScavenger) {
+                finalStopContainer.classList.add('hidden');
+            } else {
+                finalStopContainer.classList.remove('hidden');
+            }
+        };
+
         window.toggleTriviaSettings = function() {
             const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
             document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
@@ -839,6 +852,7 @@
             if (method === 'manual') {
                 renderManualCheckboxList();
             }
+            updateCreationFinalStopDropdown();
         };
 
         window.renderManualCheckboxList = function() {
@@ -851,7 +865,7 @@
                     html += `
                         <label class="flex items-center justify-between p-2 bg-slate-900 rounded-xl border border-slate-700/60 text-xs cursor-pointer hover:border-disneyGold transition">
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${idx}" class="text-disneyGold rounded">
+                                <input type="checkbox" name="manual_cp_checkbox" value="${idx}" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
                                 <span class="text-disneyGold">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
                                 <div>
                                     <p class="font-bold text-white">${p.name}</p>
@@ -868,7 +882,50 @@
         window.selectAllManualCheckboxes = function(selectState) {
             const checkboxes = document.querySelectorAll('input[name="manual_cp_checkbox"]');
             checkboxes.forEach(cb => cb.checked = selectState);
+            updateCreationFinalStopDropdown();
         };
+
+        window.updateCreationFinalStopDropdown = function() {
+            const selectEl = document.getElementById('create-final-stop-select');
+            if (!selectEl) return;
+
+            let candidateStops = [];
+            if (creationPopMethod === 'preset') {
+                const parkVal = document.getElementById('preset-park-select').value;
+                if (parkVal === 'all') {
+                    candidateStops = DISNEY_PRESETS.filter(p => p.type !== 'BONUS_PHOTO');
+                } else if (parkVal === 'Bonus Challenge') {
+                    candidateStops = [];
+                } else {
+                    candidateStops = DISNEY_PRESETS.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
+                }
+            } else if (creationPopMethod === 'manual') {
+                const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
+                checkedBoxes.forEach(cb => {
+                    const p = DISNEY_PRESETS[parseInt(cb.value)];
+                    if (p.type !== 'BONUS_PHOTO') {
+                        candidateStops.push(p);
+                    }
+                });
+            } else {
+                // Random mode - show all potential stops for selection convenience
+                candidateStops = DISNEY_PRESETS.filter(p => p.type !== 'BONUS_PHOTO');
+            }
+
+            let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
+            candidateStops.forEach((p, idx) => {
+                html += `<option value="stop_${idx}">🏁 ${p.name} (${p.park})</option>`;
+            });
+            selectEl.innerHTML = html;
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const presetSelect = document.getElementById('preset-park-select');
+            if (presetSelect) {
+                presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
+            }
+            updateCreationFinalStopDropdown();
+        });
 
         const DISNEY_PRESETS = [
             { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
@@ -1091,7 +1148,7 @@
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
-            const defaultPoints = parseInt(document.getElementById('create-default-points').value) || (gameMode === 'scavenger' ? 10 : 0);
+            const defaultPoints = gameMode === 'scavenger' ? 10 : 0;
             
             const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
@@ -1169,6 +1226,21 @@
                     }));
                 }
 
+                let finalCheckpointId = null;
+                if (gameMode === 'race') {
+                    const finalSelectVal = document.getElementById('create-final-stop-select').value;
+                    if (finalSelectVal && finalSelectVal.startsWith('stop_')) {
+                        const stopIdx = parseInt(finalSelectVal.split('_')[1]);
+                        const targetPreset = DISNEY_PRESETS[stopIdx];
+                        if (targetPreset) {
+                            const matchedCp = initialCps.find(c => c.name === targetPreset.name);
+                            if (matchedCp) {
+                                finalCheckpointId = matchedCp.id;
+                            }
+                        }
+                    }
+                }
+
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
@@ -1182,7 +1254,7 @@
                     },
                     organizerId: currentUser.uid,
                     checkpoints: initialCps,
-                    finalCheckpointId: null,
+                    finalCheckpointId: finalCheckpointId,
                     createdAt: new Date().toISOString()
                 });
                 alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
@@ -2364,7 +2436,7 @@
             const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             const tData = teamSnap.data();
 
-            if (raceData.finalCheckpointId) {
+            if (raceData.gameMode === 'race' && raceData.finalCheckpointId) {
                 const completed = tData.completedCheckpoints || [];
                 if (!completed.includes(raceData.finalCheckpointId)) {
                     alert("Organiser Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
