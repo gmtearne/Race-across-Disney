@@ -652,7 +652,7 @@
                                         <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
                                     </div>
                                     <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
-                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time.
+                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time. Checkpoints remain hidden until race start.
                                     </div>
                                 </div>
 
@@ -1703,8 +1703,6 @@
                 const raceData = raceSnap.data();
                 const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
-                
-                // Fixed: Hide bonuses for everyone (including logged-in organisers) when hideBonuses is true
                 const isHideBonuses = raceData.hideBonuses === true;
 
                 subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
@@ -2309,94 +2307,110 @@
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
-            document.getElementById('team-checkpoints-list').innerHTML = orderedMandatory.map((cp, idx) => {
-                const isDone = completedIds.includes(cp.id);
-                const isFinal = finalCheckpointId === cp.id;
-                const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
-                const detail = checkinDetails[cp.id];
-                const isManualOverride = detail && detail.isManual;
-                
-                let hintText = "";
-                if (difficulty === 'easy') {
-                    hintText = `Map pin + Detailed transit info`;
-                } else if (difficulty === 'medium') {
-                    hintText = `Specific park land hint (Click)`;
-                } else {
-                    hintText = `Blind navigation (Locked)`;
-                }
+            // Check if checkpoints should be hidden until race start (Speed Race mode only)
+            const isSpeedRace = raceData.gameMode !== 'scavenger';
+            const hasStarted = !!tData.startTime;
 
-                let statusBadgeOrButton = '';
-                if (isDone) {
-                    if (isManualOverride) {
+            if (isSpeedRace && !hasStarted) {
+                document.getElementById('team-checkpoints-list').innerHTML = `
+                    <div class="p-8 bg-slate-900/90 rounded-2xl border border-amber-500/30 text-center space-y-3">
+                        <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-xl border border-amber-500/30">
+                            <i class="fa-solid fa-hourglass-start animate-pulse"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-white">Checkpoints Awaiting Race Start</h4>
+                        <p class="text-xs text-slate-400 max-w-sm mx-auto">Your race checkpoints are safely hidden until you click <strong>Start Race</strong> above! This ensures everyone starts fair and square.</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('team-checkpoints-list').innerHTML = orderedMandatory.map((cp, idx) => {
+                    const isDone = completedIds.includes(cp.id);
+                    const isFinal = finalCheckpointId === cp.id;
+                    const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
+                    const detail = checkinDetails[cp.id];
+                    const isManualOverride = detail && detail.isManual;
+                    
+                    let hintText = "";
+                    if (difficulty === 'easy') {
+                        hintText = `Map pin + Detailed transit info`;
+                    } else if (difficulty === 'medium') {
+                        hintText = `Specific park land hint (Click)`;
+                    } else {
+                        hintText = `Blind navigation (Locked)`;
+                    }
+
+                    let statusBadgeOrButton = '';
+                    if (isDone) {
+                        if (isManualOverride) {
+                            statusBadgeOrButton = `
+                                <div class="flex items-center gap-2 flex-wrap justify-end">
+                                    <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 font-bold">
+                                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Manual Check-in
+                                    </span>
+                                    <button onclick="undoManualCheckIn('${cp.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition shadow">
+                                        <i class="fa-solid fa-rotate-left mr-1"></i> Undo / Retry
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            statusBadgeOrButton = '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>';
+                        }
+                    } else {
                         statusBadgeOrButton = `
-                            <div class="flex items-center gap-2 flex-wrap justify-end">
-                                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 font-bold">
-                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Manual Check-in
-                                </span>
-                                <button onclick="undoManualCheckIn('${cp.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition shadow">
-                                    <i class="fa-solid fa-rotate-left mr-1"></i> Undo / Retry
+                            <div class="flex justify-end w-full sm:w-auto" onclick="event.stopPropagation()">
+                                <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                                    GPS Check In
                                 </button>
                             </div>
                         `;
-                    } else {
-                        statusBadgeOrButton = '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>';
                     }
-                } else {
-                    statusBadgeOrButton = `
-                        <div class="flex justify-end w-full sm:w-auto" onclick="event.stopPropagation()">
-                            <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
-                                GPS Check In
-                            </button>
+
+                    const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
+                    const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
+
+                    const subtitleContent = difficulty === 'hard' 
+                        ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
+                        : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
+
+                    return `
+                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                </div>
+                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
+                                <div>
+                                    <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
+                                        📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
+                                    </p>
+                                    <p class="text-[10px] text-slate-400">${subtitleContent}</p>
+                                </div>
+                            </div>
+                            <div>${statusBadgeOrButton}</div>
                         </div>
                     `;
+                }).join('');
+
+                const listEl = document.getElementById('team-checkpoints-list');
+                if (listEl && !tData.endTime) {
+                    Sortable.create(listEl, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        handle: '.cursor-grab',
+                        onEnd: async function () {
+                            const newOrder = [];
+                            listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
+                                newOrder.push(card.getAttribute('data-id'));
+                                const numSpan = card.querySelector('.checkpoint-number');
+                                if (numSpan) {
+                                    numSpan.innerText = `#${index + 1}`;
+                                }
+                            });
+                            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                            await updateDoc(teamRef, { customRouteOrder: newOrder });
+                        }
+                    });
                 }
-
-                const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
-                const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
-
-                const subtitleContent = difficulty === 'hard' 
-                    ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
-                    : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
-
-                return `
-                    <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
-                                <i class="fa-solid fa-grip-vertical"></i>
-                            </div>
-                            <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
-                            <div>
-                                <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
-                                    📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
-                                </p>
-                                <p class="text-[10px] text-slate-400">${subtitleContent}</p>
-                            </div>
-                        </div>
-                        <div>${statusBadgeOrButton}</div>
-                    </div>
-                `;
-            }).join('');
-
-            const listEl = document.getElementById('team-checkpoints-list');
-            if (listEl && !tData.endTime) {
-                Sortable.create(listEl, {
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    handle: '.cursor-grab',
-                    onEnd: async function () {
-                        const newOrder = [];
-                        listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
-                            newOrder.push(card.getAttribute('data-id'));
-                            const numSpan = card.querySelector('.checkpoint-number');
-                            if (numSpan) {
-                                numSpan.innerText = `#${index + 1}`;
-                            }
-                        });
-                        const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                        await updateDoc(teamRef, { customRouteOrder: newOrder });
-                    }
-                });
             }
 
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
