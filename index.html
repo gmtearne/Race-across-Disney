@@ -171,7 +171,7 @@
             </div>
 
             <!-- Hamburger Menu for Secondary Tabs (Maps, Rules, Organiser) -->
-            <div class="shrink-0 px-3 border-l border-white/10 relative">
+            <div id="hamburger-wrapper" class="shrink-0 px-3 border-l border-white/10 relative">
                 <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
                     <i class="fa-solid fa-bars text-sm"></i> <span>More Menu</span>
                 </button>
@@ -828,9 +828,9 @@
         };
 
         window.addEventListener('click', (e) => {
-            const hamburgerContainer = document.querySelector('nav .relative');
+            const hamburgerWrapper = document.getElementById('hamburger-wrapper');
             const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (hamburgerContainer && dropdown && !hamburgerContainer.contains(e.target)) {
+            if (hamburgerWrapper && dropdown && !hamburgerWrapper.contains(e.target)) {
                 dropdown.classList.add('hidden');
             }
         });
