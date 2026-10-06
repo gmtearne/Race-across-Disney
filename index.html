@@ -222,34 +222,48 @@
         <section id="tab-race" class="space-y-6">
             
             <!-- Login/Join Card -->
-            <div id="login-prompt-card" class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-                <div class="w-16 h-16 bg-disneyBlue/20 text-disneyBlue rounded-full flex items-center justify-center mx-auto text-2xl border border-disneyBlue/30">
-                    <i class="fa-solid fa-users-gear"></i>
+            <div id="login-prompt-card" class="space-y-6">
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+                    <div class="w-16 h-16 bg-disneyBlue/20 text-disneyBlue rounded-full flex items-center justify-center mx-auto text-2xl border border-disneyBlue/30">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <h2 class="text-2xl font-disney font-bold text-white">Join or Resume Your Race</h2>
+                    <p class="text-slate-300 text-sm max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. New teams require organiser approval before accessing checkpoints!</p>
+                    
+                    <div class="max-w-sm mx-auto space-y-3 pt-2 text-left">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
+                            <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
+                            <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
+                                <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-xs text-white focus:outline-none focus:border-disneyBlue">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
+                                <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-[10px] text-slate-400 file:py-2 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:bg-slate-800 file:text-disneyGold">
+                            </div>
+                        </div>
+                        <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
+                            Enter Race Portal
+                        </button>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-disney font-bold text-white">Join or Resume Your Race</h2>
-                <p class="text-slate-300 text-sm max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. New teams require organiser approval before accessing checkpoints!</p>
-                
-                <div class="max-w-sm mx-auto space-y-3 pt-2 text-left">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
-                        <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
+
+                <!-- Create Race Box Below Login When Not Signed In -->
+                <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6 text-center space-y-3 shadow-xl">
+                    <div class="w-12 h-12 bg-indigo-600/20 text-indigo-300 rounded-full flex items-center justify-center mx-auto text-lg border border-indigo-500/30">
+                        <i class="fa-solid fa-plus"></i>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
-                        <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
-                            <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-xs text-white focus:outline-none focus:border-disneyBlue">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
-                            <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-[10px] text-slate-400 file:py-2 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:bg-slate-800 file:text-disneyGold">
-                        </div>
-                    </div>
-                    <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
-                        Enter Race Portal
+                    <h3 class="font-bold text-base text-white">Want to host an event?</h3>
+                    <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the organiser dashboard and set up checkpoints.</p>
+                    <button onclick="switchTab('organizer')" class="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
+                        Create Race / Organiser Dashboard
                     </button>
                 </div>
             </div>
@@ -1435,7 +1449,7 @@
                     difficulty: difficulty,
                     defaultPoints: defaultPoints,
                     chatEnabled: true,
-                    hideBonuses: true, // Default to hidden (true)
+                    hideBonuses: true,
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -1545,7 +1559,7 @@
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
                     const isChatEnabled = race.chatEnabled !== false;
-                    const isHideBonuses = race.hideBonuses !== false; // Default true
+                    const isHideBonuses = race.hideBonuses !== false;
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
