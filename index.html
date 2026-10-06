@@ -858,6 +858,15 @@
             document.getElementById('image-modal').classList.add('hidden');
         };
 
+        window.openImageModal = function(imgSrc) {
+            const modal = document.getElementById('image-modal');
+            const imgEl = document.getElementById('modal-image-element');
+            if (modal && imgEl) {
+                imgEl.src = imgSrc;
+                modal.classList.remove('hidden');
+            }
+        };
+
         window.toggleCreateRaceCard = function() {
             const box = document.getElementById('create-race-collapsible-box');
             const icon = document.getElementById('create-race-toggle-icon');
@@ -1559,7 +1568,7 @@
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
                     const isChatEnabled = race.chatEnabled !== false;
-                    const isHideBonuses = race.hideBonuses !== false;
+                    const isHideBonuses = race.hideBonuses === true;
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
@@ -1694,7 +1703,7 @@
                 const raceData = raceSnap.data();
                 const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
-                const isHideBonuses = raceData.hideBonuses !== false;
+                const isHideBonuses = raceData.hideBonuses === true;
                 
                 const currentUser = window.auth.currentUser;
                 const isOrganiserLoggedIn = !!currentUser;
@@ -1808,7 +1817,7 @@
                             bonusDisplay += `<div class="flex gap-1 mt-1">`;
                             for (const [bId, imgUrl] of Object.entries(bonusPhotos)) {
                                 const safeString = imgUrl.replace(/'/g, "\\'");
-                                bonusDisplay += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-lg object-cover border-2 border-disneyGold hover:scale-110 transition shadow"></button>`;
+                                bonusDisplay += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-full object-cover border-2 border-disneyGold hover:scale-110 transition shadow shrink-0"></button>`;
                             }
                             bonusDisplay += `</div>`;
                         }
@@ -1819,7 +1828,7 @@
                         <tr class="hover:bg-slate-800/40 transition">
                             <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
                             <td class="p-3 flex items-center gap-2.5">
-                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold">
+                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold shrink-0">
                                 <div>
                                     <span class="font-bold text-white">${t.teamName}</span>
                                     ${diffBadge}
