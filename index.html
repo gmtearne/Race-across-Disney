@@ -850,7 +850,8 @@
                 activeBtn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
             }
 
-            if (window.innerWidth < 768) {
+            // Only trigger hamburger if width is below 640px (sm breakpoint) or if horizontal overflow demands it
+            if (window.innerWidth < 640) {
                 hamburgerContainer.classList.remove('hidden');
                 tabsContainer.classList.add('hidden');
                 
@@ -1229,9 +1230,12 @@
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
-                
-                // Initialize chat listener now that activeRaceCode & activeTeamId are confirmed
                 initChatListener();
+
+                // If user refreshed while on leaderboard, load leaderboard data immediately
+                if (localStorage.getItem('rad_active_tab') === 'leaderboard') {
+                    loadLeaderboard();
+                }
             } catch (e) {
                 console.error("Failed to restore session:", e);
                 logoutTeam();
@@ -1967,7 +1971,6 @@
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
                 
-                // Trigger chat listener immediately upon successful login/resume
                 initChatListener();
 
                 const currentTeamSnap = await getDoc(teamRef);
@@ -2238,7 +2241,6 @@
                 `;
             }).join('');
 
-            // Initialize SortableJS for Touch & Mouse Drag-and-Drop with Instant Renumbering
             const listEl = document.getElementById('team-checkpoints-list');
             if (listEl && !tData.endTime) {
                 Sortable.create(listEl, {
