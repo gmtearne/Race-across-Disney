@@ -646,7 +646,12 @@
                     <h3 class="text-xl font-disney font-bold text-white">Organiser Active Race Panel Locked</h3>
                     <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
                     
-                    
+                    <div class="max-w-xs mx-auto flex gap-2 pt-2">
+                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono text-center">
+                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                            Unlock
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Collapsible Create New Race Card -->
@@ -1186,6 +1191,31 @@
             }
             updateCreationFinalStopDropdown();
 
+            // Check if the organiser dashboard was previously locked in this session
+            const savedLockState = sessionStorage.getItem('rad_org_locked');
+            if (savedLockState === 'true') {
+                globalDashboardLockState = true;
+                globalDashboardLockPin = sessionStorage.getItem('rad_org_lock_pin') || "";
+
+                const statusBadge = document.getElementById('global-lock-status-badge');
+                const actionBtn = document.getElementById('global-lock-action-btn');
+                const orgLockedOverlay = document.getElementById('org-locked-overlay-card');
+                const adminContainer = document.getElementById('admin-active-races-container');
+                const createRaceBox = document.getElementById('create-race-collapsible-box')?.parentElement;
+
+                if (statusBadge) {
+                    statusBadge.innerText = "LOCKED";
+                    statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                }
+                if (actionBtn) {
+                    actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
+                    actionBtn.className = "flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+                }
+                if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
+                if (adminContainer) adminContainer.classList.add('hidden');
+                if (createRaceBox) createRaceBox.classList.add('hidden');
+            }
+
             setTimeout(() => {
                 const savedTab = localStorage.getItem('rad_active_tab') || 'race';
                 switchTab(savedTab, false);
@@ -1598,6 +1628,10 @@
                 globalDashboardLockState = true;
                 globalDashboardLockPin = pin;
 
+                // Save lock state to sessionStorage to persist across refreshes
+                sessionStorage.setItem('rad_org_locked', 'true');
+                sessionStorage.setItem('rad_org_lock_pin', pin);
+
                 statusBadge.innerText = "LOCKED";
                 statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
                 actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
@@ -1606,10 +1640,18 @@
                 if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
                 if (adminContainer) adminContainer.classList.add('hidden');
                 if (createRaceBox) createRaceBox.classList.add('hidden');
+                
+                // Clear out the PIN box immediately after locking
+                if (pinInput) pinInput.value = "";
+
                 alert("Global organiser active race panel locked successfully.");
             } else {
                 globalDashboardLockState = false;
                 globalDashboardLockPin = "";
+
+                // Clear sessionStorage
+                sessionStorage.removeItem('rad_org_locked');
+                sessionStorage.removeItem('rad_org_lock_pin');
                 if (pinInput) pinInput.value = "";
 
                 statusBadge.innerText = "UNLOCKED";
@@ -1630,6 +1672,10 @@
                 globalDashboardLockState = false;
                 globalDashboardLockPin = "";
                 document.getElementById('org-unlock-code-input').value = "";
+
+                // Clear sessionStorage
+                sessionStorage.removeItem('rad_org_locked');
+                sessionStorage.removeItem('rad_org_lock_pin');
 
                 const statusBadge = document.getElementById('global-lock-status-badge');
                 const actionBtn = document.getElementById('global-lock-action-btn');
