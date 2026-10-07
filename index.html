@@ -2112,7 +2112,7 @@
                         const latLngStr = detail.latitude && detail.longitude ? `${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}` : 'No GPS coords';
 
                         html += `
-                            <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1">
+                            <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1 mb-2">
                                 <div class="flex justify-between items-center">
                                     <span class="font-bold text-white">📍 ${cp ? cp.name : 'Unknown Stop'}</span>
                                     <span class="text-[11px] text-disneyGold font-mono">${timeStr}</span>
@@ -2120,7 +2120,7 @@
                                 <div class="flex justify-between items-center text-[11px] text-slate-400">
                                     <span>GPS: <span class="font-mono text-slate-300">${latLngStr}</span> (${detail.note || 'Verified'})</span>
                                     ${isManual ? '<span class="text-amber-400 font-bold bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Manual Override</span>' : '<span class="text-emerald-400 font-bold">GPS Verified</span>'}
-                                }
+                                </div>
                             </div>
                         `;
                     });
@@ -2348,7 +2348,7 @@
 
                             <div class="pt-2 border-t border-slate-800">
                                 <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamsSnap.size})</span>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="grid grid-cols-2 gap-3">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
