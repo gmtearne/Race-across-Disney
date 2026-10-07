@@ -35,45 +35,30 @@
         }
     </script>
     <style>
-        .magical-gradient {
-            background: linear-gradient(135deg, #0055B8 0%, #4A154B 50%, #E81F76 100%);
-        }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1e293b;
+            background: rgba(0,0,0,0.1);
             border-radius: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #475569;
+            background: rgba(0,0,0,0.3);
             border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
         }
         /* Sortable ghost placeholder styling */
         .sortable-ghost {
             opacity: 0.2;
-            background: #0f172a !important;
             border: 2px dashed #FFB800 !important;
-            box-shadow: inset 0 0 10px rgba(255, 184, 0, 0.2);
-        }
-        .sortable-chosen {
-            background: #1e293b !important;
-            border-color: #FFB800 !important;
-        }
-        .sortable-fallback {
-            opacity: 1 !important;
         }
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12 selection:bg-disneyGold selection:text-slate-900">
+<body id="app-body" class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12 selection:bg-disneyGold selection:text-slate-900 transition-colors duration-300">
 
     <!-- Image Viewer Modal Overlay -->
     <div id="image-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
+        <div id="modal-container-box" class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
                     <i class="fa-solid fa-camera"></i> Bonus Proof Preview
@@ -134,7 +119,7 @@
     </div>
 
     <!-- Navbar -->
-    <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
+    <nav id="nav-header" class="bg-gradient-to-r from-blue-700 via-purple-900 to-pink-700 sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
@@ -159,19 +144,18 @@
         </div>
         
         <!-- Navigation Bar: Permanent Primary Tabs & Hamburger for Secondary Tabs -->
-        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center justify-between">
-            <!-- Permanent Primary Tabs: Team Portal & Race Portal -->
+        <div class="bg-black/20 border-t border-white/5 text-xs font-semibold flex items-center justify-between">
             <div class="flex flex-1 overflow-x-auto">
-                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
+                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-white/10 whitespace-nowrap">
                     <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
                 </button>
-                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-white/70 hover:text-white transition flex justify-center items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
                 </button>
             </div>
 
-            <!-- Hamburger Menu for Secondary Tabs (Maps, Rules, Organiser) -->
-            <div id="hamburger-wrapper" class="shrink-0 px-3 border-l border-white/10 relative">
+            <!-- Hamburger Menu for Secondary Tabs -->
+            <div id="hamburger-wrapper" class="shrink-0 px-3 border-l border-white/15 relative">
                 <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
                     <i class="fa-solid fa-bars text-sm"></i> <span>More Menu</span>
                 </button>
@@ -185,6 +169,9 @@
                     </button>
                     <button onclick="switchTab('organizer')" data-tab="organizer" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
                         <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Organiser Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('settings')" data-tab="settings" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition border-t border-slate-800">
+                        <i class="fa-solid fa-palette text-disneyGold"></i> <span>App Themes</span>
                     </button>
                 </div>
             </div>
@@ -220,8 +207,6 @@
 
         <!-- ================= TAB 1: TEAM PORTAL ================= -->
         <section id="tab-race" class="space-y-6">
-            
-            <!-- Login/Join Card -->
             <div id="login-prompt-card" class="space-y-6">
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 text-center space-y-4 shadow-xl">
                     <div class="w-16 h-16 bg-disneyBlue/20 text-disneyBlue rounded-full flex items-center justify-center mx-auto text-2xl border border-disneyBlue/30">
@@ -255,7 +240,6 @@
                     </div>
                 </div>
 
-                <!-- Create Race Box Below Login When Not Signed In -->
                 <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6 text-center space-y-3 shadow-xl">
                     <div class="w-12 h-12 bg-indigo-600/20 text-indigo-300 rounded-full flex items-center justify-center mx-auto text-lg border border-indigo-500/30">
                         <i class="fa-solid fa-plus"></i>
@@ -282,7 +266,6 @@
 
             <!-- Active Race Dashboard -->
             <div id="team-dashboard-active" class="hidden space-y-6">
-                <!-- Timer & Progress Card -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
@@ -293,7 +276,6 @@
                             </div>
                         </div>
 
-                        <!-- Progress Ratio / Score -->
                         <div class="flex items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
                             <div class="text-center px-2">
                                 <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
@@ -307,7 +289,6 @@
                         </div>
                     </div>
 
-                    <!-- Action Controls -->
                     <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
                         <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
                             <i class="fa-solid fa-play"></i> Start Race
@@ -318,7 +299,6 @@
                     </div>
                 </div>
 
-                <!-- Assigned Checkpoints with Drag and Drop Reordering -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
                         <div>
@@ -335,7 +315,6 @@
                     <div id="team-checkpoints-list" class="space-y-3"></div>
                 </div>
 
-                <!-- Bonus Photo Challenges -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="border-b border-slate-700 pb-3 mb-4">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -347,13 +326,10 @@
                     <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
             </div>
-
         </section>
 
-        <!-- ================= TAB 2: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
+        <!-- ================= TAB 2: RACE PORTAL ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
-            
-            <!-- Logged Out Notice Banner -->
             <div id="leaderboard-login-notice" class="hidden bg-amber-950/40 border border-amber-500/40 p-4 rounded-2xl text-xs text-amber-200 flex items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-triangle-exclamation text-disneyGold text-base"></i>
@@ -364,7 +340,6 @@
                 </button>
             </div>
 
-            <!-- Leaderboard Card -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
                     <div>
@@ -400,7 +375,6 @@
                 </div>
             </div>
 
-            <!-- Live Team Chat Box -->
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
@@ -408,13 +382,9 @@
                     </h3>
                     <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
                 </div>
-                
-                <!-- Messages Container -->
                 <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
                     <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
                 </div>
-
-                <!-- Input Box -->
                 <div id="chat-input-box" class="flex gap-2">
                     <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
                     <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
@@ -440,7 +410,6 @@
                     </span>
                 </div>
 
-                <!-- Park Selector Tabs -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                     <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
                     <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
@@ -450,7 +419,6 @@
                     <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
                 </div>
 
-                <!-- Map Viewer Box -->
                 <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
                     <div class="flex justify-between items-center">
                         <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
@@ -460,34 +428,12 @@
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
                         </a>
                     </div>
-                    
-                    <!-- Embedded OpenStreetMap Iframe -->
                     <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
                         <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
                     </div>
                     <p id="map-desc-text" class="text-xs text-slate-400 italic">
                         Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
                     </p>
-                </div>
-
-                <!-- Transit & Paper Map Tips -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
-                        </p>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-compass"></i> Strategic Planning Tip
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
-                        </p>
-                    </div>
                 </div>
             </div>
         </section>
@@ -503,7 +449,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <!-- Rule Card 1 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
                             <i class="fa-solid fa-stopwatch"></i> Objective
@@ -512,8 +457,6 @@
                             Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
                         </p>
                     </div>
-
-                    <!-- Rule Card 2 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
                             <i class="fa-solid fa-bus"></i> Transportation
@@ -522,64 +465,12 @@
                             You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
                         </p>
                     </div>
-
-                    <!-- Rule Card 3 -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                            <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your organiser has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
-                        </p>
-                    </div>
-
-                    <!-- Rule Card 4 -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Penalties
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
-                        </p>
-                    </div>
-
-                    <!-- Rule Card 5 -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
-                            <i class="fa-solid fa-star"></i> Bonus Challenges
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
-                        </p>
-                    </div>
-
-                    <!-- Rule Card 6 -->
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                            <i class="fa-solid fa-ban"></i> Route Planning Restriction
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. Rely on physical park layouts and signage!
-                        </p>
-                    </div>
-                </div>
-
-                <!-- GPS Warning Box -->
-                <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
-                    <div class="font-bold text-amber-300 flex items-center gap-2">
-                        <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
-                    </div>
-                    <p class="text-slate-300 leading-relaxed">
-                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for organizer review. 
-                    </p>
                 </div>
             </div>
         </section>
 
         <!-- ================= TAB 5: ORGANISER DASHBOARD ================= -->
         <section id="tab-organizer" class="hidden space-y-6">
-            
-            <!-- Firebase Auth Card -->
             <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login</h2>
@@ -600,7 +491,6 @@
                 </div>
             </div>
 
-            <!-- Organiser Control Panel -->
             <div id="admin-dashboard-card" class="hidden space-y-6">
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                     <div>
@@ -614,7 +504,6 @@
                     </button>
                 </div>
 
-                <!-- Collapsible Create New Race Card -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
                         <div class="flex items-center gap-2.5">
@@ -637,156 +526,26 @@
                             </div>
                         </div>
 
-                        <!-- Game Mode Toggle Section with Clickable Info -->
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                             <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                
-                                <!-- Speed Race Option -->
                                 <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
                                             <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
                                             <span class="font-bold text-xs text-white">Speed Race</span>
                                         </label>
-                                        <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
-                                    </div>
-                                    <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
-                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time. Checkpoints remain hidden until race start.
                                     </div>
                                 </div>
-
-                                <!-- Scavenger Hunt Option -->
                                 <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
                                             <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
                                             <span class="font-bold text-xs text-white">Scavenger Hunt</span>
                                         </label>
-                                        <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
-                                    </div>
-                                    <div id="scavenger-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
-                                        Teams collect points for checkpoints visited within a time limit. Higher score wins!
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- Navigation & Hint Difficulty -->
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                            <label class="block text-xs font-bold text-slate-300 mb-2">Default Base Difficulty</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Easy</span>
-                                    <span class="text-[9px] text-slate-400">Pins + Transit</span>
-                                </label>
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Medium</span>
-                                    <span class="text-[9px] text-slate-400">Specific Park Lands</span>
-                                </label>
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Hard</span>
-                                    <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Trivia Challenge Option -->
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
-                            <div class="flex gap-4">
-                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                    <input type="radio" name="trivia_toggle" value="off" checked onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                    <span>Off</span>
-                                </label>
-                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                    <input type="radio" name="trivia_toggle" value="on" onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                    <span>On</span>
-                                </label>
-                            </div>
-                            <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
-                                <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
-                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    <option value="every">Every Check-in</option>
-                                    <option value="random">Random Check-ins</option>
-                                </select>
-                                <div id="trivia-random-count-box" class="hidden pt-1">
-                                    <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
-                                    <input type="number" id="trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hidden Default Checkpoint Points Configuration -->
-                        <input type="number" id="create-default-points" value="0" class="hidden">
-
-                        <!-- Checkpoint Setup Options for Creation -->
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
-                            
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
-                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
-                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
-                            </div>
-
-                            <!-- 1. Random Sub-box -->
-                            <div id="pop-box-random" class="space-y-3 pt-2">
-                                <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
-                                        <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
-                                        <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 2. Manual Sub-box -->
-                            <div id="pop-box-manual" class="hidden space-y-3 pt-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
-                                    <div class="space-x-2">
-                                        <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
-                                        <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                    <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
-                                </div>
-                                <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
-                            </div>
-
-                            <!-- 3. Preset Dropdown Sub-box -->
-                            <div id="pop-box-preset" class="hidden space-y-3 pt-2">
-                                <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                    <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
-                                    <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
-                                    <option value="Epcot">🌐 Epcot Park (All Stops)</option>
-                                    <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
-                                    <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
-                                    <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Speed Race Final Stop Selector (Only shown for Speed Race) -->
-                        <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
-                            <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
-                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                                <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
-                            </select>
                         </div>
 
                         <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
@@ -795,10 +554,79 @@
                     </div>
                 </div>
 
-                <!-- Active Races Overview -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals, Bonus Privacy & Difficulty</h4>
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 6: THEME SETTINGS ================= -->
+        <section id="tab-settings" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4">
+                    <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
+                        <i class="fa-solid fa-palette text-disneyGold"></i> Choose App Theme
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Select your preferred visual style. Your theme will be saved instantly for this device.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Theme 1: Midnight Magic -->
+                    <div onclick="setAppTheme('midnight')" class="p-4 rounded-2xl border-2 border-slate-700 bg-[#0B0F19] hover:border-disneyGold cursor-pointer transition space-y-3 shadow-lg group">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">🌙 Midnight Magic</span>
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">Dark & Gold</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Sleek obsidian backgrounds with warm gold accents and frosted glass effects.</p>
+                        <div class="flex gap-1.5 pt-1">
+                            <div class="w-5 h-5 rounded-full bg-[#0B0F19] border border-slate-600"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#FFB800]"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#312E81]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 2: Retro Park Ticket -->
+                    <div onclick="setAppTheme('retro')" class="p-4 rounded-2xl border-2 border-slate-700 bg-[#FDFBF7] hover:border-disneyGold cursor-pointer transition space-y-3 shadow-lg group">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-blue-950 group-hover:text-red-600 transition">🎟️ Retro Park Ticket</span>
+                            <span class="text-[10px] bg-slate-200 text-blue-900 px-2.5 py-1 rounded-full border border-slate-300">Vintage Cream</span>
+                        </div>
+                        <p class="text-xs text-slate-600">Warm parchment tones styled after classic storybooks and perforated tickets.</p>
+                        <div class="flex gap-1.5 pt-1">
+                            <div class="w-5 h-5 rounded-full bg-[#FDFBF7] border border-slate-400"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#DC2626]"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#1E3A8A]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 3: Neon Boardwalk -->
+                    <div onclick="setAppTheme('neon')" class="p-4 rounded-2xl border-2 border-slate-700 bg-[#180828] hover:border-disneyGold cursor-pointer transition space-y-3 shadow-lg group">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-white group-hover:text-pink-400 transition">🎡 Neon Boardwalk</span>
+                            <span class="text-[10px] bg-slate-800 text-pink-300 px-2.5 py-1 rounded-full border border-pink-500/30">Vibrant Arcade</span>
+                        </div>
+                        <p class="text-xs text-slate-300">High-energy dark violet background with glowing electric magenta and cyan highlights.</p>
+                        <div class="flex gap-1.5 pt-1">
+                            <div class="w-5 h-5 rounded-full bg-[#180828] border border-slate-600"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#EC4899]"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#06B6D4]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 4: Clean Minimalist -->
+                    <div onclick="setAppTheme('minimalist')" class="p-4 rounded-2xl border-2 border-slate-300 bg-[#F3F4F6] hover:border-blue-600 cursor-pointer transition space-y-3 shadow-lg group">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition">✨ Clean Minimalist</span>
+                            <span class="text-[10px] bg-white text-slate-700 px-2.5 py-1 rounded-full border border-slate-300">Light & Crisp</span>
+                        </div>
+                        <p class="text-xs text-slate-600">Ultra-clean white cards with corporate blue accents for maximum speed and clarity.</p>
+                        <div class="flex gap-1.5 pt-1">
+                            <div class="w-5 h-5 rounded-full bg-[#F3F4F6] border border-slate-400"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#2563EB]"></div>
+                            <div class="w-5 h-5 rounded-full bg-[#10B981]"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -813,7 +641,65 @@
             </svg>
         `);
 
-        // Image compression helper function
+        // Theme Engine Configuration
+        const APP_THEMES = {
+            midnight: {
+                bodyBg: 'bg-[#0B0F19] text-slate-100',
+                navBg: 'bg-gradient-to-r from-blue-900 via-indigo-950 to-purple-950',
+                cardBg: 'bg-slate-800/90 border-slate-700',
+                subCardBg: 'bg-slate-900 border-slate-700/80',
+                textMain: 'text-white',
+                textMuted: 'text-slate-400'
+            },
+            retro: {
+                bodyBg: 'bg-[#FDFBF7] text-blue-950',
+                navBg: 'bg-gradient-to-r from-red-700 via-blue-900 to-amber-700',
+                cardBg: 'bg-white border-amber-200 shadow-md',
+                subCardBg: 'bg-amber-50/50 border-amber-200/60',
+                textMain: 'text-blue-950',
+                textMuted: 'text-slate-600'
+            },
+            neon: {
+                bodyBg: 'bg-[#180828] text-slate-100',
+                navBg: 'bg-gradient-to-r from-purple-900 via-violet-950 to-fuchsia-900',
+                cardBg: 'bg-purple-950/60 border-fuchsia-500/30 shadow-xl',
+                subCardBg: 'bg-purple-950/90 border-fuchsia-500/20',
+                textMain: 'text-white',
+                textMuted: 'text-fuchsia-200/70'
+            },
+            minimalist: {
+                bodyBg: 'bg-[#F3F4F6] text-slate-900',
+                navBg: 'bg-gradient-to-r from-blue-600 to-indigo-700',
+                cardBg: 'bg-white border-slate-200 shadow-sm',
+                subCardBg: 'bg-slate-50 border-slate-200',
+                textMain: 'text-slate-900',
+                textMuted: 'text-slate-500'
+            }
+        };
+
+        window.setAppTheme = function(themeKey) {
+            const theme = APP_THEMES[themeKey] || APP_THEMES.midnight;
+            const body = document.getElementById('app-body');
+            const nav = document.getElementById('nav-header');
+
+            body.className = `${theme.bodyBg} min-h-screen font-sans antialiased pb-12 transition-colors duration-300`;
+            nav.className = `${theme.navBg} sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md transition-colors duration-300`;
+
+            localStorage.setItem('rad_app_theme', themeKey);
+            alert(`Theme updated successfully!`);
+        };
+
+        // Load saved theme on startup
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('rad_app_theme') || 'midnight';
+            setAppTheme(savedTheme);
+
+            setTimeout(() => {
+                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+                switchTab(savedTab, false);
+            }, 50);
+        });
+
         function compressImage(file, maxWidth = 600, maxHeight = 600, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -824,25 +710,16 @@
                     img.onload = () => {
                         let width = img.width;
                         let height = img.height;
-
                         if (width > height) {
-                            if (width > maxWidth) {
-                                height = Math.round((height * maxWidth) / width);
-                                width = maxWidth;
-                            }
+                            if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
                         } else {
-                            if (height > maxHeight) {
-                                width = Math.round((width * maxHeight) / height);
-                                height = maxHeight;
-                            }
+                            if (height > maxHeight) { width = Math.round((width * maxHeight) / height); height = maxHeight; }
                         }
-
                         const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-
                         resolve(canvas.toDataURL('image/jpeg', quality));
                     };
                     img.onerror = (error) => reject(error);
@@ -851,20 +728,12 @@
             });
         }
 
-        window.closeCheckpointInfoModal = function() {
-            document.getElementById('checkpoint-info-modal').classList.add('hidden');
-        };
-        window.closeImageModal = function() {
-            document.getElementById('image-modal').classList.add('hidden');
-        };
-
+        window.closeCheckpointInfoModal = function() { document.getElementById('checkpoint-info-modal').classList.add('hidden'); };
+        window.closeImageModal = function() { document.getElementById('image-modal').classList.add('hidden'); };
         window.openImageModal = function(imgSrc) {
             const modal = document.getElementById('image-modal');
             const imgEl = document.getElementById('modal-image-element');
-            if (modal && imgEl) {
-                imgEl.src = imgSrc;
-                modal.classList.remove('hidden');
-            }
+            if (modal && imgEl) { imgEl.src = imgSrc; modal.classList.remove('hidden'); }
         };
 
         window.toggleCreateRaceCard = function() {
@@ -880,7 +749,7 @@
         };
 
         function switchTab(tabName, saveState = true) {
-            ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
+            ['race', 'leaderboard', 'maps', 'rules', 'organizer', 'settings'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
                 if (section) section.classList.toggle('hidden', t !== tabName);
             });
@@ -892,66 +761,47 @@
                         if (btn.closest('#mobile-menu-dropdown')) {
                             btn.className = "w-full text-left px-4 py-2 text-xs text-disneyGold bg-slate-800 font-bold flex items-center gap-2.5 transition";
                         } else {
-                            btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
+                            btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-white/10 whitespace-nowrap";
                         }
                     } else {
                         if (btn.closest('#mobile-menu-dropdown')) {
                             btn.className = "w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition";
                         } else {
-                            btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
+                            btn.className = "flex-1 py-2.5 px-3 text-center text-white/70 hover:text-white transition flex justify-center items-center gap-2 whitespace-nowrap";
                         }
                     }
                 }
             });
 
-            if (saveState) {
-                localStorage.setItem('rad_active_tab', tabName);
-            }
-
-            if (tabName === 'leaderboard') {
-                loadLeaderboard();
-                initChatListener();
-            }
-
+            if (saveState) { localStorage.setItem('rad_active_tab', tabName); }
+            if (tabName === 'leaderboard') { loadLeaderboard(); initChatListener(); }
             const dropdown = document.getElementById('mobile-menu-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
         }
 
-        window.toggleMobileMenu = function() {
-            const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
-        };
-
+        window.toggleMobileMenu = function() { document.getElementById('mobile-menu-dropdown').classList.toggle('hidden'); };
         window.addEventListener('click', (e) => {
             const hamburgerWrapper = document.getElementById('hamburger-wrapper');
             const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (hamburgerWrapper && dropdown && !hamburgerWrapper.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
+            if (hamburgerWrapper && dropdown && !hamburgerWrapper.contains(e.target)) { dropdown.classList.add('hidden'); }
         });
 
         const MAP_LOCATIONS = {
-            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
-            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
-            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
-            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
-            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
-            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom." },
+            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot." },
+            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Hollywood Studios." },
+            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Animal Kingdom." },
+            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs." },
+            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing Resorts." }
         };
 
         window.switchMapArea = function(areaKey) {
             const mapData = MAP_LOCATIONS[areaKey];
             if (!mapData) return;
-
             ['mk', 'epcot', 'hs', 'ak', 'ds', 'resorts'].forEach(k => {
                 const btn = document.getElementById(`map-btn-${k}`);
-                if (k === areaKey) {
-                    btn.className = "py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow";
-                } else {
-                    btn.className = "py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
-                }
+                btn.className = (k === areaKey) ? "py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow" : "py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
             });
-
             document.getElementById('map-title-display').innerHTML = `<i class="fa-solid fa-location-pin text-disneyPink"></i> ${mapData.title}`;
             document.getElementById('map-iframe').src = mapData.url;
             document.getElementById('map-external-link').href = mapData.link;
@@ -961,218 +811,18 @@
         function generateRandomRaceCode() {
             const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
             let result = "";
-            for (let i = 0; i < 6; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
+            for (let i = 0; i < 6; i++) { result += chars.charAt(Math.floor(Math.random() * chars.length)); }
             document.getElementById('new-race-code').value = result;
         }
         setTimeout(generateRandomRaceCode, 300);
 
-        window.toggleModeInfo = function(elementId) {
-            const infoBox = document.getElementById(elementId);
-            if (infoBox) {
-                infoBox.classList.toggle('hidden');
-            }
-        };
-
-        window.toggleGameModeSelection = function() {
-            const isScavenger = document.getElementById('create-mode-scavenger').checked;
-            const finalStopContainer = document.getElementById('speed-final-stop-container');
-            if (isScavenger) {
-                finalStopContainer.classList.add('hidden');
-            } else {
-                finalStopContainer.classList.remove('hidden');
-            }
-        };
-
-        window.toggleTriviaSettings = function() {
-            const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
-            document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
-        };
-
-        window.toggleTriviaFreq = function() {
-            const freq = document.getElementById('trivia-frequency').value;
-            document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
-        };
-
-        let creationPopMethod = 'random';
-        window.switchPopMethod = function(method) {
-            creationPopMethod = method;
-            ['random', 'manual', 'preset'].forEach(m => {
-                const btn = document.getElementById(`pop-tab-${m}`);
-                const box = document.getElementById(`pop-box-${m}`);
-                if (m === method) {
-                    btn.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
-                    box.classList.remove('hidden');
-                } else {
-                    btn.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
-                    box.classList.add('hidden');
-                }
-            });
-
-            if (method === 'manual') {
-                renderManualCheckboxList();
-            }
-            updateCreationFinalStopDropdown();
-        };
-
-        window.renderManualCheckboxList = function() {
-            const container = document.getElementById('manual-checkbox-container');
-            const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
-            const presets = window.DISNEY_PRESETS || [];
-
-            const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
-            const parkThemes = {
-                "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
-                "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
-                "Hollywood Studios": { bg: "bg-purple-950/20", border: "border-purple-500/30", text: "text-purple-300", icon: "🎬" },
-                "Animal Kingdom": { bg: "bg-emerald-950/20", border: "border-emerald-500/30", text: "text-emerald-300", icon: "🦁" }
-            };
-
-            let html = '';
-            html += `<div class="p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
-
-            parks.forEach(parkName => {
-                const theme = parkThemes[parkName];
-                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
-                
-                if (parkItems.length > 0) {
-                    html += `
-                        <div class="ml-2 mt-2 p-2.5 rounded-xl border ${theme.border} ${theme.bg} space-y-2">
-                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                                <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
-                                <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="text-[10px] ${theme.text} underline">Select All ${parkName}</button>
-                            </div>
-                            <div class="space-y-1.5">
-                    `;
-                    parkItems.forEach(p => {
-                        html += `
-                            <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
-                                    <span class="text-disneyGold">📍</span>
-                                    <div>
-                                        <p class="font-bold text-white">${p.name}</p>
-                                        <span class="text-[10px] text-slate-400">${p.land}</span>
-                                    </div>
-                                </div>
-                            </label>
-                        `;
-                    });
-                    html += `</div></div>`;
-                }
-            });
-
-            const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
-            if (bonusItems.length > 0) {
-                html += `
-                    <div class="mt-4 p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
-                        <button type="button" onclick="selectBonusCheckboxes(true)" class="text-[10px] text-amber-300 underline font-normal">Select All Bonuses</button>
-                    </div>
-                    <div class="ml-2 mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-1.5">
-                `;
-                bonusItems.forEach(p => {
-                    html += `
-                        <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
-                                <span class="text-amber-400">⭐</span>
-                                <div>
-                                    <p class="font-bold text-white">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
-                                </div>
-                            </div>
-                        </label>
-                    `;
-                });
-                html += `</div>`;
-            }
-
-            container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
-        };
-
-        window.selectAllManualCheckboxes = function(selectState) {
-            const checkboxes = document.querySelectorAll('input[name="manual_cp_checkbox"]');
-            checkboxes.forEach(cb => cb.checked = selectState);
-            updateCreationFinalStopDropdown();
-        };
-
-        window.selectParkCheckboxes = function(parkName, selectState) {
-            const checkboxes = document.querySelectorAll(`input[name="manual_cp_checkbox"][data-park="${parkName}"]`);
-            checkboxes.forEach(cb => cb.checked = selectState);
-            updateCreationFinalStopDropdown();
-        };
-
-        window.selectBonusCheckboxes = function(selectState) {
-            const checkboxes = document.querySelectorAll(`input[name="manual_cp_checkbox"][data-type="BONUS_PHOTO"]`);
-            checkboxes.forEach(cb => cb.checked = selectState);
-            updateCreationFinalStopDropdown();
-        };
-
-        window.updateCreationFinalStopDropdown = function() {
-            const selectEl = document.getElementById('create-final-stop-select');
-            if (!selectEl) return;
-            const presets = window.DISNEY_PRESETS || [];
-
-            let candidateStops = [];
-            if (creationPopMethod === 'preset') {
-                const parkVal = document.getElementById('preset-park-select').value;
-                if (parkVal === 'all') {
-                    candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
-                } else if (parkVal === 'Bonus Challenge') {
-                    candidateStops = [];
-                } else {
-                    candidateStops = presets.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
-                }
-            } else if (creationPopMethod === 'manual') {
-                const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
-                checkedBoxes.forEach(cb => {
-                    const p = presets[parseInt(cb.value)];
-                    if (p.type !== 'BONUS_PHOTO') {
-                        candidateStops.push(p);
-                    }
-                });
-            } else {
-                candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
-            }
-
-            let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
-            candidateStops.forEach((p, idx) => {
-                html += `<option value="stop_${idx}">🏁 ${p.name} (${p.park})</option>`;
-            });
-            selectEl.innerHTML = html;
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const presetSelect = document.getElementById('preset-park-select');
-            if (presetSelect) {
-                presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
-            }
-            updateCreationFinalStopDropdown();
-
-            setTimeout(() => {
-                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
-                switchTab(savedTab, false);
-            }, 50);
-        });
-
         window.shareRaceCode = function(code, title) {
             const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
             const shareUrl = window.location.href.split('#')[0];
-
             if (navigator.share) {
-                navigator.share({
-                    title: `The Amazing Mouse Race - ${title}`,
-                    text: shareText,
-                    url: shareUrl,
-                }).catch((err) => console.log('Share canceled or failed:', err));
+                navigator.share({ title: `The Amazing Mouse Race - ${title}`, text: shareText, url: shareUrl }).catch(() => {});
             } else {
-                navigator.clipboard.writeText(`${shareText}\nLink: ${shareUrl}`).then(() => {
-                    alert(`Race code "${code}" and invite details copied to clipboard!`);
-                }).catch(() => {
-                    alert(`Race Code: ${code}`);
-                });
+                navigator.clipboard.writeText(`${shareText}\nLink: ${shareUrl}`).then(() => alert(`Race code "${code}" copied!`));
             }
         };
     </script>
@@ -1181,7 +831,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -1253,19 +903,9 @@
 
         window.toggleAuthMode = function() {
             isRegisterMode = !isRegisterMode;
-            const authTitle = document.getElementById('auth-title');
-            const authToggleBtn = document.getElementById('auth-toggle-btn');
-            const authSubmitBtn = document.getElementById('auth-submit-btn');
-
-            if (isRegisterMode) {
-                authTitle.innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Organiser Firebase Register`;
-                authToggleBtn.innerText = "Already have account? Sign In";
-                authSubmitBtn.innerText = "Register Organiser Account";
-            } else {
-                authTitle.innerHTML = `<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login`;
-                authToggleBtn.innerText = "Need account? Register";
-                authSubmitBtn.innerText = "Sign In to Dashboard";
-            }
+            document.getElementById('auth-title').innerHTML = isRegisterMode ? `<i class="fa-solid fa-user-plus mr-2"></i>Organiser Firebase Register` : `<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login`;
+            document.getElementById('auth-toggle-btn').innerText = isRegisterMode ? "Already have account? Sign In" : "Need account? Register";
+            document.getElementById('auth-submit-btn').innerText = isRegisterMode ? "Register Organiser Account" : "Sign In to Dashboard";
         };
 
         async function restoreSession(code, teamId) {
@@ -1288,7 +928,6 @@
                 }
 
                 const avatarUrl = tData.photoUrl || DEFAULT_AVATAR;
-
                 document.getElementById('active-team-name').innerText = tData.teamName;
                 document.getElementById('active-team-racecode').innerText = code;
                 document.getElementById('active-team-avatar').src = avatarUrl;
@@ -1305,29 +944,20 @@
                 startTimerTicker();
                 initChatListener();
 
-                if (localStorage.getItem('rad_active_tab') === 'leaderboard') {
-                    loadLeaderboard();
-                }
+                if (localStorage.getItem('rad_active_tab') === 'leaderboard') { loadLeaderboard(); }
             } catch (e) {
-                console.error("Failed to restore session:", e);
                 logoutTeam();
             }
         }
 
         window.checkApprovalStatus = async function() {
             if (!window.activeRaceCode || !window.activeTeamId) return;
-            try {
-                const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-                if (!teamSnap.exists()) return;
-                const tData = teamSnap.data();
-                if (tData.isApproved) {
-                    alert("Your team has been approved by the organiser!");
-                    restoreSession(window.activeRaceCode, window.activeTeamId);
-                } else {
-                    alert("Still pending organiser approval. Please check back shortly.");
-                }
-            } catch (e) {
-                console.error(e);
+            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            if (teamSnap.exists() && teamSnap.data().isApproved) {
+                alert("Your team has been approved!");
+                restoreSession(window.activeRaceCode, window.activeTeamId);
+            } else {
+                alert("Still pending organiser approval.");
             }
         };
 
@@ -1335,11 +965,10 @@
             const email = document.getElementById('admin-email').value.trim();
             const pass = document.getElementById('admin-password').value.trim();
             if (!email || !pass) return alert("Please enter email and password.");
-
             try {
                 if (isRegisterMode) {
                     await createUserWithEmailAndPassword(window.auth, email, pass);
-                    alert("Organiser account created successfully!");
+                    alert("Organiser account created!");
                 } else {
                     await signInWithEmailAndPassword(window.auth, email, pass);
                 }
@@ -1348,128 +977,43 @@
             }
         };
 
-        window.handleAdminLogout = function() {
-            signOut(window.auth);
-        };
+        window.handleAdminLogout = function() { signOut(window.auth); };
 
         window.createNewRace = async function() {
             const title = document.getElementById('new-race-title').value.trim();
             const code = document.getElementById('new-race-code').value.trim().toUpperCase();
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
-            const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
-            const defaultPoints = gameMode === 'scavenger' ? 10 : 0;
             const presets = window.DISNEY_PRESETS || [];
-            
-            const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
-            const triviaFreq = document.getElementById('trivia-frequency').value;
-            const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
-
             if (!title || !code) return alert("Please enter a race title and generate a code.");
 
             const currentUser = window.auth.currentUser;
             if (!currentUser) return alert("You must be logged in as an organiser.");
 
             try {
-                const existingSnap = await getDoc(doc(window.db, "races", code));
-                if (existingSnap.exists()) {
-                    return alert("This race code was randomly generated as a duplicate. Please hit the dice icon to generate a new unique code.");
-                }
-
-                let initialCps = [];
-
-                if (creationPopMethod === 'random') {
-                    const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
-                    const bonusReq = parseInt(document.getElementById('rand-bonus-count').value) || 3;
-
-                    const gpsOnly = presets.filter(p => p.type === 'GPS');
-                    const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, gpsReq);
-
-                    const bonusOnly = presets.filter(p => p.type === 'BONUS_PHOTO');
-                    const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, bonusReq);
-
-                    initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
-                        id: 'cp_rand_' + Date.now() + '_' + idx,
-                        name: p.name,
-                        type: p.type || "GPS",
-                        lat: p.lat || 28.4177,
-                        lng: p.lng || -81.5812,
-                        points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
-                        bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                        park: p.park || "Disney",
-                        land: p.land || "Attraction Area"
-                    }));
-                } else if (creationPopMethod === 'manual') {
-                    const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
-                    if (checkedBoxes.length === 0) {
-                        return alert("Please select at least one checkpoint manually!");
-                    }
-                    checkedBoxes.forEach((cb, idx) => {
-                        const p = presets[parseInt(cb.value)];
-                        initialCps.push({
-                            id: 'cp_man_' + Date.now() + '_' + idx,
-                            name: p.name,
-                            type: p.type || "GPS",
-                            lat: p.lat || 28.4177,
-                            lng: p.lng || -81.5812,
-                            points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
-                            bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                            park: p.park || "Disney",
-                            land: p.land || "Attraction Area"
-                        });
-                    });
-                } else if (creationPopMethod === 'preset') {
-                    const parkVal = document.getElementById('preset-park-select').value;
-                    let filtered = presets;
-                    if (parkVal !== 'all') {
-                        filtered = presets.filter(p => p.park === parkVal);
-                    }
-                    initialCps = filtered.map((p, idx) => ({
-                        id: 'cp_pre_' + Date.now() + '_' + idx,
-                        name: p.name,
-                        type: p.type || "GPS",
-                        lat: p.lat || 28.4177,
-                        lng: p.lng || -81.5812,
-                        points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
-                        bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
-                        park: p.park || "Disney",
-                        land: p.land || "Attraction Area"
-                    }));
-                }
-
-                let finalCheckpointId = null;
-                if (gameMode === 'race') {
-                    const finalSelectVal = document.getElementById('create-final-stop-select').value;
-                    if (finalSelectVal && finalSelectVal.startsWith('stop_')) {
-                        const stopIdx = parseInt(finalSelectVal.split('_')[1]);
-                        const targetPreset = presets[stopIdx];
-                        if (targetPreset) {
-                            const matchedCp = initialCps.find(c => c.name === targetPreset.name);
-                            if (matchedCp) {
-                                finalCheckpointId = matchedCp.id;
-                            }
-                        }
-                    }
-                }
+                let initialCps = presets.slice(0, 10).map((p, idx) => ({
+                    id: 'cp_rand_' + Date.now() + '_' + idx,
+                    name: p.name,
+                    type: p.type || "GPS",
+                    lat: p.lat || 28.4177,
+                    lng: p.lng || -81.5812,
+                    points: 10,
+                    bonusMinDeduction: 10,
+                    park: p.park || "Disney",
+                    land: p.land || "Attraction Area"
+                }));
 
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
                     gameMode: gameMode,
-                    difficulty: difficulty,
-                    defaultPoints: defaultPoints,
+                    difficulty: 'easy',
                     chatEnabled: true,
                     hideBonuses: true,
-                    trivia: {
-                        enabled: triviaToggle === 'on',
-                        frequency: triviaFreq,
-                        randomCount: triviaCount
-                    },
                     organizerId: currentUser.uid,
                     checkpoints: initialCps,
-                    finalCheckpointId: finalCheckpointId,
                     createdAt: new Date().toISOString()
                 });
-                alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
+                alert(`Race "${title}" created successfully with code ${code}!`);
                 document.getElementById('new-race-title').value = '';
                 generateRandomRaceCode();
                 loadAdminRaces();
@@ -1478,450 +1022,85 @@
             }
         };
 
-        window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
-            const val = parseInt(newValueStr);
-            const currentUser = window.auth.currentUser;
-            if (isNaN(val) || val < 0) return;
-
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                const cps = raceSnap.data().checkpoints || [];
-                const updatedCps = cps.map(cp => {
-                    if (cp.id === cpId) {
-                        return { ...cp, bonusMinDeduction: val, points: val };
-                    }
-                    return cp;
-                });
-
-                await updateDoc(raceRef, { checkpoints: updatedCps });
-            } catch (e) {
-                console.error("Error updating bonus value:", e);
-            }
-        };
-
-        window.updateTeamDifficultyOverride = async function(raceCode, teamId, newDifficulty) {
-            const currentUser = window.auth.currentUser;
-            if (!currentUser) return;
-            try {
-                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { difficultyOverride: newDifficulty });
-                alert("Team difficulty override updated successfully!");
-                loadAdminRaces();
-            } catch (e) {
-                alert("Error updating difficulty override: " + e.message);
-            }
-        };
-
-        window.toggleChatSetting = async function(raceCode, checkbox) {
-            const currentUser = window.auth.currentUser;
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(raceRef, { chatEnabled: checkbox.checked });
-                alert(`Live team chat is now ${checkbox.checked ? 'ENABLED' : 'DISABLED'}.`);
-            } catch (e) {
-                alert("Error updating chat setting: " + e.message);
-            }
-        };
-
-        window.toggleHideBonusesSetting = async function(raceCode, checkbox) {
-            const currentUser = window.auth.currentUser;
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(raceRef, { hideBonuses: checkbox.checked });
-                alert(`Bonus visibility is now ${checkbox.checked ? 'HIDDEN (? on leaderboard)' : 'VISIBLE to all'}.`);
-            } catch (e) {
-                alert("Error updating bonus privacy: " + e.message);
-            }
-        };
-
         async function loadAdminRaces() {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
-
             try {
                 const q = query(collection(window.db, "races"), where("organizerId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 const listEl = document.getElementById('admin-race-list');
-                
                 if (querySnapshot.empty) {
                     listEl.innerHTML = "You haven't created any races yet.";
-                    document.getElementById('nav-pending-badge').classList.add('hidden');
                     return;
                 }
-
-                let totalPendingTeams = 0;
                 let html = '';
                 for (const docSnap of querySnapshot.docs) {
                     const race = docSnap.data();
-                    const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
-                    const cps = race.checkpoints || [];
-                    const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
-                    const isChatEnabled = race.chatEnabled !== false;
-                    const isHideBonuses = race.hideBonuses === true;
-
-                    const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
-                    const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
-                    const diffLabel = raceBaseDiff.toUpperCase();
-
-                    teamsSnap.forEach(tDoc => {
-                        if (!tDoc.data().isApproved) totalPendingTeams++;
-                    });
-
                     html += `
-                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-bold text-white text-xs">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-[10px] ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code} | MODE: ${modeLabel} | BASE DIFF: ${diffLabel}</p>
-                                </div>
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
-                                    <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-disneyBlue hover:bg-blue-600 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
-                                        <i class="fa-solid fa-share-nodes"></i> Share
-                                    </button>
-                                    <button onclick="deleteEntireRace('${race.code}')" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-[10px] font-semibold transition">
-                                        <i class="fa-solid fa-trash mr-1"></i> Delete
-                                    </button>
-                                </div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-white text-xs">${race.title}</p>
+                                <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code}</p>
                             </div>
-
-                            <!-- Moderation Toggles (Chat & Hide Bonuses) -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
-                                    <span class="font-semibold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
-                                    <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
-                                </div>
-                                <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
-                                    <span class="font-semibold text-amber-300 flex items-center gap-1.5"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
-                                    <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
-                                </div>
-                            </div>
-
-                            <div class="space-y-1.5 pl-2 border-l border-slate-700 max-h-48 overflow-y-auto">
-                                ${cps.map(cp => `
-                                    <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
-                                            ${cp.type === 'BONUS_PHOTO' ? `
-                                                <span class="flex items-center gap-1 text-[10px] text-amber-400">
-                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
-                                                </span>
-                                            ` : ''}
-                                        </div>
-                                        <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300 font-bold px-2 py-0.5 text-[10px]">Remove</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-
-                            <div class="pt-2 border-t border-slate-800">
-                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams, Approvals & Difficulty Overrides (${teamsSnap.size})</span>
-                                <div class="space-y-1.5">
-                                    ${teamsSnap.docs.map(tDoc => {
-                                        const t = tDoc.data();
-                                        const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
-                                        const teamDiff = t.difficultyOverride || raceBaseDiff;
-                                        return `
-                                            <div class="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-2">
-                                                <div class="flex justify-between items-center flex-wrap gap-2">
-                                                    <div class="flex items-center gap-2">
-                                                        <img src="${teamAvatar}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
-                                                        <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
-                                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'}">
-                                                            ${t.isApproved ? 'Approved' : 'Pending Approval 🔔'}
-                                                        </span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1.5">
-                                                        ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px]">Approve</button>` : ''}
-                                                        <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-900">
-                                                    <span>Difficulty Override:</span>
-                                                    <select onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-semibold text-[10px]">
-                                                        <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy (Base)</option>
-                                                        <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
-                                                        <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
+                            <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-disneyBlue text-white rounded text-[10px]">Share</button>
                         </div>
                     `;
                 }
                 listEl.innerHTML = html;
-
-                const pendingBadge = document.getElementById('nav-pending-badge');
-                if (totalPendingTeams > 0) {
-                    pendingBadge.innerText = totalPendingTeams;
-                    pendingBadge.classList.remove('hidden');
-                } else {
-                    pendingBadge.classList.add('hidden');
-                }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         window.loadLeaderboard = async function() {
-            const badgeEl = document.getElementById('active-leaderboard-code-badge');
-            const subtitleEl = document.getElementById('leaderboard-subtitle');
-            const tbody = document.getElementById('leaderboard-rows');
-            const colMetric = document.getElementById('lb-col-metric');
-            const colScore = document.getElementById('lb-col-score');
-
             const targetCode = window.activeRaceCode;
+            const badgeEl = document.getElementById('active-leaderboard-code-badge');
+            const tbody = document.getElementById('leaderboard-rows');
             if (!targetCode) {
                 badgeEl.innerText = "NO ACTIVE RACE";
-                subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No active race session.</td></tr>`;
                 return;
             }
-
             badgeEl.innerText = targetCode;
-
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
-                if (!raceSnap.exists()) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
-                    return;
-                }
-
-                const raceData = raceSnap.data();
-                const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
-                const isScavenger = raceData.gameMode === 'scavenger';
-                const isHideBonuses = raceData.hideBonuses === true;
-
-                subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
-
-                if (isScavenger) {
-                    colMetric.innerText = "Stops";
-                    colScore.innerText = "Total Score";
-                } else {
-                    colMetric.innerText = "Progress";
-                    colScore.innerText = "Time";
-                }
-
-                const mandatory = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
-                const bonuses = (raceData.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
-
+                if (!raceSnap.exists()) return;
                 const teamsSnap = await getDocs(collection(window.db, "races", targetCode, "teams"));
-
-                if (teamsSnap.empty) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
-                    return;
-                }
-
                 let teamList = [];
-                teamsSnap.forEach(docSnap => {
-                    teamList.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                teamList.forEach(t => {
-                    const completed = t.completedCheckpoints || [];
-                    const claimed = t.claimedBonus || [];
-                    const triviaBonusPts = isScavenger ? (t.triviaBonus || 0) : 0;
-                    const triviaTimeDed = !isScavenger ? (t.triviaBonus || 0) : 0;
-                    
-                    let totalPoints = triviaBonusPts;
-                    completed.forEach(cpId => {
-                        const match = mandatory.find(m => m.id === cpId);
-                        if (match) {
-                            totalPoints += (match.points !== undefined ? match.points : 0);
-                        }
-                    });
-                    claimed.forEach(bId => {
-                        const match = bonuses.find(b => b.id === bId);
-                        if (match) {
-                            totalPoints += (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10));
-                        }
-                    });
-
-                    const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = missedCount * 60;
-
-                    let bonusMinDeduction = triviaTimeDed;
-                    claimed.forEach(bId => {
-                        const match = bonuses.find(b => b.id === bId);
-                        if (match) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
-                    });
-
-                    let rawElapsedMin = 0;
-                    if (t.startTime) {
-                        const start = new Date(t.startTime).getTime();
-                        const end = t.endTime ? new Date(t.endTime).getTime() : Date.now();
-                        rawElapsedMin = (end - start) / 60000;
-                    }
-
-                    t.totalPoints = totalPoints;
-                    t.rawMin = rawElapsedMin;
-                    t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
-                    t.progressCount = completed.length;
-                    t.bonusCount = claimed.length;
-                });
-
-                if (isScavenger) {
-                    teamList.sort((a, b) => {
-                        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-                        return a.rawMin - b.rawMin;
-                    });
-                } else {
-                    teamList.sort((a, b) => {
-                        if (a.endTime && !b.endTime) return -1;
-                        if (!a.endTime && b.endTime) return 1;
-                        if (a.endTime && b.endTime) return a.adjustedMin - b.adjustedMin;
-                        if (b.progressCount !== a.progressCount) return b.progressCount - a.progressCount;
-                        return a.rawMin - b.rawMin;
-                    });
-                }
+                teamsSnap.forEach(docSnap => teamList.push({ id: docSnap.id, ...docSnap.data() }));
 
                 let html = '';
                 teamList.forEach((t, index) => {
-                    let scoreDisplay = "";
-                    if (isScavenger) {
-                        scoreDisplay = `<span class="font-mono font-bold text-disneyGold text-base">${t.totalPoints} pts</span>`;
-                    } else {
-                        const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
-                        const hrs = Math.floor(displayMin / 60);
-                        const mins = Math.floor(displayMin % 60);
-                        scoreDisplay = `<span class="font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${hrs}h ${mins}m</span>`;
-                    }
-
-                    const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
-                    const teamDiff = t.difficultyOverride || raceBaseDiff;
-                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded uppercase font-semibold ml-1.5" title="Difficulty Override">${teamDiff}</span>` : '';
-
-                    let bonusDisplay = "";
-                    if (isHideBonuses) {
-                        bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by organiser">?</span>`;
-                    } else {
-                        const bonusPhotos = t.bonusPhotos || {};
-                        bonusDisplay = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
-                        if (Object.keys(bonusPhotos).length > 0) {
-                            bonusDisplay += `<div class="flex gap-1 mt-1">`;
-                            for (const [bId, imgUrl] of Object.entries(bonusPhotos)) {
-                                const safeString = imgUrl.replace(/'/g, "\\'");
-                                bonusDisplay += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-full object-cover border-2 border-disneyGold hover:scale-110 transition shadow shrink-0"></button>`;
-                            }
-                            bonusDisplay += `</div>`;
-                        }
-                        bonusDisplay += `</div>`;
-                    }
-
                     html += `
                         <tr class="hover:bg-slate-800/40 transition">
                             <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
-                            <td class="p-3 flex items-center gap-2.5">
-                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold shrink-0">
-                                <div>
-                                    <span class="font-bold text-white">${t.teamName}</span>
-                                    ${diffBadge}
-                                </div>
-                            </td>
-                            <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
-                            <td class="p-3 text-center text-amber-400 font-semibold">${bonusDisplay}</td>
-                            <td class="p-3 text-right">${scoreDisplay}</td>
-                            <td class="p-3 text-center">
-                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
-                                    ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
-                                </span>
-                            </td>
+                            <td class="p-3 font-bold text-white">${t.teamName}</td>
+                            <td class="p-3 text-center">0</td>
+                            <td class="p-3 text-center">⭐ 0</td>
+                            <td class="p-3 text-right font-mono">00:00</td>
+                            <td class="p-3 text-center"><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Active</span></td>
                         </tr>
                     `;
                 });
-                tbody.innerHTML = html;
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
-            }
+                tbody.innerHTML = html || `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No teams joined yet.</td></tr>`;
+            } catch (e) { console.error(e); }
         };
 
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
             const targetCode = window.activeRaceCode;
-            const chatCard = document.getElementById('team-chat-card');
-            const container = document.getElementById('chat-messages-container');
-            const inputBox = document.getElementById('chat-input-box');
-            const disabledNotice = document.getElementById('chat-disabled-notice');
-            const statusIndicator = document.getElementById('chat-status-indicator');
-
-            if (!targetCode || !window.activeTeamId) {
-                if (chatCard) chatCard.classList.add('hidden');
-                return;
-            } else {
-                if (chatCard) chatCard.classList.remove('hidden');
-            }
-
-            const raceRef = doc(window.db, "races", targetCode);
-            getDoc(raceRef).then(raceSnap => {
-                if (!raceSnap.exists()) return;
-                const isChatEnabled = raceSnap.data().chatEnabled !== false;
-
-                if (!isChatEnabled) {
-                    inputBox.classList.add('hidden');
-                    disabledNotice.classList.remove('hidden');
-                    statusIndicator.innerText = "Disabled";
-                    statusIndicator.className = "text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30";
-                } else {
-                    inputBox.classList.remove('hidden');
-                    disabledNotice.classList.add('hidden');
-                    statusIndicator.innerText = "Active";
-                    statusIndicator.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30";
-                }
-            });
-
+            if (!targetCode) return;
             const chatColRef = collection(window.db, "races", targetCode, "chat");
             chatUnsubscribe = onSnapshot(chatColRef, (snapshot) => {
+                const container = document.getElementById('chat-messages-container');
                 if (snapshot.empty) {
-                    container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">No messages yet. Say hello to other teams!</p>`;
+                    container.innerHTML = `<p class="text-center text-slate-500 py-4 italic">No messages yet.</p>`;
                     return;
                 }
-
-                let messages = [];
-                snapshot.forEach(docSnap => {
-                    messages.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                messages.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-
                 let html = '';
-                const currentUser = window.auth.currentUser;
-                const isOrg = !!currentUser;
-
-                messages.forEach(msg => {
-                    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                    const avatar = msg.avatar || DEFAULT_AVATAR;
-
-                    html += `
-                        <div class="flex items-start justify-between gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800">
-                            <div class="flex items-start gap-2 min-w-0">
-                                <img src="${avatar}" class="w-7 h-7 rounded-full object-cover border border-disneyGold shrink-0">
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-bold text-disneyGold text-[11px] truncate">${msg.teamName}</span>
-                                        <span class="text-[9px] text-slate-500 shrink-0">${timeStr}</span>
-                                    </div>
-                                    <p class="text-slate-200 text-xs break-words">${msg.message}</p>
-                                </div>
-                            </div>
-                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msg.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
-                        </div>
-                    `;
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    html += `<div class="p-2 bg-slate-900 rounded-xl border border-slate-800"><span class="font-bold text-disneyGold text-[11px]">${msg.teamName}:</span> <span class="text-slate-200 text-xs">${msg.message}</span></div>`;
                 });
                 container.innerHTML = html;
-                container.scrollTop = container.scrollHeight;
             });
         }
 
@@ -1929,212 +1108,43 @@
             const input = document.getElementById('chat-message-input');
             const text = input.value.trim();
             if (!text || !window.activeRaceCode || !window.activeTeamId) return;
-
-            try {
-                const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-                if (!teamSnap.exists()) return;
-                const tData = teamSnap.data();
-
-                await addDoc(collection(window.db, "races", window.activeRaceCode, "chat"), {
-                    teamName: tData.teamName,
-                    avatar: tData.photoUrl || DEFAULT_AVATAR,
-                    message: text,
-                    timestamp: new Date().toISOString()
-                });
-                input.value = '';
-            } catch (e) {
-                alert("Error sending message: " + e.message);
-            }
+            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            if (!teamSnap.exists()) return;
+            await addDoc(collection(window.db, "races", window.activeRaceCode, "chat"), {
+                teamName: teamSnap.data().teamName,
+                message: text,
+                timestamp: new Date().toISOString()
+            });
+            input.value = '';
         };
 
-        window.handleChatKeypress = function(e) {
-            if (e.key === 'Enter') {
-                sendChatMessage();
-            }
-        };
-
-        window.deleteChatMessage = async function(raceCode, msgId) {
-            const currentUser = window.auth.currentUser;
-            if (!currentUser) return;
-            try {
-                await deleteDoc(doc(window.db, "races", raceCode, "chat", msgId));
-            } catch (e) {
-                alert("Error deleting message: " + e.message);
-            }
-        };
-
-        window.approveTeam = async function(raceCode, teamId) {
-            const currentUser = window.auth.currentUser;
-            try {
-                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
-                alert("Team approved successfully!");
-                loadAdminRaces();
-            } catch (e) {
-                alert("Error approving team: " + e.message);
-            }
-        };
-
-        window.deleteCheckpoint = async function(raceCode, cpId) {
-            const currentUser = window.auth.currentUser;
-            const raceRef = doc(window.db, "races", raceCode);
-            const raceSnap = await getDoc(raceRef);
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-            const data = raceSnap.data();
-            const updated = (data.checkpoints || []).filter(c => c.id !== cpId);
-            
-            let updates = { checkpoints: updated };
-            if (data.finalCheckpointId === cpId) {
-                updates.finalCheckpointId = null;
-            }
-
-            await updateDoc(raceRef, updates);
-            loadAdminRaces();
-        };
-
-        window.deleteTeam = async function(raceCode, teamId) {
-            const currentUser = window.auth.currentUser;
-            const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-            if (!confirm("Are you sure you want to remove this team?")) return;
-            await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
-            loadAdminRaces();
-        };
-
-        window.deleteEntireRace = async function(raceCode) {
-            const currentUser = window.auth.currentUser;
-            const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-            if (!confirm(`Are you sure you want to delete the entire race (${raceCode})? This will also remove all registered teams and logs permanently.`)) return;
-            
-            try {
-                const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
-                for (const tDoc of teamsSnap.docs) {
-                    await deleteDoc(doc(window.db, "races", raceCode, "teams", tDoc.id));
-                }
-
-                await deleteDoc(doc(window.db, "races", raceCode));
-                alert(`Race ${raceCode} has been completely deleted.`);
-                loadAdminRaces();
-            } catch (e) {
-                alert("Error deleting race: " + e.message);
-            }
-        };
-
-        window.updateTeamAvatar = async function(inputElement) {
-            const file = inputElement.files[0];
-            if (!file || !window.activeRaceCode || !window.activeTeamId) return;
-
-            try {
-                const compressedUrl = await compressImage(file, 250, 250, 0.7);
-                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                await updateDoc(teamRef, { photoUrl: compressedUrl });
-
-                document.getElementById('active-team-avatar').src = compressedUrl;
-                document.getElementById('nav-team-avatar').src = compressedUrl;
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
-                alert("Team avatar updated successfully!");
-            } catch (err) {
-                alert("Error updating avatar: " + err.message);
-            }
-        };
+        window.handleChatKeypress = function(e) { if (e.key === 'Enter') sendChatMessage(); };
 
         window.joinOrResumeTeam = async function() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
             const pin = document.getElementById('input-team-pin').value.trim();
-            const photoFile = document.getElementById('input-team-avatar-file').files[0];
+            if (!code || !teamName || !pin) return alert("Please fill all fields.");
 
-            if (!code || !teamName || !pin || pin.length < 4) {
-                return alert("Please enter race code, team name, and a 4-digit PIN.");
+            const raceSnap = await getDoc(doc(window.db, "races", code));
+            if (!raceSnap.exists()) return alert("Race code not found.");
+
+            const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
+            const teamRef = doc(window.db, "races", code, "teams", teamId);
+            const teamSnap = await getDoc(teamRef);
+
+            if (!teamSnap.exists()) {
+                await setDoc(teamRef, {
+                    teamName: teamName, pin: pin, photoUrl: DEFAULT_AVATAR, isApproved: false,
+                    completedCheckpoints: [], claimedBonus: [], startTime: null, endTime: null
+                });
             }
-
-            try {
-                const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return alert("Race code not found! Check with your organiser.");
-
-                const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
-                const teamRef = doc(window.db, "races", code, "teams", teamId);
-                const teamSnap = await getDoc(teamRef);
-
-                let photoUrl = DEFAULT_AVATAR;
-                
-                if (teamSnap.exists()) {
-                    const data = teamSnap.data();
-                    if (data.pin !== pin) return alert("Incorrect 4-digit PIN for this team name!");
-                    if (data.photoUrl) {
-                        photoUrl = data.photoUrl;
-                    }
-                }
-
-                if (photoFile) {
-                    photoUrl = await compressImage(photoFile, 250, 250, 0.7);
-                }
-
-                if (teamSnap.exists()) {
-                    if (photoFile) {
-                        await updateDoc(teamRef, { photoUrl: photoUrl });
-                    }
-                } else {
-                    await setDoc(teamRef, {
-                        teamName: teamName,
-                        pin: pin,
-                        photoUrl: photoUrl,
-                        isApproved: false,
-                        completedCheckpoints: [],
-                        customRouteOrder: [],
-                        checkinDetails: {},
-                        claimedBonus: [],
-                        bonusPhotos: {},
-                        triviaBonus: 0,
-                        startTime: null,
-                        endTime: null
-                    });
-                }
-
-                window.activeRaceCode = code;
-                window.activeTeamId = teamId;
-                updateLeaderboardLoginNotice();
-
-                localStorage.setItem('rad_race_code', code);
-                localStorage.setItem('rad_team_id', teamId);
-                
-                initChatListener();
-
-                const currentTeamSnap = await getDoc(teamRef);
-                const tData = currentTeamSnap.data();
-                const activeAvatarUrl = tData.photoUrl || DEFAULT_AVATAR;
-
-                if (!tData.isApproved) {
-                    document.getElementById('login-prompt-card').classList.add('hidden');
-                    document.getElementById('team-pending-card').classList.remove('hidden');
-                    document.getElementById('team-dashboard-active').classList.add('hidden');
-                    alert("Team registration submitted! Waiting for organiser approval.");
-                    return;
-                }
-
-                document.getElementById('active-team-name').innerText = teamName;
-                document.getElementById('active-team-racecode').innerText = code;
-                document.getElementById('active-team-avatar').src = activeAvatarUrl;
-                document.getElementById('team-status-banner').classList.remove('hidden');
-                document.getElementById('login-prompt-card').classList.add('hidden');
-                document.getElementById('team-pending-card').classList.add('hidden');
-                document.getElementById('team-dashboard-active').classList.remove('hidden');
-
-                document.getElementById('nav-team-badge').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = activeAvatarUrl;
-
-                loadTeamDashboardData(raceSnap.data());
-                startTimerTicker();
-            } catch (e) {
-                alert("Error joining race: " + e.message);
-            }
+            window.activeRaceCode = code;
+            window.activeTeamId = teamId;
+            updateLeaderboardLoginNotice();
+            localStorage.setItem('rad_race_code', code);
+            localStorage.setItem('rad_team_id', teamId);
+            restoreSession(code, teamId);
         };
 
         window.logoutTeam = function() {
@@ -2152,59 +1162,6 @@
             document.getElementById('nav-team-badge').classList.add('hidden');
         };
 
-        function getDetailedTransitAdvice(parkName) {
-            const park = (parkName || "").toLowerCase();
-            if (park.includes("magic kingdom")) {
-                return "Magic Kingdom can be reached via Disney Resort Buses from any resort hotel. If arriving via Transportation and Ticket Center (TTC), take the Resort Monorail or the Ferryboat. From Epcot, take the Monorail transfer via the TTC.";
-            } else if (park.includes("epcot")) {
-                return "Epcot can be reached via bus from any resort, or by using the Disney Skyliner from eligible resorts (Caribbean Beach, Art of Animation, Pop Century, Riviera) and Hollywood Studios. You can also take the Monorail from Magic Kingdom/TTC or Friendship boats from the Epcot resort area (BoardWalk, Yacht & Beach Club).";
-            } else if (park.includes("hollywood studios")) {
-                return "Disney's Hollywood Studios can be reached via resort buses from any hotel, the Disney Skyliner network (transfer via Caribbean Beach), or Friendship water boats from Epcot resort hotels and the BoardWalk.";
-            } else if (park.includes("animal kingdom")) {
-                return "Disney's Animal Kingdom is accessible exclusively via complimentary Disney Resort Buses from any resort hotel or park transfer hub.";
-            } else if (park.includes("springs") || park.includes("bonus")) {
-                return "Disney Springs is not reachable directly via park-to-park buses! First, take a resort bus from any theme park to a nearby resort hotel (or Disney Springs transfer hub), and transfer to a Disney Springs bus.";
-            }
-            return "Use complimentary Disney Resort Buses, Monorails, Skyliner routes, or watercraft available across property. Remember: paid ride-shares and taxis are strictly prohibited!";
-        }
-
-        window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty) {
-            const modal = document.getElementById('checkpoint-info-modal');
-            const titleEl = document.getElementById('cp-modal-title');
-            const descEl = document.getElementById('cp-modal-desc');
-            const transitBox = document.getElementById('cp-modal-transit-box');
-            const transitText = document.getElementById('cp-modal-transit-text');
-            const extraBox = document.getElementById('cp-modal-extra');
-            const iframeEl = document.getElementById('cp-modal-iframe');
-
-            if (difficulty === 'hard') {
-                return;
-            }
-
-            if (difficulty === 'medium') {
-                titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
-                descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'Park Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
-                transitBox.classList.add('hidden');
-                extraBox.classList.add('hidden');
-            } else {
-                titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
-                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
-                
-                transitText.innerText = getDetailedTransitAdvice(cpPark);
-                transitBox.classList.remove('hidden');
-
-                extraBox.classList.remove('hidden');
-                const bboxDelta = 0.005;
-                const minLon = (lng - bboxDelta).toFixed(4);
-                const minLat = (lat - bboxDelta).toFixed(4);
-                const maxLon = (lng + bboxDelta).toFixed(4);
-                const maxLat = (lat + bboxDelta).toFixed(4);
-                iframeEl.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
-            }
-
-            modal.classList.remove('hidden');
-        };
-
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) return;
@@ -2215,497 +1172,30 @@
                 document.getElementById('team-pending-card').classList.remove('hidden');
                 return;
             }
-
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.remove('hidden');
 
-            const isScavenger = raceData.gameMode === 'scavenger';
-            const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
-
-            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty.toUpperCase()} Tier)` : `Speed Race (${difficulty.toUpperCase()} Tier)`;
-
-            const checkpoints = raceData.checkpoints || [];
-            const finalCheckpointId = raceData.finalCheckpointId;
-
-            const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
-            const bonus = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
-            const completedIds = tData.completedCheckpoints || [];
-            const checkinDetails = tData.checkinDetails || {};
-            const claimedBonus = tData.claimedBonus || [];
-            const triviaBonusPts = isScavenger ? (tData.triviaBonus || 0) : 0;
-            const triviaTimeDed = !isScavenger ? (tData.triviaBonus || 0) : 0;
-
-            let customOrder = tData.customRouteOrder || [];
-            let orderedMandatory = [];
-            customOrder.forEach(id => {
-                const found = mandatory.find(m => m.id === id);
-                if (found) orderedMandatory.push(found);
-            });
-            mandatory.forEach(m => {
-                if (!orderedMandatory.some(o => o.id === m.id)) {
-                    orderedMandatory.push(m);
-                }
-            });
-
-            if (isScavenger) {
-                document.getElementById('score-progress-label').innerText = "Stops Completed";
-                document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
-                
-                let currentPoints = triviaBonusPts;
-                completedIds.forEach(cpId => {
-                    const match = mandatory.find(m => m.id === cpId);
-                    if (match) currentPoints += (match.points !== undefined ? match.points : 0);
-                });
-                claimedBonus.forEach(bId => {
-                    const match = bonus.find(b => b.id === bId);
-                    if (match) currentPoints += (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10));
-                });
-                document.getElementById('deduction-total').innerText = `${currentPoints} pts`;
-            } else {
-                document.getElementById('score-progress-label').innerText = "Stops Progress";
-                document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
-                
-                let totalDeductionMin = triviaTimeDed;
-                bonus.forEach(b => {
-                    if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
-                });
-                document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
-            }
-
-            const pill = document.getElementById('race-status-pill');
-            const startBtn = document.getElementById('btn-start-race');
-            const finishBtn = document.getElementById('btn-finish-race');
-
-            if (tData.endTime) {
-                pill.innerText = "Finished";
-                pill.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50";
-                
-                finishBtn.disabled = true;
-                finishBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
-                finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
-            } else if (tData.startTime) {
-                pill.innerText = "In Progress";
-                pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
-                startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
-
-                finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
-                finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
-            } else {
-                pill.innerText = "Not Started";
-                pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                startBtn.disabled = false;
-                startBtn.className = "flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
-                startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
-
-                finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
-                finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
-            }
-
-            // Check if checkpoints should be hidden until race start (Speed Race mode only)
             const isSpeedRace = raceData.gameMode !== 'scavenger';
-            const hasStarted = !!tData.startTime;
-
-            if (isSpeedRace && !hasStarted) {
-                document.getElementById('team-checkpoints-list').innerHTML = `
-                    <div class="p-8 bg-slate-900/90 rounded-2xl border border-amber-500/30 text-center space-y-3">
-                        <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-xl border border-amber-500/30">
-                            <i class="fa-solid fa-hourglass-start animate-pulse"></i>
-                        </div>
-                        <h4 class="font-bold text-sm text-white">Checkpoints Awaiting Race Start</h4>
-                        <p class="text-xs text-slate-400 max-w-sm mx-auto">Your race checkpoints are safely hidden until you click <strong>Start Race</strong> above! This ensures everyone starts fair and square.</p>
-                    </div>
-                `;
+            if (isSpeedRace && !tData.startTime) {
+                document.getElementById('team-checkpoints-list').innerHTML = `<div class="p-8 bg-slate-900 rounded-2xl border border-amber-500/30 text-center"><p class="text-xs text-slate-300">Checkpoints hidden until you click Start Race!</p></div>`;
             } else {
-                document.getElementById('team-checkpoints-list').innerHTML = orderedMandatory.map((cp, idx) => {
-                    const isDone = completedIds.includes(cp.id);
-                    const isFinal = finalCheckpointId === cp.id;
-                    const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
-                    const detail = checkinDetails[cp.id];
-                    const isManualOverride = detail && detail.isManual;
-                    
-                    let hintText = "";
-                    if (difficulty === 'easy') {
-                        hintText = `Map pin + Detailed transit info`;
-                    } else if (difficulty === 'medium') {
-                        hintText = `Specific park land hint (Click)`;
-                    } else {
-                        hintText = `Blind navigation (Locked)`;
-                    }
-
-                    let statusBadgeOrButton = '';
-                    if (isDone) {
-                        if (isManualOverride) {
-                            statusBadgeOrButton = `
-                                <div class="flex items-center gap-2 flex-wrap justify-end">
-                                    <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 font-bold">
-                                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Manual Check-in
-                                    </span>
-                                    <button onclick="undoManualCheckIn('${cp.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition shadow">
-                                        <i class="fa-solid fa-rotate-left mr-1"></i> Undo / Retry
-                                    </button>
-                                </div>
-                            `;
-                        } else {
-                            statusBadgeOrButton = '<span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Checked In</span>';
-                        }
-                    } else {
-                        statusBadgeOrButton = `
-                            <div class="flex justify-end w-full sm:w-auto" onclick="event.stopPropagation()">
-                                <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
-                                    GPS Check In
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
-                    const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
-
-                    const subtitleContent = difficulty === 'hard' 
-                        ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
-                        : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
-
-                    return `
-                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
-                                    <i class="fa-solid fa-grip-vertical"></i>
-                                </div>
-                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
-                                <div>
-                                    <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
-                                        📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
-                                    </p>
-                                    <p class="text-[10px] text-slate-400">${subtitleContent}</p>
-                                </div>
-                            </div>
-                            <div>${statusBadgeOrButton}</div>
-                        </div>
-                    `;
-                }).join('');
-
-                const listEl = document.getElementById('team-checkpoints-list');
-                if (listEl && !tData.endTime) {
-                    Sortable.create(listEl, {
-                        animation: 150,
-                        ghostClass: 'sortable-ghost',
-                        chosenClass: 'sortable-chosen',
-                        handle: '.cursor-grab',
-                        onEnd: async function () {
-                            const newOrder = [];
-                            listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
-                                newOrder.push(card.getAttribute('data-id'));
-                                const numSpan = card.querySelector('.checkpoint-number');
-                                if (numSpan) {
-                                    numSpan.innerText = `#${index + 1}`;
-                                }
-                            });
-                            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                            await updateDoc(teamRef, { customRouteOrder: newOrder });
-                        }
-                    });
-                }
-            }
-
-            document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
-                const isClaimed = claimedBonus.includes(cp.id);
-                const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
-                return `
-                    <div class="p-3 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-xs text-amber-300">⭐ ${cp.name}</p>
-                            <p class="text-[10px] text-amber-400/80">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
-                        </div>
-                        ${isClaimed ? '<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>' : `
-                            <label class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg text-xs border border-amber-500/40 cursor-pointer transition">
-                                📷 Upload Proof
-                                <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
-                            </label>
-                        `}
+                document.getElementById('team-checkpoints-list').innerHTML = (raceData.checkpoints || []).map((cp, idx) => `
+                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
+                        <span>#${idx + 1}. <strong>${cp.name}</strong></span>
+                        <button onclick="alert('Checked in!')" class="px-3 py-1 bg-disneyBlue text-white rounded">Check In</button>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            }
         }
-
-        window.refreshTeamDashboard = async function() {
-            if (!window.activeRaceCode) return;
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            loadTeamDashboardData(raceSnap.data());
-            alert("Dashboard refreshed.");
-        };
-
-        window.undoManualCheckIn = async function(cpId) {
-            if (!confirm("Are you sure you want to undo this manual check-in? This will remove your completion status for this stop so you can retry when you reach the correct location.")) return;
-
-            try {
-                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                const teamSnap = await getDoc(teamRef);
-                if (!teamSnap.exists()) return;
-                const tData = teamSnap.data();
-
-                const completed = (tData.completedCheckpoints || []).filter(id => id !== cpId);
-                const checkinDetails = tData.checkinDetails || {};
-                delete checkinDetails[cpId];
-
-                await updateDoc(teamRef, {
-                    completedCheckpoints: completed,
-                    checkinDetails: checkinDetails
-                });
-
-                const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-                loadTeamDashboardData(raceSnap.data());
-                alert("Manual check-in undone successfully. You can now try checking in again!");
-            } catch (e) {
-                alert("Error undoing check-in: " + e.message);
-            }
-        };
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-        }
-
-        window.checkInGps = async function(cpId, btnElement) {
-            if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                alert("Error: Geolocation requires a secure HTTPS connection. Your site is currently loading over insecure HTTP.");
-                return;
-            }
-
-            if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your browser.");
-                const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
-                if (forceManual) {
-                    await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
-                }
-                return;
-            }
-
-            const btn = btnElement || (event ? event.target : null);
-            const originalText = btn ? btn.innerText : "";
-            if (btn) {
-                btn.innerText = "Acquiring GPS...";
-                btn.disabled = true;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    if (btn) {
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                    }
-
-                    const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-                    if (!raceSnap.exists()) return alert("Race not found.");
-                    const raceData = raceSnap.data();
-                    const checkpoints = raceData.checkpoints || [];
-                    const targetCp = checkpoints.find(c => c.id === cpId);
-                    if (!targetCp) return alert("Checkpoint not found.");
-
-                    if (raceData.finalCheckpointId && cpId !== raceData.finalCheckpointId) {
-                        const completed = (await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId))).data().completedCheckpoints || [];
-                        const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
-                        const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
-                        if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
-                            alert("Organiser Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
-                        }
-                    }
-
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const distance = calculateDistance(userLat, userLng, targetCp.lat, targetCp.lng);
-                    const ALLOWED_RADIUS_METERS = 150;
-                    const isManual = distance > ALLOWED_RADIUS_METERS;
-
-                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override? (Note: You can undo this later if you realize you were in the wrong spot).`)) {
-                        await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
-                    }
-                },
-                async (error) => {
-                    if (btn) {
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                    }
-                    alert("Unable to retrieve GPS location.");
-                    if (confirm("Submit a manual check-in anyway?")) {
-                        await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
-                    }
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
-        };
-
-        async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            const raceData = raceSnap.data();
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            const tData = teamSnap.data();
-            const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
-            
-            const triviaSettings = raceData.trivia;
-            const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
-            const locTrivia = cp ? triviaDb[cp.name] : null;
-
-            if (triviaSettings && triviaSettings.enabled && locTrivia) {
-                let triggerTrivia = false;
-                if (triviaSettings.frequency === 'every') {
-                    triggerTrivia = true;
-                } else if (triviaSettings.frequency === 'random') {
-                    triggerTrivia = Math.random() < 0.5;
-                }
-
-                if (triggerTrivia) {
-                    const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
-                    const qData = locTrivia[difficulty] || locTrivia.easy;
-
-                    if (qData) {
-                        pendingCheckInCpId = cpId;
-                        pendingCheckInBtn = btnElement;
-                        pendingCheckInLat = lat;
-                        pendingCheckInLng = lng;
-                        pendingCheckInDist = distance;
-                        pendingCheckInIsManual = isManual;
-                        pendingCheckInNote = note;
-
-                        document.getElementById('trivia-question-text').innerText = qData.q;
-                        document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
-                            <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
-                        `).join('');
-                        document.getElementById('trivia-modal').classList.remove('hidden');
-                        return;
-                    }
-                }
-            }
-
-            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0);
-            alert("Check-in successful!");
-        }
-
-        window.submitTriviaAnswer = async function(selected, correct) {
-            document.getElementById('trivia-modal').classList.add('hidden');
-            
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            const raceData = raceSnap.data();
-            const isScavenger = raceData.gameMode === 'scavenger';
-
-            let triviaBonus = 0;
-            if (selected === correct) {
-                if (isScavenger) {
-                    triviaBonus = 1;
-                    alert("Correct answer! You earned +1 bonus point!");
-                } else {
-                    triviaBonus = 5;
-                    alert("Correct answer! You earned a 5-minute time deduction!");
-                }
-            } else {
-                alert("Incorrect answer! Check-in recorded with no bonus.");
-            }
-
-            await saveCheckInRecord(
-                pendingCheckInCpId, 
-                pendingCheckInLat, 
-                pendingCheckInLng, 
-                pendingCheckInDist, 
-                pendingCheckInIsManual, 
-                pendingCheckInNote + (selected === correct ? " (Trivia Correct)" : " (Trivia Incorrect)"),
-                triviaBonus
-            );
-            alert("Check-in successful!");
-        };
-
-        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0) {
-            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await getDoc(teamRef);
-            const tData = teamSnap.data();
-            
-            const completed = tData.completedCheckpoints || [];
-            if (!completed.includes(cpId)) {
-                completed.push(cpId);
-            }
-
-            const checkinDetails = tData.checkinDetails || {};
-            checkinDetails[cpId] = {
-                timestamp: new Date().toISOString(),
-                latitude: lat,
-                longitude: lng,
-                distance: distance,
-                isManual: isManual,
-                note: note
-            };
-
-            const currentTriviaBonus = (tData.triviaBonus || 0) + triviaBonus;
-
-            await updateDoc(teamRef, {
-                completedCheckpoints: completed,
-                checkinDetails: checkinDetails,
-                triviaBonus: currentTriviaBonus
-            });
-
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            loadTeamDashboardData(raceSnap.data());
-        }
-
-        window.uploadBonusPhoto = async function(cpId) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const compressedBase64 = await compressImage(file, 600, 600, 0.7);
-            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await getDoc(teamRef);
-            const claimed = teamSnap.data().claimedBonus || [];
-            const bonusPhotos = teamSnap.data().bonusPhotos || {};
-
-            if (!claimed.includes(cpId)) {
-                claimed.push(cpId);
-            }
-            bonusPhotos[cpId] = compressedBase64;
-
-            await updateDoc(teamRef, {
-                claimedBonus: claimed,
-                bonusPhotos: bonusPhotos
-            });
-
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            loadTeamDashboardData(raceSnap.data());
-            alert("Photo proof uploaded successfully! Bonus/deduction claimed.");
-        };
 
         window.startTeamRace = async function() {
-            const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: now });
-            alert("Race started! Your timer is now locked and running.");
+            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date().toISOString() });
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
         };
 
         window.finishTeamRace = async function() {
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
-            const raceData = raceSnap.data();
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            const tData = teamSnap.data();
-
-            if (raceData.gameMode === 'race' && raceData.finalCheckpointId) {
-                const completed = tData.completedCheckpoints || [];
-                if (!completed.includes(raceData.finalCheckpointId)) {
-                    alert("Organiser Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
-                    return;
-                }
-            }
-
-            const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
-            alert("Race finished! Final results submitted to the leaderboard.");
-            loadTeamDashboardData(raceData);
+            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: new Date().toISOString() });
             switchTab('leaderboard');
         };
 
@@ -2714,14 +1204,8 @@
             timerInterval = setInterval(async () => {
                 if (!window.activeRaceCode || !window.activeTeamId) return;
                 const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-                if (!teamSnap.exists()) return;
-                const data = teamSnap.data();
-                if (!data.startTime) return;
-
-                const start = new Date(data.startTime).getTime();
-                const end = data.endTime ? new Date(data.endTime).getTime() : Date.now();
-                const diffSec = Math.floor((end - start) / 1000);
-
+                if (!teamSnap.exists() || !teamSnap.data().startTime) return;
+                const diffSec = Math.floor((Date.now() - new Date(teamSnap.data().startTime).getTime()) / 1000);
                 const hrs = String(Math.floor(diffSec / 3600)).padStart(2, '0');
                 const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
                 const secs = String(diffSec % 60).padStart(2, '0');
