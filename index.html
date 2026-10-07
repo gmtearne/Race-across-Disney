@@ -397,11 +397,11 @@
             <button onclick="toggleMobileMenu()" id="hamburger-btn" class="mx-2 my-1.5 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition shadow shrink-0" title="Open Navigation Menu">
                 <i class="fa-solid fa-bars text-sm"></i>
             </button>
-            <div class="flex flex-1 overflow-x-auto py-1">
-                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl mx-1">
+            <div class="flex flex-1 overflow-x-auto py-1 gap-1">
+                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl">
                     <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
                 </button>
-                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl mx-1">
+                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl">
                     <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
                 </button>
             </div>
@@ -437,48 +437,65 @@
 
         <!-- ================= TAB 1: TEAM PORTAL ================= -->
         <section id="tab-race" class="space-y-6">
-            <div id="login-prompt-card" class="space-y-6">
-                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-                    <div class="w-16 h-16 bg-disneyBlue/20 text-disneyBlue rounded-full flex items-center justify-center mx-auto text-2xl border border-disneyBlue/30">
-                        <i class="fa-solid fa-users-gear"></i>
-                    </div>
-                    <h2 class="text-2xl font-disney font-bold text-white">Join or Resume Your Race</h2>
-                    <p class="text-slate-300 text-sm max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. New teams require organiser approval before accessing checkpoints!</p>
+            <div id="login-prompt-card" class="space-y-4">
+                <!-- Collapsible Join/Resume Box (Collapsed by default when not logged in) -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+                    <button onclick="toggleRacePortalCard('join-race-box', 'join-race-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-disneyBlue/20 text-disneyBlue flex items-center justify-center border border-disneyBlue/30">
+                                <i class="fa-solid fa-users-gear text-xs"></i>
+                            </div>
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Join or Resume Your Race</span>
+                        </div>
+                        <span id="join-race-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                    </button>
                     
-                    <div class="max-w-sm mx-auto space-y-3 pt-2 text-left">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
-                            <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
-                            <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
+                    <div id="join-race-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80 text-center">
+                        <p class="text-slate-300 text-xs max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. New teams require organiser approval before accessing checkpoints!</p>
+                        <div class="max-w-sm mx-auto space-y-3 text-left">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
-                                <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
+                                <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
-                                <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
+                                <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
                             </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
+                                    <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
+                                    <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
+                                </div>
+                            </div>
+                            <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
+                                Enter Race Portal
+                            </button>
                         </div>
-                        <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
-                            Enter Race Portal
-                        </button>
                     </div>
                 </div>
 
-                <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6 text-center space-y-3 shadow-xl">
-                    <div class="w-12 h-12 bg-indigo-600/20 text-indigo-300 rounded-full flex items-center justify-center mx-auto text-lg border border-indigo-500/30">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
-                    <h3 class="font-bold text-base text-white">Want to host an event?</h3>
-                    <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the organiser dashboard and set up checkpoints.</p>
-                    <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
-                        Create Race / Organiser Dashboard
+                <!-- Collapsible Host Event Box (Collapsed by default when not logged in) -->
+                <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+                    <button onclick="toggleRacePortalCard('host-event-box', 'host-event-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Want to host an event?</span>
+                        </div>
+                        <span id="host-event-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
+
+                    <div id="host-event-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80 text-center">
+                        <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the organiser dashboard and set up checkpoints.</p>
+                        <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
+                            Create Race / Organiser Dashboard
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -560,16 +577,13 @@
         <!-- ================= TAB 2: RACE PORTAL ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
             <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <button onclick="toggleRacePortalCard('leaderboard-notice-box', 'leaderboard-notice-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
-                            <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                        </div>
-                        <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Authentication Notice</span>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                     </div>
-                    <span id="leaderboard-notice-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
-                </button>
-                <div id="leaderboard-notice-box" class="hidden space-y-3 pt-3 border-t border-slate-700 text-xs text-slate-300 flex items-center justify-between gap-3">
+                    <span class="font-bold text-sm text-white">Authentication Notice</span>
+                </div>
+                <div class="space-y-3 pt-3 border-t border-slate-700 text-xs text-slate-300 flex items-center justify-between gap-3">
                     <span>Please log into your team/race to review leaderboard and chat.</span>
                     <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
                         Go to Team Portal
@@ -614,20 +628,17 @@
             </div>
 
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <button onclick="toggleRacePortalCard('team-chat-box', 'team-chat-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group border-b border-slate-700 pb-3">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30">
                             <i class="fa-solid fa-comments text-xs"></i>
                         </div>
-                        <span class="font-bold text-sm text-disneyGold group-hover:text-white transition">Live Race Chat</span>
+                        <span class="font-bold text-sm text-disneyGold">Live Race Chat</span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
-                        <span id="team-chat-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
-                    </div>
-                </button>
+                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
+                </div>
                 
-                <div id="team-chat-box" class="hidden space-y-4 pt-1">
+                <div class="space-y-4 pt-1">
                     <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
                         <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
                     </div>
@@ -1135,9 +1146,9 @@
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 if (btn.tagName === 'BUTTON') {
                     if (isMatch) {
-                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl mx-1";
+                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
                     } else {
-                        btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl mx-1";
+                        btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
                     }
                 }
             });
@@ -1151,7 +1162,7 @@
                 initChatListener();
             }
 
-            // Always close the fullscreen menu whenever any navigation selection is made
+            // Always close the fullscreen menu whenever any navigation selection is made (fixing Team Portal overlay bug)
             const fullscreenMenu = document.getElementById('app-fullscreen-menu');
             if (fullscreenMenu) fullscreenMenu.classList.add('hidden');
         }
@@ -2698,11 +2709,7 @@
             const disabledNotice = document.getElementById('chat-disabled-notice');
             const statusIndicator = document.getElementById('chat-status-indicator');
 
-            if (!targetCode || !window.activeTeamId) {
-                if (chatCard) chatCard.classList.remove('hidden'); // keep card visible for collapse toggle even if not logged in
-            } else {
-                if (chatCard) chatCard.classList.remove('hidden');
-            }
+            if (chatCard) chatCard.classList.remove('hidden');
 
             const raceRef = doc(window.db, "races", targetCode || "dummy");
             getDoc(raceRef).then(raceSnap => {
