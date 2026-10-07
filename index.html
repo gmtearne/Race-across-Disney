@@ -163,6 +163,28 @@
         </div>
     </div>
 
+    <!-- Team Verification Details Modal (Organiser View) -->
+    <div id="team-verify-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-indigo-500/50 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 p-5 shrink-0">
+                <h3 id="verify-modal-title" class="font-bold text-base text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i> Team Verification Logs
+                </h3>
+                <button onclick="closeTeamVerifyModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="verify-modal-body" class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1 text-xs">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-2xl flex justify-end shrink-0">
+                <button onclick="closeTeamVerifyModal()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Organizer Edit Race Modal -->
     <div id="organizer-edit-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-indigo-500/50 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
@@ -178,6 +200,34 @@
             <div class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1">
                 <input type="hidden" id="edit-modal-race-code">
                 
+                <div class="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                    <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Base Difficulty Level</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                            <input type="radio" name="edit_difficulty" value="easy" class="mb-1 text-disneyGold">
+                            <span class="font-bold text-xs text-white">Easy</span>
+                            <span class="text-[9px] text-slate-400">Pins + Transit</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                            <input type="radio" name="edit_difficulty" value="medium" class="mb-1 text-disneyGold">
+                            <span class="font-bold text-xs text-white">Medium</span>
+                            <span class="text-[9px] text-slate-400">Park Lands</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                            <input type="radio" name="edit_difficulty" value="hard" class="mb-1 text-disneyGold">
+                            <span class="font-bold text-xs text-white">Hard</span>
+                            <span class="text-[9px] text-slate-400">Blind (Locked)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="edit-final-stop-wrapper" class="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
+                    <select id="edit-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
+                        <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                    </select>
+                </div>
+
                 <div class="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                     <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider">Trivia Settings</h4>
                     <div class="flex gap-4">
@@ -252,7 +302,7 @@
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
                     <input type="text" id="add-cp-search-input" onkeyup="renderAddCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none">
                 </div>
-                <div id="add-cp-checkbox-container" class="space-y-2"></div>
+                <div id="add-cp-checkbox-container" class="space-y-3"></div>
             </div>
             <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-2xl flex justify-end gap-3 shrink-0">
                 <button onclick="closeAddCheckpointsModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
@@ -975,6 +1025,9 @@
         window.closeImageModal = function() {
             document.getElementById('image-modal').classList.add('hidden');
         };
+        window.closeTeamVerifyModal = function() {
+            document.getElementById('team-verify-modal').classList.add('hidden');
+        };
 
         window.openImageModal = function(imgSrc) {
             const modal = document.getElementById('image-modal');
@@ -1638,6 +1691,10 @@
         };
 
         // ================= ORGANISER EDIT MODAL LOGIC =================
+        let editingRaceActiveCheckpoints = [];
+        let editingRaceGameMode = 'race';
+        let editingRaceFinalCheckpointId = null;
+
         window.openOrganizerEditModal = async function(raceCode) {
             currentEditingRaceCode = raceCode;
             const currentUser = window.auth.currentUser;
@@ -1649,6 +1706,21 @@
                 const race = raceSnap.data();
 
                 document.getElementById('edit-modal-race-code').value = raceCode;
+                editingRaceActiveCheckpoints = race.checkpoints || [];
+                editingRaceGameMode = race.gameMode || 'race';
+                editingRaceFinalCheckpointId = race.finalCheckpointId || null;
+
+                const baseDiff = (race.difficulty || 'easy').toLowerCase();
+                const diffRadio = document.querySelector(`input[name="edit_difficulty"][value="${baseDiff}"]`);
+                if (diffRadio) diffRadio.checked = true;
+
+                const finalStopWrapper = document.getElementById('edit-final-stop-wrapper');
+                if (editingRaceGameMode === 'scavenger') {
+                    finalStopWrapper.classList.add('hidden');
+                } else {
+                    finalStopWrapper.classList.remove('hidden');
+                    updateEditFinalStopDropdown();
+                }
 
                 const trivia = race.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
                 const triviaToggleVal = trivia.enabled ? 'on' : 'off';
@@ -1656,11 +1728,12 @@
                 document.getElementById('edit-trivia-frequency').value = trivia.frequency || 'every';
                 document.getElementById('edit-trivia-random-count').value = trivia.randomCount || 3;
                 toggleEditTriviaSettings();
+                toggleEditTriviaFreq();
 
-                renderEditModalCheckpointsList(race.checkpoints || []);
+                renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
                 document.getElementById('organizer-edit-modal').classList.remove('hidden');
             } catch (e) {
-                alert("Error loading race details for editing: " + e.message);
+                alert("Error loading race details: " + e.message);
             }
         };
 
@@ -1679,6 +1752,19 @@
             document.getElementById('edit-trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
         };
 
+        function updateEditFinalStopDropdown() {
+            const selectEl = document.getElementById('edit-final-stop-select');
+            if (!selectEl) return;
+            const mandatory = editingRaceActiveCheckpoints.filter(c => c.type !== 'BONUS_PHOTO');
+
+            let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
+            mandatory.forEach(cp => {
+                const isSelected = editingRaceFinalCheckpointId === cp.id ? 'selected' : '';
+                html += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park || 'Disney'})</option>`;
+            });
+            selectEl.innerHTML = html;
+        }
+
         function renderEditModalCheckpointsList(checkpoints) {
             const container = document.getElementById('edit-modal-checkpoints-list');
             if (!container) return;
@@ -1694,7 +1780,7 @@
                         <span class="font-mono font-bold text-disneyGold text-xs shrink-0">#${idx + 1}</span>
                         <div class="min-w-0">
                             <p class="font-bold text-white text-xs truncate">
-                                ${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name}
+                                ${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name} ${editingRaceFinalCheckpointId === cp.id ? '<span class="text-disneyGold text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded ml-1">🏁 Final</span>' : ''}
                             </p>
                             <p class="text-[10px] text-slate-400 truncate">${cp.park || 'Disney'} • ${cp.land || 'Area'}</p>
                         </div>
@@ -1713,37 +1799,11 @@
             `).join('');
         }
 
-        let editingRaceActiveCheckpoints = [];
-        async function openOrganizerEditModal(raceCode) {
-            currentEditingRaceCode = raceCode;
-            const currentUser = window.auth.currentUser;
-            if (!currentUser) return;
-
-            try {
-                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-                if (!raceSnap.exists()) return;
-                const race = raceSnap.data();
-
-                editingRaceActiveCheckpoints = race.checkpoints || [];
-
-                const trivia = race.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
-                const triviaToggleVal = trivia.enabled ? 'on' : 'off';
-                document.querySelector(`input[name="edit_trivia_toggle"][value="${triviaToggleVal}"]`).checked = true;
-                document.getElementById('edit-trivia-frequency').value = trivia.frequency || 'every';
-                document.getElementById('edit-trivia-random-count').value = trivia.randomCount || 3;
-                toggleEditTriviaSettings();
-                toggleEditTriviaFreq();
-
-                renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
-                document.getElementById('organizer-edit-modal').classList.remove('hidden');
-            } catch (e) {
-                alert("Error loading race details: " + e.message);
-            }
-        }
-
         window.removeCheckpointFromEditModal = function(cpId) {
             editingRaceActiveCheckpoints = editingRaceActiveCheckpoints.filter(c => c.id !== cpId);
+            if (editingRaceFinalCheckpointId === cpId) editingRaceFinalCheckpointId = null;
             renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
+            updateEditFinalStopDropdown();
         };
 
         window.saveRaceEdits = async function() {
@@ -1756,6 +1816,8 @@
                 const raceSnap = await getDoc(raceRef);
                 if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
+                const newDifficulty = document.querySelector('input[name="edit_difficulty"]:checked')?.value || 'easy';
+                const finalStopVal = document.getElementById('edit-final-stop-select')?.value || null;
                 const triviaToggle = document.querySelector('input[name="edit_trivia_toggle"]:checked')?.value || 'off';
                 const triviaFreq = document.getElementById('edit-trivia-frequency').value;
                 const triviaCount = parseInt(document.getElementById('edit-trivia-random-count').value) || 3;
@@ -1772,6 +1834,8 @@
                 });
 
                 await updateDoc(raceRef, {
+                    difficulty: newDifficulty,
+                    finalCheckpointId: finalStopVal || null,
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -1780,7 +1844,7 @@
                     checkpoints: updatedCps
                 });
 
-                alert("Race settings and checkpoints updated successfully!");
+                alert("Race settings, difficulty, and checkpoints updated successfully!");
                 closeOrganizerEditModal();
                 loadAdminRaces();
             } catch (e) {
@@ -1788,7 +1852,7 @@
             }
         };
 
-        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC =================
+        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC (GROUPED BY PARK) =================
         window.openAddCheckpointsModal = function() {
             renderAddCheckboxList();
             document.getElementById('organizer-add-cp-modal').classList.remove('hidden');
@@ -1804,33 +1868,88 @@
             const presets = window.DISNEY_PRESETS || [];
 
             const activeIds = new Set(editingRaceActiveCheckpoints.map(c => c.name));
-            const availablePresets = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
-
-            if (availablePresets.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 py-4 text-xs">All available preset checkpoints have already been added.</p>`;
-                return;
-            }
+            const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
+            const parkThemes = {
+                "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
+                "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
+                "Hollywood Studios": { bg: "bg-purple-950/20", border: "border-purple-500/30", text: "text-purple-300", icon: "🎬" },
+                "Animal Kingdom": { bg: "bg-emerald-950/20", border: "border-emerald-500/30", text: "text-emerald-300", icon: "🦁" }
+            };
 
             let html = '';
-            availablePresets.forEach(p => {
-                html += `
-                    <label class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700/80 text-xs cursor-pointer hover:border-disneyGold transition">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" name="add_cp_checkbox" value="${p.originalIndex}" class="text-disneyGold rounded h-4 w-4">
-                            <span class="${p.type === 'BONUS_PHOTO' ? 'text-amber-400' : 'text-disneyGold'}">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
-                            <div>
-                                <p class="font-bold text-white text-xs">${p.name}</p>
-                                <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
+            parks.forEach(parkName => {
+                const theme = parkThemes[parkName];
+                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+
+                if (parkItems.length > 0) {
+                    html += `
+                        <div class="p-3 rounded-xl border ${theme.border} ${theme.bg} space-y-2.5">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                                <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
+                                <button type="button" onclick="selectParkAddCheckboxes('${parkName}', true)" class="text-[10px] ${theme.text} underline">Select All ${parkName}</button>
                             </div>
-                        </div>
-                    </label>
-                `;
+                            <div class="space-y-2">
+                    `;
+                    parkItems.forEach(p => {
+                        html += `
+                            <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
+                                <div class="flex items-center gap-2.5">
+                                    <input type="checkbox" name="add_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" class="text-disneyGold rounded h-4 w-4">
+                                    <span class="text-disneyGold">📍</span>
+                                    <div>
+                                        <p class="font-bold text-white text-xs">${p.name}</p>
+                                        <span class="text-[10px] text-slate-400">${p.land}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
             });
-            container.innerHTML = html;
+
+            const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+            if (bonusItems.length > 0) {
+                html += `
+                    <div class="p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
+                        <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                            <span class="font-bold text-xs text-amber-300"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
+                            <button type="button" onclick="selectBonusAddCheckboxes(true)" class="text-[10px] text-amber-300 underline">Select All Bonuses</button>
+                        </div>
+                        <div class="space-y-2">
+                `;
+                bonusItems.forEach(p => {
+                    html += `
+                        <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" name="add_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" class="text-disneyGold rounded h-4 w-4">
+                                <span class="text-amber-400">⭐</span>
+                                <div>
+                                    <p class="font-bold text-white text-xs">${p.name}</p>
+                                    <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
+                                </div>
+                            </div>
+                        </label>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+
+            container.innerHTML = html || '<p class="text-center text-slate-500 py-4 text-xs">All available preset checkpoints have already been added.</p>';
         };
 
         window.selectAllAddCheckboxes = function(selectState) {
             const checkboxes = document.querySelectorAll('input[name="add_cp_checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectState);
+        };
+
+        window.selectParkAddCheckboxes = function(parkName, selectState) {
+            const checkboxes = document.querySelectorAll(`input[name="add_cp_checkbox"][data-park="${parkName}"]`);
+            checkboxes.forEach(cb => cb.checked = selectState);
+        };
+
+        window.selectBonusAddCheckboxes = function(selectState) {
+            const checkboxes = document.querySelectorAll(`input[name="add_cp_checkbox"][data-type="BONUS_PHOTO"]`);
             checkboxes.forEach(cb => cb.checked = selectState);
         };
 
@@ -1857,6 +1976,7 @@
             });
 
             renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
+            updateEditFinalStopDropdown();
             closeAddCheckpointsModal();
             alert(`${checkedBoxes.length} checkpoint(s) added! Click 'Save Changes' to update the race.`);
         };
@@ -1908,7 +2028,6 @@
                 if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
                 await updateDoc(raceRef, { chatEnabled: checkbox.checked });
-                alert(`Live team chat is now ${checkbox.checked ? 'ENABLED' : 'DISABLED'}.`);
             } catch (e) {
                 alert("Error updating chat setting: " + e.message);
             }
@@ -1922,9 +2041,116 @@
                 if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
                 await updateDoc(raceRef, { hideBonuses: checkbox.checked });
-                alert(`Bonus visibility is now ${checkbox.checked ? 'HIDDEN (? on leaderboard)' : 'VISIBLE to all'}.`);
             } catch (e) {
                 alert("Error updating bonus privacy: " + e.message);
+            }
+        };
+
+        window.openTeamVerificationModal = async function(raceCode, teamId, teamName) {
+            const modal = document.getElementById('team-verify-modal');
+            const titleEl = document.getElementById('verify-modal-title');
+            const bodyEl = document.getElementById('verify-modal-body');
+
+            titleEl.innerHTML = `<i class="fa-solid fa-clipboard-check"></i> Verification Logs: ${teamName}`;
+            bodyEl.innerHTML = `<p class="text-slate-400 text-center py-6">Loading verification data...</p>`;
+            modal.classList.remove('hidden');
+
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+                const teamSnap = await getDoc(doc(window.db, "races", raceCode, "teams", teamId));
+                if (!raceSnap.exists() || !teamSnap.exists()) {
+                    bodyEl.innerHTML = `<p class="text-rose-400 text-center py-6">Team data not found.</p>`;
+                    return;
+                }
+
+                const race = raceSnap.data();
+                const team = teamSnap.data();
+                const checkpoints = race.checkpoints || [];
+                const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
+                const bonuses = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
+                const checkinDetails = team.checkinDetails || {};
+                const completedIds = team.completedCheckpoints || [];
+                const claimedBonus = team.claimedBonus || [];
+                const bonusPhotos = team.bonusPhotos || {};
+                const triviaBonus = team.triviaBonus || 0;
+
+                let html = `
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <p class="font-bold text-white text-sm">${team.teamName}</p>
+                                <p class="text-[11px] text-slate-400">PIN: <span class="font-mono text-disneyGold">${team.pin}</span> | Status: <span class="text-emerald-400 font-semibold">${team.endTime ? 'Finished' : (team.startTime ? 'Racing' : (team.isApproved ? 'Approved' : 'Pending'))}</span></p>
+                            </div>
+                            <img src="${team.photoUrl || DEFAULT_AVATAR}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold">
+                        </div>
+
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-indigo-300 uppercase tracking-wider text-xs">Mandatory Check-ins & GPS Timestamps</h4>
+                `;
+
+                if (completedIds.length === 0) {
+                    html += `<p class="text-slate-500 italic">No checkpoints completed yet.</p>`;
+                } else {
+                    completedIds.forEach(cpId => {
+                        const cp = mandatory.find(m => m.id === cpId);
+                        const detail = checkinDetails[cpId] || {};
+                        const timeStr = detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Unknown time';
+                        const isManual = detail.isManual;
+                        const latLngStr = detail.latitude && detail.longitude ? `${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}` : 'No GPS coords';
+
+                        html += `
+                            <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-white">📍 ${cp ? cp.name : 'Unknown Stop'}</span>
+                                    <span class="text-[11px] text-disneyGold font-mono">${timeStr}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[11px] text-slate-400">
+                                    <span>GPS: <span class="font-mono text-slate-300">${latLngStr}</span> (${detail.note || 'Verified'})</span>
+                                    ${isManual ? '<span class="text-amber-400 font-bold bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Manual Override</span>' : '<span class="text-emerald-400 font-bold">GPS Verified</span>'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-700">
+                            <h4 class="font-bold text-amber-300 uppercase tracking-wider text-xs">Bonus Photo Proofs (${claimedBonus.length})</h4>
+                `;
+
+                if (claimedBonus.length === 0) {
+                    html += `<p class="text-slate-500 italic">No bonus proofs uploaded.</p>`;
+                } else {
+                    claimedBonus.forEach(bId => {
+                        const b = bonuses.find(item => item.id === bId);
+                        const imgUrl = bonusPhotos[bId];
+                        html += `
+                            <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="font-bold text-amber-300">⭐ ${b ? b.name : 'Bonus Checkpoint'}</p>
+                                    <p class="text-[10px] text-slate-400">Reward Claimed</p>
+                                </div>
+                                ${imgUrl ? `<button type="button" onclick="openImageModal('${imgUrl.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-disneyBlue text-white font-bold rounded-lg text-xs hover:bg-blue-600 transition">View Photo</button>` : '<span class="text-slate-500 text-[10px]">No Image</span>'}
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-700">
+                            <h4 class="font-bold text-disneyGold uppercase tracking-wider text-xs">Trivia History</h4>
+                            <p class="text-slate-300">Total Trivia Bonus Accumulated: <span class="font-mono font-bold text-emerald-400">${triviaBonus}</span></p>
+                        </div>
+                    </div>
+                `;
+
+                bodyEl.innerHTML = html;
+            } catch (e) {
+                bodyEl.innerHTML = `<p class="text-rose-400 text-center py-6">Error loading verification data: ${e.message}</p>`;
             }
         };
 
@@ -2064,45 +2290,74 @@
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-                                    <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
-                                    <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
+                                <!-- Square Button Toggle 1: Chat -->
+                                <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Live Chat:</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                        <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-emerald-400">${isChatEnabled ? 'On' : 'Off'}</span>
+                                    </label>
                                 </div>
-                                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                                <!-- Square Button Toggle 2: Hide Bonuses -->
+                                <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
                                     <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
-                                    <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                                        <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-amber-400">${isHideBonuses ? 'On' : 'Off'}</span>
+                                    </label>
                                 </div>
                             </div>
 
                             <div class="pt-2 border-t border-slate-800">
-                                <span class="text-xs text-slate-300 font-bold block mb-2">Registered Teams, Approvals & Difficulty Overrides (${teamsSnap.size})</span>
-                                <div class="space-y-2">
+                                <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamsSnap.size})</span>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                                         const teamDiff = t.difficultyOverride || raceBaseDiff;
+                                        
+                                        let statusBadgeClass = "bg-slate-800 text-slate-300";
+                                        let statusText = "Not Started";
+                                        if (t.endTime) {
+                                            statusBadgeClass = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
+                                            statusText = "Finished";
+                                        } else if (t.startTime) {
+                                            statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                                            statusText = "Racing";
+                                        } else if (t.isApproved) {
+                                            statusBadgeClass = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+                                            statusText = "Approved";
+                                        } else {
+                                            statusBadgeClass = "bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
+                                            statusText = "Pending 🔔";
+                                        }
+
                                         return `
-                                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                                                <div class="flex justify-between items-center flex-wrap gap-2">
-                                                    <div class="flex items-center gap-2.5">
-                                                        <img src="${teamAvatar}" class="w-7 h-7 rounded-full object-cover border border-disneyGold">
-                                                        <span class="font-bold text-slate-200 text-xs">${t.teamName} (PIN: ${t.pin})</span>
-                                                        <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'}">
-                                                            ${t.isApproved ? 'Approved' : 'Pending Approval 🔔'}
-                                                        </span>
-                                                    </div>
-                                                    <div class="flex items-center gap-2">
-                                                        ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs">Approve</button>` : ''}
-                                                        <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-xs">Delete</button>
+                                            <div onclick="openTeamVerificationModal('${race.code}', '${tDoc.id}', '${t.teamName.replace(/'/g, "\\'")}')" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 hover:border-disneyGold transition cursor-pointer space-y-3 shadow flex flex-col justify-between">
+                                                <div class="flex items-center gap-3">
+                                                    <img src="${teamAvatar}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold shrink-0">
+                                                    <div class="min-w-0">
+                                                        <p class="font-bold text-white text-xs truncate">${t.teamName}</p>
+                                                        <p class="text-[10px] text-slate-400 font-mono">PIN: ${t.pin}</p>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center justify-between text-xs text-slate-400 pt-1.5 border-t border-slate-900">
-                                                    <span>Difficulty Override:</span>
-                                                    <select onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white font-semibold text-xs">
-                                                        <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy (Base)</option>
+                                                <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[10px]">
+                                                    <span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>
+                                                    <span class="text-disneyGold underline font-semibold">Verify Logs &rarr;</span>
+                                                </div>
+                                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                                                    <span>Diff Override:</span>
+                                                    <select onclick="event.stopPropagation()" onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-[10px]">
+                                                        <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy</option>
                                                         <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
                                                         <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
                                                     </select>
+                                                </div>
+                                                <div class="flex items-center justify-end gap-2 pt-1" onclick="event.stopPropagation()">
+                                                    ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[10px]">Approve</button>` : ''}
+                                                    <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
                                                 </div>
                                             </div>
                                         `;
