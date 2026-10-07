@@ -103,7 +103,38 @@
         </div>
     </div>
 
-    <!-- Image Viewer Modal Overlay (z-[70] to sit above verify logs modal) -->
+    <!-- Full Screen Semi-Transparent App-Like Navigation Menu Overlay -->
+    <div id="app-fullscreen-menu" class="fixed inset-0 z-[110] magical-gradient/95 bg-slate-950/90 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center transition-all duration-300">
+        <button onclick="toggleMobileMenu()" class="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition text-lg border border-white/20 shadow-lg">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-3xl shadow-2xl border border-amber-300/40 mb-6">
+            <i class="fa-solid fa-compass"></i>
+        </div>
+
+        <div class="space-y-3 w-full max-w-xs">
+            <h3 class="font-disney font-bold text-lg text-amber-300 tracking-wider uppercase mb-2">Navigation Menu</h3>
+            
+            <button onclick="switchTab('race')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-flag-checkered text-disneyGold"></i> <span>Team Portal</span>
+            </button>
+            <button onclick="switchTab('leaderboard')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
+            </button>
+            <button onclick="switchTab('maps')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
+            </button>
+            <button onclick="switchTab('rules')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
+            </button>
+            <button onclick="switchTab('organizer')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Organiser Dashboard</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal Overlay -->
     <div id="image-modal" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -123,7 +154,7 @@
         </div>
     </div>
 
-    <!-- In-App Map Modal (For Organiser Manual Override Check-in verification) -->
+    <!-- In-App Map Modal -->
     <div id="app-map-modal" class="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-disneyGold rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -185,7 +216,7 @@
         </div>
     </div>
 
-    <!-- Team Verification Details Modal (Organiser View) -->
+    <!-- Team Verification Details Modal -->
     <div id="team-verify-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-indigo-500/50 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 p-5 shrink-0">
@@ -284,9 +315,7 @@
                             <i class="fa-solid fa-plus"></i> Add Checkpoints
                         </button>
                     </div>
-                    <div id="edit-modal-checkpoints-list" class="space-y-3">
-                        <!-- Populated dynamically -->
-                    </div>
+                    <div id="edit-modal-checkpoints-list" class="space-y-3"></div>
                 </div>
             </div>
 
@@ -340,13 +369,19 @@
     <!-- Navbar -->
     <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
-                    <i class="fa-solid fa-compass"></i>
-                </div>
-                <div class="min-w-0">
-                    <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
-                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
+            <!-- App-Like Menu Toggle Button on the Left -->
+            <div class="flex items-center gap-3">
+                <button onclick="toggleMobileMenu()" id="hamburger-btn" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition shadow" title="Open Navigation Menu">
+                    <i class="fa-solid fa-bars text-base"></i>
+                </button>
+                <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
+                        <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
+                    </div>
                 </div>
             </div>
             
@@ -369,23 +404,6 @@
                 <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
                 </button>
-            </div>
-
-            <div id="hamburger-wrapper" class="shrink-0 px-3 border-l border-white/10 relative">
-                <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-bars text-sm"></i> <span>More Menu</span>
-                </button>
-                <div id="mobile-menu-dropdown" class="hidden absolute top-full right-0 mt-1 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 space-y-1">
-                    <button onclick="switchTab('maps')" data-tab="maps" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
-                        <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
-                    </button>
-                    <button onclick="switchTab('rules')" data-tab="rules" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
-                        <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
-                    </button>
-                    <button onclick="switchTab('organizer')" data-tab="organizer" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
-                        <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Organiser Dashboard</span>
-                    </button>
-                </div>
             </div>
         </div>
     </nav>
@@ -953,13 +971,13 @@
                     </div>
                 </div>
 
-                <!-- 3. Active Races & Teams Management (Newest first, individual collapses) -->
+                <!-- 3. Active Races & Teams Management -->
                 <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
                     <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals, Bonus Privacy & Difficulty</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
 
-                <!-- 4. Fair Play Dashboard Lock (Moved to bottom) -->
+                <!-- 4. Fair Play Dashboard Lock -->
                 <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3">
                         <div>
@@ -1089,17 +1107,9 @@
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 if (btn.tagName === 'BUTTON') {
                     if (isMatch) {
-                        if (btn.closest('#mobile-menu-dropdown')) {
-                            btn.className = "w-full text-left px-4 py-2 text-xs text-disneyGold bg-slate-800 font-bold flex items-center gap-2.5 transition";
-                        } else {
-                            btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
-                        }
+                        btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
                     } else {
-                        if (btn.closest('#mobile-menu-dropdown')) {
-                            btn.className = "w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition";
-                        } else {
-                            btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
-                        }
+                        btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
                     }
                 }
             });
@@ -1113,22 +1123,14 @@
                 initChatListener();
             }
 
-            const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (dropdown) dropdown.classList.add('hidden');
+            const fullscreenMenu = document.getElementById('app-fullscreen-menu');
+            if (fullscreenMenu) fullscreenMenu.classList.add('hidden');
         }
 
         window.toggleMobileMenu = function() {
-            const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
+            const menu = document.getElementById('app-fullscreen-menu');
+            if (menu) menu.classList.toggle('hidden');
         };
-
-        window.addEventListener('click', (e) => {
-            const hamburgerWrapper = document.getElementById('hamburger-wrapper');
-            const dropdown = document.getElementById('mobile-menu-dropdown');
-            if (hamburgerWrapper && dropdown && !hamburgerWrapper.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
 
         const MAP_LOCATIONS = {
             mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
@@ -1897,7 +1899,7 @@
             }
         };
 
-        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC (GROUPED BY PARK) =================
+        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC =================
         window.openAddCheckpointsModal = function() {
             renderAddCheckboxList();
             document.getElementById('organizer-add-cp-modal').classList.remove('hidden');
@@ -2024,30 +2026,6 @@
             updateEditFinalStopDropdown();
             closeAddCheckpointsModal();
             alert(`${checkedBoxes.length} checkpoint(s) added! Click 'Save Changes' to update the race.`);
-        };
-
-        window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
-            const val = parseInt(newValueStr);
-            const currentUser = window.auth.currentUser;
-            if (isNaN(val) || val < 0) return;
-
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                const cps = raceSnap.data().checkpoints || [];
-                const updatedCps = cps.map(cp => {
-                    if (cp.id === cpId) {
-                        return { ...cp, bonusMinDeduction: val, points: val };
-                    }
-                    return cp;
-                });
-
-                await updateDoc(raceRef, { checkpoints: updatedCps });
-            } catch (e) {
-                console.error("Error updating bonus value:", e);
-            }
         };
 
         window.updateTeamDifficultyOverride = async function(raceCode, teamId, newDifficulty) {
@@ -2348,7 +2326,6 @@
                 querySnapshot.forEach(docSnap => {
                     races.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                // Sort newest races to the top
                 races.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
                 let totalPendingTeams = 0;
@@ -2372,10 +2349,9 @@
                         if (!tData.isApproved) totalPendingTeams++;
                     });
 
-                    // Check if everyone has finished
-                    let allFinished = teamList.length > 0 && teamList.every(t => t.endTime);
+                    // Every race collapsed by default unless toggled
                     if (window.raceCollapseStates[race.code] === undefined) {
-                        window.raceCollapseStates[race.code] = allFinished; // auto-collapse if everyone finished
+                        window.raceCollapseStates[race.code] = true;
                     }
                     const isCollapsed = window.raceCollapseStates[race.code];
 
@@ -2405,22 +2381,20 @@
 
                             <div class="${isCollapsed ? 'hidden' : 'space-y-3.5'}">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                                    <!-- Square Button Toggle 1: Chat -->
-                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
+                                    <!-- App-like Pill Toggle 1: Chat -->
+                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
                                         <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Live Chat:</span>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                            <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-emerald-400">${isChatEnabled ? 'On' : 'Off'}</span>
+                                            <div class="w-12 h-7 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
                                         </label>
                                     </div>
-                                    <!-- Square Button Toggle 2: Hide Bonuses -->
-                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
+                                    <!-- App-like Pill Toggle 2: Hide Bonuses -->
+                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
                                         <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                                            <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-amber-400">${isHideBonuses ? 'On' : 'Off'}</span>
+                                            <div class="w-12 h-7 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600 shadow-inner"></div>
                                         </label>
                                     </div>
                                 </div>
@@ -2449,27 +2423,27 @@
                                             }
 
                                             return `
-                                                <div onclick="openTeamVerificationModal('${race.code}', '${t.id}', '${t.teamName.replace(/'/g, "\\'")}')" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 hover:border-disneyGold transition cursor-pointer space-y-3 shadow flex flex-col justify-between">
-                                                    <div class="flex items-center gap-3">
-                                                        <img src="${teamAvatar}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold shrink-0">
+                                                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 shadow flex flex-col justify-between">
+                                                    <!-- Team image & name as the link to open verification modal -->
+                                                    <div onclick="openTeamVerificationModal('${race.code}', '${t.id}', '${t.teamName.replace(/'/g, "\\'")}')" class="flex items-center gap-3 cursor-pointer group">
+                                                        <img src="${teamAvatar}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold shrink-0 group-hover:scale-105 transition">
                                                         <div class="min-w-0">
-                                                            <p class="font-bold text-white text-xs truncate">${t.teamName}</p>
+                                                            <p class="font-bold text-white text-xs truncate group-hover:text-disneyGold transition">${t.teamName}</p>
                                                             <p class="text-[10px] text-slate-400 font-mono">PIN: ${t.pin}</p>
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[10px]">
                                                         <span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>
-                                                        <span class="text-disneyGold underline font-semibold">Verify Logs &rarr;</span>
                                                     </div>
                                                     <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
                                                         <span>Diff Override:</span>
-                                                        <select onclick="event.stopPropagation()" onchange="updateTeamDifficultyOverride('${race.code}', '${t.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-[10px]">
+                                                        <select onchange="updateTeamDifficultyOverride('${race.code}', '${t.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-[10px]">
                                                             <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy</option>
                                                             <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
                                                             <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
                                                         </select>
                                                     </div>
-                                                    <div class="flex items-center justify-end gap-2 pt-1" onclick="event.stopPropagation()">
+                                                    <div class="flex items-center justify-end gap-2 pt-1">
                                                         ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${t.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[10px]">Approve</button>` : ''}
                                                         <button onclick="deleteTeam('${race.code}', '${t.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
                                                     </div>
