@@ -40,7 +40,6 @@
             }
         }
 
-        // Global splash screen hider that also reveals the main container
         function hideSplashScreen() {
             const mainContent = document.querySelector('main');
             if (mainContent) {
@@ -164,6 +163,108 @@
         </div>
     </div>
 
+    <!-- Organizer Edit Race Modal -->
+    <div id="organizer-edit-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-indigo-500/50 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 p-5 shrink-0">
+                <h3 class="font-bold text-base text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Race Configuration
+                </h3>
+                <button onclick="closeOrganizerEditModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1">
+                <input type="hidden" id="edit-modal-race-code">
+                
+                <div class="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
+                    <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider">Trivia Settings</h4>
+                    <div class="flex gap-4">
+                        <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                            <input type="radio" name="edit_trivia_toggle" value="off" onchange="toggleEditTriviaSettings()" class="text-disneyGold">
+                            <span>Off</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
+                            <input type="radio" name="edit_trivia_toggle" value="on" onchange="toggleEditTriviaSettings()" class="text-disneyGold">
+                            <span>On</span>
+                        </label>
+                    </div>
+                    <div id="edit-trivia-sub-settings" class="hidden space-y-3 pt-2 border-t border-slate-800">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Trivia Frequency</label>
+                            <select id="edit-trivia-frequency" onchange="toggleEditTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
+                                <option value="every">Every Check-in</option>
+                                <option value="random">Random Check-ins</option>
+                            </select>
+                        </div>
+                        <div id="edit-trivia-random-count-box" class="hidden">
+                            <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
+                            <input type="number" id="edit-trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Active Checkpoints & Bonuses</h4>
+                        <button onclick="openAddCheckpointsModal()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Add Checkpoints
+                        </button>
+                    </div>
+                    <div id="edit-modal-checkpoints-list" class="space-y-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-2xl flex justify-end gap-3 shrink-0">
+                <button onclick="closeOrganizerEditModal()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
+                    Cancel
+                </button>
+                <button onclick="saveRaceEdits()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Organizer Add Checkpoints Sub-Modal -->
+    <div id="organizer-add-cp-modal" class="fixed inset-0 z-[60] bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-emerald-500/50 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 p-4 shrink-0">
+                <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus"></i> Add More Checkpoints
+                </h3>
+                <button onclick="closeAddCheckpointsModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-3 flex-1">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-300">Select additional locations:</span>
+                    <div class="space-x-2">
+                        <button type="button" onclick="selectAllAddCheckboxes(true)" class="text-disneyGold underline">Select All</button>
+                        <button type="button" onclick="selectAllAddCheckboxes(false)" class="text-slate-400 underline">Deselect All</button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                    <input type="text" id="add-cp-search-input" onkeyup="renderAddCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+                <div id="add-cp-checkbox-container" class="space-y-2"></div>
+            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-2xl flex justify-end gap-3 shrink-0">
+                <button onclick="closeAddCheckpointsModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
+                    Cancel
+                </button>
+                <button onclick="confirmAddCheckpoints()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
+                    Add Selected to Race
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Navbar -->
     <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
@@ -257,23 +358,23 @@
                     <div class="max-w-sm mx-auto space-y-3 pt-2 text-left">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
-                            <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
+                            <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
-                            <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                            <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
-                                <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-xs text-white focus:outline-none focus:border-disneyBlue">
+                                <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
-                                <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-[10px] text-slate-400 file:py-2 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:bg-slate-800 file:text-disneyGold">
+                                <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
                             </div>
                         </div>
-                        <button onclick="joinOrResumeTeam()" class="w-full py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
+                        <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
                             Enter Race Portal
                         </button>
                     </div>
@@ -285,7 +386,7 @@
                     </div>
                     <h3 class="font-bold text-base text-white">Want to host an event?</h3>
                     <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the organiser dashboard and set up checkpoints.</p>
-                    <button onclick="switchTab('organizer')" class="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
+                    <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
                         Create Race / Organiser Dashboard
                     </button>
                 </div>
@@ -297,7 +398,7 @@
                 </div>
                 <h2 class="text-xl font-disney font-bold text-white">Awaiting Organiser Approval</h2>
                 <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the organiser to approve your team before you can see checkpoints and start the race.</p>
-                <button onclick="checkApprovalStatus()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
+                <button onclick="checkApprovalStatus()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
                     <i class="fa-solid fa-rotate mr-1"></i> Check Approval Status
                 </button>
             </div>
@@ -313,7 +414,7 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                        <div class="flex items-center gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
                             <div class="text-center px-2">
                                 <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
                                 <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
@@ -327,10 +428,10 @@
                     </div>
 
                     <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
-                        <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                        <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
                             <i class="fa-solid fa-play"></i> Start Race
                         </button>
-                        <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                        <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
                             <i class="fa-solid fa-flag-checkered"></i> Finish Race
                         </button>
                     </div>
@@ -343,13 +444,13 @@
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                 Checkpoints & Custom Route Planner
                             </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your optimal route order. Click any checkpoint for hints/maps (Easy/Medium).</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your optimal route order. Click any checkpoint for hints/maps (Easy/Medium).</p>
                         </div>
-                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
                             <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
                     </div>
-                    <div id="team-checkpoints-list" class="space-y-3"></div>
+                    <div id="team-checkpoints-list" class="space-y-3.5"></div>
                 </div>
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
@@ -360,19 +461,19 @@
                         </h3>
                         <p class="text-xs text-slate-400">Upload photo proof to claim bonuses or time deductions from your final score!</p>
                     </div>
-                    <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
                 </div>
             </div>
         </section>
 
-        <!-- ================= TAB 2: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
+        <!-- ================= TAB 2: RACE PORTAL ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
             <div id="leaderboard-login-notice" class="hidden bg-amber-950/40 border border-amber-500/40 p-4 rounded-2xl text-xs text-amber-200 flex items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-triangle-exclamation text-disneyGold text-base"></i>
                     <span>Please log into your team/race to review leaderboard and chat.</span>
                 </div>
-                <button onclick="switchTab('race')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
+                <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
                     Go to Team Portal
                 </button>
             </div>
@@ -386,8 +487,8 @@
                         <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
                     </div>
                     <div class="flex gap-2 items-center">
-                        <span id="active-leaderboard-code-badge" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-mono text-disneyGold font-bold">---</span>
-                        <button onclick="loadLeaderboard()" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+                        <span id="active-leaderboard-code-badge" class="bg-slate-900 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-mono text-disneyGold font-bold">---</span>
+                        <button onclick="loadLeaderboard()" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
                             <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
                     </div>
@@ -397,12 +498,12 @@
                     <table class="w-full text-left text-sm">
                         <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
                             <tr>
-                                <th class="p-3">Rank</th>
-                                <th class="p-3">Team</th>
-                                <th class="p-3 text-center" id="lb-col-metric">Progress</th>
-                                <th class="p-3 text-center">Bonuses</th>
-                                <th class="p-3 text-right" id="lb-col-score">Time / Points</th>
-                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3.5">Rank</th>
+                                <th class="p-3.5">Team</th>
+                                <th class="p-3.5 text-center" id="lb-col-metric">Progress</th>
+                                <th class="p-3.5 text-center">Bonuses</th>
+                                <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
+                                <th class="p-3.5 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
@@ -417,16 +518,16 @@
                     <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
                         <i class="fa-solid fa-comments"></i> Live Race Chat
                     </h3>
-                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
+                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
                 </div>
                 
-                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
+                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
                     <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
                 </div>
 
                 <div id="chat-input-box" class="flex gap-2">
-                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
-                    <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                    <button onclick="sendChatMessage()" class="px-5 py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
                         <i class="fa-solid fa-paper-plane"></i> Send
                     </button>
                 </div>
@@ -444,18 +545,18 @@
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
                     </div>
-                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3 py-1 rounded-full border border-disneyBlue/40 self-start sm:self-auto font-medium">
+                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3.5 py-1.5 rounded-xl border border-disneyBlue/40 self-start sm:self-auto font-medium">
                         <i class="fa-solid fa-compass-drafting mr-1"></i> Paper Map Tools
                     </span>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
-                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
-                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
-                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
-                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
-                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
+                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
+                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
+                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
+                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
+                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
                 </div>
 
                 <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
@@ -463,7 +564,7 @@
                         <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
                             <i class="fa-solid fa-location-pin text-disneyPink"></i> Magic Kingdom Park Map View
                         </h3>
-                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3 py-1.5 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3.5 py-2 rounded-xl border border-slate-600 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
                         </a>
                     </div>
@@ -584,13 +685,13 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">EMAIL</label>
-                        <input type="email" id="admin-email" placeholder="organiser@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
+                        <input type="email" id="admin-email" placeholder="organiser@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
-                        <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
+                        <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
                     </div>
-                    <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
+                    <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
                         Sign In to Dashboard
                     </button>
                 </div>
@@ -604,7 +705,7 @@
                         </h3>
                         <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
                     </div>
-                    <button onclick="handleAdminLogout()" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
+                    <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
                         Logout
                     </button>
                 </div>
@@ -624,8 +725,8 @@
                             <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-                            <input type="password" id="global-lock-pin-input" placeholder="Enter 4-digit PIN" maxlength="4" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono text-center w-36">
-                            <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                            <input type="password" id="global-lock-pin-input" placeholder="Enter 4-digit PIN" maxlength="4" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                            <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
                                 <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
                             </button>
                         </div>
@@ -640,8 +741,8 @@
                     <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
                     
                     <div class="max-w-xs mx-auto flex gap-2 pt-2">
-                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono text-center">
-                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
+                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
                             Unlock
                         </button>
                     </div>
@@ -655,15 +756,15 @@
                             </div>
                             <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create New Race / Hunt</span>
                         </div>
-                        <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                        <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
 
                     <div id="create-race-collapsible-box" class="hidden space-y-5 pt-4 border-t border-slate-700/80">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                            <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white">
                             <div class="flex gap-1.5">
-                                <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
-                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
+                                <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
+                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
                                     <i class="fa-solid fa-dice"></i>
                                 </button>
                             </div>
@@ -672,7 +773,7 @@
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                             <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                <div class="p-3.5 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
                                             <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
@@ -685,7 +786,7 @@
                                     </div>
                                 </div>
 
-                                <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
+                                <div class="p-3.5 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
                                             <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
@@ -703,17 +804,17 @@
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                             <label class="block text-xs font-bold text-slate-300 mb-2">Default Base Difficulty</label>
                             <div class="grid grid-cols-3 gap-2">
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                     <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
                                     <span class="font-bold text-xs text-white">Easy</span>
                                     <span class="text-[9px] text-slate-400">Pins + Transit</span>
                                 </label>
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                     <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
                                     <span class="font-bold text-xs text-white">Medium</span>
                                     <span class="text-[9px] text-slate-400">Specific Park Lands</span>
                                 </label>
-                                <label class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
+                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
                                     <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
                                     <span class="font-bold text-xs text-white">Hard</span>
                                     <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
@@ -735,7 +836,7 @@
                             </div>
                             <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
                                 <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
-                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
                                     <option value="every">Every Check-in</option>
                                     <option value="random">Random Check-ins</option>
                                 </select>
@@ -752,9 +853,9 @@
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
-                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
-                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
+                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-3 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
+                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
+                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
                             </div>
 
                             <div id="pop-box-random" class="space-y-3 pt-2">
@@ -762,11 +863,11 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
-                                        <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                        <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
-                                        <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                        <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono">
                                     </div>
                                 </div>
                             </div>
@@ -780,15 +881,15 @@
                                     </div>
                                 </div>
                                 <div class="relative">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                    <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                                    <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2.5 text-xs text-white focus:outline-none">
                                 </div>
                                 <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
                             </div>
 
                             <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                 <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
                                     <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
                                     <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
                                     <option value="Epcot">🌐 Epcot Park (All Stops)</option>
@@ -802,13 +903,13 @@
                         <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
                             <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
-                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
                                 <option value="">-- No Mandatory Final Location (Any Order) --</option>
                                 <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
                             </select>
                         </div>
 
-                        <button onclick="createNewRace()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
+                        <button onclick="createNewRace()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
                             + Create Race Event & Start
                         </button>
                     </div>
@@ -963,9 +1064,9 @@
             ['mk', 'epcot', 'hs', 'ak', 'ds', 'resorts'].forEach(k => {
                 const btn = document.getElementById(`map-btn-${k}`);
                 if (k === areaKey) {
-                    btn.className = "py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow";
+                    btn.className = "py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow";
                 } else {
-                    btn.className = "py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
+                    btn.className = "py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
                 }
             });
 
@@ -1019,10 +1120,10 @@
                 const btn = document.getElementById(`pop-tab-${m}`);
                 const box = document.getElementById(`pop-box-${m}`);
                 if (m === method) {
-                    btn.className = "py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
+                    btn.className = "py-3 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
                     box.classList.remove('hidden');
                 } else {
-                    btn.className = "py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
+                    btn.className = "py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
                     box.classList.add('hidden');
                 }
             });
@@ -1047,7 +1148,7 @@
             };
 
             let html = '';
-            html += `<div class="p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
+            html += `<div class="p-2.5 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
 
             parks.forEach(parkName => {
                 const theme = parkThemes[parkName];
@@ -1055,21 +1156,21 @@
                 
                 if (parkItems.length > 0) {
                     html += `
-                        <div class="ml-2 mt-2 p-2.5 rounded-xl border ${theme.border} ${theme.bg} space-y-2">
+                        <div class="ml-2 mt-2 p-3 rounded-xl border ${theme.border} ${theme.bg} space-y-2.5">
                             <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
                                 <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
                                 <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="text-[10px] ${theme.text} underline">Select All ${parkName}</button>
                             </div>
-                            <div class="space-y-1.5">
+                            <div class="space-y-2">
                     `;
                     parkItems.forEach(p => {
                         html += `
-                            <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
+                            <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
+                                <div class="flex items-center gap-2.5">
+                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded h-4 w-4">
                                     <span class="text-disneyGold">📍</span>
                                     <div>
-                                        <p class="font-bold text-white">${p.name}</p>
+                                        <p class="font-bold text-white text-xs">${p.name}</p>
                                         <span class="text-[10px] text-slate-400">${p.land}</span>
                                     </div>
                                 </div>
@@ -1083,20 +1184,20 @@
             const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
             if (bonusItems.length > 0) {
                 html += `
-                    <div class="mt-4 p-2 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                    <div class="mt-4 p-2.5 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span class="flex items-center gap-2"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
                         <button type="button" onclick="selectBonusCheckboxes(true)" class="text-[10px] text-amber-300 underline font-normal">Select All Bonuses</button>
                     </div>
-                    <div class="ml-2 mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-1.5">
+                    <div class="ml-2 mt-2 p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
                 `;
                 bonusItems.forEach(p => {
                     html += `
-                        <label class="flex items-center justify-between p-2 bg-slate-900/90 rounded-lg border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded">
+                        <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded h-4 w-4">
                                 <span class="text-amber-400">⭐</span>
                                 <div>
-                                    <p class="font-bold text-white">${p.name}</p>
+                                    <p class="font-bold text-white text-xs">${p.name}</p>
                                     <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
                                 </div>
                             </div>
@@ -1185,7 +1286,7 @@
                 }
                 if (actionBtn) {
                     actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
-                    actionBtn.className = "flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+                    actionBtn.className = "flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
                 }
                 if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
                 if (adminContainer) adminContainer.classList.add('hidden');
@@ -1243,6 +1344,7 @@
         let isRegisterMode = false;
         let globalDashboardLockState = false;
         let globalDashboardLockPin = "";
+        let currentEditingRaceCode = null;
 
         let pendingCheckInCpId = null;
         let pendingCheckInBtn = null;
@@ -1535,6 +1637,230 @@
             }
         };
 
+        // ================= ORGANISER EDIT MODAL LOGIC =================
+        window.openOrganizerEditModal = async function(raceCode) {
+            currentEditingRaceCode = raceCode;
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+                if (!raceSnap.exists()) return;
+                const race = raceSnap.data();
+
+                document.getElementById('edit-modal-race-code').value = raceCode;
+
+                const trivia = race.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
+                const triviaToggleVal = trivia.enabled ? 'on' : 'off';
+                document.querySelector(`input[name="edit_trivia_toggle"][value="${triviaToggleVal}"]`).checked = true;
+                document.getElementById('edit-trivia-frequency').value = trivia.frequency || 'every';
+                document.getElementById('edit-trivia-random-count').value = trivia.randomCount || 3;
+                toggleEditTriviaSettings();
+
+                renderEditModalCheckpointsList(race.checkpoints || []);
+                document.getElementById('organizer-edit-modal').classList.remove('hidden');
+            } catch (e) {
+                alert("Error loading race details for editing: " + e.message);
+            }
+        };
+
+        window.closeOrganizerEditModal = function() {
+            document.getElementById('organizer-edit-modal').classList.add('hidden');
+            currentEditingRaceCode = null;
+        };
+
+        window.toggleEditTriviaSettings = function() {
+            const val = document.querySelector('input[name="edit_trivia_toggle"]:checked')?.value || 'off';
+            document.getElementById('edit-trivia-sub-settings').classList.toggle('hidden', val === 'off');
+        };
+
+        window.toggleEditTriviaFreq = function() {
+            const freq = document.getElementById('edit-trivia-frequency').value;
+            document.getElementById('edit-trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
+        };
+
+        function renderEditModalCheckpointsList(checkpoints) {
+            const container = document.getElementById('edit-modal-checkpoints-list');
+            if (!container) return;
+
+            if (checkpoints.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">No checkpoints in this race yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = checkpoints.map((cp, idx) => `
+                <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-700/80 flex items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="font-mono font-bold text-disneyGold text-xs shrink-0">#${idx + 1}</span>
+                        <div class="min-w-0">
+                            <p class="font-bold text-white text-xs truncate">
+                                ${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} ${cp.name}
+                            </p>
+                            <p class="text-[10px] text-slate-400 truncate">${cp.park || 'Disney'} • ${cp.land || 'Area'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        ${cp.type === 'BONUS_PHOTO' ? `
+                            <span class="flex items-center gap-1 text-[10px] text-amber-400">
+                                Pts: <input type="number" id="edit-cp-pts-${cp.id}" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" class="w-14 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center text-white font-mono text-xs">
+                            </span>
+                        ` : ''}
+                        <button onclick="removeCheckpointFromEditModal('${cp.id}')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let editingRaceActiveCheckpoints = [];
+        async function openOrganizerEditModal(raceCode) {
+            currentEditingRaceCode = raceCode;
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+                if (!raceSnap.exists()) return;
+                const race = raceSnap.data();
+
+                editingRaceActiveCheckpoints = race.checkpoints || [];
+
+                const trivia = race.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
+                const triviaToggleVal = trivia.enabled ? 'on' : 'off';
+                document.querySelector(`input[name="edit_trivia_toggle"][value="${triviaToggleVal}"]`).checked = true;
+                document.getElementById('edit-trivia-frequency').value = trivia.frequency || 'every';
+                document.getElementById('edit-trivia-random-count').value = trivia.randomCount || 3;
+                toggleEditTriviaSettings();
+                toggleEditTriviaFreq();
+
+                renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
+                document.getElementById('organizer-edit-modal').classList.remove('hidden');
+            } catch (e) {
+                alert("Error loading race details: " + e.message);
+            }
+        }
+
+        window.removeCheckpointFromEditModal = function(cpId) {
+            editingRaceActiveCheckpoints = editingRaceActiveCheckpoints.filter(c => c.id !== cpId);
+            renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
+        };
+
+        window.saveRaceEdits = async function() {
+            if (!currentEditingRaceCode) return;
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+
+            try {
+                const raceRef = doc(window.db, "races", currentEditingRaceCode);
+                const raceSnap = await getDoc(raceRef);
+                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+
+                const triviaToggle = document.querySelector('input[name="edit_trivia_toggle"]:checked')?.value || 'off';
+                const triviaFreq = document.getElementById('edit-trivia-frequency').value;
+                const triviaCount = parseInt(document.getElementById('edit-trivia-random-count').value) || 3;
+
+                const updatedCps = editingRaceActiveCheckpoints.map(cp => {
+                    if (cp.type === 'BONUS_PHOTO') {
+                        const inputEl = document.getElementById(`edit-cp-pts-${cp.id}`);
+                        if (inputEl) {
+                            const val = parseInt(inputEl.value) || 10;
+                            return { ...cp, bonusMinDeduction: val, points: val };
+                        }
+                    }
+                    return cp;
+                });
+
+                await updateDoc(raceRef, {
+                    trivia: {
+                        enabled: triviaToggle === 'on',
+                        frequency: triviaFreq,
+                        randomCount: triviaCount
+                    },
+                    checkpoints: updatedCps
+                });
+
+                alert("Race settings and checkpoints updated successfully!");
+                closeOrganizerEditModal();
+                loadAdminRaces();
+            } catch (e) {
+                alert("Error saving race edits: " + e.message);
+            }
+        };
+
+        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC =================
+        window.openAddCheckpointsModal = function() {
+            renderAddCheckboxList();
+            document.getElementById('organizer-add-cp-modal').classList.remove('hidden');
+        };
+
+        window.closeAddCheckpointsModal = function() {
+            document.getElementById('organizer-add-cp-modal').classList.add('hidden');
+        };
+
+        window.renderAddCheckboxList = function() {
+            const container = document.getElementById('add-cp-checkbox-container');
+            const query = (document.getElementById('add-cp-search-input')?.value || "").toLowerCase();
+            const presets = window.DISNEY_PRESETS || [];
+
+            const activeIds = new Set(editingRaceActiveCheckpoints.map(c => c.name));
+            const availablePresets = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+
+            if (availablePresets.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4 text-xs">All available preset checkpoints have already been added.</p>`;
+                return;
+            }
+
+            let html = '';
+            availablePresets.forEach(p => {
+                html += `
+                    <label class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700/80 text-xs cursor-pointer hover:border-disneyGold transition">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" name="add_cp_checkbox" value="${p.originalIndex}" class="text-disneyGold rounded h-4 w-4">
+                            <span class="${p.type === 'BONUS_PHOTO' ? 'text-amber-400' : 'text-disneyGold'}">${p.type === 'BONUS_PHOTO' ? '⭐' : '📍'}</span>
+                            <div>
+                                <p class="font-bold text-white text-xs">${p.name}</p>
+                                <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
+                            </div>
+                        </div>
+                    </label>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.selectAllAddCheckboxes = function(selectState) {
+            const checkboxes = document.querySelectorAll('input[name="add_cp_checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectState);
+        };
+
+        window.confirmAddCheckpoints = function() {
+            const checkedBoxes = document.querySelectorAll('input[name="add_cp_checkbox"]:checked');
+            if (checkedBoxes.length === 0) {
+                return alert("Please select at least one checkpoint to add.");
+            }
+
+            const presets = window.DISNEY_PRESETS || [];
+            checkedBoxes.forEach(cb => {
+                const p = presets[parseInt(cb.value)];
+                editingRaceActiveCheckpoints.push({
+                    id: 'cp_add_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                    name: p.name,
+                    type: p.type || "GPS",
+                    lat: p.lat || 28.4177,
+                    lng: p.lng || -81.5812,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : 0,
+                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
+                    park: p.park || "Disney",
+                    land: p.land || "Attraction Area"
+                });
+            });
+
+            renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
+            closeAddCheckpointsModal();
+            alert(`${checkedBoxes.length} checkpoint(s) added! Click 'Save Changes' to update the race.`);
+        };
+
         window.updateBonusValue = async function(raceCode, cpId, newValueStr) {
             const val = parseInt(newValueStr);
             const currentUser = window.auth.currentUser;
@@ -1624,7 +1950,7 @@
                 statusBadge.innerText = "LOCKED";
                 statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
                 actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
-                actionBtn.className = "flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+                actionBtn.className = "flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
 
                 if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
                 if (adminContainer) adminContainer.classList.add('hidden');
@@ -1643,7 +1969,7 @@
                 statusBadge.innerText = "UNLOCKED";
                 statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
                 actionBtn.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel';
-                actionBtn.className = "flex-1 py-2 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+                actionBtn.className = "flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
 
                 if (orgLockedOverlay) orgLockedOverlay.classList.add('hidden');
                 if (adminContainer) adminContainer.classList.remove('hidden');
@@ -1671,7 +1997,7 @@
                 statusBadge.innerText = "UNLOCKED";
                 statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
                 actionBtn.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel';
-                actionBtn.className = "flex-1 py-2 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+                actionBtn.className = "flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
 
                 if (orgLockedOverlay) orgLockedOverlay.classList.add('hidden');
                 if (adminContainer) adminContainer.classList.remove('hidden');
@@ -1717,75 +2043,62 @@
                     });
 
                     html += `
-                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 space-y-2">
-                            <div class="flex justify-between items-center">
+                        <div class="p-4 bg-slate-900 rounded-2xl border border-slate-700/80 space-y-3.5 shadow-sm">
+                            <div class="flex justify-between items-center flex-wrap gap-2">
                                 <div>
-                                    <p class="font-bold text-white text-xs">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-[10px] ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-[10px] text-disneyGold font-mono">CODE: ${race.code} | MODE: ${modeLabel} | BASE DIFF: ${diffLabel}</p>
+                                    <p class="font-bold text-white text-sm">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-xs ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
+                                    <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel}</p>
                                 </div>
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${cps.length} Checkpoints</span>
-                                    <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-disneyBlue hover:bg-blue-600 text-white rounded text-[10px] font-semibold transition flex items-center gap-1 shadow">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-xl border border-indigo-500/30 font-semibold">${cps.length} Checkpoints</span>
+                                    <button onclick="openOrganizerEditModal('${race.code}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit Race
+                                    </button>
+                                    <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
                                         <i class="fa-solid fa-share-nodes"></i> Share
                                     </button>
-                                    <button onclick="deleteEntireRace('${race.code}')" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-[10px] font-semibold transition">
+                                    <button onclick="deleteEntireRace('${race.code}')" class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-semibold transition">
                                         <i class="fa-solid fa-trash mr-1"></i> Delete
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
-                                    <span class="font-semibold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                                    <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
                                     <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
                                 </div>
-                                <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
-                                    <span class="font-semibold text-amber-300 flex items-center gap-1.5"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
+                                <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                                    <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
                                     <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
                                 </div>
                             </div>
 
-                            <div class="space-y-1.5 pl-2 border-l border-slate-700 max-h-48 overflow-y-auto">
-                                ${cps.map(cp => `
-                                    <div class="flex justify-between items-center text-[11px] text-slate-300 bg-slate-950 p-1.5 rounded border border-slate-800">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span>${cp.type === 'BONUS_PHOTO' ? '⭐' : '📍'} <strong>${cp.name}</strong> ${race.finalCheckpointId === cp.id ? '<strong class="text-disneyGold">(Final Stop)</strong>' : ''}</span>
-                                            ${cp.type === 'BONUS_PHOTO' ? `
-                                                <span class="flex items-center gap-1 text-[10px] text-amber-400">
-                                                    Bonus: <input type="number" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" onchange="updateBonusValue('${race.code}', '${cp.id}', this.value)" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-white font-mono">
-                                                </span>
-                                            ` : ''}
-                                        </div>
-                                        <button onclick="deleteCheckpoint('${race.code}', '${cp.id}')" class="text-rose-400 hover:text-rose-300 font-bold px-2 py-0.5 text-[10px]">Remove</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-
                             <div class="pt-2 border-t border-slate-800">
-                                <span class="text-[10px] text-slate-300 font-bold block mb-1">Registered Teams, Approvals & Difficulty Overrides (${teamsSnap.size})</span>
-                                <div class="space-y-1.5">
+                                <span class="text-xs text-slate-300 font-bold block mb-2">Registered Teams, Approvals & Difficulty Overrides (${teamsSnap.size})</span>
+                                <div class="space-y-2">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                                         const teamDiff = t.difficultyOverride || raceBaseDiff;
                                         return `
-                                            <div class="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-2">
+                                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
                                                 <div class="flex justify-between items-center flex-wrap gap-2">
-                                                    <div class="flex items-center gap-2">
-                                                        <img src="${teamAvatar}" class="w-6 h-6 rounded-full object-cover border border-disneyGold">
-                                                        <span class="font-bold text-slate-200 text-[11px]">${t.teamName} (PIN: ${t.pin})</span>
-                                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'}">
+                                                    <div class="flex items-center gap-2.5">
+                                                        <img src="${teamAvatar}" class="w-7 h-7 rounded-full object-cover border border-disneyGold">
+                                                        <span class="font-bold text-slate-200 text-xs">${t.teamName} (PIN: ${t.pin})</span>
+                                                        <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold ${t.isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'}">
                                                             ${t.isApproved ? 'Approved' : 'Pending Approval 🔔'}
                                                         </span>
                                                     </div>
-                                                    <div class="flex items-center gap-1.5">
-                                                        ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px]">Approve</button>` : ''}
-                                                        <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
+                                                    <div class="flex items-center gap-2">
+                                                        ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs">Approve</button>` : ''}
+                                                        <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-xs">Delete</button>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-900">
+                                                <div class="flex items-center justify-between text-xs text-slate-400 pt-1.5 border-t border-slate-900">
                                                     <span>Difficulty Override:</span>
-                                                    <select onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-semibold text-[10px]">
+                                                    <select onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white font-semibold text-xs">
                                                         <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy (Base)</option>
                                                         <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
                                                         <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
@@ -1960,19 +2273,19 @@
 
                     html += `
                         <tr class="hover:bg-slate-800/40 transition">
-                            <td class="p-3 font-bold text-disneyGold">#${index + 1}</td>
-                            <td class="p-3 flex items-center gap-2.5">
+                            <td class="p-3.5 font-bold text-disneyGold">#${index + 1}</td>
+                            <td class="p-3.5 flex items-center gap-2.5">
                                 <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold shrink-0">
                                 <div>
                                     <span class="font-bold text-white">${t.teamName}</span>
                                     ${diffBadge}
                                 </div>
                             </td>
-                            <td class="p-3 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
-                            <td class="p-3 text-center text-amber-400 font-semibold">${bonusDisplay}</td>
-                            <td class="p-3 text-right">${scoreDisplay}</td>
-                            <td class="p-3 text-center">
-                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
+                            <td class="p-3.5 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
+                            <td class="p-3.5 text-center text-amber-400 font-semibold">${bonusDisplay}</td>
+                            <td class="p-3.5 text-right">${scoreDisplay}</td>
+                            <td class="p-3.5 text-center">
+                                <span class="text-[10px] px-2.5 py-1 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
                                     ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
                                 </span>
                             </td>
@@ -2010,12 +2323,12 @@
                     inputBox.classList.add('hidden');
                     disabledNotice.classList.remove('hidden');
                     statusIndicator.innerText = "Disabled";
-                    statusIndicator.className = "text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30";
+                    statusIndicator.className = "text-[10px] bg-rose-500/20 text-rose-300 px-2.5 py-0.5 rounded-full border border-rose-500/30";
                 } else {
                     inputBox.classList.remove('hidden');
                     disabledNotice.classList.add('hidden');
                     statusIndicator.innerText = "Active";
-                    statusIndicator.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30";
+                    statusIndicator.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30";
                 }
             });
 
@@ -2042,18 +2355,18 @@
                     const avatar = msg.avatar || DEFAULT_AVATAR;
 
                     html += `
-                        <div class="flex items-start justify-between gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800">
-                            <div class="flex items-start gap-2 min-w-0">
+                        <div class="flex items-start justify-between gap-2 p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                            <div class="flex items-start gap-2.5 min-w-0">
                                 <img src="${avatar}" class="w-7 h-7 rounded-full object-cover border border-disneyGold shrink-0">
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-bold text-disneyGold text-[11px] truncate">${msg.teamName}</span>
+                                        <span class="font-bold text-disneyGold text-xs truncate">${msg.teamName}</span>
                                         <span class="text-[9px] text-slate-500 shrink-0">${timeStr}</span>
                                     </div>
                                     <p class="text-slate-200 text-xs break-words">${msg.message}</p>
                                 </div>
                             </div>
-                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msg.id}')" class="text-rose-400 hover:text-rose-300 text-[10px] p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            ${isOrg ? `<button onclick="deleteChatMessage('${targetCode}', '${msg.id}')" class="text-rose-400 hover:text-rose-300 text-xs p-1 shrink-0" title="Delete Message"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </div>
                     `;
                 });
@@ -2112,24 +2425,6 @@
             } catch (e) {
                 alert("Error approving team: " + e.message);
             }
-        };
-
-        window.deleteCheckpoint = async function(raceCode, cpId) {
-            const currentUser = window.auth.currentUser;
-            const raceRef = doc(window.db, "races", raceCode);
-            const raceSnap = await getDoc(raceRef);
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-            const data = raceSnap.data();
-            const updated = (data.checkpoints || []).filter(c => c.id !== cpId);
-            
-            let updates = { checkpoints: updated };
-            if (data.finalCheckpointId === cpId) {
-                updates.finalCheckpointId = null;
-            }
-
-            await updateDoc(raceRef, updates);
-            loadAdminRaces();
         };
 
         window.deleteTeam = async function(raceCode, teamId) {
@@ -2421,30 +2716,30 @@
                 pill.innerText = "Finished";
                 pill.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
                 startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50";
+                startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 text-sm";
                 
                 finishBtn.disabled = true;
-                finishBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
+                finishBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
                 finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
             } else if (tData.startTime) {
                 pill.innerText = "In Progress";
                 pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
                 startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner";
+                startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
                 startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
 
                 finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
+                finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             } else {
                 pill.innerText = "Not Started";
                 pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
                 startBtn.disabled = false;
-                startBtn.className = "flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
+                startBtn.className = "flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
                 startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
 
                 finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
+                finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
@@ -2486,7 +2781,7 @@
                                     <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 font-bold">
                                         <i class="fa-solid fa-triangle-exclamation mr-1"></i> Manual Check-in
                                     </span>
-                                    <button onclick="undoManualCheckIn('${cp.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition shadow">
+                                    <button onclick="undoManualCheckIn('${cp.id}')" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow">
                                         <i class="fa-solid fa-rotate-left mr-1"></i> Undo / Retry
                                     </button>
                                 </div>
@@ -2497,7 +2792,7 @@
                     } else {
                         statusBadgeOrButton = `
                             <div class="flex justify-end w-full sm:w-auto" onclick="event.stopPropagation()">
-                                <button onclick="checkInGps('${cp.id}', this)" class="px-3 py-1.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition shadow">
+                                <button onclick="checkInGps('${cp.id}', this)" class="px-3.5 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition shadow">
                                     GPS Check In
                                 </button>
                             </div>
@@ -2512,17 +2807,17 @@
                         : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
 
                     return `
-                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-3 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1" title="Drag to reorder route">
-                                    <i class="fa-solid fa-grip-vertical"></i>
+                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-4 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                            <div class="flex items-center gap-3.5">
+                                <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1.5 py-2" title="Drag to reorder route">
+                                    <i class="fa-solid fa-grip-vertical text-sm"></i>
                                 </div>
-                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
+                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm sm:text-base">#${idx + 1}</span>
                                 <div>
-                                    <p class="font-bold text-xs ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
-                                        📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30">🏁 Final Destination Stop</span>' : ''}
+                                    <p class="font-bold text-xs sm:text-sm ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">
+                                        📍 ${cp.name} ${isFinal ? '<span class="text-disneyGold bg-amber-500/20 px-2 py-0.5 rounded ml-2 border border-amber-500/30 text-[10px]">🏁 Final Destination Stop</span>' : ''}
                                     </p>
-                                    <p class="text-[10px] text-slate-400">${subtitleContent}</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">${subtitleContent}</p>
                                 </div>
                             </div>
                             <div>${statusBadgeOrButton}</div>
@@ -2557,13 +2852,13 @@
                 const isClaimed = claimedBonus.includes(cp.id);
                 const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
                 return `
-                    <div class="p-3 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center">
+                    <div class="p-4 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center shadow-sm">
                         <div>
-                            <p class="font-bold text-xs text-amber-300">⭐ ${cp.name}</p>
-                            <p class="text-[10px] text-amber-400/80">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
+                            <p class="font-bold text-xs sm:text-sm text-amber-300">⭐ ${cp.name}</p>
+                            <p class="text-[11px] text-amber-400/80 mt-0.5">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
                         </div>
                         ${isClaimed ? '<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>' : `
-                            <label class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg text-xs border border-amber-500/40 cursor-pointer transition">
+                            <label class="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow">
                                 📷 Upload Proof
                                 <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
                             </label>
@@ -2721,7 +3016,7 @@
 
                         document.getElementById('trivia-question-text').innerText = qData.q;
                         document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
-                            <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
+                            <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-3 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
                         `).join('');
                         document.getElementById('trivia-modal').classList.remove('hidden');
                         return;
