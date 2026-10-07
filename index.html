@@ -485,6 +485,7 @@
                             <i class="fa-solid fa-flag-checkered"></i> Finish Race
                         </button>
                     </div>
+                    <div id="report-card-container"></div>
                 </div>
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
@@ -554,10 +555,11 @@
                                 <th class="p-3.5 text-center">Bonuses</th>
                                 <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
                                 <th class="p-3.5 text-center">Status</th>
+                                <th class="p-3.5 text-center">Report Card</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                            <tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
+                            <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2109,7 +2111,9 @@
                         const detail = checkinDetails[cpId] || {};
                         const timeStr = detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Unknown time';
                         const isManual = detail.isManual;
-                        const latLngStr = detail.latitude && detail.longitude ? `${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}` : 'No GPS coords';
+                        const latLngDisplay = detail.latitude && detail.longitude 
+                            ? `<a href="https://www.openstreetmap.org/?mlat=${detail.latitude}&mlon=${detail.longitude}#map=17/${detail.latitude}/${detail.longitude}" target="_blank" class="font-mono text-disneyGold underline hover:text-white">${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}</a>` 
+                            : 'No GPS coords';
 
                         html += `
                             <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1 mb-2">
@@ -2118,7 +2122,7 @@
                                     <span class="text-[11px] text-disneyGold font-mono">${timeStr}</span>
                                 </div>
                                 <div class="flex justify-between items-center text-[11px] text-slate-400">
-                                    <span>GPS: <span class="font-mono text-slate-300">${latLngStr}</span> (${detail.note || 'Verified'})</span>
+                                    <span>GPS: <span class="text-slate-300">${latLngDisplay}</span> (${detail.note || 'Verified'})</span>
                                     ${isManual ? '<span class="text-amber-400 font-bold bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Manual Override</span>' : '<span class="text-emerald-400 font-bold">GPS Verified</span>'}
                                 </div>
                             </div>
@@ -2428,7 +2432,7 @@
             if (!targetCode) {
                 badgeEl.innerText = "NO ACTIVE RACE";
                 subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
                 return;
             }
 
@@ -2437,7 +2441,7 @@
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
                 if (!raceSnap.exists()) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
                     return;
                 }
 
@@ -2462,7 +2466,7 @@
                 const teamsSnap = await getDocs(collection(window.db, "races", targetCode, "teams"));
 
                 if (teamsSnap.empty) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
                     return;
                 }
 
@@ -2470,6 +2474,15 @@
                 teamsSnap.forEach(docSnap => {
                     teamList.push({ id: docSnap.id, ...docSnap.data() });
                 });
+
+                // Check if the currently logged-in team has finished
+                let loggedInTeamFinished = false;
+                if (window.activeTeamId) {
+                    const myTeamObj = teamList.find(t => t.id === window.activeTeamId);
+                    if (myTeamObj && myTeamObj.endTime) {
+                        loggedInTeamFinished = true;
+                    }
+                }
 
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
@@ -2562,6 +2575,16 @@
                         bonusDisplay += `</div>`;
                     }
 
+                    // Report card button disabled logic for leaderboard
+                    let reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Not Finished</span>`;
+                    if (loggedInTeamFinished && t.endTime) {
+                        reportCardBtnHtml = `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400 transition shadow">View Report Card</button>`;
+                    } else if (!loggedInTeamFinished) {
+                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Locked (Finish race first)</span>`;
+                    } else {
+                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Team Racing</span>`;
+                    }
+
                     html += `
                         <tr class="hover:bg-slate-800/40 transition">
                             <td class="p-3.5 font-bold text-disneyGold">#${index + 1}</td>
@@ -2580,12 +2603,13 @@
                                     ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
                                 </span>
                             </td>
+                            <td class="p-3.5 text-center">${reportCardBtnHtml}</td>
                         </tr>
                     `;
                 });
                 tbody.innerHTML = html;
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
             }
         };
 
@@ -2929,6 +2953,121 @@
             modal.classList.remove('hidden');
         };
 
+        window.openTeamReportCard = async function(raceCode, teamId) {
+            const raceSnap = await getDoc(doc(window.db, "races", raceCode));
+            const teamSnap = await getDoc(doc(window.db, "races", raceCode, "teams", teamId));
+            if (!raceSnap.exists() || !teamSnap.exists()) return;
+
+            const race = raceSnap.data();
+            const team = teamSnap.data();
+            const isScavenger = race.gameMode === 'scavenger';
+            const checkpoints = race.checkpoints || [];
+            const bonuses = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
+            const claimedBonus = team.claimedBonus || [];
+            const bonusPhotos = team.bonusPhotos || {};
+            const triviaLogs = team.triviaLogs || [];
+
+            let scoreText = "";
+            if (isScavenger) {
+                scoreText = `${team.totalPoints || 0} Points`;
+            } else {
+                const start = new Date(team.startTime).getTime();
+                const end = new Date(team.endTime).getTime();
+                const diffMin = (end - start) / 60000;
+                const hrs = Math.floor(diffMin / 60);
+                const mins = Math.floor(diffMin % 60);
+                scoreText = `${hrs}h ${mins}m Elapsed Time`;
+            }
+
+            let randomBonusImg = "";
+            let randomBonusCaption = "No bonus photos claimed";
+            if (claimedBonus.length > 0) {
+                const randomId = claimedBonus[Math.floor(Math.random() * claimedBonus.length)];
+                const bonusObj = bonuses.find(b => b.id === randomId);
+                randomBonusImg = bonusPhotos[randomId] || "";
+                randomBonusCaption = bonusObj ? bonusObj.name : "Bonus Photo Challenge";
+            }
+
+            const correctTrivia = triviaLogs.filter(l => l.isCorrect).length;
+            const triviaScoreText = `${correctTrivia} / ${triviaLogs.length} Correct`;
+
+            const checkinDetails = team.checkinDetails || {};
+            const completedIds = team.completedCheckpoints || [];
+            let longestLegText = "N/A";
+            if (completedIds.length >= 2) {
+                let maxLegTimeMs = 0;
+                let legName = "";
+                let sortedCheckins = completedIds.map(id => ({ id, time: new Date(checkinDetails[id]?.timestamp || 0).getTime() })).sort((a, b) => a.time - b.time);
+                
+                for (let i = 1; i < sortedCheckins.length; i++) {
+                    const duration = sortedCheckins[i].time - sortedCheckins[i-1].time;
+                    if (duration > maxLegTimeMs) {
+                        maxLegTimeMs = duration;
+                        const prevCp = checkpoints.find(c => c.id === sortedCheckins[i-1].id);
+                        const currCp = checkpoints.find(c => c.id === sortedCheckins[i].id);
+                        legName = `${prevCp ? prevCp.name : 'Start'} → ${currCp ? currCp.name : 'Stop'}`;
+                    }
+                }
+                if (maxLegTimeMs > 0) {
+                    const mins = Math.floor(maxLegTimeMs / 60000);
+                    longestLegText = `${mins} mins (${legName})`;
+                }
+            }
+
+            let modalEl = document.getElementById('team-report-card-modal');
+            if (!modalEl) {
+                modalEl = document.createElement('div');
+                modalEl.id = 'team-report-card-modal';
+                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4';
+                document.body.appendChild(modalEl);
+            }
+
+            modalEl.innerHTML = `
+                <div class="bg-slate-800 border border-disneyGold rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative text-center text-xs">
+                    <div class="absolute top-4 right-4">
+                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="text-slate-400 hover:text-white font-bold text-sm">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                    <div class="w-14 h-14 bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-lg border border-amber-300/40">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-disney font-bold text-lg text-white">${team.teamName} - Race Report Card</h3>
+                        <p class="text-slate-400 text-[11px]">Official Summary & Fun Stats</p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-left">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <span class="text-slate-400">Total Score / Time:</span>
+                            <span class="font-bold text-disneyGold font-mono text-sm">${scoreText}</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <span class="text-slate-400">Trivia Accuracy:</span>
+                            <span class="font-bold text-emerald-400 font-mono">${triviaScoreText}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400">Longest Leg:</span>
+                            <span class="font-bold text-indigo-300 font-mono">${longestLegText}</span>
+                        </div>
+                    </div>
+
+                    ${randomBonusImg ? `
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <p class="font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-star mr-1"></i> Bonus Memory: ${randomBonusCaption}</p>
+                            <div class="flex justify-center">
+                                <img src="${randomBonusImg}" class="w-28 h-28 rounded-xl object-cover border-2 border-disneyGold shadow">
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <button onclick="document.getElementById('team-report-card-modal').remove()" class="w-full py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-xl uppercase transition shadow">
+                        Close Report Card
+                    </button>
+                </div>
+            `;
+        };
+
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
@@ -3003,6 +3142,7 @@
             const pill = document.getElementById('race-status-pill');
             const startBtn = document.getElementById('btn-start-race');
             const finishBtn = document.getElementById('btn-finish-race');
+            const reportCardContainer = document.getElementById('report-card-container');
 
             if (tData.endTime) {
                 pill.innerText = "Finished";
@@ -3013,26 +3153,39 @@
                 finishBtn.disabled = true;
                 finishBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
                 finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
-            } else if (tData.startTime) {
-                pill.innerText = "In Progress";
-                pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
-                startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
 
-                finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                if (reportCardContainer) {
+                    reportCardContainer.innerHTML = `
+                        <div class="mt-4 text-center">
+                            <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="px-6 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg hover:scale-105">
+                                <i class="fa-solid fa-award mr-1.5"></i> Report Card
+                            </button>
+                        </div>
+                    `;
+                }
             } else {
-                pill.innerText = "Not Started";
-                pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
-                startBtn.disabled = false;
-                startBtn.className = "flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
+                if (reportCardContainer) reportCardContainer.innerHTML = '';
+                if (tData.startTime) {
+                    pill.innerText = "In Progress";
+                    pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    startBtn.disabled = true;
+                    startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
+                    startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
 
-                finishBtn.disabled = false;
-                finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                    finishBtn.disabled = false;
+                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                } else {
+                    pill.innerText = "Not Started";
+                    pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    startBtn.disabled = false;
+                    startBtn.className = "flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
+                    startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
+
+                    finishBtn.disabled = false;
+                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                }
             }
 
             const isSpeedRace = raceData.gameMode !== 'scavenger';
