@@ -2149,9 +2149,15 @@
                         const timeStr = detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Unknown time';
                         const isManual = detail.isManual;
                         
-                        const latLngDisplay = detail.latitude && detail.longitude 
-                            ? `<button type="button" onclick="openAppMapModal(${detail.latitude}, ${detail.longitude})" class="font-mono text-disneyGold underline hover:text-white cursor-pointer">${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}</button>` 
+                        const latLngText = detail.latitude && detail.longitude 
+                            ? `${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}` 
                             : 'No GPS coords';
+
+                        const overrideBadgeHtml = isManual 
+                            ? `<button type="button" onclick="openAppMapModal(${detail.latitude || 28.4177}, ${detail.longitude || -81.5812})" class="text-[10px] bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 px-2.5 py-1 rounded-lg border border-amber-500/40 font-bold transition flex items-center gap-1.5 cursor-pointer shadow">
+                                   <i class="fa-solid fa-location-dot"></i> Manual Override (View Map)
+                               </button>`
+                            : `<span class="text-emerald-400 font-bold text-[10px]">GPS Verified</span>`;
 
                         html += `
                             <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1 mb-2">
@@ -2160,8 +2166,8 @@
                                     <span class="text-[11px] text-disneyGold font-mono">${timeStr}</span>
                                 </div>
                                 <div class="flex justify-between items-center text-[11px] text-slate-400">
-                                    <span>GPS: <span class="text-slate-300">${latLngDisplay}</span> (${detail.note || 'Verified'})</span>
-                                    ${isManual ? '<span class="text-amber-400 font-bold bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Manual Override</span>' : '<span class="text-emerald-400 font-bold">GPS Verified</span>'}
+                                    <span>GPS: <span class="text-slate-300 font-mono">${latLngText}</span> (${detail.note || 'Verified'})</span>
+                                    ${overrideBadgeHtml}
                                 </div>
                             </div>
                         `;
@@ -3756,4 +3762,3 @@
 
 </body>
 </html>
-
