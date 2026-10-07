@@ -101,8 +101,8 @@
         </div>
     </div>
 
-    <!-- Image Viewer Modal Overlay -->
-    <div id="image-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <!-- Image Viewer Modal Overlay (z-[70] to sit above verify logs modal) -->
+    <div id="image-modal" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
@@ -175,7 +175,7 @@
                 </button>
             </div>
             <div id="verify-modal-body" class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1 text-xs">
-                <!-- Populated dynamically -->
+                <p class="text-slate-400 text-center py-6">Loading verification data...</p>
             </div>
             <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-2xl flex justify-end shrink-0">
                 <button onclick="closeTeamVerifyModal()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
@@ -2046,6 +2046,18 @@
             }
         };
 
+        window.toggleTriviaAnswersView = function(btnEl) {
+            const container = document.getElementById('trivia-history-details-box');
+            if (!container) return;
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btnEl.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> Hide Answers';
+            } else {
+                container.classList.add('hidden');
+                btnEl.innerHTML = '<i class="fa-solid fa-eye mr-1"></i> View Answers';
+            }
+        };
+
         window.openTeamVerificationModal = async function(raceCode, teamId, teamName) {
             const modal = document.getElementById('team-verify-modal');
             const titleEl = document.getElementById('verify-modal-title');
@@ -2073,6 +2085,7 @@
                 const claimedBonus = team.claimedBonus || [];
                 const bonusPhotos = team.bonusPhotos || {};
                 const triviaBonus = team.triviaBonus || 0;
+                const triviaLogs = team.triviaLogs || [];
 
                 let html = `
                     <div class="space-y-4">
@@ -2107,7 +2120,7 @@
                                 <div class="flex justify-between items-center text-[11px] text-slate-400">
                                     <span>GPS: <span class="font-mono text-slate-300">${latLngStr}</span> (${detail.note || 'Verified'})</span>
                                     ${isManual ? '<span class="text-amber-400 font-bold bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Manual Override</span>' : '<span class="text-emerald-400 font-bold">GPS Verified</span>'}
-                                </div>
+                                }
                             </div>
                         `;
                     });
@@ -2142,8 +2155,31 @@
                         </div>
 
                         <div class="space-y-2 pt-2 border-t border-slate-700">
-                            <h4 class="font-bold text-disneyGold uppercase tracking-wider text-xs">Trivia History</h4>
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-disneyGold uppercase tracking-wider text-xs">Trivia History & Answers</h4>
+                                <button onclick="toggleTriviaAnswersView(this)" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-disneyGold font-semibold rounded-lg text-[10px] transition"><i class="fa-solid fa-eye mr-1"></i> View Answers</button>
+                            </div>
                             <p class="text-slate-300">Total Trivia Bonus Accumulated: <span class="font-mono font-bold text-emerald-400">${triviaBonus}</span></p>
+                            
+                            <div id="trivia-history-details-box" class="hidden space-y-2 pt-2">
+                `;
+
+                if (triviaLogs.length === 0) {
+                    html += `<p class="text-slate-500 italic text-[11px]">No trivia challenges answered yet.</p>`;
+                } else {
+                    triviaLogs.forEach((log, index) => {
+                        html += `
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1 text-[11px]">
+                                <p class="font-bold text-white">Q${index + 1}: ${log.question}</p>
+                                <p class="text-slate-300">Team Answer: <span class="${log.isCorrect ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}">${log.teamAnswer} (${log.isCorrect ? 'Correct' : 'Incorrect'})</span></p>
+                                <p class="text-slate-400">Correct Answer: <span class="text-disneyGold">${log.correctAnswer}</span></p>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2276,14 +2312,14 @@
                                     <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel}</p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-xl border border-indigo-500/30 font-semibold">${cps.length} Checkpoints</span>
-                                    <button onclick="openOrganizerEditModal('${race.code}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+                                    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-2 rounded-xl border border-indigo-500/30 font-semibold h-[34px] flex items-center">📦 ${cps.length} Checkpoints</span>
+                                    <button onclick="openOrganizerEditModal('${race.code}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow h-[34px]">
                                         <i class="fa-solid fa-pen-to-square"></i> Edit Race
                                     </button>
-                                    <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
+                                    <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow h-[34px]">
                                         <i class="fa-solid fa-share-nodes"></i> Share
                                     </button>
-                                    <button onclick="deleteEntireRace('${race.code}')" class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-semibold transition">
+                                    <button onclick="deleteEntireRace('${race.code}')" class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-semibold transition h-[34px]">
                                         <i class="fa-solid fa-trash mr-1"></i> Delete
                                     </button>
                                 </div>
@@ -2291,7 +2327,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <!-- Square Button Toggle 1: Chat -->
-                                <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
                                     <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Live Chat:</span>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="sr-only peer">
@@ -2300,7 +2336,7 @@
                                     </label>
                                 </div>
                                 <!-- Square Button Toggle 2: Hide Bonuses -->
-                                <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
                                     <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="sr-only peer">
@@ -2312,7 +2348,7 @@
 
                             <div class="pt-2 border-t border-slate-800">
                                 <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamsSnap.size})</span>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     ${teamsSnap.docs.map(tDoc => {
                                         const t = tDoc.data();
                                         const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
@@ -2779,6 +2815,7 @@
                         claimedBonus: [],
                         bonusPhotos: {},
                         triviaBonus: 0,
+                        triviaLogs: [],
                         startTime: null,
                         endTime: null
                     });
@@ -3269,6 +3306,8 @@
                         pendingCheckInIsManual = isManual;
                         pendingCheckInNote = note;
 
+                        window.currentActiveTriviaData = qData;
+
                         document.getElementById('trivia-question-text').innerText = qData.q;
                         document.getElementById('trivia-options').innerHTML = qData.options.map((opt, idx) => `
                             <button onclick="submitTriviaAnswer(${idx}, ${qData.answer})" class="w-full p-3 bg-slate-900 hover:bg-indigo-600 text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>
@@ -3279,7 +3318,7 @@
                 }
             }
 
-            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0);
+            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null);
             alert("Check-in successful!");
         }
 
@@ -3290,8 +3329,11 @@
             const raceData = raceSnap.data();
             const isScavenger = raceData.gameMode === 'scavenger';
 
+            const qData = window.currentActiveTriviaData || { q: "Trivia Question", options: [], answer: 0 };
+            const isCorrect = (selected === correct);
+
             let triviaBonus = 0;
-            if (selected === correct) {
+            if (isCorrect) {
                 if (isScavenger) {
                     triviaBonus = 1;
                     alert("Correct answer! You earned +1 bonus point!");
@@ -3303,19 +3345,27 @@
                 alert("Incorrect answer! Check-in recorded with no bonus.");
             }
 
+            const triviaLogEntry = {
+                question: qData.q,
+                teamAnswer: qData.options[selected] || "Selected Option",
+                correctAnswer: qData.options[correct] || "Correct Option",
+                isCorrect: isCorrect
+            };
+
             await saveCheckInRecord(
                 pendingCheckInCpId, 
                 pendingCheckInLat, 
                 pendingCheckInLng, 
                 pendingCheckInDist, 
                 pendingCheckInIsManual, 
-                pendingCheckInNote + (selected === correct ? " (Trivia Correct)" : " (Trivia Incorrect)"),
-                triviaBonus
+                pendingCheckInNote + (isCorrect ? " (Trivia Correct)" : " (Trivia Incorrect)"),
+                triviaBonus,
+                triviaLogEntry
             );
             alert("Check-in successful!");
         };
 
-        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0) {
+        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null) {
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
             const teamSnap = await getDoc(teamRef);
             const tData = teamSnap.data();
@@ -3336,11 +3386,16 @@
             };
 
             const currentTriviaBonus = (tData.triviaBonus || 0) + triviaBonus;
+            const triviaLogs = tData.triviaLogs || [];
+            if (triviaLogEntry) {
+                triviaLogs.push(triviaLogEntry);
+            }
 
             await updateDoc(teamRef, {
                 completedCheckpoints: completed,
                 checkinDetails: checkinDetails,
-                triviaBonus: currentTriviaBonus
+                triviaBonus: currentTriviaBonus,
+                triviaLogs: triviaLogs
             });
 
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
