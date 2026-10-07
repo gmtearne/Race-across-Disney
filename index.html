@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Web App Manifest -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0055B8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Self-Contained Web App Manifest Data URI (No external manifest.json needed) -->
+    <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"The Amazing Mouse Race","short_name":"Mouse Race","start_url":"./index.html","display":"standalone","background_color":"%230f172a","theme_color":"%230055B8","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 512 512\'><rect width=\'512\' height=\'512\' rx=\'112\' fill=\'%230055B8\'/><circle cx=\'256\' cy=\'256\' r=\'120\' fill=\'%23FFB800\'/></svg>","sizes":"any","type":"image/svg+xml"}]}'>
+    <meta name="theme-color" content="#0055B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +58,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-        /* Sortable ghost placeholder styling */
         .sortable-ghost {
             opacity: 0.2;
             background: #0f172a !important;
@@ -76,6 +75,17 @@
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12 selection:bg-disneyGold selection:text-slate-900">
+
+    <!-- Native App Splash / Loading Screen -->
+    <div id="app-splash-screen" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center space-y-4 transition-opacity duration-300">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-3xl shadow-xl border border-amber-300/40 animate-pulse">
+            <i class="fa-solid fa-compass"></i>
+        </div>
+        <div class="text-center space-y-1">
+            <h2 class="font-disney font-bold text-xl text-white tracking-wide">The Amazing Mouse Race</h2>
+            <p class="text-xs text-slate-400">Loading your magical adventure...</p>
+        </div>
+    </div>
 
     <!-- Image Viewer Modal Overlay -->
     <div id="image-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -152,7 +162,6 @@
                 </div>
             </div>
             
-            <!-- Top-Right Controls: Team Photo & Organiser Settings Cog -->
             <div class="flex items-center gap-2.5 shrink-0">
                 <div id="nav-team-badge" class="hidden items-center">
                     <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
@@ -164,9 +173,7 @@
             </div>
         </div>
         
-        <!-- Navigation Bar: Permanent Primary Tabs & Hamburger for Secondary Tabs -->
         <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center justify-between">
-            <!-- Permanent Primary Tabs: Team Portal & Race Portal -->
             <div class="flex flex-1 overflow-x-auto">
                 <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
                     <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
@@ -176,12 +183,10 @@
                 </button>
             </div>
 
-            <!-- Hamburger Menu for Secondary Tabs (Maps, Rules, Organiser) -->
             <div id="hamburger-wrapper" class="shrink-0 px-3 border-l border-white/10 relative">
                 <button onclick="toggleMobileMenu()" id="hamburger-btn" class="py-2.5 px-2 text-disneyGold hover:text-white transition flex items-center gap-1.5">
                     <i class="fa-solid fa-bars text-sm"></i> <span>More Menu</span>
                 </button>
-                <!-- Vertical Dropdown Overlay -->
                 <div id="mobile-menu-dropdown" class="hidden absolute top-full right-0 mt-1 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 space-y-1">
                     <button onclick="switchTab('maps')" data-tab="maps" class="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2.5 transition">
                         <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
@@ -199,7 +204,6 @@
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
 
-        <!-- Active Team Banner -->
         <div id="team-status-banner" class="hidden mb-6 bg-slate-800/90 border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
             <div class="flex items-center gap-3">
                 <div class="relative group cursor-pointer" title="Click to update team avatar">
@@ -226,8 +230,6 @@
 
         <!-- ================= TAB 1: TEAM PORTAL ================= -->
         <section id="tab-race" class="space-y-6">
-            
-            <!-- Login/Join Card -->
             <div id="login-prompt-card" class="space-y-6">
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 text-center space-y-4 shadow-xl">
                     <div class="w-16 h-16 bg-disneyBlue/20 text-disneyBlue rounded-full flex items-center justify-center mx-auto text-2xl border border-disneyBlue/30">
@@ -261,7 +263,6 @@
                     </div>
                 </div>
 
-                <!-- Create Race Box Below Login When Not Signed In -->
                 <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6 text-center space-y-3 shadow-xl">
                     <div class="w-12 h-12 bg-indigo-600/20 text-indigo-300 rounded-full flex items-center justify-center mx-auto text-lg border border-indigo-500/30">
                         <i class="fa-solid fa-plus"></i>
@@ -274,7 +275,6 @@
                 </div>
             </div>
 
-            <!-- Pending Approval View -->
             <div id="team-pending-card" class="hidden bg-slate-800/90 border border-amber-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl">
                 <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
                     <i class="fa-solid fa-hourglass-half"></i>
@@ -286,9 +286,7 @@
                 </button>
             </div>
 
-            <!-- Active Race Dashboard -->
             <div id="team-dashboard-active" class="hidden space-y-6">
-                <!-- Timer & Progress Card -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
@@ -299,7 +297,6 @@
                             </div>
                         </div>
 
-                        <!-- Progress Ratio / Score -->
                         <div class="flex items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
                             <div class="text-center px-2">
                                 <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
@@ -313,7 +310,6 @@
                         </div>
                     </div>
 
-                    <!-- Action Controls -->
                     <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
                         <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
                             <i class="fa-solid fa-play"></i> Start Race
@@ -324,7 +320,6 @@
                     </div>
                 </div>
 
-                <!-- Assigned Checkpoints with Drag and Drop Reordering -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
                         <div>
@@ -341,7 +336,6 @@
                     <div id="team-checkpoints-list" class="space-y-3"></div>
                 </div>
 
-                <!-- Bonus Photo Challenges -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                     <div class="border-b border-slate-700 pb-3 mb-4">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -353,13 +347,10 @@
                     <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
             </div>
-
         </section>
 
         <!-- ================= TAB 2: RACE PORTAL (LEADERBOARD + CHAT) ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
-            
-            <!-- Logged Out Notice Banner -->
             <div id="leaderboard-login-notice" class="hidden bg-amber-950/40 border border-amber-500/40 p-4 rounded-2xl text-xs text-amber-200 flex items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-triangle-exclamation text-disneyGold text-base"></i>
@@ -370,7 +361,6 @@
                 </button>
             </div>
 
-            <!-- Leaderboard Card -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
                     <div>
@@ -406,7 +396,6 @@
                 </div>
             </div>
 
-            <!-- Live Team Chat Box -->
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
@@ -415,12 +404,10 @@
                     <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
                 </div>
                 
-                <!-- Messages Container -->
                 <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
                     <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
                 </div>
 
-                <!-- Input Box -->
                 <div id="chat-input-box" class="flex gap-2">
                     <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-disneyBlue">
                     <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
@@ -446,7 +433,6 @@
                     </span>
                 </div>
 
-                <!-- Park Selector Tabs -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                     <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-2.5 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
                     <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
@@ -456,7 +442,6 @@
                     <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-2.5 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
                 </div>
 
-                <!-- Map Viewer Box -->
                 <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
                     <div class="flex justify-between items-center">
                         <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
@@ -467,7 +452,6 @@
                         </a>
                     </div>
                     
-                    <!-- Embedded OpenStreetMap Iframe -->
                     <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
                         <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
                     </div>
@@ -476,7 +460,6 @@
                     </p>
                 </div>
 
-                <!-- Transit & Paper Map Tips -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
@@ -509,7 +492,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <!-- Rule Card 1 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
                             <i class="fa-solid fa-stopwatch"></i> Objective
@@ -519,7 +501,6 @@
                         </p>
                     </div>
 
-                    <!-- Rule Card 2 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
                             <i class="fa-solid fa-bus"></i> Transportation
@@ -529,7 +510,6 @@
                         </p>
                     </div>
 
-                    <!-- Rule Card 3 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                             <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
@@ -539,7 +519,6 @@
                         </p>
                     </div>
 
-                    <!-- Rule Card 4 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
                             <i class="fa-solid fa-triangle-exclamation"></i> Penalties
@@ -549,7 +528,6 @@
                         </p>
                     </div>
 
-                    <!-- Rule Card 5 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
                             <i class="fa-solid fa-star"></i> Bonus Challenges
@@ -559,7 +537,6 @@
                         </p>
                     </div>
 
-                    <!-- Rule Card 6 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
                         <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
                             <i class="fa-solid fa-ban"></i> Route Planning Restriction
@@ -570,7 +547,6 @@
                     </div>
                 </div>
 
-                <!-- GPS Warning Box -->
                 <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
                     <div class="font-bold text-amber-300 flex items-center gap-2">
                         <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
@@ -584,8 +560,6 @@
 
         <!-- ================= TAB 5: ORGANISER DASHBOARD ================= -->
         <section id="tab-organizer" class="hidden space-y-6">
-            
-            <!-- Firebase Auth Card -->
             <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login</h2>
@@ -606,7 +580,6 @@
                 </div>
             </div>
 
-            <!-- Organiser Control Panel -->
             <div id="admin-dashboard-card" class="hidden space-y-6">
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                     <div>
@@ -620,7 +593,6 @@
                     </button>
                 </div>
 
-                <!-- Global Organiser Fair Play & Lock Panel -->
                 <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-700 pb-3">
                         <div>
@@ -644,7 +616,6 @@
                     </div>
                 </div>
 
-                <!-- Organiser Lockout Banner / Overlay when Dashboard is Locked -->
                 <div id="org-locked-overlay-card" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
                     <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
                         <i class="fa-solid fa-lock"></i>
@@ -660,7 +631,6 @@
                     </div>
                 </div>
 
-                <!-- Collapsible Create New Race Card -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
                         <div class="flex items-center gap-2.5">
@@ -683,12 +653,9 @@
                             </div>
                         </div>
 
-                        <!-- Game Mode Toggle Section with Clickable Info -->
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                             <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                
-                                <!-- Speed Race Option -->
                                 <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
@@ -702,7 +669,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Scavenger Hunt Option -->
                                 <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2.5 cursor-pointer">
@@ -715,11 +681,9 @@
                                         Teams collect points for checkpoints visited within a time limit. Higher score wins!
                                     </div>
                                 </div>
-
                             </div>
                         </div>
 
-                        <!-- Navigation & Hint Difficulty -->
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                             <label class="block text-xs font-bold text-slate-300 mb-2">Default Base Difficulty</label>
                             <div class="grid grid-cols-3 gap-2">
@@ -741,7 +705,6 @@
                             </div>
                         </div>
 
-                        <!-- Trivia Challenge Option -->
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
                             <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
                             <div class="flex gap-4">
@@ -767,10 +730,8 @@
                             </div>
                         </div>
 
-                        <!-- Hidden Default Checkpoint Points Configuration -->
                         <input type="number" id="create-default-points" value="0" class="hidden">
 
-                        <!-- Checkpoint Setup Options for Creation -->
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
                             
@@ -780,7 +741,6 @@
                                 <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
                             </div>
 
-                            <!-- 1. Random Sub-box -->
                             <div id="pop-box-random" class="space-y-3 pt-2">
                                 <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
                                 <div class="grid grid-cols-2 gap-3">
@@ -795,7 +755,6 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Manual Sub-box -->
                             <div id="pop-box-manual" class="hidden space-y-3 pt-2">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
@@ -811,7 +770,6 @@
                                 <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
                             </div>
 
-                            <!-- 3. Preset Dropdown Sub-box -->
                             <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                 <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
                                 <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
@@ -825,7 +783,6 @@
                             </div>
                         </div>
 
-                        <!-- Speed Race Final Stop Selector (Only shown for Speed Race) -->
                         <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
                             <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
@@ -841,7 +798,6 @@
                     </div>
                 </div>
 
-                <!-- Active Races Overview -->
                 <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
                     <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals, Bonus Privacy & Difficulty</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
@@ -859,7 +815,16 @@
             </svg>
         `);
 
-        // Image compression helper function
+        function hideSplashScreen() {
+            const splash = document.getElementById('app-splash-screen');
+            if (splash) {
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    splash.classList.add('hidden');
+                }, 300);
+            }
+        }
+
         function compressImage(file, maxWidth = 600, maxHeight = 600, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1197,7 +1162,6 @@
             }
             updateCreationFinalStopDropdown();
 
-            // Check if the organiser dashboard was previously locked in this session
             const savedLockState = sessionStorage.getItem('rad_org_locked');
             if (savedLockState === 'true') {
                 globalDashboardLockState = true;
@@ -1225,6 +1189,9 @@
             setTimeout(() => {
                 const savedTab = localStorage.getItem('rad_active_tab') || 'race';
                 switchTab(savedTab, false);
+                if (!window.activeRaceCode) {
+                    hideSplashScreen();
+                }
             }, 50);
         });
 
@@ -1309,9 +1276,11 @@
                 restoreSession(savedRaceCode, savedTeamId);
             } else {
                 updateLeaderboardLoginNotice();
+                hideSplashScreen();
             }
         } catch (err) {
             console.error("Firebase Initialization Error:", err);
+            hideSplashScreen();
         }
 
         function updateLeaderboardLoginNotice() {
@@ -1344,9 +1313,15 @@
         async function restoreSession(code, teamId) {
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return;
+                if (!raceSnap.exists()) {
+                    hideSplashScreen();
+                    return;
+                }
                 const teamSnap = await getDoc(doc(window.db, "races", code, "teams", teamId));
-                if (!teamSnap.exists()) return;
+                if (!teamSnap.exists()) {
+                    hideSplashScreen();
+                    return;
+                }
 
                 const tData = teamSnap.data();
                 window.activeRaceCode = code;
@@ -1357,6 +1332,7 @@
                     document.getElementById('login-prompt-card').classList.add('hidden');
                     document.getElementById('team-pending-card').classList.remove('hidden');
                     document.getElementById('team-dashboard-active').classList.add('hidden');
+                    hideSplashScreen();
                     return;
                 }
 
@@ -1377,6 +1353,7 @@
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
                 initChatListener();
+                hideSplashScreen();
 
                 if (localStorage.getItem('rad_active_tab') === 'leaderboard') {
                     loadLeaderboard();
@@ -1384,6 +1361,7 @@
             } catch (e) {
                 console.error("Failed to restore session:", e);
                 logoutTeam();
+                hideSplashScreen();
             }
         }
 
@@ -1634,7 +1612,6 @@
                 globalDashboardLockState = true;
                 globalDashboardLockPin = pin;
 
-                // Save lock state to sessionStorage to persist across refreshes
                 sessionStorage.setItem('rad_org_locked', 'true');
                 sessionStorage.setItem('rad_org_lock_pin', pin);
 
@@ -1647,15 +1624,12 @@
                 if (adminContainer) adminContainer.classList.add('hidden');
                 if (createRaceBox) createRaceBox.classList.add('hidden');
                 
-                // Clear out the PIN box immediately after locking
                 if (pinInput) pinInput.value = "";
-
                 alert("Global organiser active race panel locked successfully.");
             } else {
                 globalDashboardLockState = false;
                 globalDashboardLockPin = "";
 
-                // Clear sessionStorage
                 sessionStorage.removeItem('rad_org_locked');
                 sessionStorage.removeItem('rad_org_lock_pin');
                 if (pinInput) pinInput.value = "";
@@ -1679,7 +1653,6 @@
                 globalDashboardLockPin = "";
                 document.getElementById('org-unlock-code-input').value = "";
 
-                // Clear sessionStorage
                 sessionStorage.removeItem('rad_org_locked');
                 sessionStorage.removeItem('rad_org_lock_pin');
 
@@ -1755,7 +1728,6 @@
                                 </div>
                             </div>
 
-                            <!-- Moderation Toggles (Chat & Hide Bonuses) -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
                                     <span class="font-semibold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
@@ -2366,12 +2338,16 @@
 
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            if (!teamSnap.exists()) return;
+            if (!teamSnap.exists()) {
+                hideSplashScreen();
+                return;
+            }
             const tData = teamSnap.data();
 
             if (!tData.isApproved) {
                 document.getElementById('team-dashboard-active').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.remove('hidden');
+                hideSplashScreen();
                 return;
             }
 
@@ -2466,7 +2442,6 @@
                 finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
             }
 
-            // Check if checkpoints should be hidden until race start (Speed Race mode only)
             const isSpeedRace = raceData.gameMode !== 'scavenger';
             const hasStarted = !!tData.startTime;
 
@@ -2590,6 +2565,8 @@
                     </div>
                 `;
             }).join('');
+            
+            hideSplashScreen();
         }
 
         window.refreshTeamDashboard = async function() {
