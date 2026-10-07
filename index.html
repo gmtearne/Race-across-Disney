@@ -280,6 +280,22 @@
                 </button>
             </div>
 
+            <!-- Race Locked Banner Overlay -->
+            <div id="race-locked-banner" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+                <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-xl font-disney font-bold text-white">Race Panel is Locked</h3>
+                <p class="text-slate-300 text-xs max-w-md mx-auto">The organiser has locked this active race. Enter the 4-digit code to unlock and view the race panel again.</p>
+                
+                <div class="max-w-xs mx-auto space-y-3">
+                    <input type="password" id="unlock-code-input" placeholder="Enter 4-digit code" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-xs text-white focus:outline-none focus:border-disneyBlue">
+                    <button onclick="unlockActiveRace()" class="w-full py-2.5 bg-disneyGold hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs uppercase transition shadow">
+                        Unlock Race Panel
+                    </button>
+                </div>
+            </div>
+
             <!-- Active Race Dashboard -->
             <div id="team-dashboard-active" class="hidden space-y-6">
                 <!-- Timer & Progress Card -->
@@ -1284,6 +1300,7 @@
                     document.getElementById('login-prompt-card').classList.add('hidden');
                     document.getElementById('team-pending-card').classList.remove('hidden');
                     document.getElementById('team-dashboard-active').classList.add('hidden');
+                    document.getElementById('race-locked-banner').classList.add('hidden');
                     return;
                 }
 
@@ -1295,7 +1312,6 @@
                 document.getElementById('team-status-banner').classList.remove('hidden');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
-                document.getElementById('team-dashboard-active').classList.remove('hidden');
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
@@ -1459,6 +1475,8 @@
                     defaultPoints: defaultPoints,
                     chatEnabled: true,
                     hideBonuses: true,
+                    isLocked: false,
+                    lockCode: "",
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -1545,6 +1563,55 @@
             }
         };
 
+        window.setRaceLockState = async function(raceCode, lockState) {
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) return;
+
+            const pinInput = document.getElementById(`lock-pin-${raceCode}`);
+            const pin = pinInput ? pinInput.value.trim() : "";
+
+            if (lockState && (!pin || pin.length !== 4)) {
+                return alert("Please enter a valid 4-digit lock code before locking the race.");
+            }
+
+            try {
+                const raceRef = doc(window.db, "races", raceCode);
+                await updateDoc(raceRef, {
+                    isLocked: lockState,
+                    lockCode: lockState ? pin : ""
+                });
+                alert(`Race ${raceCode} has been ${lockState ? 'locked' : 'unlocked'} successfully.`);
+                loadAdminRaces();
+                if (window.activeRaceCode === raceCode) {
+                    loadTeamDashboardData((await getDoc(raceRef)).data());
+                }
+            } catch (e) {
+                alert("Error updating lock state: " + e.message);
+            }
+        };
+
+        window.unlockActiveRace = async function() {
+            const enteredPin = document.getElementById('unlock-code-input').value.trim();
+            if (!window.activeRaceCode) return;
+
+            try {
+                const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+                if (!raceSnap.exists()) return;
+
+                const raceData = raceSnap.data();
+                if (raceData.lockCode === enteredPin) {
+                    alert("Correct code! Race panel unlocked.");
+                    document.getElementById('race-locked-banner').classList.add('hidden');
+                    document.getElementById('team-dashboard-active').classList.remove('hidden');
+                    document.getElementById('unlock-code-input').value = "";
+                } else {
+                    alert("Incorrect 4-digit code. Try again.");
+                }
+            } catch (e) {
+                alert("Error unlocking race: " + e.message);
+            }
+        };
+
         async function loadAdminRaces() {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
@@ -1569,6 +1636,7 @@
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
                     const isChatEnabled = race.chatEnabled !== false;
                     const isHideBonuses = race.hideBonuses === true;
+                    const isLocked = race.isLocked === true;
 
                     const finalCpObj = cps.find(c => c.id === race.finalCheckpointId);
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
@@ -1596,8 +1664,8 @@
                                 </div>
                             </div>
 
-                            <!-- Moderation Toggles (Chat & Hide Bonuses) -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <!-- Moderation Toggles (Chat, Hide Bonuses & Lock Race) -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
                                     <span class="font-semibold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-comments text-disneyGold"></i> Enable Chat:</span>
                                     <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
@@ -1605,6 +1673,20 @@
                                 <div class="flex items-center justify-between p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
                                     <span class="font-semibold text-amber-300 flex items-center gap-1.5"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
                                     <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="w-4 h-4 text-disneyGold rounded cursor-pointer">
+                                </div>
+                                <div class="p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px] space-y-1.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-semibold text-rose-300 flex items-center gap-1"><i class="fa-solid fa-lock"></i> Lock Race:</span>
+                                        <span class="font-bold ${isLocked ? 'text-rose-400' : 'text-emerald-400'}">${isLocked ? 'LOCKED' : 'UNLOCKED'}</span>
+                                    </div>
+                                    <div class="flex gap-1 items-center">
+                                        <input type="text" id="lock-pin-${race.code}" placeholder="4-digit PIN" maxlength="4" value="${race.lockCode || ''}" class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-white font-mono text-center">
+                                        ${isLocked ? `
+                                            <button onclick="setRaceLockState('${race.code}', false)" class="flex-1 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px] transition">Unlock</button>
+                                        ` : `
+                                            <button onclick="setRaceLockState('${race.code}', true)" class="flex-1 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[10px] transition">Lock</button>
+                                        `}
+                                    </div>
                                 </div>
                             </div>
 
@@ -2114,6 +2196,7 @@
                     document.getElementById('login-prompt-card').classList.add('hidden');
                     document.getElementById('team-pending-card').classList.remove('hidden');
                     document.getElementById('team-dashboard-active').classList.add('hidden');
+                    document.getElementById('race-locked-banner').classList.add('hidden');
                     alert("Team registration submitted! Waiting for organiser approval.");
                     return;
                 }
@@ -2124,7 +2207,6 @@
                 document.getElementById('team-status-banner').classList.remove('hidden');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
-                document.getElementById('team-dashboard-active').classList.remove('hidden');
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
@@ -2148,6 +2230,7 @@
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
             document.getElementById('team-pending-card').classList.add('hidden');
+            document.getElementById('race-locked-banner').classList.add('hidden');
             document.getElementById('login-prompt-card').classList.remove('hidden');
             document.getElementById('nav-team-badge').classList.add('hidden');
         };
@@ -2212,12 +2295,25 @@
 
             if (!tData.isApproved) {
                 document.getElementById('team-dashboard-active').classList.add('hidden');
+                document.getElementById('race-locked-banner').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.remove('hidden');
                 return;
             }
 
             document.getElementById('team-pending-card').classList.add('hidden');
-            document.getElementById('team-dashboard-active').classList.remove('hidden');
+
+            const isLocked = raceData.isLocked === true;
+            const lockedBanner = document.getElementById('race-locked-banner');
+            const dashboardActive = document.getElementById('team-dashboard-active');
+
+            if (isLocked) {
+                lockedBanner.classList.remove('hidden');
+                dashboardActive.classList.add('hidden');
+                return;
+            } else {
+                lockedBanner.classList.add('hidden');
+                dashboardActive.classList.remove('hidden');
+            }
 
             const isScavenger = raceData.gameMode === 'scavenger';
             const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
