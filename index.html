@@ -772,6 +772,7 @@
             </div>
 
             <div id="admin-dashboard-card" class="hidden space-y-6">
+                <!-- 1. Organiser Control Panel -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                     <div>
                         <h3 class="font-bold text-indigo-300 text-sm flex items-center gap-2">
@@ -784,44 +785,7 @@
                     </button>
                 </div>
 
-                <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                        <div>
-                            <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-shield-halved"></i> Fair Play Dashboard Lock
-                            </h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Lock the active race view to hide checkpoint edits and bonus toggles from your view, aligning your access with the participants while keeping chat moderation open.</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <span class="text-xs text-slate-300 font-semibold shrink-0">Status:</span>
-                            <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-                            <input type="password" id="global-lock-pin-input" placeholder="Enter 4-digit PIN" maxlength="4" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
-                            <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                                <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="org-locked-overlay-card" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-                    <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
-                        <i class="fa-solid fa-lock"></i>
-                    </div>
-                    <h3 class="text-xl font-disney font-bold text-white">Organiser Active Race Panel Locked</h3>
-                    <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
-                    
-                    <div class="max-w-xs mx-auto flex gap-2 pt-2">
-                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
-                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                            Unlock
-                        </button>
-                    </div>
-                </div>
-
+                <!-- 2. Create New Race (At the top) -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
                         <div class="flex items-center gap-2.5">
@@ -989,10 +953,51 @@
                     </div>
                 </div>
 
+                <!-- 3. Active Races & Teams Management (Newest first, individual collapses) -->
                 <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
                     <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals, Bonus Privacy & Difficulty</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
+
+                <!-- 4. Fair Play Dashboard Lock (Moved to bottom) -->
+                <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                        <div>
+                            <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved"></i> Fair Play Dashboard Lock
+                            </h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Lock the active race view to hide checkpoint edits and bonus toggles from your view, aligning your access with the participants while keeping chat moderation open.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-xs text-slate-300 font-semibold shrink-0">Status:</span>
+                            <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
+                            <input type="password" id="global-lock-pin-input" placeholder="Enter 4-digit PIN" maxlength="4" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                            <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                                <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="org-locked-overlay-card" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+                    <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h3 class="text-xl font-disney font-bold text-white">Organiser Active Race Panel Locked</h3>
+                    <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
+                    
+                    <div class="max-w-xs mx-auto flex gap-2 pt-2">
+                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
+                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                            Unlock
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -1437,6 +1442,7 @@
         let globalDashboardLockState = false;
         let globalDashboardLockPin = "";
         let currentEditingRaceCode = null;
+        window.raceCollapseStates = {};
 
         let pendingCheckInCpId = null;
         let pendingCheckInBtn = null;
@@ -2318,6 +2324,11 @@
             }
         };
 
+        window.toggleRaceCardCollapse = function(raceCode) {
+            window.raceCollapseStates[raceCode] = !window.raceCollapseStates[raceCode];
+            loadAdminRaces();
+        };
+
         async function loadAdminRaces() {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
@@ -2333,11 +2344,17 @@
                     return;
                 }
 
+                let races = [];
+                querySnapshot.forEach(docSnap => {
+                    races.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                // Sort newest races to the top
+                races.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
                 let totalPendingTeams = 0;
                 let html = '';
                 
-                for (const docSnap of querySnapshot.docs) {
-                    const race = docSnap.data();
+                for (const race of races) {
                     const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
@@ -2348,18 +2365,31 @@
                     const modeLabel = race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race';
                     const diffLabel = raceBaseDiff.toUpperCase();
 
+                    let teamList = [];
                     teamsSnap.forEach(tDoc => {
-                        if (!tDoc.data().isApproved) totalPendingTeams++;
+                        const tData = tDoc.data();
+                        teamList.push({ id: tDoc.id, ...tData });
+                        if (!tData.isApproved) totalPendingTeams++;
                     });
+
+                    // Check if everyone has finished
+                    let allFinished = teamList.length > 0 && teamList.every(t => t.endTime);
+                    if (window.raceCollapseStates[race.code] === undefined) {
+                        window.raceCollapseStates[race.code] = allFinished; // auto-collapse if everyone finished
+                    }
+                    const isCollapsed = window.raceCollapseStates[race.code];
 
                     html += `
                         <div class="p-4 bg-slate-900 rounded-2xl border border-slate-700/80 space-y-3.5 shadow-sm">
                             <div class="flex justify-between items-center flex-wrap gap-2">
                                 <div>
                                     <p class="font-bold text-white text-sm">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-xs ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel}</p>
+                                    <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel} | Teams: ${teamList.length}</p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap">
+                                    <button onclick="toggleRaceCardCollapse('${race.code}')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700 h-[34px]">
+                                        ${isCollapsed ? 'Expand <i class="fa-solid fa-chevron-down ml-1"></i>' : 'Collapse <i class="fa-solid fa-chevron-up ml-1"></i>'}
+                                    </button>
                                     <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-2 rounded-xl border border-indigo-500/30 font-semibold h-[34px] flex items-center">📦 ${cps.length} Checkpoints</span>
                                     <button onclick="openOrganizerEditModal('${race.code}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow h-[34px]">
                                         <i class="fa-solid fa-pen-to-square"></i> Edit Race
@@ -2373,79 +2403,80 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <!-- Square Button Toggle 1: Chat -->
-                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
-                                    <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Live Chat:</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                        <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-emerald-400">${isChatEnabled ? 'On' : 'Off'}</span>
-                                    </label>
+                            <div class="${isCollapsed ? 'hidden' : 'space-y-3.5'}">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                    <!-- Square Button Toggle 1: Chat -->
+                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
+                                        <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-comments text-disneyGold"></i> Live Chat:</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" ${isChatEnabled ? 'checked' : ''} onchange="toggleChatSetting('${race.code}', this)" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                            <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-emerald-400">${isChatEnabled ? 'On' : 'Off'}</span>
+                                        </label>
+                                    </div>
+                                    <!-- Square Button Toggle 2: Hide Bonuses -->
+                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
+                                        <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                                            <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-amber-400">${isHideBonuses ? 'On' : 'Off'}</span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <!-- Square Button Toggle 2: Hide Bonuses -->
-                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs aspect-auto">
-                                    <span class="font-semibold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Hide Bonuses (?):</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" ${isHideBonuses ? 'checked' : ''} onchange="toggleHideBonusesSetting('${race.code}', this)" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                                        <span class="ml-2 font-bold text-[10px] uppercase text-slate-300 peer-checked:text-amber-400">${isHideBonuses ? 'On' : 'Off'}</span>
-                                    </label>
-                                </div>
-                            </div>
 
-                            <div class="pt-2 border-t border-slate-800">
-                                <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamsSnap.size})</span>
-                                <div class="grid grid-cols-2 gap-3">
-                                    ${teamsSnap.docs.map(tDoc => {
-                                        const t = tDoc.data();
-                                        const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
-                                        const teamDiff = t.difficultyOverride || raceBaseDiff;
-                                        
-                                        let statusBadgeClass = "bg-slate-800 text-slate-300";
-                                        let statusText = "Not Started";
-                                        if (t.endTime) {
-                                            statusBadgeClass = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
-                                            statusText = "Finished";
-                                        } else if (t.startTime) {
-                                            statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                                            statusText = "Racing";
-                                        } else if (t.isApproved) {
-                                            statusBadgeClass = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
-                                            statusText = "Approved";
-                                        } else {
-                                            statusBadgeClass = "bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
-                                            statusText = "Pending 🔔";
-                                        }
+                                <div class="pt-2 border-t border-slate-800">
+                                    <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamList.length})</span>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        ${teamList.map(t => {
+                                            const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
+                                            const teamDiff = t.difficultyOverride || raceBaseDiff;
+                                            
+                                            let statusBadgeClass = "bg-slate-800 text-slate-300";
+                                            let statusText = "Not Started";
+                                            if (t.endTime) {
+                                                statusBadgeClass = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
+                                                statusText = "Finished";
+                                            } else if (t.startTime) {
+                                                statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                                                statusText = "Racing";
+                                            } else if (t.isApproved) {
+                                                statusBadgeClass = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+                                                statusText = "Approved";
+                                            } else {
+                                                statusBadgeClass = "bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
+                                                statusText = "Pending 🔔";
+                                            }
 
-                                        return `
-                                            <div onclick="openTeamVerificationModal('${race.code}', '${tDoc.id}', '${t.teamName.replace(/'/g, "\\'")}')" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 hover:border-disneyGold transition cursor-pointer space-y-3 shadow flex flex-col justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <img src="${teamAvatar}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold shrink-0">
-                                                    <div class="min-w-0">
-                                                        <p class="font-bold text-white text-xs truncate">${t.teamName}</p>
-                                                        <p class="text-[10px] text-slate-400 font-mono">PIN: ${t.pin}</p>
+                                            return `
+                                                <div onclick="openTeamVerificationModal('${race.code}', '${t.id}', '${t.teamName.replace(/'/g, "\\'")}')" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 hover:border-disneyGold transition cursor-pointer space-y-3 shadow flex flex-col justify-between">
+                                                    <div class="flex items-center gap-3">
+                                                        <img src="${teamAvatar}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold shrink-0">
+                                                        <div class="min-w-0">
+                                                            <p class="font-bold text-white text-xs truncate">${t.teamName}</p>
+                                                            <p class="text-[10px] text-slate-400 font-mono">PIN: ${t.pin}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[10px]">
+                                                        <span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>
+                                                        <span class="text-disneyGold underline font-semibold">Verify Logs &rarr;</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                                                        <span>Diff Override:</span>
+                                                        <select onclick="event.stopPropagation()" onchange="updateTeamDifficultyOverride('${race.code}', '${t.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-[10px]">
+                                                            <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy</option>
+                                                            <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
+                                                            <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex items-center justify-end gap-2 pt-1" onclick="event.stopPropagation()">
+                                                        ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${t.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[10px]">Approve</button>` : ''}
+                                                        <button onclick="deleteTeam('${race.code}', '${t.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[10px]">
-                                                    <span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>
-                                                    <span class="text-disneyGold underline font-semibold">Verify Logs &rarr;</span>
-                                                </div>
-                                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                                                    <span>Diff Override:</span>
-                                                    <select onclick="event.stopPropagation()" onchange="updateTeamDifficultyOverride('${race.code}', '${tDoc.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-[10px]">
-                                                        <option value="easy" ${teamDiff === 'easy' ? 'selected' : ''}>Easy</option>
-                                                        <option value="medium" ${teamDiff === 'medium' ? 'selected' : ''}>Medium</option>
-                                                        <option value="hard" ${teamDiff === 'hard' ? 'selected' : ''}>Hard</option>
-                                                    </select>
-                                                </div>
-                                                <div class="flex items-center justify-end gap-2 pt-1" onclick="event.stopPropagation()">
-                                                    ${!t.isApproved ? `<button onclick="approveTeam('${race.code}', '${tDoc.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[10px]">Approve</button>` : ''}
-                                                    <button onclick="deleteTeam('${race.code}', '${tDoc.id}')" class="text-rose-400 font-bold hover:underline text-[10px]">Delete</button>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
+                                            `;
+                                        }).join('')}
+                                    </div>
                                 </div>
                             </div>
                         </div>
