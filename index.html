@@ -18,6 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- SortableJS for Touch-Friendly Drag and Drop -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- html2canvas for social share image export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- External Trivia Database -->
     <script src="trivia-data.js"></script>
     <!-- External Locations Database -->
@@ -117,6 +119,26 @@
             </div>
             <button onclick="closeImageModal()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close Preview
+            </button>
+        </div>
+    </div>
+
+    <!-- In-App Map Modal (For Organiser Manual Override Check-in verification) -->
+    <div id="app-map-modal" class="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-disneyGold rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot"></i> Check-in GPS Location (Manual Override)
+                </h3>
+                <button onclick="document.getElementById('app-map-modal').classList.add('hidden')" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="w-full h-80 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                <iframe id="app-map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
+            </div>
+            <button onclick="document.getElementById('app-map-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
+                Close Map
             </button>
         </div>
     </div>
@@ -1375,6 +1397,21 @@
                 });
             }
         };
+
+        window.openAppMapModal = function(lat, lon) {
+            const modal = document.getElementById('app-map-modal');
+            const iframe = document.getElementById('app-map-iframe');
+            if (!modal || !iframe) return;
+
+            const bboxDelta = 0.005;
+            const minLon = (lon - bboxDelta).toFixed(4);
+            const minLat = (lat - bboxDelta).toFixed(4);
+            const maxLon = (lon + bboxDelta).toFixed(4);
+            const maxLat = (lat + bboxDelta).toFixed(4);
+
+            iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lon}`;
+            modal.classList.remove('hidden');
+        };
     </script>
 
     <!-- Firebase SDK Logic -->
@@ -2111,8 +2148,9 @@
                         const detail = checkinDetails[cpId] || {};
                         const timeStr = detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Unknown time';
                         const isManual = detail.isManual;
+                        
                         const latLngDisplay = detail.latitude && detail.longitude 
-                            ? `<a href="https://www.openstreetmap.org/?mlat=${detail.latitude}&mlon=${detail.longitude}#map=17/${detail.latitude}/${detail.longitude}" target="_blank" class="font-mono text-disneyGold underline hover:text-white">${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}</a>` 
+                            ? `<button type="button" onclick="openAppMapModal(${detail.latitude}, ${detail.longitude})" class="font-mono text-disneyGold underline hover:text-white cursor-pointer">${detail.latitude.toFixed(4)}, ${detail.longitude.toFixed(4)}</button>` 
                             : 'No GPS coords';
 
                         html += `
@@ -2475,7 +2513,6 @@
                     teamList.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // Check if the currently logged-in team has finished
                 let loggedInTeamFinished = false;
                 if (window.activeTeamId) {
                     const myTeamObj = teamList.find(t => t.id === window.activeTeamId);
@@ -2575,7 +2612,6 @@
                         bonusDisplay += `</div>`;
                     }
 
-                    // Report card button disabled logic for leaderboard
                     let reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Not Finished</span>`;
                     if (loggedInTeamFinished && t.endTime) {
                         reportCardBtnHtml = `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400 transition shadow">View Report Card</button>`;
@@ -2962,6 +2998,7 @@
             const team = teamSnap.data();
             const isScavenger = race.gameMode === 'scavenger';
             const checkpoints = race.checkpoints || [];
+            const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
             const bonuses = checkpoints.filter(c => c.type === 'BONUS_PHOTO');
             const claimedBonus = team.claimedBonus || [];
             const bonusPhotos = team.bonusPhotos || {};
@@ -2991,6 +3028,13 @@
             const correctTrivia = triviaLogs.filter(l => l.isCorrect).length;
             const triviaScoreText = `${correctTrivia} / ${triviaLogs.length} Correct`;
 
+            const wrongTriviaList = triviaLogs.filter(l => !l.isCorrect);
+            let roastMessage = "No wrong trivia answers! Absolute Disney Geniuses! 🧠✨";
+            if (wrongTriviaList.length > 0) {
+                const randomWrong = wrongTriviaList[Math.floor(Math.random() * wrongTriviaList.length)];
+                roastMessage = `Oof! You guessed <span class="text-rose-400 font-bold">"${randomWrong.teamAnswer}"</span> for "${randomWrong.question}". The correct answer was <span class="text-disneyGold font-bold">"${randomWrong.correctAnswer}"</span>. Mickey is shaking his head! 🐭🤦‍♂️`;
+            }
+
             const checkinDetails = team.checkinDetails || {};
             const completedIds = team.completedCheckpoints || [];
             let longestLegText = "N/A";
@@ -3014,6 +3058,23 @@
                 }
             }
 
+            let routeListHtml = "";
+            if (completedIds.length === 0) {
+                routeListHtml = `<p class="text-slate-500 italic text-center text-[11px]">No checkpoints visited.</p>`;
+            } else {
+                let sortedRoute = completedIds.map(id => {
+                    const cp = mandatory.find(m => m.id === id);
+                    const dt = checkinDetails[id]?.timestamp ? new Date(checkinDetails[id].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    return { name: cp ? cp.name : 'Stop', time: dt };
+                });
+                routeListHtml = sortedRoute.map((stop, i) => `
+                    <div class="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800 text-[11px]">
+                        <span class="font-bold text-white"><span class="text-disneyGold mr-1">#${i+1}</span> ${stop.name}</span>
+                        <span class="text-slate-400 font-mono">${stop.time}</span>
+                    </div>
+                `).join('');
+            }
+
             let modalEl = document.getElementById('team-report-card-modal');
             if (!modalEl) {
                 modalEl = document.createElement('div');
@@ -3023,49 +3084,103 @@
             }
 
             modalEl.innerHTML = `
-                <div class="bg-slate-800 border border-disneyGold rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative text-center text-xs">
-                    <div class="absolute top-4 right-4">
-                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="text-slate-400 hover:text-white font-bold text-sm">
+                <div class="bg-slate-800 border-2 border-disneyGold rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-center text-xs overflow-y-auto max-h-[90vh] custom-scrollbar">
+                    <div class="absolute top-4 right-4 z-10">
+                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="text-slate-400 hover:text-white font-bold text-sm bg-slate-900/80 w-8 h-8 rounded-full flex items-center justify-center border border-slate-700">
                             <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
-                    <div class="w-14 h-14 bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-lg border border-amber-300/40">
-                        <i class="fa-solid fa-award"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-disney font-bold text-lg text-white">${team.teamName} - Race Report Card</h3>
-                        <p class="text-slate-400 text-[11px]">Official Summary & Fun Stats</p>
-                    </div>
 
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-left">
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <span class="text-slate-400">Total Score / Time:</span>
-                            <span class="font-bold text-disneyGold font-mono text-sm">${scoreText}</span>
+                    <!-- Branded Shareable Export Card Wrapper -->
+                    <div id="shareable-report-card-canvas" class="magical-gradient p-6 rounded-2xl border-2 border-amber-300/40 shadow-xl space-y-4 text-left relative overflow-hidden text-slate-100">
+                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between border-b border-white/20 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow border border-amber-200">
+                                    <i class="fa-solid fa-compass"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-disney font-bold text-base text-white tracking-wide">The Amazing Mouse Race</h3>
+                                    <p class="text-[10px] text-blue-200 font-medium">${race.title}</p>
+                                </div>
+                            </div>
+                            <span class="bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow">Official Report Card</span>
                         </div>
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <span class="text-slate-400">Trivia Accuracy:</span>
-                            <span class="font-bold text-emerald-400 font-mono">${triviaScoreText}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Longest Leg:</span>
-                            <span class="font-bold text-indigo-300 font-mono">${longestLegText}</span>
-                        </div>
-                    </div>
 
-                    ${randomBonusImg ? `
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                            <p class="font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-star mr-1"></i> Bonus Memory: ${randomBonusCaption}</p>
-                            <div class="flex justify-center">
-                                <img src="${randomBonusImg}" class="w-28 h-28 rounded-xl object-cover border-2 border-disneyGold shadow">
+                        <div class="flex items-center gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-white/10">
+                            <img src="${team.photoUrl || DEFAULT_AVATAR}" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold shadow shrink-0">
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-white text-sm truncate">${team.teamName}</h4>
+                                <p class="text-[11px] text-amber-300 font-mono font-bold">${scoreText}</p>
                             </div>
                         </div>
-                    ` : ''}
 
-                    <button onclick="document.getElementById('team-report-card-modal').remove()" class="w-full py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold rounded-xl uppercase transition shadow">
-                        Close Report Card
-                    </button>
+                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2.5">
+                            <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
+                                <span class="text-blue-200 font-semibold">Trivia Accuracy:</span>
+                                <span class="font-bold text-emerald-400 font-mono">${triviaScoreText}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
+                                <span class="text-blue-200 font-semibold">Longest Leg Time:</span>
+                                <span class="font-bold text-indigo-300 font-mono">${longestLegText}</span>
+                            </div>
+                            <div class="text-[11px] space-y-1">
+                                <span class="text-blue-200 font-semibold block"><i class="fa-solid fa-face-laugh-squint mr-1 text-disneyGold"></i> Trivia Roast:</span>
+                                <p class="text-slate-200 italic bg-slate-900/80 p-2.5 rounded-lg border border-white/5">${roastMessage}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+                            <span class="text-blue-200 font-semibold block text-[11px]"><i class="fa-solid fa-route mr-1 text-disneyGold"></i> Complete Route Taken (${completedIds.length} Stops):</span>
+                            <div class="max-h-36 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
+                                ${routeListHtml}
+                            </div>
+                        </div>
+
+                        ${randomBonusImg ? `
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/10 flex items-center gap-3">
+                                <img src="${randomBonusImg}" class="w-16 h-16 rounded-xl object-cover border-2 border-disneyGold shadow shrink-0">
+                                <div class="min-w-0">
+                                    <p class="font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-star mr-1"></i> Bonus Highlight</p>
+                                    <p class="text-slate-200 text-[10px] truncate">${randomBonusCaption}</p>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="text-center pt-2 border-t border-white/10 text-[9px] text-blue-200 tracking-wider uppercase font-semibold">
+                            Can your team beat this time? Play The Amazing Mouse Race! 🏰✨
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="downloadReportCardAsImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> Save / Share Image
+                        </button>
+                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl uppercase transition shadow">
+                            Close
+                        </button>
+                    </div>
                 </div>
             `;
+        };
+
+        window.downloadReportCardAsImage = async function() {
+            const cardEl = document.getElementById('shareable-report-card-canvas');
+            if (!cardEl) return;
+            try {
+                alert("Generating your branded shareable report card image...");
+                const canvas = await html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: null });
+                const imageUri = canvas.toDataURL("image/png");
+
+                const link = document.createElement('a');
+                link.download = 'Mouse_Race_Report_Card.png';
+                link.href = imageUri;
+                link.click();
+            } catch (e) {
+                alert("Error generating image: " + e.message);
+            }
         };
 
         async function loadTeamDashboardData(raceData) {
