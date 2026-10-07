@@ -40,8 +40,12 @@
             }
         }
 
-        // Global splash screen hider defined early to prevent flash
+        // Global splash screen hider that also reveals the main container
         function hideSplashScreen() {
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.style.display = 'block';
+            }
             const splash = document.getElementById('app-splash-screen');
             if (splash) {
                 splash.style.opacity = '0';
@@ -213,7 +217,8 @@
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 mt-6">
+    <!-- Hidden by default via style="display: none;" to prevent layout flashing -->
+    <main style="display: none;" class="max-w-4xl mx-auto px-4 mt-6">
 
         <div id="team-status-banner" class="hidden mb-6 bg-slate-800/90 border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
             <div class="flex items-center gap-3">
