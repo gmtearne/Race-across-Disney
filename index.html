@@ -123,13 +123,13 @@
             <button onclick="switchTab('leaderboard')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
                 <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
             </button>
-            <button onclick="switchTab('maps')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('maps')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
             </button>
-            <button onclick="switchTab('rules')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('rules')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
             </button>
-            <button onclick="switchTab('organizer')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('organizer')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Organiser Dashboard</span>
             </button>
         </div>
@@ -369,20 +369,15 @@
 
     <!-- Navbar -->
     <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
+        <!-- Top brand header row (flush compass logo & title) -->
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-            <!-- Hamburger button placed on the far left, followed by the brand logo -->
-            <div class="flex items-center gap-3 min-w-0">
-                <button onclick="toggleMobileMenu()" id="hamburger-btn" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition shadow shrink-0" title="Open Navigation Menu">
-                    <i class="fa-solid fa-bars text-base"></i>
-                </button>
-                <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
-                        <i class="fa-solid fa-compass"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
-                        <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
-                    </div>
+            <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
+                    <i class="fa-solid fa-compass"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
+                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
                 </div>
             </div>
             
@@ -397,12 +392,16 @@
             </div>
         </div>
         
-        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center justify-between">
-            <div class="flex flex-1 overflow-x-auto">
-                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap">
+        <!-- Bottom Nav row (Hamburger button level with Team Portal & Race Portal) -->
+        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center justify-between px-2">
+            <button onclick="toggleMobileMenu()" id="hamburger-btn" class="mx-2 my-1.5 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition shadow shrink-0" title="Open Navigation Menu">
+                <i class="fa-solid fa-bars text-sm"></i>
+            </button>
+            <div class="flex flex-1 overflow-x-auto py-1">
+                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl mx-1">
                     <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
                 </button>
-                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap">
+                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl mx-1">
                     <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
                 </button>
             </div>
@@ -560,14 +559,22 @@
 
         <!-- ================= TAB 2: RACE PORTAL ================= -->
         <section id="tab-leaderboard" class="hidden space-y-6">
-            <div id="leaderboard-login-notice" class="hidden bg-amber-950/40 border border-amber-500/40 p-4 rounded-2xl text-xs text-amber-200 flex items-center justify-between gap-3 shadow-lg">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-triangle-exclamation text-disneyGold text-base"></i>
-                    <span>Please log into your team/race to review leaderboard and chat.</span>
-                </div>
-                <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
-                    Go to Team Portal
+            <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                <button onclick="toggleRacePortalCard('leaderboard-notice-box', 'leaderboard-notice-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                            <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                        </div>
+                        <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Authentication Notice</span>
+                    </div>
+                    <span id="leaderboard-notice-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                 </button>
+                <div id="leaderboard-notice-box" class="hidden space-y-3 pt-3 border-t border-slate-700 text-xs text-slate-300 flex items-center justify-between gap-3">
+                    <span>Please log into your team/race to review leaderboard and chat.</span>
+                    <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
+                        Go to Team Portal
+                    </button>
+                </div>
             </div>
 
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
@@ -607,24 +614,32 @@
             </div>
 
             <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                    <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
-                        <i class="fa-solid fa-comments"></i> Live Race Chat
-                    </h3>
-                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
-                </div>
+                <button onclick="toggleRacePortalCard('team-chat-box', 'team-chat-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group border-b border-slate-700 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30">
+                            <i class="fa-solid fa-comments text-xs"></i>
+                        </div>
+                        <span class="font-bold text-sm text-disneyGold group-hover:text-white transition">Live Race Chat</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
+                        <span id="team-chat-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                    </div>
+                </button>
                 
-                <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
-                    <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
-                </div>
+                <div id="team-chat-box" class="hidden space-y-4 pt-1">
+                    <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
+                        <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
+                    </div>
 
-                <div id="chat-input-box" class="flex gap-2">
-                    <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-disneyBlue">
-                    <button onclick="sendChatMessage()" class="px-5 py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
-                        <i class="fa-solid fa-paper-plane"></i> Send
-                    </button>
+                    <div id="chat-input-box" class="flex gap-2">
+                        <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                        <button onclick="sendChatMessage()" class="px-5 py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                            <i class="fa-solid fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                    <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
                 </div>
-                <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
             </div>
         </section>
 
@@ -1098,6 +1113,18 @@
             }
         };
 
+        window.toggleRacePortalCard = function(boxId, iconId) {
+            const box = document.getElementById(boxId);
+            const icon = document.getElementById(iconId);
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                icon.innerHTML = 'Collapse <i class="fa-solid fa-chevron-up ml-1"></i>';
+            } else {
+                box.classList.add('hidden');
+                icon.innerHTML = 'Expand <i class="fa-solid fa-chevron-down ml-1"></i>';
+            }
+        };
+
         function switchTab(tabName, saveState = true) {
             ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
@@ -1108,9 +1135,9 @@
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 if (btn.tagName === 'BUTTON') {
                     if (isMatch) {
-                        btn.className = "flex-1 py-2.5 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap";
+                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl mx-1";
                     } else {
-                        btn.className = "flex-1 py-2.5 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap";
+                        btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl mx-1";
                     }
                 }
             });
@@ -2672,13 +2699,12 @@
             const statusIndicator = document.getElementById('chat-status-indicator');
 
             if (!targetCode || !window.activeTeamId) {
-                if (chatCard) chatCard.classList.add('hidden');
-                return;
+                if (chatCard) chatCard.classList.remove('hidden'); // keep card visible for collapse toggle even if not logged in
             } else {
                 if (chatCard) chatCard.classList.remove('hidden');
             }
 
-            const raceRef = doc(window.db, "races", targetCode);
+            const raceRef = doc(window.db, "races", targetCode || "dummy");
             getDoc(raceRef).then(raceSnap => {
                 if (!raceSnap.exists()) return;
                 const isChatEnabled = raceSnap.data().chatEnabled !== false;
@@ -2694,7 +2720,9 @@
                     statusIndicator.innerText = "Active";
                     statusIndicator.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30";
                 }
-            });
+            }).catch(() => {});
+
+            if (!targetCode) return;
 
             const chatColRef = collection(window.db, "races", targetCode, "chat");
             chatUnsubscribe = onSnapshot(chatColRef, (snapshot) => {
