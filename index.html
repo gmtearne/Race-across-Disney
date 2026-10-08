@@ -1460,19 +1460,20 @@
                 'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal'
             ];
             const guarded = new WeakSet();
-            const modalObserver = new MutationObserver(mutations => {
+                        const modalObserver = new MutationObserver(mutations => {
                 mutations.forEach(mutation => {
-                    if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') return;
                     const modal = mutation.target;
                     if (!modal || !modalIds.includes(modal.id) || guarded.has(modal)) return;
-                    modal.classList.add('app-modal-motion');
-                    if (!modal.classList.contains('hidden')) {
-                        modal.classList.remove('app-modal-closing');
-                        modal.classList.remove('app-modal-open');
-                        void modal.offsetWidth;
+                    if (!modal.classList.contains('app-modal-motion')) {
+                        modal.classList.add('app-modal-motion');
+                    }
+                    if (modal.classList.contains('hidden')) {
+                        if (modal.classList.contains('app-modal-open')) {
+                            modal.classList.remove('app-modal-open');
+                        }
+                    } else if (!modal.classList.contains('app-modal-open') &&
+                               !modal.classList.contains('app-modal-closing')) {
                         modal.classList.add('app-modal-open');
-                    } else if (modal.classList.contains('app-modal-closing')) {
-                        // The close handler below owns the final hidden state.
                     }
                 });
             });
