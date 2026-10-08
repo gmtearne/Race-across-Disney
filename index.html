@@ -137,11 +137,11 @@
         }
         html.portal-locked #team-status-banner {
             margin-top: 0.5rem;
-            margin-bottom: 0 !important;
+            margin-bottom: 0.5rem !important;
         }
         /* With the team card showing, the gap below it matches the gap above it */
         html.has-team-banner #portal-track > section {
-            padding-top: 0.5rem;
+            padding-top: 0;
         }
 
         /* ---------- Bottom sheet picker ---------- */
@@ -402,6 +402,12 @@
             opacity: 1 !important;
         }
         .hidden { display: none !important; }
+        /* Keep focused form fields visible above mobile keyboards. */
+        input, select, textarea, button { scroll-margin-bottom: 180px; }
+        @media (max-width: 640px) {
+            #join-race-box { padding-bottom: 2rem; }
+            #input-race-code, #input-team-name, #input-team-pin, #input-team-pin-confirm { scroll-margin-top: 150px; scroll-margin-bottom: 220px; }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
@@ -702,7 +708,7 @@
                 <div id="nav-team-badge" class="hidden items-center">
                     <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Host Dashboard">
+                <button id="nav-org-cog" onclick="switchTab('organizer')" class="relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Host Dashboard">
                     <i class="fa-solid fa-gear text-xs"></i>
                     <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
                 </button>
@@ -728,7 +734,7 @@
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
     <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-36 pb-12 min-h-screen flex flex-col w-full">
 
-        <div id="team-status-banner" class="hidden mb-3 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
+        <div id="team-status-banner" class="hidden mb-2 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
             <div class="relative group cursor-pointer shrink-0" title="Click to update team avatar">
                 <img id="active-team-avatar" src="" class="w-8 h-8 rounded-full object-cover border-2 border-disneyGold">
                 <label class="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold cursor-pointer">
@@ -767,21 +773,26 @@
                             <div class="max-w-sm mx-auto space-y-3 text-left">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
-                                    <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
+                                    <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" enterkeyhint="next" autocomplete="off" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
-                                    <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                    <input type="text" id="input-team-name" placeholder="e.g. Team 1" enterkeyhint="next" autocomplete="organization" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
-                                        <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                        <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" inputmode="numeric" enterkeyhint="next" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
                                         <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
                                     </div>
+                                </div>
+                                <div id="team-pin-confirm-wrap" class="hidden">
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">CONFIRM 4-DIGIT PIN</label>
+                                    <input type="password" id="input-team-pin-confirm" placeholder="Re-enter PIN" maxlength="4" inputmode="numeric" enterkeyhint="done" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                    <p class="text-[10px] text-slate-500 mt-1">Only required when registering a new team.</p>
                                 </div>
                                 <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
                                     Enter Race Portal
@@ -1369,7 +1380,10 @@
                             <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-                            <input type="password" id="global-lock-pin-input" placeholder="Enter 4-digit PIN" maxlength="4" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                            <div class="flex flex-col gap-1">
+                                <input type="password" id="global-lock-pin-input" placeholder="Set 4-digit PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                                <input type="password" id="global-lock-pin-confirm" placeholder="Confirm PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                            </div>
                             <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
                                 <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
                             </button>
@@ -2260,7 +2274,7 @@
                 } else {
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
-                    if (orgCog) orgCog.classList.add('hidden');
+                    if (orgCog) orgCog.classList.remove('hidden');
                 }
             });
 
@@ -3056,6 +3070,8 @@
         window.toggleGlobalOrganizerLock = function() {
             const pinInput = document.getElementById('global-lock-pin-input');
             const pin = pinInput ? pinInput.value.trim() : "";
+            const confirmPinInput = document.getElementById('global-lock-pin-confirm');
+            const confirmPin = confirmPinInput ? confirmPinInput.value.trim() : "";
             const statusBadge = document.getElementById('global-lock-status-badge');
             const actionBtn = document.getElementById('global-lock-action-btn');
             const orgLockedOverlay = document.getElementById('org-locked-overlay-card');
@@ -3063,9 +3079,10 @@
             const createRaceBox = document.getElementById('create-race-collapsible-box')?.parentElement;
 
             if (!window.globalDashboardLockState) {
-                if (!pin || pin.length !== 4) {
+                if (!/^\d{4}$/.test(pin)) {
                     return alert("Please enter a valid 4-digit PIN to lock your dashboard.");
                 }
+                if (pin !== confirmPin) return alert("The PINs do not match. Please confirm your PIN.");
                 window.globalDashboardLockState = true;
                 window.globalDashboardLockPin = pin;
 
@@ -3082,8 +3099,10 @@
                 if (createRaceBox) createRaceBox.classList.add('hidden');
                 
                 if (pinInput) pinInput.value = "";
+                if (confirmPinInput) confirmPinInput.value = "";
                 alert("Global host active race panel locked successfully.");
             } else {
+                if (pin !== window.globalDashboardLockPin) return alert("Incorrect 4-digit PIN. The dashboard remains locked.");
                 window.globalDashboardLockState = false;
                 window.globalDashboardLockPin = "";
 
@@ -3583,13 +3602,56 @@
             }
         };
 
+        let teamPinLookupToken = 0;
+        async function updateTeamPinConfirmationVisibility() {
+            const code = document.getElementById('input-race-code').value.trim().toUpperCase();
+            const teamName = document.getElementById('input-team-name').value.trim();
+            const wrap = document.getElementById('team-pin-confirm-wrap');
+            const token = ++teamPinLookupToken;
+            if (!code || !teamName || !window.db) { wrap.classList.add('hidden'); return; }
+            try {
+                const raceSnap = await getDoc(doc(window.db, 'races', code));
+                if (token !== teamPinLookupToken) return;
+                if (!raceSnap.exists()) { wrap.classList.add('hidden'); return; }
+                const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
+                const existing = await getDoc(doc(window.db, 'races', code, 'teams', teamId));
+                if (token !== teamPinLookupToken) return;
+                wrap.classList.toggle('hidden', existing.exists());
+                if (existing.exists()) document.getElementById('input-team-pin-confirm').value = '';
+            } catch (_) { wrap.classList.add('hidden'); }
+        }
+        document.getElementById('input-race-code').addEventListener('change', updateTeamPinConfirmationVisibility);
+        document.getElementById('input-team-name').addEventListener('change', updateTeamPinConfirmationVisibility);
+        document.getElementById('input-team-name').addEventListener('blur', updateTeamPinConfirmationVisibility);
+
+
+        // Mobile keyboard ergonomics: Enter advances between text/PIN fields and scrolls focus above the keyboard.
+        (function setupJoinFormKeyboard() {
+            const fields = ['input-race-code', 'input-team-name', 'input-team-pin', 'input-team-pin-confirm'];
+            fields.forEach((id, index) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('focus', () => {
+                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 180);
+                });
+                el.addEventListener('keydown', event => {
+                    if (event.key !== 'Enter') return;
+                    event.preventDefault();
+                    const next = fields.slice(index + 1).map(nextId => document.getElementById(nextId)).find(node => node && !node.closest('#team-pin-confirm-wrap')?.classList.contains('hidden'));
+                    if (next) next.focus();
+                    else document.querySelector('#join-race-box button[onclick="joinOrResumeTeam()"]')?.focus();
+                });
+            });
+        })();
+
         window.joinOrResumeTeam = async function() {
             const code = document.getElementById('input-race-code').value.trim().toUpperCase();
             const teamName = document.getElementById('input-team-name').value.trim();
             const pin = document.getElementById('input-team-pin').value.trim();
             const photoFile = document.getElementById('input-team-avatar-file').files[0];
+            const confirmPin = document.getElementById('input-team-pin-confirm').value.trim();
 
-            if (!code || !teamName || !pin || pin.length < 4) {
+            if (!code || !teamName || !/^\d{4}$/.test(pin)) {
                 return alert("Please enter race code, team name, and a 4-digit PIN.");
             }
 
@@ -3620,6 +3682,8 @@
                         await updateDoc(teamRef, { photoUrl: photoUrl });
                     }
                 } else {
+                    if (!/^\d{4}$/.test(confirmPin)) return alert("Please confirm your 4-digit PIN to register a new team.");
+                    if (pin !== confirmPin) return alert("The PINs do not match. Please check and try again.");
                     await setDoc(teamRef, {
                         teamName: teamName,
                         pin: pin,
