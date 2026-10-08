@@ -76,8 +76,8 @@
             position: relative;
             width: 100%;
             flex: 0 0 auto;
-            height: calc(100vh - var(--portal-offset, 220px));
-            height: calc(100dvh - var(--portal-offset, 220px));
+            height: calc(100vh - var(--portal-offset, 190px));
+            height: calc(100dvh - var(--portal-offset, 190px) - env(safe-area-inset-bottom, 0px));
             min-height: 320px;
             overflow-x: auto;
             overflow-y: hidden;
@@ -118,6 +118,11 @@
             overflow: hidden;
             height: 100dvh;
             min-height: 0;
+        }
+
+        /* Portal tabs: trim bottom padding so the scroll area runs to the bottom of the screen */
+        html.portal-locked main {
+            padding-bottom: 0.75rem;
         }
 
         /* Team card only appears on the race / leaderboard portal tabs */
@@ -4172,7 +4177,7 @@
         if (!banner) return;
         function updatePortalOffset() {
             const bh = (banner.classList.contains('hidden') || banner.offsetHeight === 0) ? 0 : banner.offsetHeight + 12;
-            document.documentElement.style.setProperty('--portal-offset', (144 + bh + 48) + 'px');
+            document.documentElement.style.setProperty('--portal-offset', (144 + bh + 12) + 'px');
         }
         new ResizeObserver(updatePortalOffset).observe(banner);
         new MutationObserver(updatePortalOffset).observe(banner, { attributes: true, attributeFilter: ['class'] });
