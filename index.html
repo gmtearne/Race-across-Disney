@@ -1083,32 +1083,51 @@
             }
         }, { passive: false });
 
-        // Fluid Live Sliding Gesture Integration between Team Portal ('race') and Race Portal ('leaderboard')
+        // Fluid Live Sliding Gesture with Direction Lock & Intent Threshold
         let touchStartX = 0;
+        let touchStartY_portal = 0;
         let currentXDelta = 0;
         let isDraggingPortal = false;
+        let gestureLockedAxis = null; // 'horizontal' or 'vertical'
 
         window.addEventListener('touchstart', (e) => {
             const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-            // Only enable live dragging when looking at either of these two connected portals
             if (activeTab === 'race' || activeTab === 'leaderboard') {
                 touchStartX = e.changedTouches[0].screenX;
+                touchStartY_portal = e.changedTouches[0].screenY;
                 isDraggingPortal = true;
+                gestureLockedAxis = null;
             }
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
             if (!isDraggingPortal) return;
             const currentX = e.changedTouches[0].screenX;
-            currentXDelta = currentX - touchStartX;
+            const currentY = e.changedTouches[0].screenY;
+            const diffX = currentX - touchStartX;
+            const diffY = currentY - touchStartY_portal;
 
+            // Lock gesture axis on initial movement to prevent vertical mix-ups
+            if (!gestureLockedAxis) {
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+                    gestureLockedAxis = 'horizontal';
+                } else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 10) {
+                    gestureLockedAxis = 'vertical';
+                    isDraggingPortal = false; // Release control back to normal scrolling
+                    resetPortalStyles();
+                    return;
+                }
+            }
+
+            if (gestureLockedAxis !== 'horizontal') return;
+
+            currentXDelta = diffX;
             const activeTab = localStorage.getItem('rad_active_tab') || 'race';
             const raceSec = document.getElementById('tab-race');
             const lbSec = document.getElementById('tab-leaderboard');
 
-            // Apply transform shift mapping live to finger motion
+            // Apply transform shift live to finger motion
             if (activeTab === 'race' && currentXDelta < 0) {
-                // Dragging left from Team Portal to reveal Race Portal
                 if (raceSec && lbSec) {
                     raceSec.style.transform = `translateX(${currentXDelta}px)`;
                     lbSec.classList.remove('hidden');
@@ -1119,7 +1138,6 @@
                     lbSec.style.width = '100%';
                 }
             } else if (activeTab === 'leaderboard' && currentXDelta > 0) {
-                // Dragging right from Race Portal to reveal Team Portal
                 if (raceSec && lbSec) {
                     lbSec.style.transform = `translateX(${currentXDelta}px)`;
                     raceSec.classList.remove('hidden');
@@ -1133,34 +1151,33 @@
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
-            if (!isDraggingPortal) return;
+            if (!isDraggingPortal || gestureLockedAxis !== 'horizontal') {
+                isDraggingPortal = false;
+                return;
+            }
             isDraggingPortal = false;
 
             const activeTab = localStorage.getItem('rad_active_tab') || 'race';
             const raceSec = document.getElementById('tab-race');
             const lbSec = document.getElementById('tab-leaderboard');
-            const threshold = window.innerWidth * 0.3; // 30% screen threshold to commit switch
+            const threshold = window.innerWidth * 0.35; // 35% threshold to commit switch
 
-            // Reset inline styles smoothly with transition
             if (raceSec) { raceSec.style.transition = 'transform 0.25s ease-in-out'; }
             if (lbSec) { lbSec.style.transition = 'transform 0.25s ease-in-out'; }
 
             if (activeTab === 'race' && currentXDelta < -threshold) {
-                // Commit switch to Race Portal
                 if (raceSec && lbSec) {
                     raceSec.style.transform = 'translateX(-100%)';
                     lbSec.style.transform = 'translateX(0)';
                 }
                 setTimeout(() => { switchTab('leaderboard'); resetPortalStyles(); }, 250);
             } else if (activeTab === 'leaderboard' && currentXDelta > threshold) {
-                // Commit switch to Team Portal
                 if (raceSec && lbSec) {
                     raceSec.style.transform = 'translateX(0)';
                     lbSec.style.transform = 'translateX(100%)';
                 }
                 setTimeout(() => { switchTab('race'); resetPortalStyles(); }, 250);
             } else {
-                // Snap back to current portal if threshold not met
                 if (raceSec) raceSec.style.transform = 'translateX(0)';
                 if (lbSec) lbSec.style.transform = activeTab === 'leaderboard' ? 'translateX(0)' : 'translateX(100%)';
                 setTimeout(() => { resetPortalStyles(); }, 250);
