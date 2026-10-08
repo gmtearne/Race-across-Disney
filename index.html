@@ -76,8 +76,8 @@
             position: relative;
             width: 100%;
             flex: 0 0 auto;
-            height: calc(100vh - 170px);
-            height: calc(100dvh - 170px);
+            height: calc(100vh - var(--portal-offset, 220px));
+            height: calc(100dvh - var(--portal-offset, 220px));
             min-height: 320px;
             overflow-x: auto;
             overflow-y: hidden;
@@ -112,6 +112,17 @@
 
         #portal-track > section::-webkit-scrollbar {
             display: none;
+        }
+
+        html.portal-locked, html.portal-locked body {
+            overflow: hidden;
+            height: 100dvh;
+            min-height: 0;
+        }
+
+        /* Team card only appears on the race / leaderboard portal tabs */
+        html:not(.on-portal) #team-status-banner {
+            display: none !important;
         }
 
         /* App-like motion, glass navigation and native-feeling transitions */
@@ -1384,6 +1395,8 @@
             const isPortalTab = (tabName === 'race' || tabName === 'leaderboard');
             if (portalViewport) {
                 portalViewport.classList.toggle('hidden', !isPortalTab);
+                document.documentElement.classList.toggle('portal-locked', isPortalTab);
+                document.documentElement.classList.toggle('on-portal', isPortalTab);
             }
 
             // Give standard pages a soft arrival animation when they become visible.
@@ -1460,7 +1473,7 @@
                 'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal'
             ];
             const guarded = new WeakSet();
-                        const modalObserver = new MutationObserver(mutations => {
+            const modalObserver = new MutationObserver(mutations => {
                 mutations.forEach(mutation => {
                     const modal = mutation.target;
                     if (!modal || !modalIds.includes(modal.id) || guarded.has(modal)) return;
@@ -4159,6 +4172,20 @@
                 document.getElementById('elapsed-time-display').innerText = `${hrs}:${mins}:${secs}`;
             }, 1000);
         }
+    </script>
+    <script>
+    (function () {
+        const banner = document.getElementById('team-status-banner');
+        if (!banner) return;
+        function updatePortalOffset() {
+            const bh = (banner.classList.contains('hidden') || banner.offsetHeight === 0) ? 0 : banner.offsetHeight + 24;
+            document.documentElement.style.setProperty('--portal-offset', (144 + bh + 48) + 'px');
+        }
+        new ResizeObserver(updatePortalOffset).observe(banner);
+        new MutationObserver(updatePortalOffset).observe(banner, { attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('resize', updatePortalOffset);
+        updatePortalOffset();
+    })();
     </script>
     <script>
     if ('serviceWorker' in navigator) {
