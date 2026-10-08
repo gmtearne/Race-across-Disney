@@ -658,28 +658,21 @@
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
     <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-36 pb-12 min-h-screen flex flex-col w-full">
 
-        <div id="team-status-banner" class="hidden mb-6 bg-slate-800/90 border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="relative group cursor-pointer" title="Click to update team avatar">
-                    <img id="active-team-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold">
-                    <label class="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold cursor-pointer">
-                        <i class="fa-solid fa-camera"></i>
-                        <input type="file" accept="image/*" class="hidden" onchange="updateTeamAvatar(this)">
-                    </label>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h2 id="active-team-name" class="font-bold text-lg text-white"></h2>
-                        <span class="text-xs bg-disneyBlue/30 text-blue-300 px-2 py-0.5 rounded-full border border-disneyBlue/40">Active Team</span>
-                    </div>
-                    <p class="text-xs text-slate-400">Race Code: <span id="active-team-racecode" class="font-mono text-disneyGold font-bold">---</span> <span class="text-[10px] text-slate-500 ml-2">(Click avatar to change)</span></p>
-                </div>
+        <div id="team-status-banner" class="hidden mb-3 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
+            <div class="relative group cursor-pointer shrink-0" title="Click to update team avatar">
+                <img id="active-team-avatar" src="" class="w-8 h-8 rounded-full object-cover border-2 border-disneyGold">
+                <label class="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold cursor-pointer">
+                    <i class="fa-solid fa-camera"></i>
+                    <input type="file" accept="image/*" class="hidden" onchange="updateTeamAvatar(this)">
+                </label>
             </div>
-            <div class="flex gap-2">
-                <button onclick="logoutTeam()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-right-from-bracket"></i> Switch Team
-                </button>
+            <div class="min-w-0 flex-1 flex items-baseline gap-2">
+                <h2 id="active-team-name" class="font-bold text-sm text-white truncate"></h2>
+                <span class="font-mono text-xs text-disneyGold font-bold shrink-0" id="active-team-racecode">---</span>
             </div>
+            <button onclick="logoutTeam()" title="Switch Team" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center justify-center">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
         </div>
 
         <div id="portal-viewport">
@@ -4178,7 +4171,7 @@
         const banner = document.getElementById('team-status-banner');
         if (!banner) return;
         function updatePortalOffset() {
-            const bh = (banner.classList.contains('hidden') || banner.offsetHeight === 0) ? 0 : banner.offsetHeight + 24;
+            const bh = (banner.classList.contains('hidden') || banner.offsetHeight === 0) ? 0 : banner.offsetHeight + 12;
             document.documentElement.style.setProperty('--portal-offset', (144 + bh + 48) + 'px');
         }
         new ResizeObserver(updatePortalOffset).observe(banner);
