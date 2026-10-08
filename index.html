@@ -57,25 +57,38 @@
         }
     </script>
     <style>
-        /* Disable pull-to-refresh and elastic overscroll for app-like experience */
+        /* Allow completely natural vertical scrolling and touch panning on body */
         html, body {
-            overscroll-behavior-y: none;
-            touch-action: pan-x pan-y;
+            touch-action: pan-y pinch-zoom;
             -webkit-overflow-scrolling: touch;
             overflow-x: hidden;
+            overflow-y: auto;
         }
 
-        /* Portal slide container wrapper with flex track */
+        /* Use CSS Scroll Snap for native, buttery-smooth horizontal swiping between tabs without blocking vertical scroll */
         #portal-viewport {
             position: relative;
             width: 100%;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Hide scrollbar for clean mobile app look */
+        }
+        #portal-viewport::-webkit-scrollbar {
+            display: none;
         }
 
         #portal-track {
             display: flex;
             width: 200%;
-            will-change: transform;
+            align-items: flex-start;
+        }
+
+        #portal-track > section {
+            width: 50%;
+            flex-shrink: 0;
+            scroll-snap-align: start;
         }
 
         .magical-gradient {
@@ -459,7 +472,7 @@
         <div id="portal-viewport">
             <div id="portal-track">
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
-                <section id="tab-race" class="w-1/2 shrink-0 px-3 space-y-6">
+                <section id="tab-race" class="px-3 space-y-6">
                 <div id="login-prompt-card" class="space-y-4">
                     <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
                     <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
@@ -598,7 +611,7 @@
             </section>
 
                 <!-- ================= TAB 2: RACE PORTAL ================= -->
-                <section id="tab-leaderboard" class="w-1/2 shrink-0 px-3 space-y-6">
+                <section id="tab-leaderboard" class="px-3 space-y-6">
                 <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
@@ -1077,98 +1090,6 @@
 
         let chatUnsubscribe = null;
 
-        // Prevent pull-to-refresh gestures across touch devices
-        let touchStartY = 0;
-        window.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            const touchY = e.touches[0].clientY;
-            const touchDelta = touchY - touchStartY;
-            if (window.scrollY === 0 && touchDelta > 0) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Smooth Flex Track Sliding Gesture with Full Vertical Scroll Support
-        let portalTouchStartX = 0;
-        let portalTouchStartY = 0;
-        let isDraggingPortal = false;
-        let portalGestureAxis = null;
-
-        window.addEventListener('touchstart', (e) => {
-            const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-            if (activeTab === 'race' || activeTab === 'leaderboard') {
-                portalTouchStartX = e.changedTouches[0].screenX;
-                portalTouchStartY = e.changedTouches[0].screenY;
-                isDraggingPortal = true;
-                portalGestureAxis = null;
-            }
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!isDraggingPortal) return;
-            const currentX = e.changedTouches[0].screenX;
-            const currentY = e.changedTouches[0].screenY;
-            const diffX = currentX - portalTouchStartX;
-            const diffY = currentY - portalTouchStartY;
-
-            if (!portalGestureAxis) {
-                if (Math.abs(diffY) > Math.abs(diffX)) {
-                    portalGestureAxis = 'vertical';
-                    isDraggingPortal = false;
-                    return;
-                } else if (Math.abs(diffX) > 10) {
-                    portalGestureAxis = 'horizontal';
-                }
-            }
-
-            if (portalGestureAxis === 'horizontal') {
-                const track = document.getElementById('portal-track');
-                const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-                const baseOffset = activeTab === 'leaderboard' ? -50 : 0;
-                const percentageDelta = (diffX / window.innerWidth) * 50;
-                const currentOffset = baseOffset + percentageDelta;
-
-                if (track) {
-                    track.style.transition = 'none';
-                    track.style.transform = `translateX(${currentOffset}%)`;
-                }
-            }
-        }, { passive: true });
-
-        window.addEventListener('touchend', (e) => {
-            if (!isDraggingPortal || portalGestureAxis !== 'horizontal') {
-                isDraggingPortal = false;
-                resetPortalTrack();
-                return;
-            }
-            isDraggingPortal = false;
-
-            const currentX = e.changedTouches[0].screenX;
-            const diffX = currentX - portalTouchStartX;
-            const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-            const threshold = window.innerWidth * 0.25;
-
-            if (activeTab === 'race' && diffX < -threshold) {
-                switchTab('leaderboard');
-            } else if (activeTab === 'leaderboard' && diffX > threshold) {
-                switchTab('race');
-            } else {
-                resetPortalTrack();
-            }
-        }, { passive: true });
-
-        function resetPortalTrack() {
-            const track = document.getElementById('portal-track');
-            const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-            if (track) {
-                track.style.transition = 'transform 0.25s ease-in-out';
-                track.style.transform = activeTab === 'leaderboard' ? 'translateX(-50%)' : 'translateX(0%)';
-            }
-        }
-
         function compressImage(file, maxWidth = 600, maxHeight = 600, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1250,7 +1171,6 @@
         };
 
         function switchTab(tabName, saveState = true) {
-            const track = document.getElementById('portal-track');
             ['maps', 'rules', 'organizer'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
                 if (section) {
@@ -1264,9 +1184,9 @@
                 portalViewport.classList.toggle('hidden', !isPortalTab);
             }
 
-            if (isPortalTab && track) {
-                track.style.transition = 'transform 0.25s ease-in-out';
-                track.style.transform = tabName === 'leaderboard' ? 'translateX(-50%)' : 'translateX(0%)';
+            if (isPortalTab && portalViewport) {
+                const targetScrollLeft = tabName === 'leaderboard' ? portalViewport.clientWidth : 0;
+                portalViewport.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
             }
 
             document.querySelectorAll('[data-tab]').forEach(btn => {
@@ -1594,6 +1514,33 @@
                 presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
             }
             updateCreationFinalStopDropdown();
+
+            // Track scroll position of portal viewport to sync active tab buttons if swiped manually
+            const portalViewport = document.getElementById('portal-viewport');
+            if (portalViewport) {
+                portalViewport.addEventListener('scroll', () => {
+                    if (portalViewport.classList.contains('hidden')) return;
+                    const scrollLeft = portalViewport.scrollLeft;
+                    const width = portalViewport.clientWidth;
+                    const activeTab = scrollLeft > width / 2 ? 'leaderboard' : 'race';
+                    
+                    document.querySelectorAll('[data-tab]').forEach(btn => {
+                        const isMatch = btn.getAttribute('data-tab') === activeTab;
+                        if (btn.tagName === 'BUTTON') {
+                            if (isMatch) {
+                                btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
+                            } else {
+                                btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
+                            }
+                        }
+                    });
+                    localStorage.setItem('rad_active_tab', activeTab);
+                    if (activeTab === 'leaderboard') {
+                        if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
+                        initChatListener();
+                    }
+                }, { passive: true });
+            }
 
             const savedLockState = sessionStorage.getItem('rad_org_locked');
             if (savedLockState === 'true') {
