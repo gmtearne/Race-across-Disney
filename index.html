@@ -46,6 +46,10 @@
             const mainContent = document.querySelector('main');
             if (mainContent) {
                 mainContent.style.display = 'block';
+                if (typeof window.updatePortalHeight === 'function') {
+                    const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+                    window.updatePortalHeight(savedTab);
+                }
             }
             const splash = document.getElementById('app-splash-screen');
             if (splash) {
@@ -63,17 +67,19 @@
             -webkit-overflow-scrolling: touch;
             overflow-x: hidden;
             overflow-y: auto;
+            min-height: 100vh;
         }
 
-        /* Use CSS Scroll Snap for native, buttery-smooth horizontal swiping between tabs without blocking vertical scroll */
+        /* Use CSS Scroll Snap with dynamic height clipping to prevent scrolling into dead space */
         #portal-viewport {
             position: relative;
             width: 100%;
             overflow-x: auto;
-            overflow-y: visible;
+            overflow-y: hidden;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none; /* Hide scrollbar for clean mobile app look */
+            transition: height 0.25s ease-in-out;
         }
         #portal-viewport::-webkit-scrollbar {
             display: none;
@@ -401,8 +407,8 @@
         </div>
     </div>
 
-    <!-- Navbar -->
-    <nav class="magical-gradient sticky top-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
+    <!-- Fixed Navbar with 36pt / pt-36 integration -->
+    <nav class="magical-gradient fixed top-0 left-0 right-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
         <!-- Top brand header row (flush compass logo & title) -->
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
@@ -442,8 +448,8 @@
         </div>
     </nav>
 
-    <!-- Hidden by default via style="display: none;" to prevent layout flashing -->
-    <main style="display: none;" class="max-w-4xl mx-auto px-4 mt-6">
+    <!-- Hidden by default via style="display: none;" with pt-36 to clear fixed navbar -->
+    <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-36 pb-12">
 
         <div id="team-status-banner" class="hidden mb-6 bg-slate-800/90 border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
             <div class="flex items-center gap-3">
@@ -1170,6 +1176,14 @@
             }
         };
 
+        window.updatePortalHeight = function(tabName) {
+            const activeSection = document.getElementById(`tab-${tabName}`);
+            const viewport = document.getElementById('portal-viewport');
+            if (activeSection && viewport) {
+                viewport.style.height = activeSection.scrollHeight + 'px';
+            }
+        };
+
         function switchTab(tabName, saveState = true) {
             ['maps', 'rules', 'organizer'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
@@ -1179,14 +1193,16 @@
             });
 
             const portalViewport = document.getElementById('portal-viewport');
+            const portalTrack = document.getElementById('portal-track');
             const isPortalTab = (tabName === 'race' || tabName === 'leaderboard');
             if (portalViewport) {
                 portalViewport.classList.toggle('hidden', !isPortalTab);
             }
 
-            if (isPortalTab && portalViewport) {
-                const targetScrollLeft = tabName === 'leaderboard' ? portalViewport.clientWidth : 0;
-                portalViewport.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+            if (isPortalTab && portalTrack) {
+                const targetTransform = tabName === 'leaderboard' ? '-50%' : '0%';
+                portalTrack.style.transform = `translateX(${targetTransform})`;
+                window.updatePortalHeight(tabName);
             }
 
             document.querySelectorAll('[data-tab]').forEach(btn => {
@@ -1291,6 +1307,8 @@
                 });
                 container.innerHTML = html;
                 container.scrollTop = container.scrollHeight;
+                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+                window.updatePortalHeight(savedTab);
             });
         }
 
@@ -1336,6 +1354,8 @@
             const infoBox = document.getElementById(elementId);
             if (infoBox) {
                 infoBox.classList.toggle('hidden');
+                const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+                window.updatePortalHeight(savedTab);
             }
         };
 
@@ -1352,11 +1372,15 @@
         window.toggleTriviaSettings = function() {
             const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
             document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
+            const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+            window.updatePortalHeight(savedTab);
         };
 
         window.toggleTriviaFreq = function() {
             const freq = document.getElementById('trivia-frequency').value;
             document.getElementById('trivia-random-count-box').classList.toggle('hidden', freq !== 'random');
+            const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+            window.updatePortalHeight(savedTab);
         };
 
         let creationPopMethod = 'random';
@@ -1378,6 +1402,8 @@
                 renderManualCheckboxList();
             }
             updateCreationFinalStopDropdown();
+            const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+            window.updatePortalHeight(savedTab);
         };
 
         window.renderManualCheckboxList = function() {
@@ -1454,6 +1480,8 @@
             }
 
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
+            const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+            window.updatePortalHeight(savedTab);
         };
 
         window.selectAllManualCheckboxes = function(selectState) {
@@ -1514,33 +1542,6 @@
                 presetSelect.addEventListener('change', updateCreationFinalStopDropdown);
             }
             updateCreationFinalStopDropdown();
-
-            // Track scroll position of portal viewport to sync active tab buttons if swiped manually
-            const portalViewport = document.getElementById('portal-viewport');
-            if (portalViewport) {
-                portalViewport.addEventListener('scroll', () => {
-                    if (portalViewport.classList.contains('hidden')) return;
-                    const scrollLeft = portalViewport.scrollLeft;
-                    const width = portalViewport.clientWidth;
-                    const activeTab = scrollLeft > width / 2 ? 'leaderboard' : 'race';
-                    
-                    document.querySelectorAll('[data-tab]').forEach(btn => {
-                        const isMatch = btn.getAttribute('data-tab') === activeTab;
-                        if (btn.tagName === 'BUTTON') {
-                            if (isMatch) {
-                                btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
-                            } else {
-                                btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
-                            }
-                        }
-                    });
-                    localStorage.setItem('rad_active_tab', activeTab);
-                    if (activeTab === 'leaderboard') {
-                        if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
-                        initChatListener();
-                    }
-                }, { passive: true });
-            }
 
             const savedLockState = sessionStorage.getItem('rad_org_locked');
             if (savedLockState === 'true') {
@@ -2659,6 +2660,8 @@
                 } else {
                     pendingBadge.classList.add('hidden');
                 }
+                const savedTab = localStorage.getItem('rad_active_tab') || 'organizer';
+                window.updatePortalHeight(savedTab);
             } catch (e) {
                 console.error(e);
             }
@@ -2674,6 +2677,7 @@
             if (!targetCode) {
                 subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
+                window.updatePortalHeight('leaderboard');
                 return;
             }
 
@@ -2681,6 +2685,7 @@
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
                 if (!raceSnap.exists()) {
                     tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
+                    window.updatePortalHeight('leaderboard');
                     return;
                 }
 
@@ -2706,6 +2711,7 @@
 
                 if (teamsSnap.empty) {
                     tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
+                    window.updatePortalHeight('leaderboard');
                     return;
                 }
 
@@ -2845,8 +2851,10 @@
                     `;
                 });
                 tbody.innerHTML = html;
+                window.updatePortalHeight('leaderboard');
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
+                window.updatePortalHeight('leaderboard');
             }
         };
 
@@ -3058,6 +3066,7 @@
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('login-prompt-card').classList.remove('hidden');
             document.getElementById('nav-team-badge').classList.add('hidden');
+            window.updatePortalHeight('race');
         };
 
         function getDetailedTransitAdvice(parkName) {
@@ -3562,6 +3571,8 @@
             }).join('');
             
             hideSplashScreen();
+            const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+            window.updatePortalHeight(savedTab);
         }
 
         window.refreshTeamDashboard = async function() {
