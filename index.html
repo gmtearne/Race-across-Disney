@@ -62,6 +62,14 @@
             overscroll-behavior-y: none;
             touch-action: pan-x pan-y;
             -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
+        }
+
+        /* Portal slide container wrapper */
+        #portal-viewport {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
         }
 
         .magical-gradient {
@@ -442,218 +450,220 @@
             </div>
         </div>
 
-        <!-- ================= TAB 1: TEAM PORTAL ================= -->
-        <section id="tab-race" class="space-y-6">
-            <div id="login-prompt-card" class="space-y-4">
-                <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
-                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
-                    <button onclick="toggleRacePortalCard('join-race-box', 'join-race-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-disneyBlue/20 text-disneyBlue flex items-center justify-center border border-disneyBlue/30">
-                                <i class="fa-solid fa-users-gear text-xs"></i>
+        <div id="portal-viewport">
+            <!-- ================= TAB 1: TEAM PORTAL ================= -->
+            <section id="tab-race" class="space-y-6">
+                <div id="login-prompt-card" class="space-y-4">
+                    <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+                        <button onclick="toggleRacePortalCard('join-race-box', 'join-race-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-disneyBlue/20 text-disneyBlue flex items-center justify-center border border-disneyBlue/30">
+                                    <i class="fa-solid fa-users-gear text-xs"></i>
+                                </div>
+                                <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Join or Resume Your Race</span>
                             </div>
-                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Join or Resume Your Race</span>
+                            <span id="join-race-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Collapse <i class="fa-solid fa-chevron-up ml-1"></i></span>
+                        </button>
+                        
+                        <div id="join-race-box" class="space-y-4 pt-4 border-t border-slate-700/80 text-center">
+                            <p class="text-slate-300 text-xs max-w-md mx-auto">Enter the 6-character race code provided by your host, your team name, and your 4-digit PIN. New teams require host approval before accessing checkpoints!</p>
+                            <div class="max-w-sm mx-auto space-y-3 text-left">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
+                                    <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
+                                    <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
+                                        <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
+                                        <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
+                                    </div>
+                                </div>
+                                <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
+                                    Enter Race Portal
+                                </button>
+                            </div>
                         </div>
-                        <span id="join-race-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Collapse <i class="fa-solid fa-chevron-up ml-1"></i></span>
-                    </button>
-                    
-                    <div id="join-race-box" class="space-y-4 pt-4 border-t border-slate-700/80 text-center">
-                        <p class="text-slate-300 text-xs max-w-md mx-auto">Enter the 6-character race code provided by your host, your team name, and your 4-digit PIN. New teams require host approval before accessing checkpoints!</p>
-                        <div class="max-w-sm mx-auto space-y-3 text-left">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
-                                <input type="text" id="input-race-code" placeholder="e.g. MK2026" maxlength="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center uppercase font-mono text-disneyGold font-bold tracking-widest focus:outline-none focus:border-disneyBlue">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">TEAM NAME</label>
-                                <input type="text" id="input-team-name" placeholder="e.g. Team 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyBlue">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">4-DIGIT PIN</label>
-                                    <input type="password" id="input-team-pin" placeholder="1234" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-disneyBlue">
+                    </div>
+
+                    <!-- Collapsible Host Event Box (Collapsed by default when not logged in) -->
+                    <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+                        <button onclick="toggleRacePortalCard('host-event-box', 'host-event-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
+                                    <i class="fa-solid fa-plus text-xs"></i>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">AVATAR (OPTIONAL)</label>
-                                    <input type="file" id="input-team-avatar-file" accept="image/*" class="w-full text-xs text-slate-400 file:py-2.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-slate-800 file:text-disneyGold">
-                                </div>
+                                <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
                             </div>
-                            <button onclick="joinOrResumeTeam()" class="w-full py-3.5 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg">
-                                Enter Race Portal
+                            <span id="host-event-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                        </button>
+
+                        <div id="host-event-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80 text-center">
+                            <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the host dashboard and set up checkpoints.</p>
+                            <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
+                                Host Dashboard
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Collapsible Host Event Box (Collapsed by default when not logged in) -->
-                <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-                    <button onclick="toggleRacePortalCard('host-event-box', 'host-event-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                            </div>
-                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
-                        </div>
-                        <span id="host-event-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                <div id="team-pending-card" class="hidden bg-slate-800/90 border border-amber-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl">
+                    <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <h2 class="text-xl font-disney font-bold text-white">Awaiting Host Approval</h2>
+                    <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the host to approve your team before you can see checkpoints and start the race.</p>
+                    <button onclick="checkApprovalStatus()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
+                        <i class="fa-solid fa-rotate mr-1"></i> Check Approval Status
                     </button>
-
-                    <div id="host-event-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80 text-center">
-                        <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the host dashboard and set up checkpoints.</p>
-                        <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
-                            Host Dashboard
-                        </button>
-                    </div>
                 </div>
-            </div>
 
-            <div id="team-pending-card" class="hidden bg-slate-800/90 border border-amber-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl">
-                <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
-                    <i class="fa-solid fa-hourglass-half"></i>
-                </div>
-                <h2 class="text-xl font-disney font-bold text-white">Awaiting Host Approval</h2>
-                <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the host to approve your team before you can see checkpoints and start the race.</p>
-                <button onclick="checkApprovalStatus()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
-                    <i class="fa-solid fa-rotate mr-1"></i> Check Approval Status
-                </button>
-            </div>
+                <div id="team-dashboard-active" class="hidden space-y-6">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold" id="dashboard-mode-label">Live Race Status</span>
+                                <div class="flex items-baseline gap-3 mt-1">
+                                    <span id="elapsed-time-display" class="font-mono text-3xl sm:text-4xl font-bold text-white tracking-wider">00:00:00</span>
+                                    <span id="race-status-pill" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold">Not Started</span>
+                                </div>
+                            </div>
 
-            <div id="team-dashboard-active" class="hidden space-y-6">
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold" id="dashboard-mode-label">Live Race Status</span>
-                            <div class="flex items-baseline gap-3 mt-1">
-                                <span id="elapsed-time-display" class="font-mono text-3xl sm:text-4xl font-bold text-white tracking-wider">00:00:00</span>
-                                <span id="race-status-pill" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold">Not Started</span>
+                            <div class="flex items-center gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
+                                <div class="text-center px-2">
+                                    <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
+                                    <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
+                                </div>
+                                <div class="h-8 w-px bg-slate-700"></div>
+                                <div class="text-center px-2">
+                                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonuses / Pts</p>
+                                    <p id="deduction-total" class="text-2xl font-bold text-emerald-400 font-mono">-0m</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
-                            <div class="text-center px-2">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
-                                <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
-                            </div>
-                            <div class="h-8 w-px bg-slate-700"></div>
-                            <div class="text-center px-2">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonuses / Pts</p>
-                                <p id="deduction-total" class="text-2xl font-bold text-emerald-400 font-mono">-0m</p>
-                            </div>
+                        <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
+                            <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
+                                <i class="fa-solid fa-play"></i> Start Race
+                            </button>
+                            <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
+                                <i class="fa-solid fa-flag-checkered"></i> Finish Race
+                            </button>
                         </div>
+                        <div id="report-card-container"></div>
                     </div>
 
-                    <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
-                        <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                            <i class="fa-solid fa-play"></i> Start Race
-                        </button>
-                        <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                            <i class="fa-solid fa-flag-checkered"></i> Finish Race
-                        </button>
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
+                                    Checkpoints
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Drag and Drop checkpoints to plan your route</p>
+                            </div>
+                            <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
+                                <i class="fa-solid fa-rotate"></i> Refresh
+                            </button>
+                        </div>
+                        <div id="team-checkpoints-list" class="space-y-3.5"></div>
                     </div>
-                    <div id="report-card-container"></div>
-                </div>
 
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <div>
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                        <div class="border-b border-slate-700 pb-3 mb-4">
                             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
-                                Checkpoints
+                                <i class="fa-solid fa-camera-retro text-disneyGold"></i>
+                                Bonus Photo Challenges
                             </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Drag and Drop checkpoints to plan your route</p>
+                            <p class="text-xs text-slate-400">Upload photo proof to claim bonuses or time deductions from your final score!</p>
                         </div>
-                        <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
-                            <i class="fa-solid fa-rotate"></i> Refresh
+                        <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: RACE PORTAL ================= -->
+            <section id="tab-leaderboard" class="hidden space-y-6">
+                <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                            <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                        </div>
+                        <span class="font-bold text-sm text-white">Authentication Notice</span>
+                    </div>
+                    <div class="space-y-3 pt-3 border-t border-slate-700 text-xs text-slate-300 flex items-center justify-between gap-3">
+                        <span>Please log into your team/race to review leaderboard and chat.</span>
+                        <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
+                            Go to Team Portal
                         </button>
                     </div>
-                    <div id="team-checkpoints-list" class="space-y-3.5"></div>
                 </div>
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                    <div class="border-b border-slate-700 pb-3 mb-4">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-camera-retro text-disneyGold"></i>
-                            Bonus Photo Challenges
-                        </h3>
-                        <p class="text-xs text-slate-400">Upload photo proof to claim bonuses or time deductions from your final score!</p>
-                    </div>
-                    <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 2: RACE PORTAL ================= -->
-        <section id="tab-leaderboard" class="hidden space-y-6">
-            <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
-                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                    </div>
-                    <span class="font-bold text-sm text-white">Authentication Notice</span>
-                </div>
-                <div class="space-y-3 pt-3 border-t border-slate-700 text-xs text-slate-300 flex items-center justify-between gap-3">
-                    <span>Please log into your team/race to review leaderboard and chat.</span>
-                    <button onclick="switchTab('race')" class="px-3.5 py-2 bg-disneyGold text-slate-950 font-bold rounded-xl transition hover:bg-yellow-400 shrink-0">
-                        Go to Team Portal
-                    </button>
-                </div>
-            </div>
-
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
-                    <div>
-                        <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
-                        </h2>
-                        <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                            <tr>
-                                <th class="p-3.5">Rank</th>
-                                <th class="p-3.5">Team</th>
-                                <th class="p-3.5 text-center" id="lb-col-metric">Progress</th>
-                                <th class="p-3.5 text-center">Bonuses</th>
-                                <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
-                                <th class="p-3.5 text-center">Status</th>
-                                <th class="p-3.5 text-center">Report Card</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                            <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30">
-                            <i class="fa-solid fa-comments text-xs"></i>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
+                        <div>
+                            <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
+                            </h2>
+                            <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
                         </div>
-                        <span class="font-bold text-sm text-disneyGold">Live Race Chat</span>
-                    </div>
-                    <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
-                </div>
-                
-                <div class="space-y-4 pt-1">
-                    <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
-                        <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
                     </div>
 
-                    <div id="chat-input-box" class="flex gap-2">
-                        <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-disneyBlue">
-                        <button onclick="sendChatMessage()" class="px-5 py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
-                            <i class="fa-solid fa-paper-plane"></i> Send
-                        </button>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3.5">Rank</th>
+                                    <th class="p-3.5">Team</th>
+                                    <th class="p-3.5 text-center" id="lb-col-metric">Progress</th>
+                                    <th class="p-3.5 text-center">Bonuses</th>
+                                    <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
+                                    <th class="p-3.5 text-center">Status</th>
+                                    <th class="p-3.5 text-center">Report Card</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
+                                <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the host for this race.</p>
                 </div>
-            </div>
-        </section>
+
+                <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30">
+                                <i class="fa-solid fa-comments text-xs"></i>
+                            </div>
+                            <span class="font-bold text-sm text-disneyGold">Live Race Chat</span>
+                        </div>
+                        <span id="chat-status-indicator" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30">Active</span>
+                    </div>
+                    
+                    <div class="space-y-4 pt-1">
+                        <div id="chat-messages-container" class="h-64 overflow-y-auto custom-scrollbar space-y-3 p-3.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-xs">
+                            <p class="text-center text-slate-500 py-4 italic">Loading chat messages...</p>
+                        </div>
+
+                        <div id="chat-input-box" class="flex gap-2">
+                            <input type="text" id="chat-message-input" placeholder="Type a message to other teams..." onkeypress="handleChatKeypress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-disneyBlue">
+                            <button onclick="sendChatMessage()" class="px-5 py-3 bg-disneyBlue hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition shadow">
+                                <i class="fa-solid fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                        <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the host for this race.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
 
         <!-- ================= TAB 3: PARK MAPS ================= -->
         <section id="tab-maps" class="hidden space-y-6">
@@ -1073,36 +1083,103 @@
             }
         }, { passive: false });
 
-        // Swipe Navigation Listener between Team Portal ('race') and Race Portal ('leaderboard')
+        // Fluid Live Sliding Gesture Integration between Team Portal ('race') and Race Portal ('leaderboard')
         let touchStartX = 0;
-        let touchEndX = 0;
-        
+        let currentXDelta = 0;
+        let isDraggingPortal = false;
+
         window.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
+            const activeTab = localStorage.getItem('rad_active_tab') || 'race';
+            // Only enable live dragging when looking at either of these two connected portals
+            if (activeTab === 'race' || activeTab === 'leaderboard') {
+                touchStartX = e.changedTouches[0].screenX;
+                isDraggingPortal = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDraggingPortal) return;
+            const currentX = e.changedTouches[0].screenX;
+            currentXDelta = currentX - touchStartX;
+
+            const activeTab = localStorage.getItem('rad_active_tab') || 'race';
+            const raceSec = document.getElementById('tab-race');
+            const lbSec = document.getElementById('tab-leaderboard');
+
+            // Apply transform shift mapping live to finger motion
+            if (activeTab === 'race' && currentXDelta < 0) {
+                // Dragging left from Team Portal to reveal Race Portal
+                if (raceSec && lbSec) {
+                    raceSec.style.transform = `translateX(${currentXDelta}px)`;
+                    lbSec.classList.remove('hidden');
+                    lbSec.style.transform = `translateX(calc(100% + ${currentXDelta}px))`;
+                    lbSec.style.position = 'absolute';
+                    lbSec.style.top = '0';
+                    lbSec.style.left = '0';
+                    lbSec.style.width = '100%';
+                }
+            } else if (activeTab === 'leaderboard' && currentXDelta > 0) {
+                // Dragging right from Race Portal to reveal Team Portal
+                if (raceSec && lbSec) {
+                    lbSec.style.transform = `translateX(${currentXDelta}px)`;
+                    raceSec.classList.remove('hidden');
+                    raceSec.style.transform = `translateX(calc(-100% + ${currentXDelta}px))`;
+                    raceSec.style.position = 'absolute';
+                    raceSec.style.top = '0';
+                    raceSec.style.left = '0';
+                    raceSec.style.width = '100%';
+                }
+            }
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipeGesture();
-        }, { passive: true });
-
-        function handleSwipeGesture() {
-            const swipeThreshold = 70;
-            const diff = touchEndX - touchStartX;
-            
-            if (Math.abs(diff) < swipeThreshold) return;
+            if (!isDraggingPortal) return;
+            isDraggingPortal = false;
 
             const activeTab = localStorage.getItem('rad_active_tab') || 'race';
-            if (diff > 0) {
-                // Swiped Right -> Go to Team Portal if currently on Race Portal
-                if (activeTab === 'leaderboard') {
-                    switchTab('race');
+            const raceSec = document.getElementById('tab-race');
+            const lbSec = document.getElementById('tab-leaderboard');
+            const threshold = window.innerWidth * 0.3; // 30% screen threshold to commit switch
+
+            // Reset inline styles smoothly with transition
+            if (raceSec) { raceSec.style.transition = 'transform 0.25s ease-in-out'; }
+            if (lbSec) { lbSec.style.transition = 'transform 0.25s ease-in-out'; }
+
+            if (activeTab === 'race' && currentXDelta < -threshold) {
+                // Commit switch to Race Portal
+                if (raceSec && lbSec) {
+                    raceSec.style.transform = 'translateX(-100%)';
+                    lbSec.style.transform = 'translateX(0)';
                 }
+                setTimeout(() => { switchTab('leaderboard'); resetPortalStyles(); }, 250);
+            } else if (activeTab === 'leaderboard' && currentXDelta > threshold) {
+                // Commit switch to Team Portal
+                if (raceSec && lbSec) {
+                    raceSec.style.transform = 'translateX(0)';
+                    lbSec.style.transform = 'translateX(100%)';
+                }
+                setTimeout(() => { switchTab('race'); resetPortalStyles(); }, 250);
             } else {
-                // Swiped Left -> Go to Race Portal if currently on Team Portal
-                if (activeTab === 'race') {
-                    switchTab('leaderboard');
-                }
+                // Snap back to current portal if threshold not met
+                if (raceSec) raceSec.style.transform = 'translateX(0)';
+                if (lbSec) lbSec.style.transform = activeTab === 'leaderboard' ? 'translateX(0)' : 'translateX(100%)';
+                setTimeout(() => { resetPortalStyles(); }, 250);
+            }
+            currentXDelta = 0;
+        }, { passive: true });
+
+        function resetPortalStyles() {
+            const raceSec = document.getElementById('tab-race');
+            const lbSec = document.getElementById('tab-leaderboard');
+            if (raceSec) {
+                raceSec.style.transform = '';
+                raceSec.style.transition = '';
+                raceSec.style.position = '';
+            }
+            if (lbSec) {
+                lbSec.style.transform = '';
+                lbSec.style.transition = '';
+                lbSec.style.position = '';
             }
         }
 
@@ -1189,7 +1266,15 @@
         function switchTab(tabName, saveState = true) {
             ['race', 'leaderboard', 'maps', 'rules', 'organizer'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
-                if (section) section.classList.toggle('hidden', t !== tabName);
+                if (section) {
+                    if (t === 'race' || t === 'leaderboard') {
+                        section.classList.toggle('hidden', t !== tabName);
+                        section.style.transform = '';
+                        section.style.position = '';
+                    } else {
+                        section.classList.toggle('hidden', t !== tabName);
+                    }
+                }
             });
 
             document.querySelectorAll('[data-tab]').forEach(btn => {
@@ -1221,7 +1306,6 @@
             if (menu) menu.classList.toggle('hidden');
         };
 
-        // GLOBAL initChatListener FUNCTION TO FIX REFERENCE ERROR
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
             const targetCode = window.activeRaceCode;
@@ -3794,6 +3878,7 @@
             if (!claimed.includes(cpId)) {
                 claimed.push(cpId);
             }
+        
             bonusPhotos[cpId] = compressedBase64;
 
             await updateDoc(teamRef, {
