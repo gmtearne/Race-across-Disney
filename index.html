@@ -66,16 +66,24 @@
             min-height: 100vh;
         }
 
-        /* Use CSS Scroll Snap for native, buttery-smooth horizontal swiping between tabs without blocking vertical scroll */
+        /*
+         * Portal pages behave like two independent sheets of paper side-by-side.
+         * The outer viewport handles ONLY horizontal movement; each portal section
+         * owns its own vertical scroll position. This prevents a short portal from
+         * inheriting the vertical position of the longer portal.
+         */
         #portal-viewport {
             position: relative;
             width: 100%;
-            flex: 1;
+            flex: 0 0 auto;
+            height: calc(100vh - 170px);
+            height: calc(100dvh - 170px);
+            min-height: 320px;
             overflow-x: auto;
-            overflow-y: visible;
+            overflow-y: hidden;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Hide scrollbar for clean mobile app look */
+            scrollbar-width: none;
         }
         #portal-viewport::-webkit-scrollbar {
             display: none;
@@ -84,13 +92,26 @@
         #portal-track {
             display: flex;
             width: 200%;
-            align-items: flex-start;
+            height: 100%;
+            min-height: 0;
+            align-items: stretch;
         }
 
         #portal-track > section {
             width: 50%;
-            flex-shrink: 0;
+            flex: 0 0 50%;
+            height: 100%;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
             scroll-snap-align: start;
+            scrollbar-width: none;
+        }
+
+        #portal-track > section::-webkit-scrollbar {
+            display: none;
         }
 
         .magical-gradient {
