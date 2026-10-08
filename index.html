@@ -130,7 +130,7 @@
                 <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
             </button>
             <button onclick="switchTab('organizer')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
-                <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Organiser Dashboard</span>
+                <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Host Dashboard</span>
             </button>
         </div>
     </div>
@@ -239,7 +239,7 @@
         </div>
     </div>
 
-    <!-- Organizer Edit Race Modal -->
+    <!-- Host Edit Race Modal -->
     <div id="organizer-edit-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-indigo-500/50 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 p-5 shrink-0">
@@ -276,7 +276,7 @@
                 </div>
 
                 <div id="edit-final-stop-wrapper" class="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
+                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
                     <select id="edit-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
                         <option value="">-- No Mandatory Final Location (Any Order) --</option>
                     </select>
@@ -331,7 +331,7 @@
         </div>
     </div>
 
-    <!-- Organizer Add Checkpoints Sub-Modal -->
+    <!-- Host Add Checkpoints Sub-Modal -->
     <div id="organizer-add-cp-modal" class="fixed inset-0 z-[60] bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-emerald-500/50 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 p-4 shrink-0">
@@ -385,7 +385,7 @@
                 <div id="nav-team-badge" class="hidden items-center">
                     <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Organiser Dashboard">
+                <button id="nav-org-cog" onclick="switchTab('organizer')" class="hidden relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Host Dashboard">
                     <i class="fa-solid fa-gear text-xs"></i>
                     <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
                 </button>
@@ -438,7 +438,7 @@
         <!-- ================= TAB 1: TEAM PORTAL ================= -->
         <section id="tab-race" class="space-y-6">
             <div id="login-prompt-card" class="space-y-4">
-                <!-- Collapsible Join/Resume Box (Collapsed by default when not logged in) -->
+                <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
                     <button onclick="toggleRacePortalCard('join-race-box', 'join-race-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
                         <div class="flex items-center gap-2.5">
@@ -447,11 +447,11 @@
                             </div>
                             <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Join or Resume Your Race</span>
                         </div>
-                        <span id="join-race-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                        <span id="join-race-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Collapse <i class="fa-solid fa-chevron-up ml-1"></i></span>
                     </button>
                     
-                    <div id="join-race-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80 text-center">
-                        <p class="text-slate-300 text-xs max-w-md mx-auto">Enter the 6-character race code provided by your organiser, your team name, and your 4-digit PIN. New teams require organiser approval before accessing checkpoints!</p>
+                    <div id="join-race-box" class="space-y-4 pt-4 border-t border-slate-700/80 text-center">
+                        <p class="text-slate-300 text-xs max-w-md mx-auto">Enter the 6-character race code provided by your host, your team name, and your 4-digit PIN. New teams require host approval before accessing checkpoints!</p>
                         <div class="max-w-sm mx-auto space-y-3 text-left">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">RACE CODE</label>
@@ -485,15 +485,15 @@
                             <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
                                 <i class="fa-solid fa-plus text-xs"></i>
                             </div>
-                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Want to host an event?</span>
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
                         </div>
                         <span id="host-event-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
 
                     <div id="host-event-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80 text-center">
-                        <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the organiser dashboard and set up checkpoints.</p>
+                        <p class="text-xs text-slate-300 max-w-sm mx-auto">To create your own race for others to join, click here to access the host dashboard and set up checkpoints.</p>
                         <button onclick="switchTab('organizer')" class="inline-block px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase rounded-xl transition shadow">
-                            Create Race / Organiser Dashboard
+                            Host Dashboard
                         </button>
                     </div>
                 </div>
@@ -503,8 +503,8 @@
                 <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
                     <i class="fa-solid fa-hourglass-half"></i>
                 </div>
-                <h2 class="text-xl font-disney font-bold text-white">Awaiting Organiser Approval</h2>
-                <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the organiser to approve your team before you can see checkpoints and start the race.</p>
+                <h2 class="text-xl font-disney font-bold text-white">Awaiting Host Approval</h2>
+                <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the host to approve your team before you can see checkpoints and start the race.</p>
                 <button onclick="checkApprovalStatus()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
                     <i class="fa-solid fa-rotate mr-1"></i> Check Approval Status
                 </button>
@@ -550,9 +550,9 @@
                         <div>
                             <h3 class="text-lg font-bold text-white flex items-center gap-2">
                                 <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
-                                Checkpoints & Custom Route Planner
+                                Checkpoints
                             </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Drag and drop checkpoints using the grip handles to plan your optimal route order. Click any checkpoint for hints/maps (Easy/Medium).</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Drag and Drop checkpoints to plan your route</p>
                         </div>
                         <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
                             <i class="fa-solid fa-rotate"></i> Refresh
@@ -599,12 +599,6 @@
                         </h2>
                         <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
                     </div>
-                    <div class="flex gap-2 items-center">
-                        <span id="active-leaderboard-code-badge" class="bg-slate-900 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-mono text-disneyGold font-bold">---</span>
-                        <button onclick="loadLeaderboard()" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-                            <i class="fa-solid fa-rotate"></i> Refresh
-                        </button>
-                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -649,7 +643,7 @@
                             <i class="fa-solid fa-paper-plane"></i> Send
                         </button>
                     </div>
-                    <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the organiser for this race.</p>
+                    <p id="chat-disabled-notice" class="hidden text-center text-xs text-rose-400 italic">Live chat has been disabled by the host for this race.</p>
                 </div>
             </div>
         </section>
@@ -751,7 +745,7 @@
                             <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your organiser has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
+                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your host has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
                         </p>
                     </div>
 
@@ -788,23 +782,23 @@
                         <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
                     </div>
                     <p class="text-slate-300 leading-relaxed">
-                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for organizer review. 
+                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for host review. 
                     </p>
                 </div>
             </div>
         </section>
 
-        <!-- ================= TAB 5: ORGANISER DASHBOARD ================= -->
+        <!-- ================= TAB 5: HOST DASHBOARD ================= -->
         <section id="tab-organizer" class="hidden space-y-6">
             <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                    <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login</h2>
+                    <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Host Login</h2>
                     <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-[11px] text-disneyGold underline">Need account? Register</button>
                 </div>
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">EMAIL</label>
-                        <input type="email" id="admin-email" placeholder="organiser@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
+                        <input type="email" id="admin-email" placeholder="host@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
@@ -817,11 +811,11 @@
             </div>
 
             <div id="admin-dashboard-card" class="hidden space-y-6">
-                <!-- 1. Organiser Control Panel -->
+                <!-- 1. Host Dashboard Header -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
                     <div>
                         <h3 class="font-bold text-indigo-300 text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-gauge-high"></i> Organiser Control Panel
+                            <i class="fa-solid fa-gauge-high"></i> Host Dashboard
                         </h3>
                         <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
                     </div>
@@ -837,7 +831,7 @@
                             <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
                                 <i class="fa-solid fa-plus text-xs"></i>
                             </div>
-                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create New Race / Hunt</span>
+                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
                         </div>
                         <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
@@ -984,8 +978,8 @@
                         </div>
 
                         <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Designated Final Ending Location (Speed Race Only)</label>
-                            <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last. Leave unassigned if teams can finish in any order.</p>
+                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
+                            <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
                             <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
                                 <option value="">-- No Mandatory Final Location (Any Order) --</option>
                                 <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
@@ -1000,7 +994,7 @@
 
                 <!-- 3. Active Races & Teams Management -->
                 <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Active Races, Team Approvals, Bonus Privacy & Difficulty</h4>
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races</h4>
                     <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                 </div>
 
@@ -1032,7 +1026,7 @@
                     <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
                         <i class="fa-solid fa-lock"></i>
                     </div>
-                    <h3 class="text-xl font-disney font-bold text-white">Organiser Active Race Panel Locked</h3>
+                    <h3 class="text-xl font-disney font-bold text-white">Host Active Race Panel Locked</h3>
                     <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
                     
                     <div class="max-w-xs mx-auto flex gap-2 pt-2">
@@ -1636,11 +1630,11 @@
             const authSubmitBtn = document.getElementById('auth-submit-btn');
 
             if (isRegisterMode) {
-                authTitle.innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Organiser Firebase Register`;
+                authTitle.innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Host Registration`;
                 authToggleBtn.innerText = "Already have account? Sign In";
-                authSubmitBtn.innerText = "Register Organiser Account";
+                authSubmitBtn.innerText = "Register Host Account";
             } else {
-                authTitle.innerHTML = `<i class="fa-solid fa-lock mr-2"></i>Organiser Firebase Login`;
+                authTitle.innerHTML = `<i class="fa-solid fa-lock mr-2"></i>Host Login`;
                 authToggleBtn.innerText = "Need account? Register";
                 authSubmitBtn.innerText = "Sign In to Dashboard";
             }
@@ -1708,10 +1702,10 @@
                 if (!teamSnap.exists()) return;
                 const tData = teamSnap.data();
                 if (tData.isApproved) {
-                    alert("Your team has been approved by the organiser!");
+                    alert("Your team has been approved by the host!");
                     restoreSession(window.activeRaceCode, window.activeTeamId);
                 } else {
-                    alert("Still pending organiser approval. Please check back shortly.");
+                    alert("Still pending host approval. Please check back shortly.");
                 }
             } catch (e) {
                 console.error(e);
@@ -1726,7 +1720,7 @@
             try {
                 if (isRegisterMode) {
                     await createUserWithEmailAndPassword(window.auth, email, pass);
-                    alert("Organiser account created successfully!");
+                    alert("Host account created successfully!");
                 } else {
                     await signInWithEmailAndPassword(window.auth, email, pass);
                 }
@@ -1754,7 +1748,7 @@
             if (!title || !code) return alert("Please enter a race title and generate a code.");
 
             const currentUser = window.auth.currentUser;
-            if (!currentUser) return alert("You must be logged in as an organiser.");
+            if (!currentUser) return alert("You must be logged in as a host.");
 
             try {
                 const existingSnap = await getDoc(doc(window.db, "races", code));
@@ -1865,7 +1859,7 @@
             }
         };
 
-        // ================= ORGANISER EDIT MODAL LOGIC =================
+        // ================= HOST EDIT MODAL LOGIC =================
         let editingRaceActiveCheckpoints = [];
         let editingRaceGameMode = 'race';
         let editingRaceFinalCheckpointId = null;
@@ -2027,7 +2021,7 @@
             }
         };
 
-        // ================= ADD CHECKPOINTS SUB-MODAL LOGIC =================
+        // ================= HOST ADD CHECKPOINTS SUB-MODAL LOGIC =================
         window.openAddCheckpointsModal = function() {
             renderAddCheckboxList();
             document.getElementById('organizer-add-cp-modal').classList.remove('hidden');
@@ -2379,7 +2373,7 @@
                 if (createRaceBox) createRaceBox.classList.add('hidden');
                 
                 if (pinInput) pinInput.value = "";
-                alert("Global organiser active race panel locked successfully.");
+                alert("Global host active race panel locked successfully.");
             } else {
                 window.globalDashboardLockState = false;
                 window.globalDashboardLockPin = "";
@@ -2396,7 +2390,7 @@
                 if (orgLockedOverlay) orgLockedOverlay.classList.add('hidden');
                 if (adminContainer) adminContainer.classList.remove('hidden');
                 if (createRaceBox) createRaceBox.classList.remove('hidden');
-                alert("Global organiser active race panel unlocked.");
+                alert("Global host active race panel unlocked.");
             }
         };
 
@@ -2487,13 +2481,12 @@
                             <div class="flex justify-between items-center flex-wrap gap-2">
                                 <div>
                                     <p class="font-bold text-white text-sm">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-xs ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
-                                    <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel} | Teams: ${teamList.length}</p>
+                                    <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel} | Teams: ${teamList.length} | Checkpoints: ${cps.length}</p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <button onclick="toggleRaceCardCollapse('${race.code}')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700 h-[34px]">
                                         ${isCollapsed ? 'Expand <i class="fa-solid fa-chevron-down ml-1"></i>' : 'Collapse <i class="fa-solid fa-chevron-up ml-1"></i>'}
                                     </button>
-                                    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-2 rounded-xl border border-indigo-500/30 font-semibold h-[34px] flex items-center">📦 ${cps.length} Checkpoints</span>
                                     <button onclick="openOrganizerEditModal('${race.code}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow h-[34px]">
                                         <i class="fa-solid fa-pen-to-square"></i> Edit Race
                                     </button>
@@ -2595,7 +2588,6 @@
         }
 
         window.loadLeaderboard = async function() {
-            const badgeEl = document.getElementById('active-leaderboard-code-badge');
             const subtitleEl = document.getElementById('leaderboard-subtitle');
             const tbody = document.getElementById('leaderboard-rows');
             const colMetric = document.getElementById('lb-col-metric');
@@ -2603,13 +2595,10 @@
 
             const targetCode = window.activeRaceCode;
             if (!targetCode) {
-                badgeEl.innerText = "NO ACTIVE RACE";
                 subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
                 return;
             }
-
-            badgeEl.innerText = targetCode;
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
@@ -2732,7 +2721,7 @@
 
                     let bonusDisplay = "";
                     if (isHideBonuses) {
-                        bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by organiser">?</span>`;
+                        bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by host">?</span>`;
                     } else {
                         const bonusPhotos = t.bonusPhotos || {};
                         bonusDisplay = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
@@ -2897,7 +2886,7 @@
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", code));
-                if (!raceSnap.exists()) return alert("Race code not found! Check with your organiser.");
+                if (!raceSnap.exists()) return alert("Race code not found! Check with your host.");
 
                 const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
                 const teamRef = doc(window.db, "races", code, "teams", teamId);
@@ -2956,7 +2945,7 @@
                     document.getElementById('login-prompt-card').classList.add('hidden');
                     document.getElementById('team-pending-card').classList.remove('hidden');
                     document.getElementById('team-dashboard-active').classList.add('hidden');
-                    alert("Team registration submitted! Waiting for organiser approval.");
+                    alert("Team registration submitted! Waiting for host approval.");
                     return;
                 }
 
@@ -3315,7 +3304,9 @@
             const finishBtn = document.getElementById('btn-finish-race');
             const reportCardContainer = document.getElementById('report-card-container');
 
-            if (tData.endTime) {
+            const isRaceFinished = !!tData.endTime;
+
+            if (isRaceFinished) {
                 pill.innerText = "Finished";
                 pill.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
                 startBtn.disabled = true;
@@ -3467,18 +3458,28 @@
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
                 const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
+                
+                let actionHtml = '';
+                if (isRaceFinished) {
+                    actionHtml = `<span class="text-xs text-slate-400 font-bold bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">Race Finished</span>`;
+                } else if (isClaimed) {
+                    actionHtml = `<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>`;
+                } else {
+                    actionHtml = `
+                        <label class="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow">
+                            📷 Upload Proof
+                            <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
+                        </label>
+                    `;
+                }
+
                 return `
                     <div class="p-4 bg-slate-900 rounded-xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex justify-between items-center shadow-sm">
                         <div>
                             <p class="font-bold text-xs sm:text-sm text-amber-300">⭐ ${cp.name}</p>
                             <p class="text-[11px] text-amber-400/80 mt-0.5">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
                         </div>
-                        ${isClaimed ? '<span class="text-xs text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i> Claimed</span>' : `
-                            <label class="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow">
-                                📷 Upload Proof
-                                <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
-                            </label>
-                        `}
+                        <div>${actionHtml}</div>
                     </div>
                 `;
             }).join('');
@@ -3570,7 +3571,7 @@
                         const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
                         const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
                         if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
-                            alert("Organiser Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
+                            alert("Host Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
                         }
                     }
 
@@ -3768,7 +3769,7 @@
             if (raceData.gameMode === 'race' && raceData.finalCheckpointId) {
                 const completed = tData.completedCheckpoints || [];
                 if (!completed.includes(raceData.finalCheckpointId)) {
-                    alert("Organiser Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
+                    alert("Host Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
                     return;
                 }
             }
