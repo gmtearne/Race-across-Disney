@@ -25,6 +25,13 @@
     <!-- External Locations Database -->
     <script src="locations-data.js"></script>
     <script>
+    // Optional card background photos for Easy / Medium modes.
+    // Key = exact checkpoint name, value = image path or URL. Missing names simply show no image.
+    // Example: "Test Track": "img/test-track.webp",
+    window.LOCATION_IMAGES = {
+    };
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -76,8 +83,8 @@
             position: relative;
             width: 100%;
             flex: 0 0 auto;
-            height: calc(100vh - var(--portal-offset, 190px));
-            height: calc(100dvh - var(--portal-offset, 190px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - var(--portal-offset, 144px));
+            height: calc(100dvh - var(--portal-offset, 144px));
             min-height: 320px;
             overflow-x: auto;
             overflow-y: hidden;
@@ -98,6 +105,8 @@
         }
 
         #portal-track > section {
+            padding-top: 1rem;
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
             width: 50%;
             flex: 0 0 50%;
             height: 100%;
@@ -122,8 +131,16 @@
 
         /* Portal tabs: trim bottom padding so the scroll area runs to the bottom of the screen */
         html.portal-locked main {
-            padding-bottom: 0.75rem;
+            padding-top: var(--nav-h, 144px) !important;
+            padding-bottom: 0 !important;
+            min-height: 0 !important;
         }
+        html.portal-locked #team-status-banner {
+            margin-top: 0.75rem;
+        }
+
+        .no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .no-spinner { -moz-appearance: textfield; appearance: textfield; }
 
         /* Team card only appears on the race / leaderboard portal tabs */
         html:not(.on-portal) #team-status-banner {
@@ -1085,115 +1102,138 @@
                         <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
                     </button>
 
-                    <div id="create-race-collapsible-box" class="hidden space-y-5 pt-4 border-t border-slate-700/80">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <input type="text" id="new-race-title" placeholder="Race Title (e.g. Magic Kingdom Chase)" class="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white">
-                            <div class="flex gap-1.5">
-                                <input type="text" id="new-race-code" placeholder="CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white uppercase font-mono text-disneyGold font-bold text-center">
-                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs shadow transition">
+                    <div id="create-race-collapsible-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80">
+                        <div class="space-y-2.5">
+                            <input type="text" id="new-race-title" placeholder="Race title (e.g. Magic Kingdom Chase)" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                            <div class="flex gap-2">
+                                <input type="text" id="new-race-code" placeholder="RACE CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white uppercase font-mono text-disneyGold font-bold tracking-widest text-center">
+                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl text-sm shadow transition shrink-0">
                                     <i class="fa-solid fa-dice"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                            <label class="block text-xs font-bold text-slate-300 mb-2">Select Game Mode</label>
+                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Game Mode</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="p-3.5 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
-                                    <div class="flex items-center justify-between">
-                                        <label class="flex items-center space-x-2.5 cursor-pointer">
-                                            <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                            <span class="font-bold text-xs text-white">Speed Race</span>
+                                <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                            <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="sr-only peer">
+                                            <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
+                                            <span class="font-bold text-sm text-white">Speed Race</span>
                                         </label>
-                                        <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
+                                        <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
                                     </div>
-                                    <div id="race-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                    <div id="race-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
                                         First team to complete all checkpoints wins! Ranked purely by total elapsed time. Checkpoints remain hidden until race start.
                                     </div>
                                 </div>
-
-                                <div class="p-3.5 rounded-xl border border-slate-700 bg-slate-950 hover:border-disneyGold transition">
-                                    <div class="flex items-center justify-between">
-                                        <label class="flex items-center space-x-2.5 cursor-pointer">
-                                            <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger" onchange="toggleGameModeSelection()" class="text-disneyGold focus:ring-disneyGold h-4 w-4">
-                                            <span class="font-bold text-xs text-white">Scavenger Hunt</span>
+                                <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                            <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger"  onchange="toggleGameModeSelection()" class="sr-only peer">
+                                            <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
+                                            <span class="font-bold text-sm text-white">Scavenger Hunt</span>
                                         </label>
-                                        <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-600 hover:bg-disneyGold hover:text-slate-950 transition">?</button>
+                                        <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
                                     </div>
-                                    <div id="scavenger-info-box" class="hidden mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-300">
+                                    <div id="scavenger-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
                                         Teams collect points for checkpoints visited within a time limit. Higher score wins!
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80">
-                            <label class="block text-xs font-bold text-slate-300 mb-2">Default Base Difficulty</label>
+                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Base Difficulty</label>
                             <div class="grid grid-cols-3 gap-2">
-                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="easy" checked class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Easy</span>
-                                    <span class="text-[9px] text-slate-400">Pins + Transit</span>
+                                <label class="relative block cursor-pointer select-none">
+                                    <input type="radio" name="create_difficulty" value="easy" checked class="sr-only peer">
+                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                        <span class="block font-bold text-sm text-white">Easy</span>
+                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Pins + Transit</span>
+                                    </div>
+                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                                 </label>
-                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="medium" class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Medium</span>
-                                    <span class="text-[9px] text-slate-400">Specific Park Lands</span>
+                                <label class="relative block cursor-pointer select-none">
+                                    <input type="radio" name="create_difficulty" value="medium"  class="sr-only peer">
+                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                        <span class="block font-bold text-sm text-white">Medium</span>
+                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Park Lands</span>
+                                    </div>
+                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                                 </label>
-                                <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                                    <input type="radio" name="create_difficulty" value="hard" class="mb-1 text-disneyGold">
-                                    <span class="font-bold text-xs text-white">Hard</span>
-                                    <span class="text-[9px] text-slate-400">Blind (Not Clickable)</span>
+                                <label class="relative block cursor-pointer select-none">
+                                    <input type="radio" name="create_difficulty" value="hard"  class="sr-only peer">
+                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                        <span class="block font-bold text-sm text-white">Hard</span>
+                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Blind</span>
+                                    </div>
+                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                                 </label>
                             </div>
                         </div>
 
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-slate-300">Trivia Challenge Option</label>
-                            <div class="flex gap-4">
-                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                    <input type="radio" name="trivia_toggle" value="off" checked onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                    <span>Off</span>
-                                </label>
-                                <label class="flex items-center space-x-2 text-xs cursor-pointer text-slate-300">
-                                    <input type="radio" name="trivia_toggle" value="on" onchange="toggleTriviaSettings()" class="text-disneyGold">
-                                    <span>On</span>
+                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-circle-question text-disneyGold"></i> Trivia Challenge</span>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Ask a question at check-in for bonus rewards</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input type="checkbox" id="create-trivia-switch" onchange="toggleTriviaSettings()" class="sr-only peer">
+                                    <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
                                 </label>
                             </div>
-                            <div id="trivia-sub-settings" class="hidden space-y-2 pt-2 border-t border-slate-800">
-                                <label class="block text-[11px] text-slate-400">Trivia Frequency</label>
-                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white">
+                            <div id="trivia-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
+                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                     <option value="every">Every Check-in</option>
                                     <option value="random">Random Check-ins</option>
                                 </select>
-                                <div id="trivia-random-count-box" class="hidden pt-1">
-                                    <label class="block text-[10px] text-slate-400 mb-1">How many random check-ins require trivia?</label>
-                                    <input type="number" id="trivia-random-count" value="3" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                <div id="trivia-random-count-box" class="hidden">
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Random check-ins with trivia</label>
+                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                            <button type="button" onclick="stepNumber('trivia-random-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                            <input type="number" id="trivia-random-count" value="3" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                            <button type="button" onclick="stepNumber('trivia-random-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <input type="number" id="create-default-points" value="0" class="hidden">
 
-                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoint Population Method</label>
-                            
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-3 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow">🎲 Random Selection</button>
-                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">☑ Manually Select</button>
-                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow">📂 Pre-configured List</button>
+                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoints</label>
+
+                            <div class="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[11px] transition shadow">🎲 Random</button>
+                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition">☑ Manual</button>
+                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition">📂 Preset</button>
                             </div>
 
-                            <div id="pop-box-random" class="space-y-3 pt-2">
-                                <p class="text-[11px] text-slate-300">Configure how many random stops to include in the race:</p>
+                            <div id="pop-box-random" class="space-y-3 pt-1">
+                                <p class="text-[11px] text-slate-400">How many random stops should this race include?</p>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1">GPS Stops</label>
-                                        <input type="number" id="rand-gps-count" value="10" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono">
+                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">GPS Stops</label>
+                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                            <button type="button" onclick="stepNumber('rand-gps-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                            <input type="number" id="rand-gps-count" value="10" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                            <button type="button" onclick="stepNumber('rand-gps-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1">Bonus Challenges</label>
-                                        <input type="number" id="rand-bonus-count" value="3" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono">
+                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
+                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                            <button type="button" onclick="stepNumber('rand-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                            <input type="number" id="rand-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                            <button type="button" onclick="stepNumber('rand-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1215,7 +1255,7 @@
 
                             <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                 <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
+                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                     <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
                                     <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
                                     <option value="Epcot">🌐 Epcot Park (All Stops)</option>
@@ -1226,17 +1266,17 @@
                             </div>
                         </div>
 
-                        <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                        <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
                             <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
-                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
+                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                 <option value="">-- No Mandatory Final Location (Any Order) --</option>
                                 <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
                             </select>
                         </div>
 
-                        <button onclick="createNewRace()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wide rounded-xl transition shadow-lg">
-                            + Create Race Event & Start
+                        <button onclick="createNewRace()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 active:scale-[0.98] text-white font-bold text-sm tracking-wide rounded-2xl transition shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-flag-checkered"></i> Create Race
                         </button>
                     </div>
                 </div>
@@ -1624,6 +1664,16 @@
         }
         setTimeout(generateRandomRaceCode, 300);
 
+        window.stepNumber = function(id, delta) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const min = el.min !== '' ? parseInt(el.min) : 0;
+            const next = (parseInt(el.value) || 0) + delta;
+            el.value = Math.max(min, next);
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
         window.toggleModeInfo = function(elementId) {
             const infoBox = document.getElementById(elementId);
             if (infoBox) {
@@ -1642,7 +1692,7 @@
         };
 
         window.toggleTriviaSettings = function() {
-            const val = document.querySelector('input[name="trivia_toggle"]:checked').value;
+            const val = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
             document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
         };
 
@@ -1658,10 +1708,10 @@
                 const btn = document.getElementById(`pop-tab-${m}`);
                 const box = document.getElementById(`pop-box-${m}`);
                 if (m === method) {
-                    btn.className = "py-3 px-3 bg-indigo-600 text-white font-bold rounded-xl text-xs transition border border-indigo-400 shadow";
+                    btn.className = "py-2.5 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[11px] transition shadow";
                     box.classList.remove('hidden');
                 } else {
-                    btn.className = "py-3 px-3 bg-slate-950 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition border border-slate-700 shadow";
+                    btn.className = "py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition";
                     box.classList.add('hidden');
                 }
             });
@@ -1906,7 +1956,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getDocFromCache, waitForPendingWrites, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -1945,10 +1995,67 @@
         window.updateDoc = updateDoc;
         window.onSnapshot = onSnapshot;
 
+        // ---------- Offline support helpers ----------
+        // Read from the server when possible, otherwise fall back to the copy saved on this device.
+        window.safeGetDoc = async function(ref) {
+            if (!navigator.onLine) return await getDocFromCache(ref);
+            try {
+                return await Promise.race([
+                    getDoc(ref),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('slow-network')), 6000))
+                ]);
+            } catch (e) {
+                return await getDocFromCache(ref);
+            }
+        };
+
+        // Save to the device straight away. Firestore uploads it automatically once the network is back,
+        // so we must not wait for the server to confirm or the app would hang while offline.
+        window.fastUpdate = function(ref, data) {
+            const write = updateDoc(ref, data);
+            write.catch(err => console.error("Write failed:", err));
+            updateSyncStatus();
+            return Promise.race([
+                write,
+                new Promise(resolve => setTimeout(resolve, navigator.onLine ? 8000 : 250))
+            ]).finally(updateSyncStatus);
+        };
+
+        let syncWatchActive = false;
+        function updateSyncStatus() {
+            const pill = document.getElementById('sync-status');
+            if (!pill) return;
+            const offline = !navigator.onLine;
+            if (offline) {
+                pill.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Offline: progress is saved on this device';
+                pill.classList.remove('hidden');
+            }
+            if (!window.db || syncWatchActive) return;
+            syncWatchActive = true;
+            waitForPendingWrites(window.db).then(() => {
+                syncWatchActive = false;
+                if (!navigator.onLine) return;
+                pill.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i> All progress synced';
+                pill.classList.remove('hidden');
+                setTimeout(() => { if (navigator.onLine) pill.classList.add('hidden'); }, 2500);
+            }).catch(() => { syncWatchActive = false; });
+        }
+        window.addEventListener('offline', updateSyncStatus);
+        window.addEventListener('online', updateSyncStatus);
+        window.addEventListener('load', () => { if (!navigator.onLine) updateSyncStatus(); });
+
         try {
             const app = initializeApp(firebaseConfig);
             window.auth = getAuth(app);
-            window.db = getFirestore(app);
+            try {
+                // Offline-capable database: data is cached on the device and writes are queued until the network returns
+                window.db = initializeFirestore(app, {
+                    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+                });
+            } catch (cacheErr) {
+                console.warn("Offline cache unavailable, using standard database:", cacheErr);
+                window.db = getFirestore(app);
+            }
 
             onAuthStateChanged(window.auth, (user) => {
                 const authCard = document.getElementById('admin-auth-card');
@@ -2011,12 +2118,12 @@
 
         async function restoreSession(code, teamId) {
             try {
-                const raceSnap = await getDoc(doc(window.db, "races", code));
+                const raceSnap = await safeGetDoc(doc(window.db, "races", code));
                 if (!raceSnap.exists()) {
                     hideSplashScreen();
                     return;
                 }
-                const teamSnap = await getDoc(doc(window.db, "races", code, "teams", teamId));
+                const teamSnap = await safeGetDoc(doc(window.db, "races", code, "teams", teamId));
                 if (!teamSnap.exists()) {
                     hideSplashScreen();
                     return;
@@ -2110,7 +2217,7 @@
             const defaultPoints = gameMode === 'scavenger' ? 10 : 0;
             const presets = window.DISNEY_PRESETS || [];
             
-            const triviaToggle = document.querySelector('input[name="trivia_toggle"]:checked')?.value || 'off';
+            const triviaToggle = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
             const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
 
@@ -3598,7 +3705,7 @@
         };
 
         async function loadTeamDashboardData(raceData) {
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
                 hideSplashScreen();
                 return;
@@ -3778,12 +3885,17 @@
                     const clickAction = difficulty === 'hard' ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                     const hoverCursor = difficulty === 'hard' ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
 
+                    const locImg = (difficulty !== 'hard' && window.LOCATION_IMAGES) ? window.LOCATION_IMAGES[cp.name] : '';
+                    const bgStyle = locImg
+                        ? `style="background-image: linear-gradient(90deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.80) 100%), url('${locImg}'); background-size: cover; background-position: center;"`
+                        : '';
+
                     const subtitleContent = difficulty === 'hard' 
                         ? `<span class="text-disneyGold">Blind navigation (Hard mode)</span>`
                         : `${cp.park || 'Disney Park'} • ${isScavenger ? ptValue + ' Pts' : 'GPS Stop'} • <span class="text-disneyGold">${hintText}</span>`;
 
                     return `
-                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card p-4 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                        <div data-id="${cp.id}" ${clickAction} ${bgStyle} class="checkpoint-card p-4 bg-slate-900 rounded-xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                             <div class="flex items-center gap-3.5">
                                 <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1.5 py-2" title="Drag to reorder route">
                                     <i class="fa-solid fa-grip-vertical text-sm"></i>
@@ -3818,7 +3930,7 @@
                                 }
                             });
                             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                            await updateDoc(teamRef, { customRouteOrder: newOrder });
+                            await fastUpdate(teamRef, { customRouteOrder: newOrder });
                         }
                     });
                 }
@@ -3858,7 +3970,7 @@
 
         window.refreshTeamDashboard = async function() {
             if (!window.activeRaceCode) return;
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
         };
@@ -3868,7 +3980,7 @@
 
             try {
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-                const teamSnap = await getDoc(teamRef);
+                const teamSnap = await safeGetDoc(teamRef);
                 if (!teamSnap.exists()) return;
                 const tData = teamSnap.data();
 
@@ -3876,12 +3988,12 @@
                 const checkinDetails = tData.checkinDetails || {};
                 delete checkinDetails[cpId];
 
-                await updateDoc(teamRef, {
+                await fastUpdate(teamRef, {
                     completedCheckpoints: completed,
                     checkinDetails: checkinDetails
                 });
 
-                const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+                const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
                 alert("Manual check-in undone successfully. You can now try checking in again!");
             } catch (e) {
@@ -3928,7 +4040,7 @@
                         btn.disabled = false;
                     }
 
-                    const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+                    const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                     if (!raceSnap.exists()) return alert("Race not found.");
                     const raceData = raceSnap.data();
                     const checkpoints = raceData.checkpoints || [];
@@ -3936,7 +4048,7 @@
                     if (!targetCp) return alert("Checkpoint not found.");
 
                     if (raceData.finalCheckpointId && cpId !== raceData.finalCheckpointId) {
-                        const completed = (await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId))).data().completedCheckpoints || [];
+                        const completed = (await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId))).data().completedCheckpoints || [];
                         const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
                         const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
                         if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
@@ -3969,9 +4081,9 @@
         };
 
         async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             const tData = teamSnap.data();
             const cp = (raceData.checkpoints || []).find(c => c.id === cpId);
             
@@ -4013,13 +4125,13 @@
             }
 
             await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null);
-            alert("Check-in successful!");
+            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         }
 
         window.submitTriviaAnswer = async function(selected, correct) {
             closeAppModal('trivia-modal');
             
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
             const isScavenger = raceData.gameMode === 'scavenger';
 
@@ -4056,12 +4168,12 @@
                 triviaBonus,
                 triviaLogEntry
             );
-            alert("Check-in successful!");
+            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         };
 
         async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null) {
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await getDoc(teamRef);
+            const teamSnap = await safeGetDoc(teamRef);
             const tData = teamSnap.data();
             
             const completed = tData.completedCheckpoints || [];
@@ -4085,14 +4197,14 @@
                 triviaLogs.push(triviaLogEntry);
             }
 
-            await updateDoc(teamRef, {
+            await fastUpdate(teamRef, {
                 completedCheckpoints: completed,
                 checkinDetails: checkinDetails,
                 triviaBonus: currentTriviaBonus,
                 triviaLogs: triviaLogs
             });
 
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
         }
 
@@ -4102,7 +4214,7 @@
 
             const compressedBase64 = await compressImage(file, 600, 600, 0.7);
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await getDoc(teamRef);
+            const teamSnap = await safeGetDoc(teamRef);
             const claimed = teamSnap.data().claimedBonus || [];
             const bonusPhotos = teamSnap.data().bonusPhotos || {};
 
@@ -4112,28 +4224,28 @@
         
             bonusPhotos[cpId] = compressedBase64;
 
-            await updateDoc(teamRef, {
+            await fastUpdate(teamRef, {
                 claimedBonus: claimed,
                 bonusPhotos: bonusPhotos
             });
 
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Photo proof uploaded successfully! Bonus/deduction claimed.");
         };
 
         window.startTeamRace = async function() {
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: now });
+            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: now });
             alert("Race started! Your timer is now locked and running.");
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
         };
 
         window.finishTeamRace = async function() {
-            const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
+            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
-            const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+            const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             const tData = teamSnap.data();
 
             if (raceData.gameMode === 'race' && raceData.finalCheckpointId) {
@@ -4145,7 +4257,7 @@
             }
 
             const now = new Date().toISOString();
-            await updateDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
+            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
             alert("Race finished! Final results submitted to the leaderboard.");
             loadTeamDashboardData(raceData);
             switchTab('leaderboard');
@@ -4155,7 +4267,7 @@
             clearInterval(timerInterval);
             timerInterval = setInterval(async () => {
                 if (!window.activeRaceCode || !window.activeTeamId) return;
-                const teamSnap = await getDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+                const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
                 if (!teamSnap.exists()) return;
                 const data = teamSnap.data();
                 if (!data.startTime) return;
@@ -4174,14 +4286,22 @@
     <script>
     (function () {
         const banner = document.getElementById('team-status-banner');
-        if (!banner) return;
+        const nav = document.querySelector('nav');
+        if (!banner || !nav) return;
         function updatePortalOffset() {
-            const bh = (banner.classList.contains('hidden') || banner.offsetHeight === 0) ? 0 : banner.offsetHeight + 12;
-            document.documentElement.style.setProperty('--portal-offset', (144 + bh + 12) + 'px');
+            const navH = nav.offsetHeight || 144;
+            const visible = !(banner.classList.contains('hidden') || banner.offsetHeight === 0);
+            // banner height + 12px top margin + 12px bottom margin
+            const bh = visible ? banner.offsetHeight + 24 : 0;
+            const root = document.documentElement.style;
+            root.setProperty('--nav-h', navH + 'px');
+            root.setProperty('--portal-offset', (navH + bh) + 'px');
         }
         new ResizeObserver(updatePortalOffset).observe(banner);
+        new ResizeObserver(updatePortalOffset).observe(nav);
         new MutationObserver(updatePortalOffset).observe(banner, { attributes: true, attributeFilter: ['class'] });
         window.addEventListener('resize', updatePortalOffset);
+        window.addEventListener('load', updatePortalOffset);
         updatePortalOffset();
     })();
     </script>
@@ -4194,5 +4314,6 @@
         });
     }
     </script>
+    <div id="sync-status" class="hidden fixed left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);"></div>
 </body>
 </html>
