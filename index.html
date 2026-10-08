@@ -114,6 +114,185 @@
             display: none;
         }
 
+        /* App-like motion, glass navigation and native-feeling transitions */
+        :root {
+            --app-motion: cubic-bezier(0.22, 1, 0.36, 1);
+            --app-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #app-fullscreen-menu {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            background: rgba(2, 6, 23, 0.38);
+            -webkit-backdrop-filter: blur(26px) saturate(145%);
+            backdrop-filter: blur(26px) saturate(145%);
+            transition: opacity 320ms var(--app-motion), visibility 320ms linear;
+        }
+
+        #app-fullscreen-menu.app-menu-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        #app-fullscreen-menu::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15,23,42,.28), rgba(30,41,59,.12));
+            pointer-events: none;
+        }
+
+        #app-fullscreen-menu > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* The close control mirrors the hamburger position in the lower nav row.
+           It is anchored to the viewport so the logo can never pull it inward. */
+        #app-menu-close {
+            position: fixed !important;
+            top: calc(4.25rem + env(safe-area-inset-top));
+            left: .5rem;
+            z-index: 20;
+            transform: scale(.92);
+            opacity: 0;
+            transition: transform 420ms var(--app-spring), opacity 220ms ease, background-color 180ms ease;
+        }
+        #app-fullscreen-menu.app-menu-open #app-menu-close {
+            transform: scale(1);
+            opacity: 1;
+        }
+        #app-menu-close:active { transform: scale(.88); }
+
+        /* Springy hamburger: tiny physical response rather than a website-like hover. */
+        #hamburger-btn {
+            transition: transform 360ms var(--app-spring), background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease !important;
+        }
+        #hamburger-btn:active { transform: scale(.88); }
+        #hamburger-btn:hover { transform: translateY(-1px) scale(1.04); }
+
+        /* Native-style active tab pill with a moving highlight. */
+        [data-tab] {
+            position: relative;
+            overflow: hidden;
+            transition: color 220ms ease, background-color 220ms ease, transform 300ms var(--app-spring) !important;
+        }
+        [data-tab]::after {
+            content: '';
+            position: absolute;
+            left: 18%;
+            right: 18%;
+            bottom: 3px;
+            height: 2px;
+            border-radius: 999px;
+            background: currentColor;
+            transform: scaleX(0);
+            opacity: 0;
+            transition: transform 360ms var(--app-spring), opacity 220ms ease;
+        }
+        [data-tab].text-disneyGold::after {
+            transform: scaleX(1);
+            opacity: .9;
+        }
+        [data-tab]:active { transform: scale(.97); }
+
+        #app-fullscreen-menu .app-menu-content {
+            opacity: 0;
+            transform: translateY(14px) scale(.98);
+            transition: opacity 320ms var(--app-motion), transform 420ms var(--app-motion);
+        }
+
+        #app-fullscreen-menu.app-menu-open .app-menu-content {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        #app-fullscreen-menu .app-menu-item {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 260ms var(--app-motion), transform 360ms var(--app-motion), background-color 180ms ease, border-color 180ms ease;
+        }
+
+        #app-fullscreen-menu.app-menu-open .app-menu-item {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #app-fullscreen-menu.app-menu-open .app-menu-item:nth-child(2) { transition-delay: 50ms; }
+        #app-fullscreen-menu.app-menu-open .app-menu-item:nth-child(3) { transition-delay: 90ms; }
+        #app-fullscreen-menu.app-menu-open .app-menu-item:nth-child(4) { transition-delay: 130ms; }
+        #app-fullscreen-menu.app-menu-open .app-menu-item:nth-child(5) { transition-delay: 170ms; }
+        #app-fullscreen-menu.app-menu-open .app-menu-item:nth-child(6) { transition-delay: 210ms; }
+
+        .app-glass-button {
+            background: rgba(255,255,255,.055) !important;
+            border-color: rgba(255,255,255,.14) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.06);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .app-glass-button:hover {
+            background: rgba(255,255,255,.11) !important;
+            border-color: rgba(255,255,255,.24) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Soft page arrival — deliberately subtle so it feels native, not theatrical. */
+        .app-page-enter {
+            animation: appPageEnter 420ms var(--app-motion) both;
+            will-change: opacity, transform;
+        }
+
+        .app-page-enter-from-left {
+            animation-name: appPageFromLeft;
+        }
+
+        .app-page-enter-from-right {
+            animation-name: appPageFromRight;
+        }
+
+        @keyframes appPageEnter {
+            from { opacity: .35; transform: translateY(8px) scale(.994); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes appPageFromLeft {
+            from { opacity: .45; transform: translateX(-18px) scale(.997); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes appPageFromRight {
+            from { opacity: .45; transform: translateX(18px) scale(.997); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #app-fullscreen-menu, #app-fullscreen-menu .app-menu-content, #app-fullscreen-menu .app-menu-item {
+                transition: none !important;
+            }
+            .app-page-enter, .app-page-enter-from-left, .app-page-enter-from-right { animation: none !important; }
+            #app-menu-close, #hamburger-btn, [data-tab] { transition: none !important; }
+        }
+
+
+        /* Shared modal motion: opening fades/scales in; closing gets a short graceful exit. */
+        .app-modal-motion {
+            transition: opacity 220ms var(--app-motion), transform 320ms var(--app-spring) !important;
+        }
+        .app-modal-motion.app-modal-closing {
+            opacity: 0 !important;
+            transform: scale(.97) translateY(5px) !important;
+            pointer-events: none !important;
+        }
+        .app-modal-motion.app-modal-open {
+            animation: appModalEnter 300ms var(--app-motion) both;
+        }
+        @keyframes appModalEnter {
+            from { opacity: 0; transform: scale(.975) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
         .magical-gradient {
             background: linear-gradient(135deg, #0055B8 0%, #4A154B 50%, #E81F76 100%);
         }
@@ -161,32 +340,32 @@
     </div>
 
     <!-- Full Screen Semi-Transparent App-Like Navigation Menu Overlay -->
-    <div id="app-fullscreen-menu" class="fixed inset-0 z-[110] magical-gradient/95 bg-slate-950/90 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center transition-all duration-300">
+    <div id="app-fullscreen-menu" class="fixed inset-0 z-[110] magical-gradient/95 bg-slate-950/90 hidden flex flex-col items-center justify-center p-6 text-center">
         <!-- Close menu button positioned on the left -->
-        <button onclick="toggleMobileMenu()" class="absolute top-6 left-6 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition text-lg border border-white/20 shadow-lg">
+        <button onclick="toggleMobileMenu()" id="app-menu-close" class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition text-lg border border-white/20 shadow-lg">
             <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-3xl shadow-2xl border border-amber-300/40 mb-6">
+        <div class="app-menu-content w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-3xl shadow-2xl border border-amber-300/40 mb-6">
             <i class="fa-solid fa-compass"></i>
         </div>
 
-        <div class="space-y-3 w-full max-w-xs">
+        <div class="app-menu-content space-y-3 w-full max-w-xs">
             <h3 class="font-disney font-bold text-lg text-amber-300 tracking-wider uppercase mb-2">Navigation Menu</h3>
             
-            <button onclick="switchTab('race')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+            <button onclick="switchTab('race')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
                 <i class="fa-solid fa-flag-checkered text-disneyGold"></i> <span>Team Portal</span>
             </button>
-            <button onclick="switchTab('leaderboard')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
+            <button onclick="switchTab('leaderboard')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
                 <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
             </button>
-            <button onclick="switchTab('maps')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('maps')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
             </button>
-            <button onclick="switchTab('rules')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('rules')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
             </button>
-            <button onclick="switchTab('organizer')" class="w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
+            <button onclick="switchTab('organizer')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
                 <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Host Dashboard</span>
             </button>
         </div>
@@ -1151,13 +1330,13 @@
         }
 
         window.closeCheckpointInfoModal = function() {
-            document.getElementById('checkpoint-info-modal').classList.add('hidden');
+            closeAppModal('checkpoint-info-modal');
         };
         window.closeImageModal = function() {
-            document.getElementById('image-modal').classList.add('hidden');
+            closeAppModal('image-modal');
         };
         window.closeTeamVerifyModal = function() {
-            document.getElementById('team-verify-modal').classList.add('hidden');
+            closeAppModal('team-verify-modal');
         };
 
         window.openImageModal = function(imgSrc) {
@@ -1207,8 +1386,26 @@
                 portalViewport.classList.toggle('hidden', !isPortalTab);
             }
 
+            // Give standard pages a soft arrival animation when they become visible.
+            if (!isPortalTab) {
+                const page = document.getElementById(`tab-${tabName}`);
+                if (page) {
+                    page.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right');
+                    void page.offsetWidth;
+                    page.classList.add('app-page-enter');
+                }
+            }
+
             if (isPortalTab && portalViewport) {
                 const targetScrollLeft = tabName === 'leaderboard' ? portalViewport.clientWidth : 0;
+                const targetPage = tabName === 'leaderboard'
+                    ? document.querySelector('#portal-track > section:nth-child(2)')
+                    : document.querySelector('#portal-track > section:nth-child(1)');
+                if (targetPage) {
+                    targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right');
+                    void targetPage.offsetWidth;
+                    targetPage.classList.add('app-page-enter', tabName === 'leaderboard' ? 'app-page-enter-from-right' : 'app-page-enter-from-left');
+                }
                 portalViewport.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
             }
 
@@ -1216,7 +1413,7 @@
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 if (btn.tagName === 'BUTTON') {
                     if (isMatch) {
-                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
+                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
                     } else {
                         btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
                     }
@@ -1233,13 +1430,73 @@
             }
 
             const fullscreenMenu = document.getElementById('app-fullscreen-menu');
-            if (fullscreenMenu) fullscreenMenu.classList.add('hidden');
+            if (fullscreenMenu && fullscreenMenu.classList.contains('app-menu-open')) {
+                toggleMobileMenu();
+            }
         }
 
         window.toggleMobileMenu = function() {
             const menu = document.getElementById('app-fullscreen-menu');
-            if (menu) menu.classList.toggle('hidden');
+            if (!menu) return;
+
+            const opening = !menu.classList.contains('app-menu-open');
+
+            if (opening) {
+                menu.classList.remove('hidden');
+                // Let the browser paint the visible state before starting the transition.
+                requestAnimationFrame(() => menu.classList.add('app-menu-open'));
+            } else {
+                menu.classList.remove('app-menu-open');
+                setTimeout(() => {
+                    if (!menu.classList.contains('app-menu-open')) menu.classList.add('hidden');
+                }, 290);
+            }
         };
+
+        // Give every app modal the same native-feeling open/close treatment.
+        (function initAppModalMotion() {
+            const modalIds = [
+                'image-modal', 'app-map-modal', 'checkpoint-info-modal', 'trivia-modal',
+                'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal'
+            ];
+            const guarded = new WeakSet();
+            const modalObserver = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') return;
+                    const modal = mutation.target;
+                    if (!modal || !modalIds.includes(modal.id) || guarded.has(modal)) return;
+                    modal.classList.add('app-modal-motion');
+                    if (!modal.classList.contains('hidden')) {
+                        modal.classList.remove('app-modal-closing');
+                        modal.classList.remove('app-modal-open');
+                        void modal.offsetWidth;
+                        modal.classList.add('app-modal-open');
+                    } else if (modal.classList.contains('app-modal-closing')) {
+                        // The close handler below owns the final hidden state.
+                    }
+                });
+            });
+            modalIds.forEach(id => {
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.classList.add('app-modal-motion');
+                    modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
+                }
+            });
+
+            window.closeAppModal = function(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                guarded.add(modal);
+                modal.classList.remove('app-modal-open');
+                modal.classList.add('app-modal-closing');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('app-modal-closing');
+                    guarded.delete(modal);
+                }, 230);
+            };
+        })();
 
         function initChatListener() {
             if (chatUnsubscribe) chatUnsubscribe();
@@ -1551,7 +1808,7 @@
                         const isMatch = btn.getAttribute('data-tab') === activeTab;
                         if (btn.tagName === 'BUTTON') {
                             if (isMatch) {
-                                btn.className = "flex-1 py-2 px-3 text-center text-disneyGold border-b-2 border-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
+                                btn.className = "flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
                             } else {
                                 btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
                             }
@@ -2007,7 +2264,7 @@
         };
 
         window.closeOrganizerEditModal = function() {
-            document.getElementById('organizer-edit-modal').classList.add('hidden');
+            closeAppModal('organizer-edit-modal');
             currentEditingRaceCode = null;
         };
 
@@ -2128,7 +2385,7 @@
         };
 
         window.closeAddCheckpointsModal = function() {
-            document.getElementById('organizer-add-cp-modal').classList.add('hidden');
+            closeAppModal('organizer-add-cp-modal');
         };
 
         window.renderAddCheckboxList = function() {
@@ -3748,7 +4005,7 @@
         }
 
         window.submitTriviaAnswer = async function(selected, correct) {
-            document.getElementById('trivia-modal').classList.add('hidden');
+            closeAppModal('trivia-modal');
             
             const raceSnap = await getDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
