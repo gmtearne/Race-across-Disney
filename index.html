@@ -139,6 +139,46 @@
             margin-top: 0.75rem;
         }
 
+        /* ---------- Bottom sheet picker ---------- */
+        #app-sheet {
+            position: fixed; inset: 0; z-index: 95;
+            visibility: hidden; pointer-events: none;
+            transition: visibility 0s linear 0.3s;
+        }
+        #app-sheet.open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+        #app-sheet .sheet-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(2, 6, 23, 0.72);
+            -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.25s ease;
+        }
+        #app-sheet.open .sheet-backdrop { opacity: 1; }
+        #app-sheet .sheet-panel {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            max-width: 32rem; margin: 0 auto;
+            max-height: 78dvh;
+            display: flex; flex-direction: column;
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.25); border-bottom: 0;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        #app-sheet.open .sheet-panel { transform: translateY(0); }
+        #app-sheet-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+        .app-select {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem !important;
+        }
+
         .no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .no-spinner { -moz-appearance: textfield; appearance: textfield; }
 
@@ -547,7 +587,7 @@
                 <div id="edit-final-stop-wrapper" class="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
                     <select id="edit-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
-                        <option value="">-- No Mandatory Final Location (Any Order) --</option>
+                        <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
                     </select>
                 </div>
 
@@ -1099,7 +1139,7 @@
                             </div>
                             <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
                         </div>
-                        <span id="create-race-toggle-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                        <span id="create-race-toggle-icon" class="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-xs transition-transform duration-300"><i class="fa-solid fa-chevron-down"></i></span>
                     </button>
 
                     <div id="create-race-collapsible-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80">
@@ -1188,7 +1228,7 @@
                             </div>
                             <div id="trivia-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
                                 <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
-                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                     <option value="every">Every Check-in</option>
                                     <option value="random">Random Check-ins</option>
                                 </select>
@@ -1210,10 +1250,11 @@
                         <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoints</label>
 
-                            <div class="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
-                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2.5 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[11px] transition shadow">🎲 Random</button>
-                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition">☑ Manual</button>
-                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition">📂 Preset</button>
+                            <div class="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
+                                <button type="button" onclick="switchPopMethod('area')" id="pop-tab-area" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">🧭</span><span>By Area</span></button>
+                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">☑️</span><span>Manual</span></button>
+                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">📂</span><span>Preset</span></button>
                             </div>
 
                             <div id="pop-box-random" class="space-y-3 pt-1">
@@ -1238,24 +1279,42 @@
                                 </div>
                             </div>
 
-                            <div id="pop-box-manual" class="hidden space-y-3 pt-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] text-slate-300">Select locations by park or category:</span>
-                                    <div class="space-x-2">
-                                        <button type="button" onclick="selectAllManualCheckboxes(true)" class="text-[10px] text-disneyGold underline">Select All</button>
-                                        <button type="button" onclick="selectAllManualCheckboxes(false)" class="text-[10px] text-slate-400 underline">Deselect All</button>
+                            <div id="pop-box-area" class="hidden space-y-3 pt-1">
+                                <p class="text-[11px] text-slate-400">Switch areas on or off and choose how many random stops come from each one.</p>
+                                <div id="area-random-list" class="space-y-2"></div>
+                                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                                    <span class="text-xs text-slate-300 font-semibold">GPS stops in total</span>
+                                    <span id="area-random-total" class="font-mono font-bold text-disneyGold text-base">0</span>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
+                                    <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                        <button type="button" onclick="stepNumber('area-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                        <input type="number" id="area-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                        <button type="button" onclick="stepNumber('area-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mt-1.5">Bonuses are only drawn from areas that are switched on.</p>
+                                </div>
+                            </div>
+
+                            <div id="pop-box-manual" class="hidden space-y-3 pt-1">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[11px] text-slate-400">Pick the stops to include</span>
+                                    <div class="flex gap-1.5">
+                                        <button type="button" onclick="selectAllManualCheckboxes(true)" class="px-3 py-1.5 rounded-full bg-disneyGold/15 border border-disneyGold/40 text-disneyGold text-[11px] font-bold active:scale-95 transition">Select all</button>
+                                        <button type="button" onclick="selectAllManualCheckboxes(false)" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-[11px] font-bold active:scale-95 transition">Clear</button>
                                     </div>
                                 </div>
                                 <div class="relative">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-                                    <input type="text" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2.5 text-xs text-white focus:outline-none">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                    <input type="search" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
                                 </div>
-                                <div id="manual-checkbox-container" class="max-h-64 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
+                                <div id="manual-checkbox-container" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
                             </div>
 
                             <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                 <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                                <select id="preset-park-select" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                <select id="preset-park-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                     <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
                                     <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
                                     <option value="Epcot">🌐 Epcot Park (All Stops)</option>
@@ -1269,9 +1328,8 @@
                         <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
                             <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
                             <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
-                            <select id="create-final-stop-select" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                <option value="">-- No Mandatory Final Location (Any Order) --</option>
-                                <option value="preview_placeholder" disabled>Select stops above or configure after creation...</option>
+                            <select id="create-final-stop-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
                             </select>
                         </div>
 
@@ -1400,13 +1458,9 @@
         window.toggleCreateRaceCard = function() {
             const box = document.getElementById('create-race-collapsible-box');
             const icon = document.getElementById('create-race-toggle-icon');
-            if (box.classList.contains('hidden')) {
-                box.classList.remove('hidden');
-                icon.innerHTML = 'Collapse <i class="fa-solid fa-chevron-up ml-1"></i>';
-            } else {
-                box.classList.add('hidden');
-                icon.innerHTML = 'Expand <i class="fa-solid fa-chevron-down ml-1"></i>';
-            }
+            const opening = box.classList.contains('hidden');
+            box.classList.toggle('hidden', !opening);
+            icon.classList.toggle('rotate-180', opening);
         };
 
         window.toggleRacePortalCard = function(boxId, iconId) {
@@ -1702,23 +1756,137 @@
         };
 
         let creationPopMethod = 'random';
+        const POP_TAB_ACTIVE = "py-2 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5";
+        const POP_TAB_INACTIVE = "py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5";
+
         window.switchPopMethod = function(method) {
             creationPopMethod = method;
-            ['random', 'manual', 'preset'].forEach(m => {
+            ['random', 'area', 'manual', 'preset'].forEach(m => {
                 const btn = document.getElementById(`pop-tab-${m}`);
                 const box = document.getElementById(`pop-box-${m}`);
+                if (!btn || !box) return;
                 if (m === method) {
-                    btn.className = "py-2.5 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[11px] transition shadow";
+                    btn.className = POP_TAB_ACTIVE;
                     box.classList.remove('hidden');
                 } else {
-                    btn.className = "py-2.5 px-1 text-slate-400 font-bold rounded-xl text-[11px] transition";
+                    btn.className = POP_TAB_INACTIVE;
                     box.classList.add('hidden');
                 }
             });
 
-            if (method === 'manual') {
-                renderManualCheckboxList();
+            if (method === 'manual') renderManualCheckboxList();
+            if (method === 'area') renderAreaRandomList();
+            if (method === 'preset' && window.populatePresetParkSelect) window.populatePresetParkSelect();
+            updateCreationFinalStopDropdown();
+        };
+
+        // ---------- Helpers for random / by-area selection ----------
+        function escHtml(str) {
+            return String(str == null ? '' : str).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        }
+
+        function pickRandom(arr, n) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
             }
+            return copy.slice(0, Math.max(0, n));
+        }
+
+        // Make sure a chosen mandatory final stop is part of a random selection
+        function ensureIncluded(picked, finalPreset) {
+            if (!finalPreset || picked.includes(finalPreset)) return;
+            let idx = -1;
+            for (let k = picked.length - 1; k >= 0; k--) {
+                if (picked[k].park === finalPreset.park) { idx = k; break; }
+            }
+            if (idx === -1) picked.push(finalPreset); else picked[idx] = finalPreset;
+        }
+
+        // Areas are built from the location list itself, so new areas (Disney Springs, Resorts...) appear automatically
+        function getPresetAreas() {
+            const counts = new Map();
+            (window.DISNEY_PRESETS || []).forEach(p => {
+                if (p.type === 'BONUS_PHOTO') return;
+                counts.set(p.park, (counts.get(p.park) || 0) + 1);
+            });
+            return [...counts.entries()].map(([name, count]) => ({ name, count }));
+        }
+
+        let areaRandomAreas = [];
+        const areaRandomState = {};
+        const AREA_TRACK = "w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors";
+
+        window.renderAreaRandomList = function() {
+            const container = document.getElementById('area-random-list');
+            if (!container) return;
+            areaRandomAreas = getPresetAreas();
+            areaRandomAreas.forEach(a => {
+                if (!areaRandomState[a.name]) areaRandomState[a.name] = { enabled: true, count: Math.min(3, a.count) };
+                areaRandomState[a.name].count = Math.min(areaRandomState[a.name].count, a.count);
+            });
+            container.innerHTML = areaRandomAreas.map((a, i) => {
+                const st = areaRandomState[a.name];
+                const icon = window.areaIcon ? window.areaIcon(a.name) : '📍';
+                return `
+                <div id="area-row-${i}" class="p-3 rounded-2xl border transition ${st.enabled ? 'border-slate-700 bg-slate-950' : 'border-slate-800 bg-slate-950/40 opacity-60'}">
+                    <div class="flex items-center gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input type="checkbox" ${st.enabled ? 'checked' : ''} onchange="toggleAreaRandom(${i}, this.checked)" class="sr-only peer">
+                            <span class="${AREA_TRACK}"></span>
+                        </label>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-bold text-sm text-white truncate">${icon} ${escHtml(a.name)}</p>
+                            <p class="text-[11px] text-slate-400">${a.count} stop${a.count === 1 ? '' : 's'} available</p>
+                        </div>
+                        <div id="area-stepper-${i}" class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shrink-0 ${st.enabled ? '' : 'pointer-events-none'}">
+                            <button type="button" onclick="stepAreaRandom(${i}, -1)" class="w-9 h-9 text-lg font-bold text-slate-300 active:bg-slate-800">−</button>
+                            <span id="area-count-${i}" class="w-8 text-center text-sm font-mono font-bold text-white">${st.count}</span>
+                            <button type="button" onclick="stepAreaRandom(${i}, 1)" class="w-9 h-9 text-lg font-bold text-slate-300 active:bg-slate-800">+</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-500 text-xs py-3">No locations available yet.</p>';
+            updateAreaRandomTotal();
+        };
+
+        function updateAreaRandomTotal() {
+            const total = areaRandomAreas.reduce((sum, a) => {
+                const st = areaRandomState[a.name];
+                return sum + (st && st.enabled ? st.count : 0);
+            }, 0);
+            const el = document.getElementById('area-random-total');
+            if (el) el.textContent = total;
+        }
+
+        window.toggleAreaRandom = function(i, on) {
+            const a = areaRandomAreas[i];
+            if (!a) return;
+            const st = areaRandomState[a.name];
+            st.enabled = on;
+            if (on && st.count === 0) st.count = Math.min(3, a.count);
+            const row = document.getElementById(`area-row-${i}`);
+            const stepper = document.getElementById(`area-stepper-${i}`);
+            const countEl = document.getElementById(`area-count-${i}`);
+            row.classList.toggle('opacity-60', !on);
+            row.classList.toggle('border-slate-700', on);
+            row.classList.toggle('bg-slate-950', on);
+            row.classList.toggle('border-slate-800', !on);
+            row.classList.toggle('bg-slate-950/40', !on);
+            stepper.classList.toggle('pointer-events-none', !on);
+            countEl.textContent = st.count;
+            updateAreaRandomTotal();
+            updateCreationFinalStopDropdown();
+        };
+
+        window.stepAreaRandom = function(i, delta) {
+            const a = areaRandomAreas[i];
+            if (!a) return;
+            const st = areaRandomState[a.name];
+            st.count = Math.max(0, Math.min(a.count, st.count + delta));
+            document.getElementById(`area-count-${i}`).textContent = st.count;
+            updateAreaRandomTotal();
             updateCreationFinalStopDropdown();
         };
 
@@ -1727,7 +1895,7 @@
             const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
             const presets = window.DISNEY_PRESETS || [];
 
-            const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
                 "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
@@ -1736,10 +1904,10 @@
             };
 
             let html = '';
-            html += `<div class="p-2.5 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
+            html += `<div class="p-3 bg-slate-950 rounded-2xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
 
             parks.forEach(parkName => {
-                const theme = parkThemes[parkName];
+                const theme = parkThemes[parkName] || { bg: "bg-sky-950/20", border: "border-sky-500/30", text: "text-sky-300", icon: (window.areaIcon ? window.areaIcon(parkName) : "📍") };
                 const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
                 
                 if (parkItems.length > 0) {
@@ -1747,21 +1915,24 @@
                         <div class="ml-2 mt-2 p-3 rounded-xl border ${theme.border} ${theme.bg} space-y-2.5">
                             <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
                                 <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
-                                <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="text-[10px] ${theme.text} underline">Select All ${parkName}</button>
+                                <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="px-2.5 py-1 rounded-full border ${theme.border} ${theme.text} text-[10px] font-bold active:scale-95 transition">Select all</button>
                             </div>
                             <div class="space-y-2">
                     `;
                     parkItems.forEach(p => {
                         html += `
-                            <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                                <div class="flex items-center gap-2.5">
-                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded h-4 w-4">
+                            <label class="flex items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-emerald-500/60 has-[:checked]:bg-emerald-950/20">
+                                <div class="flex items-center gap-2.5 min-w-0">
                                     <span class="text-disneyGold">📍</span>
-                                    <div>
-                                        <p class="font-bold text-white text-xs">${p.name}</p>
-                                        <span class="text-[10px] text-slate-400">${p.land}</span>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-white text-sm leading-tight">${p.name}</p>
+                                        <span class="text-[11px] text-slate-400">${p.land}</span>
                                     </div>
                                 </div>
+                                <span class="relative inline-flex items-center shrink-0">
+                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="sr-only peer">
+                                    <span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span>
+                                </span>
                             </label>
                         `;
                     });
@@ -1774,28 +1945,33 @@
                 html += `
                     <div class="mt-4 p-2.5 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span class="flex items-center gap-2"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
-                        <button type="button" onclick="selectBonusCheckboxes(true)" class="text-[10px] text-amber-300 underline font-normal">Select All Bonuses</button>
+                        <button type="button" onclick="selectBonusCheckboxes(true)" class="px-2.5 py-1 rounded-full border border-amber-500/40 text-amber-300 text-[10px] font-bold normal-case active:scale-95 transition">Select all</button>
                     </div>
                     <div class="ml-2 mt-2 p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
                 `;
                 bonusItems.forEach(p => {
                     html += `
-                        <label class="flex items-center justify-between p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs cursor-pointer hover:border-disneyGold transition">
-                            <div class="flex items-center gap-2.5">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="text-disneyGold rounded h-4 w-4">
+                        <label class="flex items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/20">
+                            <div class="flex items-center gap-2.5 min-w-0">
                                 <span class="text-amber-400">⭐</span>
-                                <div>
-                                    <p class="font-bold text-white text-xs">${p.name}</p>
-                                    <span class="text-[10px] text-slate-400">${p.land} (${p.park})</span>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-white text-sm leading-tight">${p.name}</p>
+                                    <span class="text-[11px] text-slate-400">${p.land} (${p.park})</span>
                                 </div>
                             </div>
+                            <span class="relative inline-flex items-center shrink-0">
+                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="sr-only peer">
+                                <span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span>
+                            </span>
                         </label>
                     `;
                 });
                 html += `</div>`;
             }
 
+            const tickedBefore = new Set(Array.from(document.querySelectorAll('input[name="manual_cp_checkbox"]:checked')).map(cb => cb.value));
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
+            container.querySelectorAll('input[name="manual_cp_checkbox"]').forEach(cb => { if (tickedBefore.has(cb.value)) cb.checked = true; });
         };
 
         window.selectAllManualCheckboxes = function(selectState) {
@@ -1835,19 +2011,23 @@
                 const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
                 checkedBoxes.forEach(cb => {
                     const p = presets[parseInt(cb.value)];
-                    if (p.type !== 'BONUS_PHOTO') {
-                        candidateStops.push(p);
-                    }
+                    if (p && p.type !== 'BONUS_PHOTO') candidateStops.push(p);
                 });
+            } else if (creationPopMethod === 'area') {
+                const live = Object.keys(areaRandomState).filter(n => areaRandomState[n].enabled && areaRandomState[n].count > 0);
+                candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO' && live.includes(p.park));
             } else {
                 candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
             }
 
-            let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
-            candidateStops.forEach((p, idx) => {
-                html += `<option value="stop_${idx}">🏁 ${p.name} (${p.park})</option>`;
+            const previous = selectEl.value;
+            let html = '<option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>';
+            candidateStops.forEach(p => {
+                // value is the position in the full location list, so it always matches when the race is created
+                html += `<option value="stop_${presets.indexOf(p)}" data-icon="🏁" data-sub="${escHtml((p.land || '') + ' • ' + (p.park || ''))}">${escHtml(p.name)}</option>`;
             });
             selectEl.innerHTML = html;
+            if (previous && Array.from(selectEl.options).some(o => o.value === previous)) selectEl.value = previous;
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2234,15 +2414,30 @@
 
                 let initialCps = [];
 
+                const finalSelectEarly = gameMode === 'race' ? document.getElementById('create-final-stop-select').value : '';
+                const finalPreset = (finalSelectEarly && finalSelectEarly.startsWith('stop_')) ? presets[parseInt(finalSelectEarly.split('_')[1])] : null;
+                const toCheckpoint = (p, idx, prefix) => ({
+                    id: prefix + Date.now() + '_' + idx,
+                    name: p.name,
+                    type: p.type || "GPS",
+                    lat: p.lat || 28.4177,
+                    lng: p.lng || -81.5812,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : defaultPoints,
+                    bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
+                    park: p.park || "Disney",
+                    land: p.land || "Attraction Area"
+                });
+
                 if (creationPopMethod === 'random') {
                     const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
                     const bonusReq = parseInt(document.getElementById('rand-bonus-count').value) || 3;
 
                     const gpsOnly = presets.filter(p => p.type === 'GPS');
-                    const shuffledGps = [...gpsOnly].sort(() => 0.5 - Math.random()).slice(0, gpsReq);
+                    const shuffledGps = pickRandom(gpsOnly, gpsReq);
+                    ensureIncluded(shuffledGps, finalPreset);
 
                     const bonusOnly = presets.filter(p => p.type === 'BONUS_PHOTO');
-                    const shuffledBonus = [...bonusOnly].sort(() => 0.5 - Math.random()).slice(0, bonusReq);
+                    const shuffledBonus = pickRandom(bonusOnly, bonusReq);
 
                     initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
                         id: 'cp_rand_' + Date.now() + '_' + idx,
@@ -2255,6 +2450,28 @@
                         park: p.park || "Disney",
                         land: p.land || "Attraction Area"
                     }));
+                } else if (creationPopMethod === 'area') {
+                    const areas = getPresetAreas();
+                    const picked = [];
+                    const switchedOn = [];
+                    areas.forEach(a => {
+                        const st = areaRandomState[a.name];
+                        if (!st || !st.enabled) return;
+                        switchedOn.push(a.name);
+                        if (st.count <= 0) return;
+                        picked.push(...pickRandom(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.park === a.name), st.count));
+                    });
+                    if (picked.length === 0) {
+                        return alert("Switch on at least one area and give it one or more stops.");
+                    }
+                    ensureIncluded(picked, finalPreset);
+
+                    const bonusReq = parseInt(document.getElementById('area-bonus-count').value) || 0;
+                    const knownAreas = areas.map(a => a.name);
+                    const bonusPool = presets.filter(p => p.type === 'BONUS_PHOTO' && (!knownAreas.includes(p.park) || switchedOn.includes(p.park)));
+                    const bonusPicked = pickRandom(bonusPool, bonusReq);
+
+                    initialCps = [...picked, ...bonusPicked].map((p, idx) => toCheckpoint(p, idx, 'cp_area_'));
                 } else if (creationPopMethod === 'manual') {
                     const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
                     if (checkedBoxes.length === 0) {
@@ -2402,10 +2619,10 @@
             if (!selectEl) return;
             const mandatory = editingRaceActiveCheckpoints.filter(c => c.type !== 'BONUS_PHOTO');
 
-            let html = '<option value="">-- No Mandatory Final Location (Any Order) --</option>';
+            let html = '<option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>';
             mandatory.forEach(cp => {
                 const isSelected = editingRaceFinalCheckpointId === cp.id ? 'selected' : '';
-                html += `<option value="${cp.id}" ${isSelected}>🏁 ${cp.name} (${cp.park || 'Disney'})</option>`;
+                html += `<option value="${cp.id}" ${isSelected} data-icon="🏁" data-sub="${escHtml((cp.land || 'Area') + ' • ' + (cp.park || 'Disney'))}">${escHtml(cp.name)}</option>`;
             });
             selectEl.innerHTML = html;
         }
@@ -2513,7 +2730,7 @@
             const presets = window.DISNEY_PRESETS || [];
 
             const activeIds = new Set(editingRaceActiveCheckpoints.map(c => c.name));
-            const parks = ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"];
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
                 "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
@@ -2523,7 +2740,7 @@
 
             let html = '';
             parks.forEach(parkName => {
-                const theme = parkThemes[parkName];
+                const theme = parkThemes[parkName] || { bg: "bg-sky-950/20", border: "border-sky-500/30", text: "text-sky-300", icon: (window.areaIcon ? window.areaIcon(parkName) : "📍") };
                 const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
 
                 if (parkItems.length > 0) {
@@ -4315,5 +4532,236 @@
     }
     </script>
     <div id="sync-status" class="hidden fixed left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);"></div>
+    <div id="app-sheet" aria-hidden="true">
+        <div class="sheet-backdrop" onclick="closeAppSheet()"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="app-sheet-title">
+            <div id="app-sheet-head" class="px-5 pt-3 pb-3 shrink-0">
+                <div class="w-10 h-1 rounded-full bg-slate-600 mx-auto mb-3"></div>
+                <div class="flex items-center justify-between gap-3">
+                    <h3 id="app-sheet-title" class="font-bold text-base text-white truncate"></h3>
+                    <button type="button" onclick="closeAppSheet()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs active:scale-95 transition shrink-0" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div id="app-sheet-search-wrap" class="hidden px-5 pb-3 shrink-0">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                    <input type="search" id="app-sheet-search" placeholder="Search..." autocomplete="off" class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                </div>
+            </div>
+            <div id="app-sheet-list" class="px-3 pb-4 space-y-1.5"></div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        const esc = str => String(str == null ? '' : str).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+        // Icons for areas; unknown areas fall back to a sensible default
+        window.areaIcon = function (name) {
+            const n = String(name || '').toLowerCase();
+            if (n.includes('magic kingdom')) return '🏰';
+            if (n.includes('epcot')) return '🌐';
+            if (n.includes('hollywood')) return '🎬';
+            if (n.includes('animal')) return '🦁';
+            if (n.includes('springs')) return '🛍️';
+            if (n.includes('resort') || n.includes('hotel')) return '🏨';
+            if (n.includes('transit') || n.includes('monorail') || n.includes('skyliner')) return '🚝';
+            return '📍';
+        };
+
+        // ---------- Bottom sheet ----------
+        const sheet = document.getElementById('app-sheet');
+        const panel = sheet.querySelector('.sheet-panel');
+        const listEl = document.getElementById('app-sheet-list');
+        const searchWrap = document.getElementById('app-sheet-search-wrap');
+        const searchInput = document.getElementById('app-sheet-search');
+        let current = null;
+
+        function renderList() {
+            if (!current) return;
+            const q = searchInput.value.trim().toLowerCase();
+            const rows = current.options.filter(o => !q || (o.label + ' ' + (o.sub || '')).toLowerCase().includes(q));
+            listEl.innerHTML = rows.map(o => {
+                const sel = String(o.value) === String(current.selected);
+                return `
+                <button type="button" data-value="${esc(o.value)}" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition active:scale-[0.98] ${sel ? 'border-disneyGold/70 bg-disneyGold/10' : 'border-slate-800 bg-slate-900/80'}">
+                    ${o.icon ? `<span class="text-lg shrink-0">${esc(o.icon)}</span>` : ''}
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-bold ${sel ? 'text-disneyGold' : 'text-white'} truncate">${esc(o.label)}</span>
+                        ${o.sub ? `<span class="block text-[11px] text-slate-400 truncate">${esc(o.sub)}</span>` : ''}
+                    </span>
+                    ${sel ? '<span class="w-6 h-6 rounded-full bg-disneyGold text-slate-950 flex items-center justify-center text-[10px] shrink-0"><i class="fa-solid fa-check"></i></span>' : ''}
+                </button>`;
+            }).join('') || '<p class="text-center text-slate-500 text-xs py-6">Nothing matches your search.</p>';
+        }
+
+        window.openAppSheet = function (cfg) {
+            current = cfg;
+            document.getElementById('app-sheet-title').textContent = cfg.title || 'Choose';
+            const showSearch = cfg.searchable === true || (cfg.searchable !== false && cfg.options.length > 8);
+            searchWrap.classList.toggle('hidden', !showSearch);
+            searchInput.value = '';
+            renderList();
+            sheet.classList.add('open');
+            sheet.setAttribute('aria-hidden', 'false');
+            listEl.scrollTop = 0;
+        };
+
+        window.closeAppSheet = function () {
+            sheet.classList.remove('open');
+            sheet.setAttribute('aria-hidden', 'true');
+            current = null;
+        };
+
+        listEl.addEventListener('click', e => {
+            const btn = e.target.closest('button[data-value]');
+            if (!btn || !current) return;
+            const cb = current.onSelect;
+            const value = btn.getAttribute('data-value');
+            window.closeAppSheet();
+            if (cb) cb(value);
+        });
+        searchInput.addEventListener('input', renderList);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && current) window.closeAppSheet(); });
+
+        // Swipe the header down to dismiss
+        (function () {
+            const head = document.getElementById('app-sheet-head');
+            let startY = null, dy = 0;
+            head.addEventListener('touchstart', e => { startY = e.touches[0].clientY; dy = 0; panel.style.transition = 'none'; }, { passive: true });
+            head.addEventListener('touchmove', e => {
+                if (startY === null) return;
+                dy = Math.max(0, e.touches[0].clientY - startY);
+                panel.style.transform = `translateY(${dy}px)`;
+            }, { passive: true });
+            head.addEventListener('touchend', () => {
+                if (startY === null) return;
+                panel.style.transition = '';
+                panel.style.transform = '';
+                if (dy > 90) window.closeAppSheet();
+                startY = null; dy = 0;
+            });
+        })();
+
+        // Re-draw our custom control whenever code sets the hidden select's value directly
+        function watchValue(sel, onChange) {
+            const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+            Object.defineProperty(sel, 'value', {
+                configurable: true,
+                get() { return desc.get.call(this); },
+                set(v) { desc.set.call(this, v); onChange(); }
+            });
+        }
+
+        function readOptions(sel) {
+            return Array.from(sel.options)
+                .filter(o => !o.disabled)
+                .map(o => ({ value: o.value, label: o.text.trim(), sub: o.dataset.sub || '', icon: o.dataset.icon || '' }));
+        }
+
+        // Turn a <select> into a button that opens the bottom sheet. The <select> stays as the source of truth.
+        window.enhanceSelect = function (id, opts) {
+            opts = opts || {};
+            const sel = document.getElementById(id);
+            if (!sel || sel.dataset.enhanced) return;
+            sel.dataset.enhanced = '1';
+            sel.classList.add('hidden');
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full flex items-center gap-3 bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-left text-white transition active:scale-[0.99] focus:outline-none focus:border-disneyGold';
+            btn.innerHTML = '<span data-role="icon" class="text-lg shrink-0 hidden"></span><span class="min-w-0 flex-1"><span data-role="label" class="block text-sm font-semibold truncate"></span><span data-role="sub" class="block text-[11px] text-slate-400 truncate"></span></span><i class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0"></i>';
+            sel.insertAdjacentElement('afterend', btn);
+
+            function sync() {
+                const o = sel.options[sel.selectedIndex];
+                const iconEl = btn.querySelector('[data-role="icon"]');
+                btn.querySelector('[data-role="label"]').textContent = o ? o.text.trim() : (opts.placeholder || 'Select...');
+                btn.querySelector('[data-role="sub"]').textContent = o ? (o.dataset.sub || '') : '';
+                iconEl.textContent = o ? (o.dataset.icon || '') : '';
+                iconEl.classList.toggle('hidden', !(o && o.dataset.icon));
+            }
+            sel.addEventListener('change', sync);
+            new MutationObserver(sync).observe(sel, { childList: true, subtree: true });
+            watchValue(sel, sync);
+            sync();
+
+            btn.addEventListener('click', () => {
+                window.openAppSheet({
+                    title: opts.title || 'Choose',
+                    options: readOptions(sel),
+                    selected: sel.value,
+                    searchable: opts.searchable,
+                    onSelect: v => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+                });
+            });
+        };
+
+        // Turn a short <select> into a segmented toggle
+        window.enhanceSegmented = function (id) {
+            const sel = document.getElementById(id);
+            if (!sel || sel.dataset.enhanced) return;
+            sel.dataset.enhanced = '1';
+            sel.classList.add('hidden');
+
+            const wrap = document.createElement('div');
+            wrap.className = 'grid gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800';
+            sel.insertAdjacentElement('afterend', wrap);
+
+            function sync() {
+                wrap.style.gridTemplateColumns = `repeat(${sel.options.length}, minmax(0, 1fr))`;
+                wrap.innerHTML = '';
+                Array.from(sel.options).forEach(o => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    const on = o.value === sel.value;
+                    b.className = 'py-2.5 px-2 rounded-xl text-xs font-bold transition active:scale-95 ' + (on ? 'bg-indigo-600 text-white shadow' : 'text-slate-400');
+                    b.textContent = o.text.trim();
+                    b.addEventListener('click', () => {
+                        sel.value = o.value;
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    wrap.appendChild(b);
+                });
+            }
+            sel.addEventListener('change', sync);
+            new MutationObserver(sync).observe(sel, { childList: true, subtree: true });
+            watchValue(sel, sync);
+            sync();
+        };
+
+        // Park/area choices for the Preset method come straight from the location list
+        window.populatePresetParkSelect = function () {
+            const sel = document.getElementById('preset-park-select');
+            if (!sel) return;
+            const presets = window.DISNEY_PRESETS || [];
+            const counts = new Map();
+            presets.forEach(p => { if (p.type !== 'BONUS_PHOTO') counts.set(p.park, (counts.get(p.park) || 0) + 1); });
+            const previous = sel.value;
+            let html = `<option value="all" data-icon="🌟" data-sub="${presets.length} locations and bonuses">All locations &amp; bonuses</option>`;
+            counts.forEach((n, park) => {
+                html += `<option value="${esc(park)}" data-icon="${esc(window.areaIcon(park))}" data-sub="${n} stop${n === 1 ? '' : 's'}">${esc(park)}</option>`;
+            });
+            html += '<option value="Bonus Challenge" data-icon="⭐" data-sub="Photo challenges only">Bonus photo challenges</option>';
+            sel.innerHTML = html;
+            if (previous && Array.from(sel.options).some(o => o.value === previous)) sel.value = previous;
+            if (!sel.dataset.listening) {
+                sel.dataset.listening = '1';
+                sel.addEventListener('change', () => { if (window.updateCreationFinalStopDropdown) window.updateCreationFinalStopDropdown(); });
+            }
+        };
+
+        window.populatePresetParkSelect();
+        window.enhanceSelect('preset-park-select', { title: 'Choose a park group', searchable: false });
+        window.enhanceSelect('create-final-stop-select', { title: 'Final location', searchable: true });
+        window.enhanceSelect('edit-final-stop-select', { title: 'Final location', searchable: true });
+        window.enhanceSegmented('trivia-frequency');
+        window.enhanceSegmented('edit-trivia-frequency');
+
+        // Fill the final-location list once the main app script has loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.updateCreationFinalStopDropdown) window.updateCreationFinalStopDropdown();
+        });
+    })();
+    </script>
 </body>
 </html>
