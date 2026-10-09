@@ -463,6 +463,16 @@
         #race-journey-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
         #journey-timeline { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
         #journey-timeline > div:not(.race-stop-dot) { flex-shrink: 0; }
+        @keyframes journeyRouteUpdated {
+            0% { opacity: .35; transform: translateY(3px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        #journey-timeline.journey-updated > div { animation: journeyRouteUpdated .35s ease-out both; }
+        #journey-timeline.journey-updated .race-stop-dot { animation: journeyRouteUpdated .35s ease-out both; }
+        @media (prefers-reduced-motion: reduce) {
+            #journey-timeline.journey-updated > div,
+            #journey-timeline.journey-updated .race-stop-dot { animation: none; }
+        }
         @media (max-width: 640px) {
             #race-journey-card { border-radius: 1.35rem; }
             #journey-timeline .race-stop-dot { width: 1.5rem; height: 1.5rem; font-size: .65rem; }
@@ -984,11 +994,8 @@
                                     <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                     Checkpoints
                                 </h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Drag and Drop checkpoints to plan your route</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Drag to reorder — your journey updates instantly</p>
                             </div>
-                            <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
-                                <i class="fa-solid fa-rotate"></i> Refresh
-                            </button>
                         </div>
                         <div id="team-checkpoints-list" class="space-y-3.5"></div>
                     </div>
@@ -4436,6 +4443,20 @@
                                     numSpan.innerText = `#${index + 1}`;
                                 }
                             });
+                            if (journeyTimerState) {
+                                const stopById = new Map(journeyTimerState.stops.map(cp => [cp.id, cp]));
+                                const reordered = newOrder.map(id => stopById.get(id)).filter(Boolean);
+                                journeyTimerState.stops.forEach(cp => { if (!newOrder.includes(cp.id)) reordered.push(cp); });
+                                journeyTimerState.stops = reordered;
+                                const { stops, completed, details, started, finished } = journeyTimerState;
+                                renderRaceJourney(stops, completed, details, started, finished);
+                                const journeyTimeline = document.getElementById('journey-timeline');
+                                if (journeyTimeline) {
+                                    journeyTimeline.classList.remove('journey-updated');
+                                    void journeyTimeline.offsetWidth;
+                                    journeyTimeline.classList.add('journey-updated');
+                                }
+                            }
                             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
                             await fastUpdate(teamRef, { customRouteOrder: newOrder });
                         }
