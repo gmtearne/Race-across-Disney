@@ -4453,9 +4453,12 @@
                                 renderRaceJourney(stops, completed, details, started, finished);
                                 const journeyTimeline = document.getElementById('journey-timeline');
                                 if (journeyTimeline) {
+                                    clearTimeout(journeyTimeline._updatedTimeout);
                                     journeyTimeline.classList.remove('journey-updated');
                                     void journeyTimeline.offsetWidth;
                                     journeyTimeline.classList.add('journey-updated');
+                                    // The 1s timer re-renders the timeline children, so the class must not linger or the animation replays every tick.
+                                    journeyTimeline._updatedTimeout = setTimeout(() => journeyTimeline.classList.remove('journey-updated'), 400);
                                 }
                             }
                             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
