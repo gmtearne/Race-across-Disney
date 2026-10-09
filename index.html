@@ -64,15 +64,30 @@
         }
     </script>
     <style>
-        /* Allow completely natural vertical scrolling and touch panning on body */
+        /*
+         * The document itself never scrolls (that is what triggers pull-to-refresh
+         * and the nested-scroller "two finger" bug). Instead <main> is the single
+         * scroll container for every standard page, just like the portal sheets.
+         */
         html, body {
-            touch-action: pan-y pinch-zoom;
-            -webkit-overflow-scrolling: touch;
-            overflow-x: hidden;
-            overflow-y: auto;
-            overscroll-behavior-y: none;
-            min-height: 100vh;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
         }
+        body > main {
+            flex: 1 1 auto;
+            min-height: 0 !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding-left: max(1rem, calc((100% - 56rem) / 2 + 1rem)) !important;
+            padding-right: max(1rem, calc((100% - 56rem) / 2 + 1rem)) !important;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        html.portal-locked body > main { overflow: hidden; }
 
         /*
          * Portal pages behave like two independent sheets of paper side-by-side.
@@ -2248,7 +2263,7 @@
                     setTimeout(() => { if (button.isConnected) button.innerHTML = old; }, 1600);
                 }
             } catch (error) {
-                window.prompt('Copy this race code:', String(code));
+                appAlert(`Race code: ${code}`, { title: "Copy this code", tone: "info" });
             }
         };
 
@@ -2405,6 +2420,7 @@
                     if (orgCog) orgCog.classList.remove('hidden');
                     loadAdminRaces();
                 } else {
+                    stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
                     if (orgCog) orgCog.classList.remove('hidden');
@@ -3446,9 +3462,52 @@
                 } else {
                     pendingBadge.classList.add('hidden');
                 }
+                watchHostPendingTeams(races.map(r => r.code));
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        // Live listener per host race so the cog badge updates the moment a team registers,
+        // without the host having to open the dashboard or expand a race.
+        const hostPendingWatch = { key: '', unsubs: [], counts: {}, refreshTimer: null };
+
+        function renderHostPendingBadge() {
+            const badge = document.getElementById('nav-pending-badge');
+            if (!badge) return;
+            const total = Object.values(hostPendingWatch.counts).reduce((a, b) => a + b, 0);
+            badge.innerText = total;
+            badge.classList.toggle('hidden', total === 0);
+        }
+
+        function stopHostPendingWatch() {
+            hostPendingWatch.unsubs.forEach(unsub => unsub());
+            hostPendingWatch.unsubs = [];
+            hostPendingWatch.counts = {};
+            hostPendingWatch.key = '';
+            clearTimeout(hostPendingWatch.refreshTimer);
+            renderHostPendingBadge();
+        }
+        window.stopHostPendingWatch = stopHostPendingWatch;
+
+        function watchHostPendingTeams(codes) {
+            const key = [...codes].sort().join(',');
+            if (key === hostPendingWatch.key) return;
+            stopHostPendingWatch();
+            hostPendingWatch.key = key;
+            codes.forEach(code => {
+                const unsub = onSnapshot(collection(window.db, "races", code, "teams"), snap => {
+                    const pending = snap.docs.filter(d => !d.data().isApproved).length;
+                    const previous = hostPendingWatch.counts[code];
+                    hostPendingWatch.counts[code] = pending;
+                    renderHostPendingBadge();
+                    if (previous !== undefined && previous !== pending) {
+                        clearTimeout(hostPendingWatch.refreshTimer);
+                        hostPendingWatch.refreshTimer = setTimeout(loadAdminRaces, 400);
+                    }
+                }, err => console.error('Pending team watch failed:', err));
+                hostPendingWatch.unsubs.push(unsub);
+            });
         }
 
         window.loadLeaderboard = async function() {
@@ -3703,7 +3762,7 @@
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
-            if (!confirm("Are you sure you want to remove this team?")) return;
+            if (!(await appConfirm("Remove this team from the race?", { title: "Remove team", confirmText: "Remove", danger: true }))) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
             loadAdminRaces();
         };
@@ -3713,7 +3772,7 @@
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
-            if (!confirm(`Are you sure you want to delete the entire race (${raceCode})? This will also remove all registered teams and logs permanently.`)) return;
+            if (!(await appConfirm(`This permanently deletes race ${raceCode}, all registered teams and their logs.`, { title: "Delete race?", confirmText: "Delete race", danger: true }))) return;
             
             try {
                 const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
@@ -4216,7 +4275,7 @@
             const isScavenger = raceData.gameMode === 'scavenger';
             const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
 
-            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty.toUpperCase()} Tier)` : `Speed Race (${difficulty.toUpperCase()} Tier)`;
+            document.getElementById('dashboard-mode-label').innerText = isScavenger ? 'Scavenger Hunt' : 'Speed Race';
 
             const checkpoints = raceData.checkpoints || [];
             const finalCheckpointId = raceData.finalCheckpointId;
@@ -4506,7 +4565,7 @@
         };
 
         window.undoManualCheckIn = async function(cpId) {
-            if (!confirm("Are you sure you want to undo this manual check-in? This will remove your completion status for this stop so you can retry when you reach the correct location.")) return;
+            if (!(await appConfirm("This removes your completion for this stop so you can retry when you reach the correct location.", { title: "Undo check-in?", confirmText: "Undo", danger: true }))) return;
 
             try {
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
@@ -4549,7 +4608,7 @@
 
             if (!navigator.geolocation) {
                 alert("Geolocation is not supported by your browser.");
-                const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
+                const forceManual = await appConfirm("Submit a manual check-in without GPS coordinates?", { title: "Manual check-in", confirmText: "Check in" });
                 if (forceManual) {
                     await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
@@ -4592,7 +4651,7 @@
                     const ALLOWED_RADIUS_METERS = 150;
                     const isManual = distance > ALLOWED_RADIUS_METERS;
 
-                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override? (Note: You can undo this later if you realize you were in the wrong spot).`)) {
+                    if (!isManual || await appConfirm(`You appear to be ${Math.round(distance)}m outside the check-in area. You can undo this later if you were in the wrong spot.`, { title: "Record manual override?", confirmText: "Record", tone: "warning" })) {
                         await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
                     }
                 },
@@ -4602,7 +4661,7 @@
                         btn.disabled = false;
                     }
                     alert("Unable to retrieve GPS location.");
-                    if (confirm("Submit a manual check-in anyway?")) {
+                    if (await appConfirm("Submit a manual check-in anyway?", { title: "Manual check-in", confirmText: "Check in" })) {
                         await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
                     }
                 },
@@ -4846,6 +4905,126 @@
     }
     </script>
     <div id="sync-status" class="hidden fixed left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);"></div>
+    <script>
+        (function () {
+            const TONES = {
+                success: { icon: 'fa-circle-check', ring: 'bg-emerald-500/15 text-emerald-400', title: 'Done' },
+                error:   { icon: 'fa-circle-xmark', ring: 'bg-rose-500/15 text-rose-400', title: 'Something went wrong' },
+                warning: { icon: 'fa-triangle-exclamation', ring: 'bg-amber-500/15 text-amber-400', title: 'Heads up' },
+                info:    { icon: 'fa-circle-info', ring: 'bg-sky-500/15 text-sky-400', title: 'Notice' }
+            };
+
+            function inferTone(msg) {
+                if (/error|incorrect|unable|not found|not supported|do not match|failed|duplicate/i.test(msg)) return 'error';
+                if (/rule|warning|must|cannot|please|still pending|you must/i.test(msg)) return 'warning';
+                if (/success|approved|correct|copied|started|finished|unlocked|locked|created|updated|saved|undone|refreshed|added|submitted|deleted|earned|uploaded/i.test(msg)) return 'success';
+                return 'info';
+            }
+
+            let root = null;
+            let queue = Promise.resolve();
+
+            function ensureRoot() {
+                if (root) return root;
+                root = document.createElement('div');
+                root.id = 'app-dialog';
+                root.setAttribute('role', 'alertdialog');
+                root.setAttribute('aria-modal', 'true');
+                root.className = 'fixed inset-0 z-[120] flex items-center justify-center p-6 pointer-events-none';
+                root.innerHTML = `
+                    <div data-backdrop class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
+                    <div data-panel class="relative w-full max-w-xs bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl p-5 text-center opacity-0 scale-95 transition duration-200 ease-out">
+                        <div data-icon class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-xl mb-3"></div>
+                        <h2 data-title id="app-dialog-title" class="text-base font-bold text-white text-balance"></h2>
+                        <p data-msg id="app-dialog-msg" class="text-sm text-slate-300 mt-1.5 leading-relaxed text-pretty whitespace-pre-line"></p>
+                        <div data-actions class="flex gap-2 mt-5"></div>
+                    </div>`;
+                root.setAttribute('aria-labelledby', 'app-dialog-title');
+                root.setAttribute('aria-describedby', 'app-dialog-msg');
+                root.style.visibility = 'hidden';
+                document.body.appendChild(root);
+                return root;
+            }
+
+            function show(message, opts, withCancel) {
+                return new Promise(resolve => {
+                    const el = ensureRoot();
+                    const msg = String(message ?? '');
+                    const tone = opts.tone || (opts.danger ? 'error' : (withCancel ? 'info' : inferTone(msg)));
+                    const t = TONES[tone] || TONES.info;
+                    const iconEl = el.querySelector('[data-icon]');
+                    iconEl.className = `w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-xl mb-3 ${t.ring}`;
+                    iconEl.innerHTML = `<i class="fa-solid ${opts.danger ? 'fa-trash' : t.icon}" aria-hidden="true"></i>`;
+                    el.querySelector('[data-title]').textContent = opts.title || (withCancel ? 'Are you sure?' : t.title);
+                    el.querySelector('[data-msg]').textContent = msg;
+
+                    const actions = el.querySelector('[data-actions]');
+                    actions.innerHTML = '';
+                    const primaryClass = opts.danger
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                        : 'bg-disneyGold hover:brightness-110 text-slate-900';
+                    let cancelBtn = null;
+                    if (withCancel) {
+                        cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.className = 'flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-[0.97]';
+                        cancelBtn.textContent = opts.cancelText || 'Cancel';
+                        actions.appendChild(cancelBtn);
+                    }
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.className = `flex-1 py-3 rounded-2xl text-sm font-bold transition active:scale-[0.97] ${primaryClass}`;
+                    okBtn.textContent = opts.confirmText || 'OK';
+                    actions.appendChild(okBtn);
+
+                    const backdrop = el.querySelector('[data-backdrop]');
+                    const panel = el.querySelector('[data-panel]');
+                    const previousFocus = document.activeElement;
+
+                    const close = (result) => {
+                        document.removeEventListener('keydown', onKey);
+                        backdrop.classList.add('opacity-0');
+                        panel.classList.add('opacity-0', 'scale-95');
+                        el.classList.add('pointer-events-none');
+                        setTimeout(() => {
+                            el.style.visibility = 'hidden';
+                            if (previousFocus && previousFocus.focus) previousFocus.focus({ preventScroll: true });
+                            resolve(result);
+                        }, 180);
+                    };
+                    const onKey = (e) => {
+                        if (e.key === 'Escape') close(withCancel ? false : true);
+                        if (e.key === 'Enter') { e.preventDefault(); close(true); }
+                    };
+
+                    okBtn.onclick = () => close(true);
+                    if (cancelBtn) cancelBtn.onclick = () => close(false);
+                    backdrop.onclick = () => close(withCancel ? false : true);
+                    document.addEventListener('keydown', onKey);
+
+                    el.style.visibility = 'visible';
+                    el.classList.remove('pointer-events-none');
+                    requestAnimationFrame(() => {
+                        backdrop.classList.remove('opacity-0');
+                        panel.classList.remove('opacity-0', 'scale-95');
+                        okBtn.focus({ preventScroll: true });
+                    });
+                });
+            }
+
+            function enqueue(message, opts, withCancel) {
+                const run = queue.then(() => show(message, opts || {}, withCancel));
+                queue = run.catch(() => {});
+                return run;
+            }
+
+            window.appAlert = (message, opts) => enqueue(message, opts, false);
+            window.appConfirm = (message, opts) => enqueue(message, opts, true);
+            // Route every legacy alert() through the in-app dialog so no native browser popup ever appears.
+            window.alert = (message) => { window.appAlert(message); };
+        })();
+    </script>
+
     <div id="app-sheet" aria-hidden="true">
         <div class="sheet-backdrop" onclick="closeAppSheet()"></div>
         <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="app-sheet-title">
