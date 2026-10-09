@@ -114,7 +114,7 @@
 
         #portal-track {
             display: flex;
-            width: 200%;
+            width: 400%;
             height: 100%;
             min-height: 0;
             align-items: stretch;
@@ -123,8 +123,8 @@
         #portal-track > section {
             padding-top: 1rem;
             padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-            width: 50%;
-            flex: 0 0 50%;
+            width: 25%;
+            flex: 0 0 25%;
             height: 100%;
             min-height: 0;
             overflow-y: auto;
@@ -352,6 +352,9 @@
             from { opacity: .35; transform: translateY(8px) scale(.994); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .app-page-fade { animation: appPageFade 380ms var(--app-motion) backwards; }
+        @keyframes appPageFade { from { opacity: .35; } to { opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) { .app-page-fade { animation: none !important; } }
         @keyframes appPageFromLeft {
             from { opacity: .45; transform: translateX(-18px) scale(.997); }
             to { opacity: 1; transform: translateX(0) scale(1); }
@@ -454,6 +457,7 @@
             --theme-cream: #fff1cf;
             --theme-header-firework-1: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22 fill=%22none%22%3E%3Cline x1=%2247.0%22 y1=%2240.0%22 x2=%2270.0%22 y2=%2240.0%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2274.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2249.3%22 y1=%2245.9%22 x2=%2257.7%22 y2=%2251.3%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.1%22 cy=%2253.5%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2244.4%22 y1=%2245.5%22 x2=%2258.7%22 y2=%2263.5%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.2%22 cy=%2266.6%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2241.1%22 y1=%2250.9%22 x2=%2242.2%22 y2=%2260.9%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2242.6%22 cy=%2264.9%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2238.4%22 y1=%2246.8%22 x2=%2233.3%22 y2=%2269.2%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2232.4%22 cy=%2273.1%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2232.2%22 y1=%2247.7%22 x2=%2225.0%22 y2=%2254.7%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2222.2%22 cy=%2257.5%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2233.7%22 y1=%2243.0%22 x2=%2213.0%22 y2=%2253.0%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%229.4%22 cy=%2254.8%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2229.1%22 y1=%2238.7%22 x2=%2219.2%22 y2=%2237.5%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2215.2%22 cy=%2237.0%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2233.7%22 y1=%2237.0%22 x2=%2213.0%22 y2=%2227.0%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%229.4%22 cy=%2225.2%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2234.2%22 y1=%2230.6%22 x2=%2229.0%22 y2=%2222.1%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2226.9%22 cy=%2218.7%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2238.4%22 y1=%2233.2%22 x2=%2233.3%22 y2=%2210.8%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2232.4%22 cy=%226.9%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2243.7%22 y1=%2229.6%22 x2=%2247.1%22 y2=%2220.2%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2248.4%22 cy=%2216.5%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2244.4%22 y1=%2234.5%22 x2=%2258.7%22 y2=%2216.5%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.2%22 cy=%2213.4%22 r=%221.9%22 fill=%22%23fff3b0%22/%3E%3Cline x1=%2250.4%22 y1=%2236.4%22 x2=%2259.9%22 y2=%2233.2%22 stroke=%22%23ffd45e%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2263.7%22 cy=%2231.9%22 r=%221.3%22 fill=%22%23fff3b0%22/%3E%3Ccircle cx=%2240.0%22 cy=%2240.0%22 r=%223%22 fill=%22%23fff3b0%22/%3E%3C/svg%3E");
             --theme-header-firework-2: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22 fill=%22none%22%3E%3Cline x1=%2247.0%22 y1=%2240.0%22 x2=%2268.0%22 y2=%2240.0%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2272.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2248.8%22 y1=%2246.6%22 x2=%2255.2%22 y2=%2251.4%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2258.4%22 cy=%2253.8%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2243.5%22 y1=%2246.1%22 x2=%2254.0%22 y2=%2264.2%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2238.7%22 y1=%2250.9%22 x2=%2237.7%22 y2=%2258.9%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2237.2%22 cy=%2262.8%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2236.5%22 y1=%2246.1%22 x2=%2226.0%22 y2=%2264.2%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2229.9%22 y1=%2244.3%22 x2=%2222.5%22 y2=%2247.5%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2218.8%22 cy=%2249.0%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2233.0%22 y1=%2240.0%22 x2=%2212.0%22 y2=%2240.0%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2231.2%22 y1=%2233.4%22 x2=%2224.8%22 y2=%2228.6%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2221.6%22 cy=%2226.2%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2236.5%22 y1=%2233.9%22 x2=%2226.0%22 y2=%2215.8%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2241.3%22 y1=%2229.1%22 x2=%2242.3%22 y2=%2221.1%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2242.8%22 cy=%2217.2%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2243.5%22 y1=%2233.9%22 x2=%2254.0%22 y2=%2215.8%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23ffd0e6%22/%3E%3Cline x1=%2250.1%22 y1=%2235.7%22 x2=%2257.5%22 y2=%2232.5%22 stroke=%22%23ff6fb1%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.2%22 cy=%2231.0%22 r=%221.3%22 fill=%22%23ffd0e6%22/%3E%3Ccircle cx=%2240.0%22 cy=%2240.0%22 r=%223%22 fill=%22%23ffd0e6%22/%3E%3C/svg%3E");
+            --theme-header-firework-4: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22 fill=%22none%22%3E%3Cline x1=%2247.0%22 y1=%2240.0%22 x2=%2268.0%22 y2=%2240.0%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2272.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2248.8%22 y1=%2246.6%22 x2=%2255.2%22 y2=%2251.4%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2258.4%22 cy=%2253.8%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2243.5%22 y1=%2246.1%22 x2=%2254.0%22 y2=%2264.2%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2238.7%22 y1=%2250.9%22 x2=%2237.7%22 y2=%2258.9%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2237.2%22 cy=%2262.8%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2236.5%22 y1=%2246.1%22 x2=%2226.0%22 y2=%2264.2%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2229.9%22 y1=%2244.3%22 x2=%2222.5%22 y2=%2247.5%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2218.8%22 cy=%2249.0%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2233.0%22 y1=%2240.0%22 x2=%2212.0%22 y2=%2240.0%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2231.2%22 y1=%2233.4%22 x2=%2224.8%22 y2=%2228.6%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2221.6%22 cy=%2226.2%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2236.5%22 y1=%2233.9%22 x2=%2226.0%22 y2=%2215.8%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2241.3%22 y1=%2229.1%22 x2=%2242.3%22 y2=%2221.1%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2242.8%22 cy=%2217.2%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2243.5%22 y1=%2233.9%22 x2=%2254.0%22 y2=%2215.8%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23eadcff%22/%3E%3Cline x1=%2250.1%22 y1=%2235.7%22 x2=%2257.5%22 y2=%2232.5%22 stroke=%22%23b58cff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.2%22 cy=%2231.0%22 r=%221.3%22 fill=%22%23eadcff%22/%3E%3Ccircle cx=%2240.0%22 cy=%2240.0%22 r=%223%22 fill=%22%23eadcff%22/%3E%3C/svg%3E");
             --theme-header-firework-3: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22 fill=%22none%22%3E%3Cline x1=%2247.0%22 y1=%2240.0%22 x2=%2268.0%22 y2=%2240.0%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2272.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2248.8%22 y1=%2246.6%22 x2=%2255.2%22 y2=%2251.4%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2258.4%22 cy=%2253.8%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2243.5%22 y1=%2246.1%22 x2=%2254.0%22 y2=%2264.2%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2238.7%22 y1=%2250.9%22 x2=%2237.7%22 y2=%2258.9%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2237.2%22 cy=%2262.8%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2236.5%22 y1=%2246.1%22 x2=%2226.0%22 y2=%2264.2%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2267.7%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2229.9%22 y1=%2244.3%22 x2=%2222.5%22 y2=%2247.5%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2218.8%22 cy=%2249.0%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2233.0%22 y1=%2240.0%22 x2=%2212.0%22 y2=%2240.0%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.0%22 cy=%2240.0%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2231.2%22 y1=%2233.4%22 x2=%2224.8%22 y2=%2228.6%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2221.6%22 cy=%2226.2%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2236.5%22 y1=%2233.9%22 x2=%2226.0%22 y2=%2215.8%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2224.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2241.3%22 y1=%2229.1%22 x2=%2242.3%22 y2=%2221.1%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2242.8%22 cy=%2217.2%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2243.5%22 y1=%2233.9%22 x2=%2254.0%22 y2=%2215.8%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2256.0%22 cy=%2212.3%22 r=%221.9%22 fill=%22%23d8ecff%22/%3E%3Cline x1=%2250.1%22 y1=%2235.7%22 x2=%2257.5%22 y2=%2232.5%22 stroke=%22%236fb6ff%22 stroke-width=%222.2%22 stroke-opacity=%22.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%2261.2%22 cy=%2231.0%22 r=%221.3%22 fill=%22%23d8ecff%22/%3E%3Ccircle cx=%2240.0%22 cy=%2240.0%22 r=%223%22 fill=%22%23d8ecff%22/%3E%3C/svg%3E");
         }
         /* App-like: prevent accidental page text selection, but keep form editing usable. */
@@ -590,14 +594,17 @@
                 var(--theme-header-firework-1),
                 var(--theme-header-firework-2),
                 var(--theme-header-firework-3),
+                var(--theme-header-firework-4),
                 radial-gradient(1.4px 1.4px at 14% 30%, #fff 50%, transparent 52%),
                 radial-gradient(1px 1px at 27% 72%, #fff 50%, transparent 52%),
                 radial-gradient(1.6px 1.6px at 46% 20%, #ffe9a8 50%, transparent 52%),
                 radial-gradient(1px 1px at 58% 78%, #fff 50%, transparent 52%),
-                radial-gradient(1.3px 1.3px at 66% 34%, #fff 50%, transparent 52%);
+                radial-gradient(1.3px 1.3px at 66% 34%, #fff 50%, transparent 52%),
+                radial-gradient(1.4px 1.4px at 80% 22%, #fff 50%, transparent 52%),
+                radial-gradient(1px 1px at 93% 40%, #ffe9a8 50%, transparent 52%);
             background-repeat: no-repeat;
-            background-position: calc(66% - 36px) -20px, calc(45% - 20px) -14px, 6px -10px, 0 0, 0 0, 0 0, 0 0, 0 0;
-            background-size: 72px 72px, 44px 44px, 46px 46px, auto, auto, auto, auto, auto;
+            background-position: calc(60% - 36px) -20px, calc(40% - 20px) -14px, calc(100% - 64px) -14px, calc(80% - 20px) 36px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+            background-size: 72px 72px, 44px 44px, 66px 66px, 42px 42px, auto, auto, auto, auto, auto, auto, auto;
             opacity: .8;
             animation: headerTwinkle 4.5s ease-in-out infinite;
         }
@@ -627,7 +634,7 @@
         }
         .brand-title-main {
             display: block; font-family: 'Fredoka', sans-serif; font-weight: 700;
-            font-size: clamp(24px, 7.4vw, 31px); letter-spacing: .01em; white-space: nowrap;
+            font-size: clamp(27px, 8.6vw, 36px); letter-spacing: .01em; white-space: nowrap;
             background: linear-gradient(180deg, var(--theme-title-top) 0%, var(--theme-title-mid) 48%, var(--theme-title-bottom) 100%);
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent; color: transparent;
@@ -663,6 +670,14 @@
             box-shadow: inset 0 2px 5px rgba(0,0,0,.45);
         }
         .app-header [data-tab]::after { display: none; }
+        .app-header .brass-btn[data-tab] { overflow: visible; }
+        .app-header .brass-btn.tab-active {
+            filter: brightness(1.12);
+            box-shadow: 0 0 0 2px rgba(255,229,143,.55), 0 0 18px rgba(255,184,0,.65), 0 3px 0 rgba(0,0,0,.45), inset 0 0 6px rgba(0,0,0,.6) !important;
+        }
+        /* Menu page */
+        #tab-menu .menu-page-title { font-family: 'Fredoka', sans-serif; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--theme-accent); text-align: center; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+        #tab-menu .app-glass-button { background: var(--theme-card-bg) !important; border-color: var(--theme-card-border) !important; -webkit-backdrop-filter: blur(var(--theme-card-blur)); backdrop-filter: blur(var(--theme-card-blur)); font-family: 'Fredoka', sans-serif; }
         .app-header [data-tab].text-disneyGold {
             color: var(--theme-accent);
             border-color: var(--theme-metal-light);
@@ -689,38 +704,6 @@
         <div class="text-center space-y-1">
             <h2 class="font-disney font-bold text-xl text-white tracking-wide">The Amazing Mouse Race</h2>
             <p class="text-xs text-slate-400">Loading your magical adventure...</p>
-        </div>
-    </div>
-
-    <!-- Full Screen Semi-Transparent App-Like Navigation Menu Overlay -->
-    <div id="app-fullscreen-menu" class="fixed inset-0 z-[110] magical-gradient/95 bg-slate-950/90 hidden flex flex-col items-center justify-center p-6 text-center">
-        <!-- Close menu button positioned on the left -->
-        <button onclick="toggleMobileMenu()" id="app-menu-close" class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition text-lg border border-white/20 shadow-lg">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-
-        <div class="app-menu-content w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-3xl shadow-2xl border border-amber-300/40 mb-6">
-            <i class="fa-solid fa-compass"></i>
-        </div>
-
-        <div class="app-menu-content space-y-3 w-full max-w-xs">
-            <h3 class="font-disney font-bold text-lg text-amber-300 tracking-wider uppercase mb-2">Navigation Menu</h3>
-            
-            <button onclick="switchTab('race')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
-                <i class="fa-solid fa-flag-checkered text-disneyGold"></i> <span>Team Portal</span>
-            </button>
-            <button onclick="switchTab('leaderboard')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg">
-                <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
-            </button>
-            <button onclick="switchTab('maps')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
-                <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
-            </button>
-            <button onclick="switchTab('rules')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
-                <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
-            </button>
-            <button onclick="switchTab('organizer')" class="app-menu-item app-glass-button w-full py-4 px-6 bg-white/10 hover:bg-white/20 border border-white/20 text-sm rounded-2xl transition flex items-center justify-center gap-3 shadow-lg text-white">
-                <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Host Dashboard</span>
-            </button>
         </div>
     </div>
 
@@ -964,9 +947,6 @@
         <!-- Top brand header row (flush compass logo & title) -->
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
-                <div class="brand-medallion shrink-0">
-                    <i class="fa-solid fa-compass"></i>
-                </div>
                 <div class="min-w-0">
                     <h1 class="brand-title" aria-label="The Amazing Mouse Race">
                         <span class="brand-title-small">The Amazing</span>
@@ -980,16 +960,12 @@
                 <div id="nav-team-badge" class="hidden items-center">
                     <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="brass-btn w-10 h-10 object-cover shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" class="brass-btn relative w-10 h-10 transition flex items-center justify-center" title="Host Dashboard">
-                    <i class="fa-solid fa-gear text-sm"></i>
-                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
-                </button>
             </div>
         </div>
         
-        <!-- Bottom Nav row (Hamburger button level with Team Portal & Race Portal) -->
-        <div class="app-tabrow relative text-xs font-semibold flex items-center justify-between px-2">
-            <button onclick="toggleMobileMenu()" id="hamburger-btn" class="brass-btn mx-2 my-1.5 w-10 h-10 flex items-center justify-center transition shrink-0" title="Open Navigation Menu">
+        <!-- Nav row: menu (circle) | Team Portal | Race Portal | Host (circle) — all four are also swipeable pages -->
+        <div class="app-tabrow relative text-xs font-semibold flex items-center justify-between px-1">
+            <button onclick="toggleMobileMenu()" id="hamburger-btn" data-tab="menu" class="brass-btn mx-2 my-1.5 w-10 h-10 flex items-center justify-center transition shrink-0" title="Open Navigation Menu">
                 <i class="fa-solid fa-bars text-sm"></i>
             </button>
             <div class="flex flex-1 overflow-x-auto py-1 gap-1">
@@ -1000,6 +976,10 @@
                     <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
                 </button>
             </div>
+                <button id="nav-org-cog" onclick="switchTab('organizer')" data-tab="organizer" class="brass-btn relative mx-2 my-1.5 w-10 h-10 transition flex items-center justify-center shrink-0" title="Host Dashboard">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
+                </button>
         </div>
     </nav>
 
@@ -1025,6 +1005,26 @@
 
         <div id="portal-viewport">
             <div id="portal-track">
+                <!-- ================= TAB 0: MENU (swipe right from Team Portal) ================= -->
+                <section id="tab-menu" class="px-3 space-y-3">
+                    <h3 class="menu-page-title text-lg mb-1 pt-2">Menu</h3>
+                    <button onclick="switchTab('race')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
+                        <i class="fa-solid fa-flag-checkered text-disneyGold"></i> <span>Team Portal</span>
+                    </button>
+                    <button onclick="switchTab('leaderboard')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
+                        <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
+                    </button>
+                    <button onclick="switchTab('maps')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
+                        <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
+                    </button>
+                    <button onclick="switchTab('rules')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
+                        <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
+                    </button>
+                    <button onclick="switchTab('organizer')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
+                        <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Host Dashboard</span>
+                    </button>
+                </section>
+
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
                 <section id="tab-race" class="px-3 space-y-6">
                 <div id="login-prompt-card" class="space-y-4">
@@ -1250,6 +1250,302 @@
                     </div>
                 </div>
             </section>
+
+        <!-- ================= TAB 5: HOST DASHBOARD ================= -->
+                <section id="tab-organizer" class="px-3 space-y-6">
+                    <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                            <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Host Login</h2>
+                            <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-[11px] text-disneyGold underline">Need account? Register</button>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">EMAIL</label>
+                                <input type="email" id="admin-email" placeholder="host@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
+                                <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
+                            </div>
+                            <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
+                                Sign In to Dashboard
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="admin-dashboard-card" class="hidden space-y-6">
+                        <!-- 1. Host Dashboard Header -->
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-indigo-300 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-gauge-high"></i> Host Dashboard
+                                </h3>
+                                <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
+                            </div>
+                            <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
+                                Logout
+                            </button>
+                        </div>
+
+                        <!-- 2. Create New Race (At the top) -->
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+                            <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
+                                        <i class="fa-solid fa-plus text-xs"></i>
+                                    </div>
+                                    <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
+                                </div>
+                                <span id="create-race-toggle-icon" class="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-xs transition-transform duration-300"><i class="fa-solid fa-chevron-down"></i></span>
+                            </button>
+
+                            <div id="create-race-collapsible-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80">
+                                <div class="space-y-2.5">
+                                    <input type="text" id="new-race-title" placeholder="Race title (e.g. Magic Kingdom Chase)" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                                    <div class="flex gap-2">
+                                        <input type="text" id="new-race-code" placeholder="RACE CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white uppercase font-mono text-disneyGold font-bold tracking-widest text-center">
+                                        <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl text-sm shadow transition shrink-0">
+                                            <i class="fa-solid fa-dice"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Game Mode</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                                    <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="sr-only peer">
+                                                    <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
+                                                    <span class="font-bold text-sm text-white">Speed Race</span>
+                                                </label>
+                                                <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
+                                            </div>
+                                            <div id="race-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+                                                First team to complete all checkpoints wins! Ranked purely by total elapsed time. Checkpoints remain hidden until race start.
+                                            </div>
+                                        </div>
+                                        <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                                    <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger"  onchange="toggleGameModeSelection()" class="sr-only peer">
+                                                    <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
+                                                    <span class="font-bold text-sm text-white">Scavenger Hunt</span>
+                                                </label>
+                                                <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
+                                            </div>
+                                            <div id="scavenger-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+                                                Teams collect points for checkpoints visited within a time limit. Higher score wins!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Base Difficulty</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <label class="relative block cursor-pointer select-none">
+                                            <input type="radio" name="create_difficulty" value="easy" checked class="sr-only peer">
+                                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                                <span class="block font-bold text-sm text-white">Easy</span>
+                                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Pins + Transit</span>
+                                            </div>
+                                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+                                        </label>
+                                        <label class="relative block cursor-pointer select-none">
+                                            <input type="radio" name="create_difficulty" value="medium"  class="sr-only peer">
+                                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                                <span class="block font-bold text-sm text-white">Medium</span>
+                                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Park Lands</span>
+                                            </div>
+                                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+                                        </label>
+                                        <label class="relative block cursor-pointer select-none">
+                                            <input type="radio" name="create_difficulty" value="hard"  class="sr-only peer">
+                                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                                <span class="block font-bold text-sm text-white">Hard</span>
+                                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Blind</span>
+                                            </div>
+                                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-circle-question text-disneyGold"></i> Trivia Challenge</span>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">Ask a question at check-in for bonus rewards</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                            <input type="checkbox" id="create-trivia-switch" onchange="toggleTriviaSettings()" class="sr-only peer">
+                                            <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
+                                        </label>
+                                    </div>
+                                    <div id="trivia-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
+                                        <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                            <option value="every">Every Check-in</option>
+                                            <option value="random">Random Check-ins</option>
+                                        </select>
+                                        <div id="trivia-random-count-box" class="hidden">
+                                            <div>
+                                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Random check-ins with trivia</label>
+                                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                                    <button type="button" onclick="stepNumber('trivia-random-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                                    <input type="number" id="trivia-random-count" value="3" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                                    <button type="button" onclick="stepNumber('trivia-random-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input type="number" id="create-default-points" value="0" class="hidden">
+
+                                <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoints</label>
+
+                                    <div class="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                        <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
+                                        <button type="button" onclick="switchPopMethod('area')" id="pop-tab-area" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">🧭</span><span>By Area</span></button>
+                                        <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">☑️</span><span>Manual</span></button>
+                                        <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">📂</span><span>Preset</span></button>
+                                    </div>
+
+                                    <div id="pop-box-random" class="space-y-3 pt-1">
+                                        <p class="text-[11px] text-slate-400">How many random stops should this race include?</p>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">GPS Stops</label>
+                                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                                    <button type="button" onclick="stepNumber('rand-gps-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                                    <input type="number" id="rand-gps-count" value="10" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                                    <button type="button" onclick="stepNumber('rand-gps-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
+                                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                                    <button type="button" onclick="stepNumber('rand-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                                    <input type="number" id="rand-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                                    <button type="button" onclick="stepNumber('rand-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="pop-box-area" class="hidden space-y-3 pt-1">
+                                        <p class="text-[11px] text-slate-400">Switch areas on or off and choose how many random stops come from each one.</p>
+                                        <div id="area-random-list" class="space-y-2"></div>
+                                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                                            <span class="text-xs text-slate-300 font-semibold">GPS stops in total</span>
+                                            <span id="area-random-total" class="font-mono font-bold text-disneyGold text-base">0</span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
+                                            <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                                <button type="button" onclick="stepNumber('area-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                                <input type="number" id="area-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                                <button type="button" onclick="stepNumber('area-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                            </div>
+                                            <p class="text-[10px] text-slate-500 mt-1.5">Bonuses are only drawn from areas that are switched on.</p>
+                                        </div>
+                                    </div>
+
+                                    <div id="pop-box-manual" class="hidden space-y-3 pt-1">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-400">Pick the stops to include</span>
+                                            <div class="flex gap-1.5">
+                                                <button type="button" onclick="selectAllManualCheckboxes(true)" class="px-3 py-1.5 rounded-full bg-disneyGold/15 border border-disneyGold/40 text-disneyGold text-[11px] font-bold active:scale-95 transition">Select all</button>
+                                                <button type="button" onclick="selectAllManualCheckboxes(false)" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-[11px] font-bold active:scale-95 transition">Clear</button>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                            <input type="search" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                                        </div>
+                                        <div id="manual-checkbox-container" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
+                                    </div>
+
+                                    <div id="pop-box-preset" class="hidden space-y-3 pt-2">
+                                        <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
+                                        <select id="preset-park-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                            <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
+                                            <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
+                                            <option value="Epcot">🌐 Epcot Park (All Stops)</option>
+                                            <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
+                                            <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
+                                            <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
+                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
+                                    <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
+                                    <select id="create-final-stop-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                        <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="createNewRace()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 active:scale-[0.98] text-white font-bold text-sm tracking-wide rounded-2xl transition shadow-lg flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-flag-checkered"></i> Create Race
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Active Races & Teams Management -->
+                        <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races</h4>
+                            <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
+                        </div>
+
+                        <!-- 4. Fair Play Dashboard Lock -->
+                        <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                                <div>
+                                    <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fa-solid fa-shield-halved"></i> Fair Play Dashboard Lock
+                                    </h4>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Lock the active race view to hide checkpoint edits and bonus toggles from your view, aligning your access with the participants while keeping chat moderation open.</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <span class="text-xs text-slate-300 font-semibold shrink-0">Status:</span>
+                                    <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
+                                </div>
+                                <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
+                                    <div class="flex flex-col gap-1">
+                                        <input type="password" id="global-lock-pin-input" placeholder="Set 4-digit PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                                        <input type="password" id="global-lock-pin-confirm" placeholder="Confirm PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
+                                    </div>
+                                    <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                                        <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="org-locked-overlay-card" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+                            <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <h3 class="text-xl font-disney font-bold text-white">Host Active Race Panel Locked</h3>
+                            <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
+                            
+                            <div class="max-w-xs mx-auto flex gap-2 pt-2">
+                                <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
+                                <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                                    Unlock
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -1393,301 +1689,6 @@
             </div>
         </section>
 
-        <!-- ================= TAB 5: HOST DASHBOARD ================= -->
-        <section id="tab-organizer" class="hidden space-y-6">
-            <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                    <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Host Login</h2>
-                    <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-[11px] text-disneyGold underline">Need account? Register</button>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">EMAIL</label>
-                        <input type="email" id="admin-email" placeholder="host@disney.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
-                        <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
-                    </div>
-                    <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
-                        Sign In to Dashboard
-                    </button>
-                </div>
-            </div>
-
-            <div id="admin-dashboard-card" class="hidden space-y-6">
-                <!-- 1. Host Dashboard Header -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-                    <div>
-                        <h3 class="font-bold text-indigo-300 text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-gauge-high"></i> Host Dashboard
-                        </h3>
-                        <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
-                    </div>
-                    <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
-                        Logout
-                    </button>
-                </div>
-
-                <!-- 2. Create New Race (At the top) -->
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-                    <button onclick="toggleCreateRaceCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                            </div>
-                            <span class="font-bold text-sm text-white group-hover:text-disneyGold transition">Create new Race/Hunt</span>
-                        </div>
-                        <span id="create-race-toggle-icon" class="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-xs transition-transform duration-300"><i class="fa-solid fa-chevron-down"></i></span>
-                    </button>
-
-                    <div id="create-race-collapsible-box" class="hidden space-y-4 pt-4 border-t border-slate-700/80">
-                        <div class="space-y-2.5">
-                            <input type="text" id="new-race-title" placeholder="Race title (e.g. Magic Kingdom Chase)" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
-                            <div class="flex gap-2">
-                                <input type="text" id="new-race-code" placeholder="RACE CODE" readonly class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white uppercase font-mono text-disneyGold font-bold tracking-widest text-center">
-                                <button onclick="generateRandomRaceCode()" title="Generate Random Code" class="px-5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl text-sm shadow transition shrink-0">
-                                    <i class="fa-solid fa-dice"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Game Mode</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
-                                            <input type="radio" name="create_game_mode" value="race" id="create-mode-race" checked onchange="toggleGameModeSelection()" class="sr-only peer">
-                                            <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
-                                            <span class="font-bold text-sm text-white">Speed Race</span>
-                                        </label>
-                                        <button type="button" onclick="toggleModeInfo('race-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
-                                    </div>
-                                    <div id="race-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
-                                        First team to complete all checkpoints wins! Ranked purely by total elapsed time. Checkpoints remain hidden until race start.
-                                    </div>
-                                </div>
-                                <div class="p-3.5 rounded-2xl border border-slate-700 bg-slate-950 transition has-[:checked]:border-disneyGold has-[:checked]:bg-disneyGold/10 has-[:checked]:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
-                                            <input type="radio" name="create_game_mode" value="scavenger" id="create-mode-scavenger"  onchange="toggleGameModeSelection()" class="sr-only peer">
-                                            <span class="relative w-5 h-5 rounded-full border-2 border-slate-500 shrink-0 transition peer-checked:border-disneyGold after:content-[''] after:absolute after:inset-[3px] after:rounded-full after:bg-disneyGold after:scale-0 peer-checked:after:scale-100 after:transition"></span>
-                                            <span class="font-bold text-sm text-white">Scavenger Hunt</span>
-                                        </label>
-                                        <button type="button" onclick="toggleModeInfo('scavenger-info-box')" class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-600 hover:text-white shrink-0">?</button>
-                                    </div>
-                                    <div id="scavenger-info-box" class="hidden mt-2.5 pt-2.5 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed">
-                                        Teams collect points for checkpoints visited within a time limit. Higher score wins!
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Base Difficulty</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <label class="relative block cursor-pointer select-none">
-                                    <input type="radio" name="create_difficulty" value="easy" checked class="sr-only peer">
-                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
-                                        <span class="block font-bold text-sm text-white">Easy</span>
-                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Pins + Transit</span>
-                                    </div>
-                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
-                                </label>
-                                <label class="relative block cursor-pointer select-none">
-                                    <input type="radio" name="create_difficulty" value="medium"  class="sr-only peer">
-                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
-                                        <span class="block font-bold text-sm text-white">Medium</span>
-                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Park Lands</span>
-                                    </div>
-                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
-                                </label>
-                                <label class="relative block cursor-pointer select-none">
-                                    <input type="radio" name="create_difficulty" value="hard"  class="sr-only peer">
-                                    <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
-                                        <span class="block font-bold text-sm text-white">Hard</span>
-                                        <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Blind</span>
-                                    </div>
-                                    <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="min-w-0">
-                                    <span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-circle-question text-disneyGold"></i> Trivia Challenge</span>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Ask a question at check-in for bonus rewards</p>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                    <input type="checkbox" id="create-trivia-switch" onchange="toggleTriviaSettings()" class="sr-only peer">
-                                    <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
-                                </label>
-                            </div>
-                            <div id="trivia-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
-                                <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
-                                <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                    <option value="every">Every Check-in</option>
-                                    <option value="random">Random Check-ins</option>
-                                </select>
-                                <div id="trivia-random-count-box" class="hidden">
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Random check-ins with trivia</label>
-                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                            <button type="button" onclick="stepNumber('trivia-random-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                            <input type="number" id="trivia-random-count" value="3" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                            <button type="button" onclick="stepNumber('trivia-random-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <input type="number" id="create-default-points" value="0" class="hidden">
-
-                        <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoints</label>
-
-                            <div class="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
-                                <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
-                                <button type="button" onclick="switchPopMethod('area')" id="pop-tab-area" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">🧭</span><span>By Area</span></button>
-                                <button type="button" onclick="switchPopMethod('manual')" id="pop-tab-manual" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">☑️</span><span>Manual</span></button>
-                                <button type="button" onclick="switchPopMethod('preset')" id="pop-tab-preset" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">📂</span><span>Preset</span></button>
-                            </div>
-
-                            <div id="pop-box-random" class="space-y-3 pt-1">
-                                <p class="text-[11px] text-slate-400">How many random stops should this race include?</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">GPS Stops</label>
-                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                            <button type="button" onclick="stepNumber('rand-gps-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                            <input type="number" id="rand-gps-count" value="10" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                            <button type="button" onclick="stepNumber('rand-gps-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
-                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                            <button type="button" onclick="stepNumber('rand-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                            <input type="number" id="rand-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                            <button type="button" onclick="stepNumber('rand-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="pop-box-area" class="hidden space-y-3 pt-1">
-                                <p class="text-[11px] text-slate-400">Switch areas on or off and choose how many random stops come from each one.</p>
-                                <div id="area-random-list" class="space-y-2"></div>
-                                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-                                    <span class="text-xs text-slate-300 font-semibold">GPS stops in total</span>
-                                    <span id="area-random-total" class="font-mono font-bold text-disneyGold text-base">0</span>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
-                                    <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                        <button type="button" onclick="stepNumber('area-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                        <input type="number" id="area-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                        <button type="button" onclick="stepNumber('area-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                    </div>
-                                    <p class="text-[10px] text-slate-500 mt-1.5">Bonuses are only drawn from areas that are switched on.</p>
-                                </div>
-                            </div>
-
-                            <div id="pop-box-manual" class="hidden space-y-3 pt-1">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-[11px] text-slate-400">Pick the stops to include</span>
-                                    <div class="flex gap-1.5">
-                                        <button type="button" onclick="selectAllManualCheckboxes(true)" class="px-3 py-1.5 rounded-full bg-disneyGold/15 border border-disneyGold/40 text-disneyGold text-[11px] font-bold active:scale-95 transition">Select all</button>
-                                        <button type="button" onclick="selectAllManualCheckboxes(false)" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-[11px] font-bold active:scale-95 transition">Clear</button>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                                    <input type="search" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
-                                </div>
-                                <div id="manual-checkbox-container" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
-                            </div>
-
-                            <div id="pop-box-preset" class="hidden space-y-3 pt-2">
-                                <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
-                                <select id="preset-park-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                    <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
-                                    <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
-                                    <option value="Epcot">🌐 Epcot Park (All Stops)</option>
-                                    <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
-                                    <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
-                                    <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
-                            <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
-                            <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
-                            <select id="create-final-stop-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
-                            </select>
-                        </div>
-
-                        <button onclick="createNewRace()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 active:scale-[0.98] text-white font-bold text-sm tracking-wide rounded-2xl transition shadow-lg flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-flag-checkered"></i> Create Race
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 3. Active Races & Teams Management -->
-                <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races</h4>
-                    <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
-                </div>
-
-                <!-- 4. Fair Play Dashboard Lock -->
-                <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                        <div>
-                            <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-shield-halved"></i> Fair Play Dashboard Lock
-                            </h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Lock the active race view to hide checkpoint edits and bonus toggles from your view, aligning your access with the participants while keeping chat moderation open.</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <span class="text-xs text-slate-300 font-semibold shrink-0">Status:</span>
-                            <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-                            <div class="flex flex-col gap-1">
-                                <input type="password" id="global-lock-pin-input" placeholder="Set 4-digit PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
-                                <input type="password" id="global-lock-pin-confirm" placeholder="Confirm PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
-                            </div>
-                            <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                                <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="org-locked-overlay-card" class="hidden bg-slate-800 border border-rose-500/50 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-                    <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
-                        <i class="fa-solid fa-lock"></i>
-                    </div>
-                    <h3 class="text-xl font-disney font-bold text-white">Host Active Race Panel Locked</h3>
-                    <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
-                    
-                    <div class="max-w-xs mx-auto flex gap-2 pt-2">
-                        <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
-                        <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                            Unlock
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </section>
 
     </main>
 
@@ -1778,7 +1779,9 @@
         };
 
         function switchTab(tabName, saveState = true) {
-            ['maps', 'rules', 'organizer'].forEach(t => {
+            const PORTAL_PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
+            const prevTab = window.currentTab;
+            ['maps', 'rules'].forEach(t => {
                 const section = document.getElementById(`tab-${t}`);
                 if (section) {
                     section.classList.toggle('hidden', t !== tabName);
@@ -1786,7 +1789,10 @@
             });
 
             const portalViewport = document.getElementById('portal-viewport');
-            const isPortalTab = (tabName === 'race' || tabName === 'leaderboard');
+            const isPortalTab = PORTAL_PAGES.includes(tabName);
+            const viewportWasHidden = !!(portalViewport && portalViewport.classList.contains('hidden'));
+            if (tabName !== 'menu') window.lastNonMenuTab = tabName;
+            window.currentTab = tabName;
             if (portalViewport) {
                 portalViewport.classList.toggle('hidden', !isPortalTab);
                 document.documentElement.classList.toggle('portal-locked', isPortalTab);
@@ -1804,30 +1810,22 @@
             }
 
             if (isPortalTab && portalViewport) {
-                const targetScrollLeft = tabName === 'leaderboard' ? portalViewport.clientWidth : 0;
-                const targetPage = tabName === 'leaderboard'
-                    ? document.querySelector('#portal-track > section:nth-child(2)')
-                    : document.querySelector('#portal-track > section:nth-child(1)');
+                const pageIndex = PORTAL_PAGES.indexOf(tabName);
+                const targetScrollLeft = pageIndex * portalViewport.clientWidth;
+                const targetPage = document.querySelector(`#portal-track > section:nth-child(${pageIndex + 1})`);
                 if (targetPage) {
-                    targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right');
+                    // fade only: a sliding (transform) animation would shift the scroll-snap target mid-swipe
+                    targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right', 'app-page-fade');
                     void targetPage.offsetWidth;
-                    targetPage.classList.add('app-page-enter', tabName === 'leaderboard' ? 'app-page-enter-from-right' : 'app-page-enter-from-left');
+                    targetPage.classList.add('app-page-fade');
                 }
-                portalViewport.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                // Coming back from Maps/Rules (viewport was display:none) or first load: jump, don't glide
+                portalViewport.scrollTo({ left: targetScrollLeft, behavior: (viewportWasHidden || !saveState) ? 'auto' : 'smooth' });
             }
 
-            document.querySelectorAll('[data-tab]').forEach(btn => {
-                const isMatch = btn.getAttribute('data-tab') === tabName;
-                if (btn.tagName === 'BUTTON') {
-                    if (isMatch) {
-                        btn.className = "flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
-                    } else {
-                        btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
-                    }
-                }
-            });
+            setActiveNavTab(tabName);
 
-            if (saveState) {
+            if (saveState && tabName !== 'menu') {
                 localStorage.setItem('rad_active_tab', tabName);
             }
 
@@ -1836,28 +1834,25 @@
                 initChatListener();
             }
 
-            const fullscreenMenu = document.getElementById('app-fullscreen-menu');
-            if (fullscreenMenu && fullscreenMenu.classList.contains('app-menu-open')) {
-                toggleMobileMenu();
-            }
         }
 
+        // Highlights the nav control for the current page (pills get the gilded style, circles glow)
+        window.setActiveNavTab = function(tabName) {
+            document.querySelectorAll('[data-tab]').forEach(btn => {
+                const isMatch = btn.getAttribute('data-tab') === tabName;
+                btn.classList.toggle('tab-active', isMatch);
+                if (btn.classList.contains('brass-btn')) return;
+                btn.classList.toggle('text-disneyGold', isMatch);
+                btn.classList.toggle('text-slate-400', !isMatch);
+                btn.classList.toggle('bg-slate-900/60', isMatch);
+                btn.classList.toggle('hover:text-slate-200', !isMatch);
+            });
+        };
+
+        // Hamburger: jump to the menu page, or back to wherever you were
         window.toggleMobileMenu = function() {
-            const menu = document.getElementById('app-fullscreen-menu');
-            if (!menu) return;
-
-            const opening = !menu.classList.contains('app-menu-open');
-
-            if (opening) {
-                menu.classList.remove('hidden');
-                // Let the browser paint the visible state before starting the transition.
-                requestAnimationFrame(() => menu.classList.add('app-menu-open'));
-            } else {
-                menu.classList.remove('app-menu-open');
-                setTimeout(() => {
-                    if (!menu.classList.contains('app-menu-open')) menu.classList.add('hidden');
-                }, 290);
-            }
+            if (window.currentTab === 'menu') switchTab(window.lastNonMenuTab || 'race');
+            else switchTab('menu');
         };
 
         // Give every app modal the same native-feeling open/close treatment.
@@ -2342,28 +2337,42 @@
             // Track scroll position of portal viewport to sync active tab buttons if swiped manually
             const portalViewport = document.getElementById('portal-viewport');
             if (portalViewport) {
+                const PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
+                let settleTimer = null;
                 portalViewport.addEventListener('scroll', () => {
                     if (portalViewport.classList.contains('hidden')) return;
-                    const scrollLeft = portalViewport.scrollLeft;
-                    const width = portalViewport.clientWidth;
-                    const activeTab = scrollLeft > width / 2 ? 'leaderboard' : 'race';
-                    
-                    document.querySelectorAll('[data-tab]').forEach(btn => {
-                        const isMatch = btn.getAttribute('data-tab') === activeTab;
-                        if (btn.tagName === 'BUTTON') {
-                            if (isMatch) {
-                                btn.className = "flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl";
-                            } else {
-                                btn.className = "flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl";
-                            }
-                        }
-                    });
-                    localStorage.setItem('rad_active_tab', activeTab);
-                    if (activeTab === 'leaderboard') {
-                        if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
-                        initChatListener();
+                    const width = portalViewport.clientWidth || 1;
+                    const idx = Math.max(0, Math.min(PAGES.length - 1, Math.round(portalViewport.scrollLeft / width)));
+                    const activeTab = PAGES[idx];
+                    if (window.currentTab !== activeTab) {
+                        window.currentTab = activeTab;
+                        setActiveNavTab(activeTab);
                     }
+                    // Do the heavier work once the swipe has settled, not on every page it passes through
+                    clearTimeout(settleTimer);
+                    settleTimer = setTimeout(() => {
+                        const tab = window.currentTab;
+                        if (tab !== 'menu') {
+                            window.lastNonMenuTab = tab;
+                            localStorage.setItem('rad_active_tab', tab);
+                        }
+                        if (tab === 'leaderboard') {
+                            if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
+                            initChatListener();
+                        }
+                    }, 160);
                 }, { passive: true });
+
+                // Keep the current page aligned if the screen size/orientation changes
+                let lastW = portalViewport.clientWidth;
+                window.addEventListener('resize', () => {
+                    if (portalViewport.classList.contains('hidden')) return;
+                    const w = portalViewport.clientWidth;
+                    if (w === lastW) return;
+                    lastW = w;
+                    const i = Math.max(0, PAGES.indexOf(window.currentTab));
+                    portalViewport.scrollTo({ left: i * w, behavior: 'auto' });
+                });
             }
 
             const savedLockState = sessionStorage.getItem('rad_org_locked');
