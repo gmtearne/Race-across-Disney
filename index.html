@@ -4212,12 +4212,36 @@
                 const listEl = document.getElementById('team-checkpoints-list');
                 if (listEl && !tData.endTime) {
                     Sortable.create(listEl, {
-                        animation: 150,
-                        ghostClass: 'sortable-ghost',
-                        chosenClass: 'sortable-chosen',
-                        handle: '.cursor-grab',
-                        onEnd: async function () {
-                            const newOrder = [];
+    animation: 150,
+    handle: '.cursor-grab',
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    
+    // Position jumping & touch fix
+    forceFallback: true,        
+    fallbackOnBody: true,       
+    fallbackClass: 'sortable-fallback',
+    scroll: true,               
+    scrollSensitivity: 60,
+    scrollSpeed: 10,
+    delay: 100,                 
+    delayOnTouchOnly: true,     
+    touchStartThreshold: 5,     
+
+    onEnd: async function () {
+        const newOrder = [];
+        listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
+            newOrder.push(card.getAttribute('data-id'));
+            const numSpan = card.querySelector('.checkpoint-number');
+            if (numSpan) {
+                numSpan.innerText = `#${index + 1}`;
+            }
+        });
+        const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+        await fastUpdate(teamRef, { customRouteOrder: newOrder });
+    }
+});
+
                             listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
                                 newOrder.push(card.getAttribute('data-id'));
                                 const numSpan = card.querySelector('.checkpoint-number');
