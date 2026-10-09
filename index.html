@@ -5027,34 +5027,5 @@
         });
     })();
     </script>
-    <script>
-(async function checkForUpdates() {
-  const check = async () => {
-    try {
-      const response = await fetch(
-        window.location.pathname + '?updateCheck=' + Date.now(),
-        { method: 'HEAD', cache: 'no-store' }
-      );
-
-      const lastModified = response.headers.get('Last-Modified');
-      if (lastModified) {
-        const current = localStorage.getItem('pageVersion');
-
-        if (current && current !== lastModified) {
-          localStorage.setItem('pageVersion', lastModified);
-          window.location.reload();
-        } else {
-          localStorage.setItem('pageVersion', lastModified);
-        }
-      }
-    } catch (e) {
-      // Retry on the next check.
-    }
-  };
-
-  await check();
-  setInterval(check, 60000);
-})();
-    </script>
 </body>
 </html>
