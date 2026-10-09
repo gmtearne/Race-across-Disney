@@ -352,9 +352,12 @@
             from { opacity: .35; transform: translateY(8px) scale(.994); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        /* vertical-only motion so the horizontal scroll-snap position is never shifted */
+        .app-page-pop { animation: appPagePop 280ms var(--app-motion) backwards; }
+        @keyframes appPagePop { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         .app-page-fade { animation: appPageFade 380ms var(--app-motion) backwards; }
         @keyframes appPageFade { from { opacity: .35; } to { opacity: 1; } }
-        @media (prefers-reduced-motion: reduce) { .app-page-fade { animation: none !important; } }
+        @media (prefers-reduced-motion: reduce) { .app-page-fade, .app-page-pop { animation: none !important; } }
         @keyframes appPageFromLeft {
             from { opacity: .45; transform: translateX(-18px) scale(.997); }
             to { opacity: 1; transform: translateX(0) scale(1); }
@@ -1778,7 +1781,7 @@
             }
         };
 
-        function switchTab(tabName, saveState = true) {
+        function switchTab(tabName, saveState = true, instant = false) {
             const PORTAL_PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
             const prevTab = window.currentTab;
             ['maps', 'rules'].forEach(t => {
@@ -1815,12 +1818,13 @@
                 const targetPage = document.querySelector(`#portal-track > section:nth-child(${pageIndex + 1})`);
                 if (targetPage) {
                     // fade only: a sliding (transform) animation would shift the scroll-snap target mid-swipe
-                    targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right', 'app-page-fade');
+                    targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right', 'app-page-fade', 'app-page-pop');
                     void targetPage.offsetWidth;
-                    targetPage.classList.add('app-page-fade');
+                    // the menu appears in place (no glide past the pages in between)
+                    targetPage.classList.add((tabName === 'menu' || instant) ? 'app-page-pop' : 'app-page-fade');
                 }
                 // Coming back from Maps/Rules (viewport was display:none) or first load: jump, don't glide
-                portalViewport.scrollTo({ left: targetScrollLeft, behavior: (viewportWasHidden || !saveState) ? 'auto' : 'smooth' });
+                portalViewport.scrollTo({ left: targetScrollLeft, behavior: (viewportWasHidden || !saveState || instant || tabName === 'menu') ? 'auto' : 'smooth' });
             }
 
             setActiveNavTab(tabName);
@@ -1851,7 +1855,7 @@
 
         // Hamburger: jump to the menu page, or back to wherever you were
         window.toggleMobileMenu = function() {
-            if (window.currentTab === 'menu') switchTab(window.lastNonMenuTab || 'race');
+            if (window.currentTab === 'menu') switchTab(window.lastNonMenuTab || 'race', true, true);
             else switchTab('menu');
         };
 
