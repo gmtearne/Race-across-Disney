@@ -1031,34 +1031,23 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
-                        <div>
-                            <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
-                            </h2>
-                            <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3.5 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-3 px-0.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30 shrink-0">
+                            <i class="fa-solid fa-trophy text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-sm text-white leading-tight">Live Leaderboard</h2>
+                            <p id="leaderboard-subtitle" class="text-[11px] text-slate-400 truncate">Displaying standings for active race.</p>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <tr>
-                                    <th class="p-3.5">Rank</th>
-                                    <th class="p-3.5">Team</th>
-                                    <th class="p-3.5 text-center" id="lb-col-metric">Progress</th>
-                                    <th class="p-3.5 text-center">Bonuses</th>
-                                    <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
-                                    <th class="p-3.5 text-center">Status</th>
-                                    <th class="p-3.5 text-center">Report Card</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                                <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <ol id="leaderboard-rows" class="space-y-1.5" aria-label="Team standings">
+                        <li class="text-center py-6 text-slate-400 text-xs">Loading standings...</li>
+                    </ol>
+                    <p id="leaderboard-footnote" class="hidden text-[10px] text-slate-500 text-center mt-3">
+                        <i class="fa-solid fa-lock mr-1"></i>Report cards unlock once your team finishes.
+                    </p>
                 </div>
 
                 <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
@@ -3465,20 +3454,20 @@
         window.loadLeaderboard = async function() {
             const subtitleEl = document.getElementById('leaderboard-subtitle');
             const tbody = document.getElementById('leaderboard-rows');
-            const colMetric = document.getElementById('lb-col-metric');
-            const colScore = document.getElementById('lb-col-score');
+            const footnoteEl = document.getElementById('leaderboard-footnote');
 
             const targetCode = window.activeRaceCode;
             if (!targetCode) {
-                subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
+                subtitleEl.innerText = "Join a race team from the Team Portal tab.";
+                tbody.innerHTML = `<li class="text-center py-6 text-slate-400 text-xs">No active race session detected.</li>`;
+                if (footnoteEl) footnoteEl.classList.add('hidden');
                 return;
             }
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
                 if (!raceSnap.exists()) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
+                    tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</li>`;
                     return;
                 }
 
@@ -3487,15 +3476,7 @@
                 const isScavenger = raceData.gameMode === 'scavenger';
                 const isHideBonuses = raceData.hideBonuses === true;
 
-                subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
-
-                if (isScavenger) {
-                    colMetric.innerText = "Stops";
-                    colScore.innerText = "Total Score";
-                } else {
-                    colMetric.innerText = "Progress";
-                    colScore.innerText = "Time";
-                }
+                subtitleEl.innerText = `Race ${targetCode} · ${isScavenger ? 'Scavenger Hunt' : 'Speed Race'}`;
 
                 const mandatory = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (raceData.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
@@ -3503,7 +3484,7 @@
                 const teamsSnap = await getDocs(collection(window.db, "races", targetCode, "teams"));
 
                 if (teamsSnap.empty) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
+                    tbody.innerHTML = `<li class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</li>`;
                     return;
                 }
 
@@ -3578,73 +3559,90 @@
                     });
                 }
 
+                const rankStyles = [
+                    'bg-disneyGold text-slate-950',
+                    'bg-slate-300 text-slate-900',
+                    'bg-amber-700 text-amber-50'
+                ];
+
                 let html = '';
                 teamList.forEach((t, index) => {
-                    let scoreDisplay = "";
+                    let scoreValue = "";
+                    let scoreClass = "text-slate-200";
                     if (isScavenger) {
-                        scoreDisplay = `<span class="font-mono font-bold text-disneyGold text-base">${t.totalPoints} pts</span>`;
+                        scoreValue = `${t.totalPoints}<span class="text-[10px] font-semibold text-slate-400 ml-0.5">pts</span>`;
+                        scoreClass = "text-disneyGold";
                     } else {
                         const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
                         const hrs = Math.floor(displayMin / 60);
                         const mins = Math.floor(displayMin % 60);
-                        scoreDisplay = `<span class="font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${hrs}h ${mins}m</span>`;
+                        scoreValue = `${hrs}h ${String(mins).padStart(2, '0')}m`;
+                        scoreClass = t.endTime ? "text-emerald-400" : "text-slate-200";
                     }
+
+                    const status = t.endTime
+                        ? { label: 'Finished', dot: 'bg-purple-400' }
+                        : (t.startTime ? { label: 'Racing', dot: 'bg-emerald-400 animate-pulse' } : { label: 'Waiting', dot: 'bg-slate-500' });
 
                     const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                     const teamDiff = t.difficultyOverride || raceBaseDiff;
-                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded uppercase font-semibold ml-1.5" title="Difficulty Override">${teamDiff}</span>` : '';
+                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-px rounded uppercase font-semibold shrink-0" title="Difficulty Override">${teamDiff}</span>` : '';
 
-                    let bonusDisplay = "";
-                    if (isHideBonuses) {
-                        bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by host">?</span>`;
-                    } else {
-                        const bonusPhotos = t.bonusPhotos || {};
-                        bonusDisplay = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
-                        if (Object.keys(bonusPhotos).length > 0) {
-                            bonusDisplay += `<div class="flex gap-1 mt-1">`;
-                            for (const [bId, imgUrl] of Object.entries(bonusPhotos)) {
-                                const safeString = imgUrl.replace(/'/g, "\\'");
-                                bonusDisplay += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-full object-cover border-2 border-disneyGold hover:scale-110 transition shadow shrink-0"></button>`;
-                            }
-                            bonusDisplay += `</div>`;
-                        }
-                        bonusDisplay += `</div>`;
+                    const bonusCountHtml = isHideBonuses
+                        ? `<span class="flex items-center gap-1" title="Bonuses are hidden by host"><i class="fa-solid fa-star text-amber-400/70 text-[9px]"></i>?</span>`
+                        : `<span class="flex items-center gap-1" title="Bonuses claimed"><i class="fa-solid fa-star text-amber-400 text-[9px]"></i>${t.bonusCount}</span>`;
+
+                    let photosHtml = '';
+                    const bonusPhotos = (!isHideBonuses && t.bonusPhotos) ? t.bonusPhotos : {};
+                    const photoEntries = Object.entries(bonusPhotos);
+                    if (photoEntries.length > 0) {
+                        photosHtml = `<div class="flex -space-x-1.5">` + photoEntries.map(([, imgUrl]) => {
+                            const safeString = imgUrl.replace(/'/g, "\\'");
+                            return `<button type="button" onclick="openImageModal('${safeString}')" aria-label="View bonus proof photo" class="focus:outline-none focus-visible:ring-2 focus-visible:ring-disneyGold rounded-full"><img src="${imgUrl}" alt="" class="w-6 h-6 rounded-full object-cover border-2 border-slate-900 ring-1 ring-disneyGold/60 hover:scale-110 transition"></button>`;
+                        }).join('') + `</div>`;
                     }
 
-                    let reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Not Finished</span>`;
-                    if (loggedInTeamFinished && t.endTime) {
-                        reportCardBtnHtml = `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400 transition shadow">View Report Card</button>`;
-                    } else if (!loggedInTeamFinished) {
-                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Locked (Finish race first)</span>`;
-                    } else {
-                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Team Racing</span>`;
-                    }
+                    const reportBtnHtml = (loggedInTeamFinished && t.endTime)
+                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
+                        : '';
+
+                    const extraRow = (photosHtml || reportBtnHtml)
+                        ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}${reportBtnHtml}</div>`
+                        : '';
+
+                    const isMine = t.id === window.activeTeamId;
+                    const rankClass = rankStyles[index] || 'bg-slate-700 text-slate-300';
 
                     html += `
-                        <tr class="hover:bg-slate-800/40 transition">
-                            <td class="p-3.5 font-bold text-disneyGold">#${index + 1}</td>
-                            <td class="p-3.5 flex items-center gap-2.5">
-                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold shrink-0">
-                                <div>
-                                    <span class="font-bold text-white">${t.teamName}</span>
-                                    ${diffBadge}
+                        <li class="rounded-xl px-2.5 py-2 border ${isMine ? 'bg-amber-400/5 border-disneyGold/40' : 'bg-slate-900/50 border-slate-700/50'}">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${rankClass}">${index + 1}</span>
+                                <img src="${teamAvatar}" alt="" class="w-9 h-9 rounded-full object-cover border border-disneyGold/60 shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="font-bold text-white text-sm truncate">${t.teamName}</span>
+                                        ${isMine ? '<span class="text-[9px] text-disneyGold font-semibold uppercase shrink-0">You</span>' : ''}
+                                        ${diffBadge}
+                                    </div>
+                                    <div class="flex items-center gap-2.5 text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
+                                        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.dot}"></span>${status.label}</span>
+                                        <span class="flex items-center gap-1" title="${isScavenger ? 'Stops' : 'Checkpoints'} completed"><i class="fa-solid fa-flag text-slate-500 text-[9px]"></i>${t.progressCount}/${mandatory.length}</span>
+                                        ${bonusCountHtml}
+                                    </div>
                                 </div>
-                            </td>
-                            <td class="p-3.5 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
-                            <td class="p-3.5 text-center text-amber-400 font-semibold">${bonusDisplay}</td>
-                            <td class="p-3.5 text-right">${scoreDisplay}</td>
-                            <td class="p-3.5 text-center">
-                                <span class="text-[10px] px-2.5 py-1 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
-                                    ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
-                                </span>
-                            </td>
-                            <td class="p-3.5 text-center">${reportCardBtnHtml}</td>
-                        </tr>
+                                <div class="text-right shrink-0">
+                                    <div class="font-mono font-bold text-sm leading-tight ${scoreClass}">${scoreValue}</div>
+                                    <div class="text-[9px] uppercase tracking-wide text-slate-500">${isScavenger ? 'Score' : (t.endTime ? 'Final' : 'Elapsed')}</div>
+                                </div>
+                            </div>
+                            ${extraRow}
+                        </li>
                     `;
                 });
                 tbody.innerHTML = html;
+                if (footnoteEl) footnoteEl.classList.toggle('hidden', loggedInTeamFinished);
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</li>`;
             }
         };
 
