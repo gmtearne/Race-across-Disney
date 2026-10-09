@@ -36,10 +36,10 @@
             theme: {
                 extend: {
                     colors: {
-                        disneyBlue: '#0055B8',
-                        disneyPurple: '#4A154B',
-                        disneyGold: '#FFB800',
-                        disneyPink: '#E81F76'
+                        disneyBlue: 'var(--theme-primary)',
+                        disneyPurple: 'var(--theme-secondary)',
+                        disneyGold: 'var(--theme-accent)',
+                        disneyPink: 'var(--theme-highlight)'
                     },
                     fontFamily: {
                         disney: ['Fredoka', 'sans-serif'],
@@ -372,7 +372,7 @@
         }
 
         .magical-gradient {
-            background: linear-gradient(135deg, #0055B8 0%, #4A154B 50%, #E81F76 100%);
+            background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 50%, var(--theme-highlight) 100%);
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -400,7 +400,65 @@
         }
         .sortable-fallback {
             opacity: 1 !important;
+            pointer-events: none !important;
+            z-index: 9999 !important;
         }
+        /* Theme tokens: future themes can override this single palette layer. */
+        :root {
+            --theme-primary: #0055B8;
+            --theme-secondary: #4A154B;
+            --theme-accent: #FFB800;
+            --theme-highlight: #E81F76;
+            --theme-page: #0f172a;
+            --theme-surface: #1e293b;
+            --theme-muted: #94a3b8;
+            --theme-success: #34d399;
+            --theme-radius-card: 1.25rem;
+        }
+        /* App-like: prevent accidental page text selection, but keep form editing usable. */
+        html, body, body * {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        input, textarea, [contenteditable="true"] {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default;
+        }
+        #team-checkpoints-list { position: relative; }
+        #team-checkpoints-list .cursor-grab {
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            cursor: grab;
+        }
+        #team-checkpoints-list .cursor-grab:active { cursor: grabbing; }
+        html.route-dragging, html.route-dragging body { overflow: visible !important; }
+        html.route-dragging .sortable-fallback {
+            position: fixed !important;
+            z-index: 99999 !important;
+            pointer-events: none !important;
+            box-shadow: 0 18px 45px rgba(0,0,0,.45) !important;
+            transform: scale(1.02);
+        }
+        .race-progress-track {
+            height: 8px; overflow: hidden; border-radius: 999px;
+            background: rgba(148,163,184,.18);
+        }
+        .race-progress-fill {
+            height: 100%; border-radius: inherit;
+            background: linear-gradient(90deg, var(--theme-accent), var(--theme-success));
+            transition: width 450ms ease;
+        }
+        .race-stop-dot {
+            width: 1.65rem; height: 1.65rem; border-radius: 999px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid rgba(148,163,184,.35); background: var(--theme-page);
+            color: var(--theme-muted); flex: 0 0 auto; font-size: .7rem;
+        }
+        .race-stop-dot.done { background: var(--theme-success); color: #052e2b; border-color: var(--theme-success); }
+        .race-stop-dot.next { border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 0 4px rgba(255,184,0,.12); }
         .hidden { display: none !important; }
         /* Keep focused form fields visible above mobile keyboards. */
         input, select, textarea, button { scroll-margin-bottom: 180px; }
@@ -866,6 +924,29 @@
                             </button>
                         </div>
                         <div id="report-card-container"></div>
+                    </div>
+
+                    <div id="race-journey-card" class="bg-gradient-to-br from-amber-500/10 via-slate-800 to-emerald-500/10 border border-amber-400/25 rounded-3xl p-5 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-[.18em] font-bold text-amber-300">Your adventure</p>
+                                <h3 class="font-disney text-xl font-bold text-white">The journey so far ✨</h3>
+                            </div>
+                            <div class="text-right">
+                                <p id="journey-progress-count" class="font-disney text-2xl font-bold text-amber-300">0%</p>
+                                <p class="text-[10px] text-slate-400">of the route</p>
+                            </div>
+                        </div>
+                        <div class="race-progress-track"><div id="journey-progress-fill" class="race-progress-fill" style="width:0%"></div></div>
+                        <div id="journey-timeline" class="flex items-start gap-2 overflow-x-auto py-1"></div>
+                        <div class="flex items-center gap-3 rounded-2xl bg-slate-950/50 border border-white/5 p-3">
+                            <div class="w-10 h-10 rounded-2xl bg-amber-400/15 text-amber-300 flex items-center justify-center"><i class="fa-solid fa-stopwatch text-lg"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <p id="journey-next-label" class="text-xs font-bold text-white">Ready when you are!</p>
+                                <p class="text-[10px] text-slate-400">Time since your last stop</p>
+                            </div>
+                            <span id="journey-stop-timer" class="font-mono text-sm font-bold text-emerald-300">—</span>
+                        </div>
                     </div>
 
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
@@ -2119,6 +2200,33 @@
             }, 50);
         });
 
+        window.copyRaceCode = async function(code) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(String(code));
+                } else {
+                    const field = document.createElement('textarea');
+                    field.value = String(code);
+                    field.setAttribute('readonly', '');
+                    field.style.position = 'fixed';
+                    field.style.opacity = '0';
+                    document.body.appendChild(field);
+                    field.select();
+                    const copied = document.execCommand('copy');
+                    field.remove();
+                    if (!copied) throw new Error('Clipboard unavailable');
+                }
+                const button = [...document.querySelectorAll('button')].find(b => b.getAttribute('onclick') === `copyRaceCode('${code}')`);
+                if (button) {
+                    const old = button.innerHTML;
+                    button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                    setTimeout(() => { if (button.isConnected) button.innerHTML = old; }, 1600);
+                }
+            } catch (error) {
+                window.prompt('Copy this race code:', String(code));
+            }
+        };
+
         window.shareRaceCode = function(code, title) {
             const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
             const shareUrl = window.location.href.split('#')[0];
@@ -3221,6 +3329,9 @@
                                     <button onclick="shareRaceCode('${race.code}', '${race.title.replace(/'/g, "\\'")}')" class="px-3.5 py-2 bg-disneyBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow h-[34px]">
                                         <i class="fa-solid fa-share-nodes"></i> Share
                                     </button>
+                                    <button onclick="copyRaceCode('${race.code}')" class="px-3.5 py-2 bg-emerald-600/90 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow h-[34px]" title="Copy race code">
+                                        <i class="fa-regular fa-copy"></i> Copy code
+                                    </button>
                                     <button onclick="deleteEntireRace('${race.code}')" class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-semibold transition h-[34px]">
                                         <i class="fa-solid fa-trash mr-1"></i> Delete
                                     </button>
@@ -4001,6 +4112,55 @@
             }
         };
 
+        function renderRaceJourney(orderedStops, completedIds, checkinDetails, raceStarted, raceFinished) {
+            const total = orderedStops.length;
+            const completedCount = orderedStops.filter(cp => completedIds.includes(cp.id)).length;
+            const pct = total ? Math.round(completedCount / total * 100) : 0;
+            const fill = document.getElementById('journey-progress-fill');
+            const count = document.getElementById('journey-progress-count');
+            const timeline = document.getElementById('journey-timeline');
+            const nextLabel = document.getElementById('journey-next-label');
+            const timer = document.getElementById('journey-stop-timer');
+            if (!fill || !count || !timeline || !nextLabel || !timer) return;
+            fill.style.width = pct + '%';
+            count.textContent = pct + '%';
+            timeline.innerHTML = orderedStops.map((cp, i) => {
+                const done = completedIds.includes(cp.id);
+                const next = !done && orderedStops.slice(0, i).every(item => completedIds.includes(item.id));
+                return `<div class="flex flex-col items-center gap-1.5 min-w-[3.5rem] max-w-[4.5rem]">
+                    <span class="race-stop-dot ${done ? 'done' : (next ? 'next' : '')}">${done ? '<i class="fa-solid fa-check"></i>' : (i + 1)}</span>
+                    <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${cp.name}</span>
+                </div>`;
+            }).join('<div class="h-[2px] min-w-[.75rem] flex-1 bg-slate-700 mt-3"></div>');
+            const nextStop = orderedStops.find(cp => !completedIds.includes(cp.id));
+            if (raceFinished) {
+                nextLabel.textContent = 'Adventure complete — amazing work! 🏆';
+                timer.textContent = 'DONE';
+                return;
+            }
+            if (!raceStarted) {
+                nextLabel.textContent = 'Ready when you are — start the race!';
+                timer.textContent = 'READY';
+                return;
+            }
+            nextLabel.textContent = nextStop ? `Next up: ${nextStop.name}` : 'All stops complete — head for the finish!';
+            const latest = orderedStops.filter(cp => completedIds.includes(cp.id))
+                .map(cp => ({ id: cp.id, time: Date.parse((checkinDetails[cp.id] || {}).timestamp || '') }))
+                .filter(item => Number.isFinite(item.time))
+                .sort((a, b) => b.time - a.time)[0];
+            const elapsed = latest ? Math.max(0, Date.now() - latest.time) : 0;
+            const mins = Math.floor(elapsed / 60000);
+            const secs = Math.floor(elapsed / 1000) % 60;
+            timer.textContent = latest ? `${mins}m ${String(secs).padStart(2, '0')}s` : '—';
+        }
+
+        let journeyTimerState = null;
+        setInterval(() => {
+            if (!journeyTimerState) return;
+            const { stops, completed, details, started, finished } = journeyTimerState;
+            renderRaceJourney(stops, completed, details, started, finished);
+        }, 1000);
+
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
@@ -4046,6 +4206,8 @@
                     orderedMandatory.push(m);
                 }
             });
+            journeyTimerState = { stops: orderedMandatory, completed: completedIds, details: checkinDetails, started: !!tData.startTime, finished: !!tData.endTime };
+            renderRaceJourney(orderedMandatory, completedIds, checkinDetails, !!tData.startTime, !!tData.endTime);
 
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
@@ -4210,13 +4372,35 @@
                 }).join('');
 
                 const listEl = document.getElementById('team-checkpoints-list');
+                if (listEl) {
+                    // Dashboard refreshes re-render this list; destroy the old instance before rebinding.
+                    const oldSortable = Sortable.get(listEl);
+                    if (oldSortable) oldSortable.destroy();
+                }
                 if (listEl && !tData.endTime) {
                     Sortable.create(listEl, {
-                        animation: 150,
+                        animation: 180,
                         ghostClass: 'sortable-ghost',
                         chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-fallback',
                         handle: '.cursor-grab',
+                        draggable: '.checkpoint-card',
+                        forceFallback: true,
+                        fallbackOnBody: true,
+                        fallbackTolerance: 4,
+                        fallbackClass: 'sortable-fallback',
+                        swapThreshold: 0.65,
+                        invertSwap: true,
+                        delayOnTouchOnly: true,
+                        delay: 100,
+                        touchStartThreshold: 4,
+                        scroll: true,
+                        bubbleScroll: true,
+                        onStart: function (evt) {
+                            document.documentElement.classList.add('route-dragging');
+                        },
                         onEnd: async function () {
+                            document.documentElement.classList.remove('route-dragging');
                             const newOrder = [];
                             listEl.querySelectorAll('.checkpoint-card').forEach((card, index) => {
                                 newOrder.push(card.getAttribute('data-id'));
