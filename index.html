@@ -447,6 +447,8 @@
             --theme-card-tile-bg: rgba(15,23,42,.55);
             --theme-card-border: rgba(255,184,0,.24);
             --theme-card-blur: 10px;
+            /* soft amber -> green wash across outer cards (same as the "Your Adventure" card) */
+            --theme-card-gradient: linear-gradient(135deg, rgba(245,158,11,.10) 0%, transparent 45%, rgba(16,185,129,.10) 100%);
 
             /* ---- Header ---- */
             --theme-header-bg: linear-gradient(180deg, rgba(12,10,42,.96) 0%, rgba(36,16,64,.92) 100%);
@@ -573,8 +575,17 @@
             backdrop-filter: blur(var(--theme-card-blur));
             box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
         }
-        #race-journey-card {
-            background-image: linear-gradient(135deg, rgba(245,158,11,.10) 0%, transparent 45%, rgba(16,185,129,.10) 100%);
+        #race-journey-card { background-image: var(--theme-card-gradient); }
+        /* every outer card gets the same gradient wash (rows/tiles inside them stay flat) */
+        #portal-track .bg-slate-800:is(.rounded-2xl, .rounded-3xl),
+        #portal-track [class~="bg-slate-800/90"]:is(.rounded-2xl, .rounded-3xl),
+        #team-status-banner {
+            background-image: var(--theme-card-gradient);
+        }
+        #portal-track [class~="bg-slate-800/90"]:is(.rounded-2xl, .rounded-3xl) {
+            background-color: var(--theme-card-bg);
+            -webkit-backdrop-filter: blur(var(--theme-card-blur));
+            backdrop-filter: blur(var(--theme-card-blur));
         }
         /* Tiles nested inside cards (checkpoint rows, race rows, etc.) */
         #portal-track .bg-slate-900 { background-color: var(--theme-card-tile-bg); }
