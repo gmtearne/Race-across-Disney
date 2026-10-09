@@ -64,14 +64,30 @@
         }
     </script>
     <style>
-        /* Allow completely natural vertical scrolling and touch panning on body */
+        /*
+         * The document itself never scrolls (that is what triggers pull-to-refresh
+         * and the nested-scroller "two finger" bug). Instead <main> is the single
+         * scroll container for every standard page, just like the portal sheets.
+         */
         html, body {
-            touch-action: pan-y pinch-zoom;
-            -webkit-overflow-scrolling: touch;
-            overflow-x: hidden;
-            overflow-y: auto;
-            min-height: 100vh;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
         }
+        body > main {
+            flex: 1 1 auto;
+            min-height: 0 !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding-left: max(1rem, calc((100% - 56rem) / 2 + 1rem)) !important;
+            padding-right: max(1rem, calc((100% - 56rem) / 2 + 1rem)) !important;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        html.portal-locked body > main { overflow: hidden; }
 
         /*
          * Portal pages behave like two independent sheets of paper side-by-side.
@@ -414,6 +430,30 @@
             --theme-muted: #94a3b8;
             --theme-success: #34d399;
             --theme-radius-card: 1.25rem;
+
+            /* ---- Scene: static illustrated background (swap the image to re-skin the app) ---- */
+            --theme-bg-image: url('img/bg-placeholder.jpg');
+            --theme-bg-position: center top;
+            --theme-bg-overlay: linear-gradient(180deg, rgba(5,8,25,.10) 0%, rgba(5,8,25,.32) 100%);
+
+            /* ---- Cards floating over the scene ---- */
+            --theme-card-bg: rgba(15,23,42,.68);
+            --theme-card-tile-bg: rgba(15,23,42,.55);
+            --theme-card-border: rgba(255,184,0,.24);
+            --theme-card-blur: 10px;
+
+            /* ---- Header ---- */
+            --theme-header-bg: linear-gradient(180deg, rgba(12,10,42,.96) 0%, rgba(36,16,64,.92) 100%);
+            --theme-metal-light: #ffe58f;   /* brass / gold trim gradient */
+            --theme-metal-mid: #f0b429;
+            --theme-metal-dark: #9a5b12;
+            --theme-title-top: #fff3b0;
+            --theme-title-mid: #ffc933;
+            --theme-title-bottom: #e08a1e;
+            --theme-title-outline: #4a2400;
+            --theme-cream: #fff1cf;
+            --theme-header-ornament-gears: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 150 80%22 fill=%22none%22 stroke=%22%23e8b04a%22 stroke-width=%222.2%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M130.7,26.1 L137.9,27.3 L137.9,32.7 L130.7,33.9 L129.1,40.0 L134.7,44.6 L132.0,49.3 L125.2,46.7 L120.7,51.2 L123.3,58.0 L118.6,60.7 L114.0,55.1 L107.9,56.7 L106.7,63.9 L101.3,63.9 L100.1,56.7 L94.0,55.1 L89.4,60.7 L84.7,58.0 L87.3,51.2 L82.8,46.7 L76.0,49.3 L73.3,44.6 L78.9,40.0 L77.3,33.9 L70.1,32.7 L70.1,27.3 L77.3,26.1 L78.9,20.0 L73.3,15.4 L76.0,10.7 L82.8,13.3 L87.3,8.8 L84.7,2.0 L89.4,-0.7 L94.0,4.9 L100.1,3.3 L101.3,-3.9 L106.7,-3.9 L107.9,3.3 L114.0,4.9 L118.6,-0.7 L123.3,2.0 L120.7,8.8 L125.2,13.3 L132.0,10.7 L134.7,15.4 L129.1,20.0 Z%22/%3E%3Ccircle cx=%22104%22 cy=%2230%22 r=%229%22/%3E%3Cpath d=%22M54.7,46.8 L59.9,47.7 L59.9,52.3 L54.7,53.2 L52.9,58.2 L56.2,62.3 L53.3,65.8 L48.7,63.2 L44.1,65.9 L44.1,71.1 L39.5,71.9 L37.7,67.0 L32.5,66.1 L29.1,70.1 L25.1,67.8 L26.8,62.8 L23.4,58.8 L18.2,59.6 L16.7,55.3 L21.2,52.7 L21.2,47.3 L16.7,44.7 L18.2,40.4 L23.4,41.2 L26.8,37.2 L25.1,32.2 L29.1,29.9 L32.5,33.9 L37.7,33.0 L39.5,28.1 L44.1,28.9 L44.1,34.1 L48.7,36.8 L53.3,34.2 L56.2,37.7 L52.9,41.8 Z%22/%3E%3Ccircle cx=%2238%22 cy=%2250%22 r=%226%22/%3E%3Cpath d=%22M149.8,67.9 L153.9,68.4 L153.9,71.6 L149.8,72.1 L148.4,75.4 L151.0,78.7 L148.7,81.0 L145.4,78.4 L142.1,79.8 L141.6,83.9 L138.4,83.9 L137.9,79.8 L134.6,78.4 L131.3,81.0 L129.0,78.7 L131.6,75.4 L130.2,72.1 L126.1,71.6 L126.1,68.4 L130.2,67.9 L131.6,64.6 L129.0,61.3 L131.3,59.0 L134.6,61.6 L137.9,60.2 L138.4,56.1 L141.6,56.1 L142.1,60.2 L145.4,61.6 L148.7,59.0 L151.0,61.3 L148.4,64.6 Z%22/%3E%3Ccircle cx=%22140%22 cy=%2270%22 r=%224%22/%3E%3C/svg%3E");
+            --theme-header-ornament-vine: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 70%22 fill=%22none%22%3E%3Cpath d=%22M0 8 C 22 10, 30 34, 52 38 S 90 36, 118 20%22 stroke=%22%236b8f3a%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3Cg fill=%22%234fae6a%22 stroke=%22%232c6e45%22 stroke-width=%221%22%3E%3Cellipse cx=%2220%22 cy=%2222%22 rx=%229%22 ry=%224.5%22 transform=%22rotate(50 20 22)%22/%3E%3Cellipse cx=%2238%22 cy=%2240%22 rx=%229%22 ry=%224.5%22 transform=%22rotate(-30 38 40)%22/%3E%3Cellipse cx=%2262%22 cy=%2230%22 rx=%229%22 ry=%224.5%22 transform=%22rotate(-60 62 30)%22/%3E%3Cellipse cx=%2280%22 cy=%2244%22 rx=%229%22 ry=%224.5%22 transform=%22rotate(20 80 44)%22/%3E%3Cellipse cx=%22100%22 cy=%2224%22 rx=%228%22 ry=%224%22 transform=%22rotate(-40 100 24)%22/%3E%3C/g%3E%3Ccircle cx=%2246%22 cy=%2214%22 r=%222.4%22 fill=%22%23ffd45e%22/%3E%3Ccircle cx=%2292%22 cy=%2212%22 r=%222%22 fill=%22%23ffd45e%22/%3E%3Ccircle cx=%2212%22 cy=%2240%22 r=%222%22 fill=%22%23ffd45e%22/%3E%3C/svg%3E");
         }
         /* App-like: prevent accidental page text selection, but keep form editing usable. */
         html, body, body * {
@@ -461,12 +501,43 @@
         .race-stop-dot.next { border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 0 4px rgba(255,184,0,.12); }
         /* Compact, app-like journey panel while preserving the full timeline and live timer. */
         #race-journey-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
-        #journey-timeline { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
+        #journey-timeline { overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
         #journey-timeline > div:not(.race-stop-dot) { flex-shrink: 0; }
+        @keyframes journeyRouteUpdated {
+            0% { opacity: .7; }
+            100% { opacity: 1; }
+        }
+        #journey-timeline.journey-updated > div { animation: journeyRouteUpdated .35s ease-out both; }
+        #journey-timeline.journey-updated .race-stop-dot { animation: journeyRouteUpdated .35s ease-out both; }
+        @media (prefers-reduced-motion: reduce) {
+            #journey-timeline.journey-updated > div,
+            #journey-timeline.journey-updated .race-stop-dot { animation: none; }
+        }
         @media (max-width: 640px) {
             #race-journey-card { border-radius: 1.35rem; }
             #journey-timeline .race-stop-dot { width: 1.5rem; height: 1.5rem; font-size: .65rem; }
         }
+        /* Compact, app-like race timer card */
+        #race-timer-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
+        .race-stat-chip {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-width: 3.6rem; padding: .4rem .55rem; border-radius: .9rem;
+            background: rgba(2,6,23,.55); border: 1px solid rgba(255,255,255,.06);
+        }
+        .race-action {
+            display: flex; align-items: center; justify-content: center; gap: .4rem;
+            height: 2.6rem; padding: 0 .9rem; border-radius: 999px;
+            font-size: .8rem; font-weight: 700; color: #fff;
+            transition: transform .12s ease, background-color .15s ease, opacity .15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .race-action:not(:disabled):active { transform: scale(.96); }
+        .race-action--start { background: #059669; box-shadow: 0 6px 16px rgba(5,150,105,.3); }
+        .race-action--start:hover { background: #10b981; }
+        .race-action--finish { background: var(--theme-highlight); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+        .race-action--finish:hover { filter: brightness(1.08); }
+        .race-action--done { background: rgba(51,65,85,.6); color: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        .race-status-pill { font-size: 10px; line-height: 1; padding: .3rem .5rem; border-radius: 999px; font-weight: 700; border-width: 1px; white-space: nowrap; }
         .hidden { display: none !important; }
         /* Keep focused form fields visible above mobile keyboards. */
         input, select, textarea, button { scroll-margin-bottom: 180px; }
@@ -474,9 +545,140 @@
             #join-race-box { padding-bottom: 2rem; }
             #input-race-code, #input-team-name, #input-team-pin, #input-team-pin-confirm { scroll-margin-top: 150px; scroll-margin-bottom: 220px; }
         }
+
+        /* =====================================================================
+           SCENE: fixed illustrated background + translucent cards
+           ===================================================================== */
+        #app-bg {
+            position: fixed; left: 0; top: 0; width: 100%;
+            height: 100vh; height: 100lvh;
+            z-index: -1; pointer-events: none;
+            background: var(--theme-bg-overlay), var(--theme-bg-image) var(--theme-bg-position) / cover no-repeat, var(--theme-page);
+        }
+        /* Top-level cards */
+        #portal-track .bg-slate-800:is(.rounded-2xl, .rounded-3xl),
+        #team-status-banner,
+        #race-journey-card {
+            background-color: var(--theme-card-bg);
+            border-color: var(--theme-card-border);
+            -webkit-backdrop-filter: blur(var(--theme-card-blur));
+            backdrop-filter: blur(var(--theme-card-blur));
+            box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+        }
+        #race-journey-card {
+            background-image: linear-gradient(135deg, rgba(245,158,11,.10) 0%, transparent 45%, rgba(16,185,129,.10) 100%);
+        }
+        /* Tiles nested inside cards (checkpoint rows, race rows, etc.) */
+        #portal-track .bg-slate-900 { background-color: var(--theme-card-tile-bg); }
+
+        /* =====================================================================
+           HEADER: brass-and-night-sky
+           ===================================================================== */
+        .app-header {
+            background: var(--theme-header-bg);
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, var(--theme-metal-dark), var(--theme-metal-light) 25%, var(--theme-metal-mid) 50%, var(--theme-metal-light) 75%, var(--theme-metal-dark)) 1;
+            box-shadow: 0 8px 22px rgba(0,0,0,.45), 0 0 18px rgba(255,184,0,.12);
+            overflow: hidden;
+        }
+        /* stars + vine (left) + gears (right) */
+        .app-header::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image:
+                var(--theme-header-ornament-vine),
+                var(--theme-header-ornament-gears),
+                radial-gradient(1.4px 1.4px at 14% 30%, #fff 50%, transparent 52%),
+                radial-gradient(1px 1px at 27% 72%, #fff 50%, transparent 52%),
+                radial-gradient(1.6px 1.6px at 46% 20%, #ffe9a8 50%, transparent 52%),
+                radial-gradient(1px 1px at 58% 78%, #fff 50%, transparent 52%),
+                radial-gradient(1.3px 1.3px at 71% 34%, #fff 50%, transparent 52%),
+                radial-gradient(1px 1px at 88% 66%, #ffe9a8 50%, transparent 52%);
+            background-repeat: no-repeat;
+            background-position: left -6px top -4px, right -8px top -6px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+            background-size: 92px auto, 118px auto, auto, auto, auto, auto, auto, auto;
+            opacity: .75;
+            animation: headerTwinkle 5s ease-in-out infinite;
+        }
+        @keyframes headerTwinkle { 0%,100% { opacity: .75; } 50% { opacity: .95; } }
+        .app-header > * { position: relative; }
+
+        /* compass medallion */
+        .brand-medallion {
+            width: 46px; height: 46px; border-radius: 9999px;
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid transparent;
+            background: radial-gradient(circle at 35% 30%, #2f3478 0%, #11133a 72%) padding-box,
+                        linear-gradient(145deg, var(--theme-metal-light), var(--theme-metal-mid) 45%, var(--theme-metal-dark)) border-box;
+            color: var(--theme-metal-light); font-size: 22px;
+            box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 14px rgba(255,184,0,.35), inset 0 0 8px rgba(0,0,0,.6);
+        }
+        .brand-medallion i { filter: drop-shadow(0 0 5px rgba(255,200,60,.7)); animation: compassSway 6s ease-in-out infinite; }
+        @keyframes compassSway { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+
+        /* title lettering */
+        .brand-title { line-height: 1; margin: 0; }
+        .brand-title-small {
+            display: block; font-family: 'Fredoka', sans-serif; font-weight: 600;
+            font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--theme-cream); text-shadow: 0 2px 0 rgba(0,0,0,.55);
+            margin-bottom: 1px;
+        }
+        .brand-title-main {
+            display: block; font-family: 'Fredoka', sans-serif; font-weight: 700;
+            font-size: clamp(24px, 7.4vw, 31px); letter-spacing: .01em; white-space: nowrap;
+            background: linear-gradient(180deg, var(--theme-title-top) 0%, var(--theme-title-mid) 48%, var(--theme-title-bottom) 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
+            filter: drop-shadow(1px 0 0 var(--theme-title-outline)) drop-shadow(-1px 0 0 var(--theme-title-outline))
+                    drop-shadow(0 1px 0 var(--theme-title-outline)) drop-shadow(0 -1px 0 var(--theme-title-outline))
+                    drop-shadow(0 3px 2px rgba(0,0,0,.55));
+        }
+        .brand-subtitle {
+            font-family: 'Fredoka', sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .05em;
+            color: var(--theme-cream); opacity: .9; margin-top: 3px; text-shadow: 0 1px 0 rgba(0,0,0,.6);
+        }
+
+        /* round brass buttons (avatar / settings / menu) */
+        .app-header .brass-btn {
+            border: 3px solid transparent !important;
+            border-radius: 9999px !important;
+            background: radial-gradient(circle at 35% 30%, #2f3478 0%, #11133a 75%) padding-box,
+                        linear-gradient(145deg, var(--theme-metal-light), var(--theme-metal-mid) 45%, var(--theme-metal-dark)) border-box !important;
+            color: var(--theme-metal-light) !important;
+            box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 10px rgba(255,184,0,.22), inset 0 0 6px rgba(0,0,0,.6) !important;
+        }
+        .app-header .brass-btn:hover { filter: brightness(1.18); }
+        .app-header .brass-btn i { filter: drop-shadow(0 0 4px rgba(255,200,60,.55)); }
+
+        /* gilded tab pills */
+        .app-header .app-tabrow { background: transparent; border-top: 0; padding-bottom: 6px; }
+        .app-header [data-tab] {
+            font-family: 'Fredoka', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: .02em;
+            border-radius: 9999px;
+            border: 2px solid rgba(240,180,41,.30);
+            background: rgba(8,8,32,.55);
+            color: rgba(214,204,240,.78);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,.45);
+        }
+        .app-header [data-tab]::after { display: none; }
+        .app-header [data-tab].text-disneyGold {
+            color: var(--theme-accent);
+            border-color: var(--theme-metal-light);
+            background: linear-gradient(180deg, rgba(92,58,12,.62), rgba(28,16,6,.82));
+            box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 14px rgba(255,184,0,.38), inset 0 1px 0 rgba(255,235,160,.40);
+            text-shadow: 0 0 8px rgba(255,184,0,.45);
+        }
+        .app-header [data-tab] i { filter: drop-shadow(0 0 4px rgba(255,200,60,.4)); }
+        @media (prefers-reduced-motion: reduce) {
+            .app-header::before, .brand-medallion i { animation: none; }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
+
+    <!-- Static illustrated scene (image set via --theme-bg-image in the theme tokens) -->
+    <div id="app-bg" aria-hidden="true"></div>
 
     <!-- Native App Splash / Loading Screen -->
     <div id="app-splash-screen" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center space-y-4 transition-opacity duration-300">
@@ -757,33 +959,36 @@
     </div>
 
     <!-- Fixed Navbar -->
-    <nav class="magical-gradient fixed top-0 left-0 right-0 z-40 border-b border-white/10 shadow-lg backdrop-blur-md">
+    <nav class="app-header fixed top-0 left-0 right-0 z-40">
         <!-- Top brand header row (flush compass logo & title) -->
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg border border-amber-300/40 shrink-0">
+                <div class="brand-medallion shrink-0">
                     <i class="fa-solid fa-compass"></i>
                 </div>
                 <div class="min-w-0">
-                    <h1 class="font-disney font-bold text-lg sm:text-xl tracking-wide text-white drop-shadow truncate">The Amazing Mouse Race</h1>
-                    <p id="nav-subtitle" class="text-xs text-blue-200 font-medium truncate">Magic Kingdom & Beyond</p>
+                    <h1 class="brand-title" aria-label="The Amazing Mouse Race">
+                        <span class="brand-title-small">The Amazing</span>
+                        <span class="brand-title-main">Mouse Race</span>
+                    </h1>
+                    <p id="nav-subtitle" class="brand-subtitle truncate">Magic Kingdom & Beyond</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2.5 shrink-0">
                 <div id="nav-team-badge" class="hidden items-center">
-                    <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
+                    <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="brass-btn w-10 h-10 object-cover shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
                 </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" class="relative w-9 h-9 rounded-full bg-slate-900/80 border border-indigo-400/50 text-indigo-200 hover:text-white hover:bg-indigo-600 transition flex items-center justify-center shadow" title="Host Dashboard">
-                    <i class="fa-solid fa-gear text-xs"></i>
+                <button id="nav-org-cog" onclick="switchTab('organizer')" class="brass-btn relative w-10 h-10 transition flex items-center justify-center" title="Host Dashboard">
+                    <i class="fa-solid fa-gear text-sm"></i>
                     <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
                 </button>
             </div>
         </div>
         
         <!-- Bottom Nav row (Hamburger button level with Team Portal & Race Portal) -->
-        <div class="relative bg-slate-950/40 border-t border-white/5 text-xs font-semibold flex items-center justify-between px-2">
-            <button onclick="toggleMobileMenu()" id="hamburger-btn" class="mx-2 my-1.5 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition shadow shrink-0" title="Open Navigation Menu">
+        <div class="app-tabrow relative text-xs font-semibold flex items-center justify-between px-2">
+            <button onclick="toggleMobileMenu()" id="hamburger-btn" class="brass-btn mx-2 my-1.5 w-10 h-10 flex items-center justify-center transition shrink-0" title="Open Navigation Menu">
                 <i class="fa-solid fa-bars text-sm"></i>
             </button>
             <div class="flex flex-1 overflow-x-auto py-1 gap-1">
@@ -900,35 +1105,34 @@
                 </div>
 
                 <div id="team-dashboard-active" class="hidden space-y-6">
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                                <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold" id="dashboard-mode-label">Live Race Status</span>
-                                <div class="flex items-baseline gap-3 mt-1">
-                                    <span id="elapsed-time-display" class="font-mono text-3xl sm:text-4xl font-bold text-white tracking-wider">00:00:00</span>
-                                    <span id="race-status-pill" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold">Not Started</span>
+                    <div id="race-timer-card" class="bg-slate-800 border border-slate-700 rounded-3xl p-3.5 sm:p-4 relative overflow-hidden app-surface">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <span id="race-status-pill" class="race-status-pill bg-amber-500/20 text-amber-300 border-amber-500/40">Not Started</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-disneyGold truncate" id="dashboard-mode-label">Live Race Status</span>
                                 </div>
+                                <span id="elapsed-time-display" class="block mt-1 font-mono text-[1.85rem] sm:text-3xl leading-none font-bold text-white tabular-nums">00:00:00</span>
                             </div>
 
-                            <div class="flex items-center gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
-                                <div class="text-center px-2">
-                                    <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
-                                    <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
+                            <div class="flex items-stretch gap-1.5 shrink-0">
+                                <div class="race-stat-chip">
+                                    <p id="checkpoint-ratio" class="text-base font-bold text-disneyGold font-mono leading-none">0/0</p>
+                                    <p class="text-[8px] text-slate-400 uppercase font-semibold mt-1 leading-none max-w-[3.5rem] truncate" id="score-progress-label">Stops Progress</p>
                                 </div>
-                                <div class="h-8 w-px bg-slate-700"></div>
-                                <div class="text-center px-2">
-                                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonuses / Pts</p>
-                                    <p id="deduction-total" class="text-2xl font-bold text-emerald-400 font-mono">-0m</p>
+                                <div class="race-stat-chip">
+                                    <p id="deduction-total" class="text-base font-bold text-emerald-400 font-mono leading-none">-0m</p>
+                                    <p class="text-[8px] text-slate-400 uppercase font-semibold mt-1 leading-none">Bonus</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
-                            <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                                <i class="fa-solid fa-play"></i> Start Race
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <button id="btn-start-race" onclick="startTeamRace()" class="race-action race-action--start">
+                                <i class="fa-solid fa-play text-xs"></i> Start Race
                             </button>
-                            <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                                <i class="fa-solid fa-flag-checkered"></i> Finish Race
+                            <button id="btn-finish-race" onclick="finishTeamRace()" class="race-action race-action--finish">
+                                <i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race
                             </button>
                         </div>
                         <div id="report-card-container"></div>
@@ -964,11 +1168,8 @@
                                     <i class="fa-solid fa-map-location-dot text-disneyBlue"></i>
                                     Checkpoints
                                 </h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Drag and Drop checkpoints to plan your route</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Drag to reorder — your journey updates instantly</p>
                             </div>
-                            <button onclick="refreshTeamDashboard()" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-300 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap font-medium">
-                                <i class="fa-solid fa-rotate"></i> Refresh
-                            </button>
                         </div>
                         <div id="team-checkpoints-list" class="space-y-3.5"></div>
                     </div>
@@ -1003,34 +1204,23 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
-                        <div>
-                            <h2 class="text-xl font-disney font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-trophy text-disneyGold"></i> Live Leaderboard
-                            </h2>
-                            <p id="leaderboard-subtitle" class="text-xs text-slate-400">Displaying standings for active race.</p>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3.5 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-3 px-0.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30 shrink-0">
+                            <i class="fa-solid fa-trophy text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-sm text-white leading-tight">Live Leaderboard</h2>
+                            <p id="leaderboard-subtitle" class="text-[11px] text-slate-400 truncate">Displaying standings for active race.</p>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <tr>
-                                    <th class="p-3.5">Rank</th>
-                                    <th class="p-3.5">Team</th>
-                                    <th class="p-3.5 text-center" id="lb-col-metric">Progress</th>
-                                    <th class="p-3.5 text-center">Bonuses</th>
-                                    <th class="p-3.5 text-right" id="lb-col-score">Time / Points</th>
-                                    <th class="p-3.5 text-center">Status</th>
-                                    <th class="p-3.5 text-center">Report Card</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-rows" class="divide-y divide-slate-700/60">
-                                <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading standings...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <ol id="leaderboard-rows" class="space-y-1.5" aria-label="Team standings">
+                        <li class="text-center py-6 text-slate-400 text-xs">Loading standings...</li>
+                    </ol>
+                    <p id="leaderboard-footnote" class="hidden text-[10px] text-slate-500 text-center mt-3">
+                        <i class="fa-solid fa-lock mr-1"></i>Report cards unlock once your team finishes.
+                    </p>
                 </div>
 
                 <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
@@ -2231,7 +2421,7 @@
                     setTimeout(() => { if (button.isConnected) button.innerHTML = old; }, 1600);
                 }
             } catch (error) {
-                window.prompt('Copy this race code:', String(code));
+                appAlert(`Race code: ${code}`, { title: "Copy this code", tone: "info" });
             }
         };
 
@@ -2388,6 +2578,7 @@
                     if (orgCog) orgCog.classList.remove('hidden');
                     loadAdminRaces();
                 } else {
+                    stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
                     if (orgCog) orgCog.classList.remove('hidden');
@@ -3429,28 +3620,71 @@
                 } else {
                     pendingBadge.classList.add('hidden');
                 }
+                watchHostPendingTeams(races.map(r => r.code));
             } catch (e) {
                 console.error(e);
             }
         }
 
+        // Live listener per host race so the cog badge updates the moment a team registers,
+        // without the host having to open the dashboard or expand a race.
+        const hostPendingWatch = { key: '', unsubs: [], counts: {}, refreshTimer: null };
+
+        function renderHostPendingBadge() {
+            const badge = document.getElementById('nav-pending-badge');
+            if (!badge) return;
+            const total = Object.values(hostPendingWatch.counts).reduce((a, b) => a + b, 0);
+            badge.innerText = total;
+            badge.classList.toggle('hidden', total === 0);
+        }
+
+        function stopHostPendingWatch() {
+            hostPendingWatch.unsubs.forEach(unsub => unsub());
+            hostPendingWatch.unsubs = [];
+            hostPendingWatch.counts = {};
+            hostPendingWatch.key = '';
+            clearTimeout(hostPendingWatch.refreshTimer);
+            renderHostPendingBadge();
+        }
+        window.stopHostPendingWatch = stopHostPendingWatch;
+
+        function watchHostPendingTeams(codes) {
+            const key = [...codes].sort().join(',');
+            if (key === hostPendingWatch.key) return;
+            stopHostPendingWatch();
+            hostPendingWatch.key = key;
+            codes.forEach(code => {
+                const unsub = onSnapshot(collection(window.db, "races", code, "teams"), snap => {
+                    const pending = snap.docs.filter(d => !d.data().isApproved).length;
+                    const previous = hostPendingWatch.counts[code];
+                    hostPendingWatch.counts[code] = pending;
+                    renderHostPendingBadge();
+                    if (previous !== undefined && previous !== pending) {
+                        clearTimeout(hostPendingWatch.refreshTimer);
+                        hostPendingWatch.refreshTimer = setTimeout(loadAdminRaces, 400);
+                    }
+                }, err => console.error('Pending team watch failed:', err));
+                hostPendingWatch.unsubs.push(unsub);
+            });
+        }
+
         window.loadLeaderboard = async function() {
             const subtitleEl = document.getElementById('leaderboard-subtitle');
             const tbody = document.getElementById('leaderboard-rows');
-            const colMetric = document.getElementById('lb-col-metric');
-            const colScore = document.getElementById('lb-col-score');
+            const footnoteEl = document.getElementById('leaderboard-footnote');
 
             const targetCode = window.activeRaceCode;
             if (!targetCode) {
-                subtitleEl.innerText = "Please join a race team first from the Team Portal tab.";
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No active race session detected.</td></tr>`;
+                subtitleEl.innerText = "Join a race team from the Team Portal tab.";
+                tbody.innerHTML = `<li class="text-center py-6 text-slate-400 text-xs">No active race session detected.</li>`;
+                if (footnoteEl) footnoteEl.classList.add('hidden');
                 return;
             }
 
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", targetCode));
                 if (!raceSnap.exists()) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</td></tr>`;
+                    tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Race document not found for code ${targetCode}.</li>`;
                     return;
                 }
 
@@ -3459,15 +3693,7 @@
                 const isScavenger = raceData.gameMode === 'scavenger';
                 const isHideBonuses = raceData.hideBonuses === true;
 
-                subtitleEl.innerText = `Displaying live standings for race code: ${targetCode} (${isScavenger ? 'Scavenger Hunt' : 'Speed Race'})`;
-
-                if (isScavenger) {
-                    colMetric.innerText = "Stops";
-                    colScore.innerText = "Total Score";
-                } else {
-                    colMetric.innerText = "Progress";
-                    colScore.innerText = "Time";
-                }
+                subtitleEl.innerText = `Race ${targetCode} · ${isScavenger ? 'Scavenger Hunt' : 'Speed Race'}`;
 
                 const mandatory = (raceData.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (raceData.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
@@ -3475,7 +3701,7 @@
                 const teamsSnap = await getDocs(collection(window.db, "races", targetCode, "teams"));
 
                 if (teamsSnap.empty) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</td></tr>`;
+                    tbody.innerHTML = `<li class="text-center py-6 text-slate-400 text-xs">No teams registered for race ${targetCode} yet.</li>`;
                     return;
                 }
 
@@ -3550,73 +3776,90 @@
                     });
                 }
 
+                const rankStyles = [
+                    'bg-disneyGold text-slate-950',
+                    'bg-slate-300 text-slate-900',
+                    'bg-amber-700 text-amber-50'
+                ];
+
                 let html = '';
                 teamList.forEach((t, index) => {
-                    let scoreDisplay = "";
+                    let scoreValue = "";
+                    let scoreClass = "text-slate-200";
                     if (isScavenger) {
-                        scoreDisplay = `<span class="font-mono font-bold text-disneyGold text-base">${t.totalPoints} pts</span>`;
+                        scoreValue = `${t.totalPoints}<span class="text-[10px] font-semibold text-slate-400 ml-0.5">pts</span>`;
+                        scoreClass = "text-disneyGold";
                     } else {
                         const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
                         const hrs = Math.floor(displayMin / 60);
                         const mins = Math.floor(displayMin % 60);
-                        scoreDisplay = `<span class="font-mono font-bold ${t.endTime ? 'text-emerald-400' : 'text-slate-300'}">${hrs}h ${mins}m</span>`;
+                        scoreValue = `${hrs}h ${String(mins).padStart(2, '0')}m`;
+                        scoreClass = t.endTime ? "text-emerald-400" : "text-slate-200";
                     }
+
+                    const status = t.endTime
+                        ? { label: 'Finished', dot: 'bg-purple-400' }
+                        : (t.startTime ? { label: 'Racing', dot: 'bg-emerald-400 animate-pulse' } : { label: 'Waiting', dot: 'bg-slate-500' });
 
                     const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
                     const teamDiff = t.difficultyOverride || raceBaseDiff;
-                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded uppercase font-semibold ml-1.5" title="Difficulty Override">${teamDiff}</span>` : '';
+                    const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-px rounded uppercase font-semibold shrink-0" title="Difficulty Override">${teamDiff}</span>` : '';
 
-                    let bonusDisplay = "";
-                    if (isHideBonuses) {
-                        bonusDisplay = `<span class="text-slate-400 font-bold text-sm" title="Bonuses are hidden by host">?</span>`;
-                    } else {
-                        const bonusPhotos = t.bonusPhotos || {};
-                        bonusDisplay = `<div class="flex items-center gap-1.5 flex-wrap justify-center"><span>⭐ ${t.bonusCount}</span>`;
-                        if (Object.keys(bonusPhotos).length > 0) {
-                            bonusDisplay += `<div class="flex gap-1 mt-1">`;
-                            for (const [bId, imgUrl] of Object.entries(bonusPhotos)) {
-                                const safeString = imgUrl.replace(/'/g, "\\'");
-                                bonusDisplay += `<button type="button" onclick="openImageModal('${safeString}')" title="View Bonus Proof" class="cursor-pointer focus:outline-none"><img src="${imgUrl}" class="w-7 h-7 rounded-full object-cover border-2 border-disneyGold hover:scale-110 transition shadow shrink-0"></button>`;
-                            }
-                            bonusDisplay += `</div>`;
-                        }
-                        bonusDisplay += `</div>`;
+                    const bonusCountHtml = isHideBonuses
+                        ? `<span class="flex items-center gap-1" title="Bonuses are hidden by host"><i class="fa-solid fa-star text-amber-400/70 text-[9px]"></i>?</span>`
+                        : `<span class="flex items-center gap-1" title="Bonuses claimed"><i class="fa-solid fa-star text-amber-400 text-[9px]"></i>${t.bonusCount}</span>`;
+
+                    let photosHtml = '';
+                    const bonusPhotos = (!isHideBonuses && t.bonusPhotos) ? t.bonusPhotos : {};
+                    const photoEntries = Object.entries(bonusPhotos);
+                    if (photoEntries.length > 0) {
+                        photosHtml = `<div class="flex -space-x-1.5">` + photoEntries.map(([, imgUrl]) => {
+                            const safeString = imgUrl.replace(/'/g, "\\'");
+                            return `<button type="button" onclick="openImageModal('${safeString}')" aria-label="View bonus proof photo" class="focus:outline-none focus-visible:ring-2 focus-visible:ring-disneyGold rounded-full"><img src="${imgUrl}" alt="" class="w-6 h-6 rounded-full object-cover border-2 border-slate-900 ring-1 ring-disneyGold/60 hover:scale-110 transition"></button>`;
+                        }).join('') + `</div>`;
                     }
 
-                    let reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Not Finished</span>`;
-                    if (loggedInTeamFinished && t.endTime) {
-                        reportCardBtnHtml = `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="px-3 py-1.5 bg-disneyGold text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400 transition shadow">View Report Card</button>`;
-                    } else if (!loggedInTeamFinished) {
-                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Locked (Finish race first)</span>`;
-                    } else {
-                        reportCardBtnHtml = `<span class="text-slate-500 text-[10px] italic">Team Racing</span>`;
-                    }
+                    const reportBtnHtml = (loggedInTeamFinished && t.endTime)
+                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
+                        : '';
+
+                    const extraRow = (photosHtml || reportBtnHtml)
+                        ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}${reportBtnHtml}</div>`
+                        : '';
+
+                    const isMine = t.id === window.activeTeamId;
+                    const rankClass = rankStyles[index] || 'bg-slate-700 text-slate-300';
 
                     html += `
-                        <tr class="hover:bg-slate-800/40 transition">
-                            <td class="p-3.5 font-bold text-disneyGold">#${index + 1}</td>
-                            <td class="p-3.5 flex items-center gap-2.5">
-                                <img src="${teamAvatar}" class="w-8 h-8 rounded-full object-cover border border-disneyGold shrink-0">
-                                <div>
-                                    <span class="font-bold text-white">${t.teamName}</span>
-                                    ${diffBadge}
+                        <li class="rounded-xl px-2.5 py-2 border ${isMine ? 'bg-amber-400/5 border-disneyGold/40' : 'bg-slate-900/50 border-slate-700/50'}">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${rankClass}">${index + 1}</span>
+                                <img src="${teamAvatar}" alt="" class="w-9 h-9 rounded-full object-cover border border-disneyGold/60 shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="font-bold text-white text-sm truncate">${t.teamName}</span>
+                                        ${isMine ? '<span class="text-[9px] text-disneyGold font-semibold uppercase shrink-0">You</span>' : ''}
+                                        ${diffBadge}
+                                    </div>
+                                    <div class="flex items-center gap-2.5 text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
+                                        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.dot}"></span>${status.label}</span>
+                                        <span class="flex items-center gap-1" title="${isScavenger ? 'Stops' : 'Checkpoints'} completed"><i class="fa-solid fa-flag text-slate-500 text-[9px]"></i>${t.progressCount}/${mandatory.length}</span>
+                                        ${bonusCountHtml}
+                                    </div>
                                 </div>
-                            </td>
-                            <td class="p-3.5 text-center font-mono font-bold text-slate-200">${t.progressCount}/${mandatory.length}</td>
-                            <td class="p-3.5 text-center text-amber-400 font-semibold">${bonusDisplay}</td>
-                            <td class="p-3.5 text-right">${scoreDisplay}</td>
-                            <td class="p-3.5 text-center">
-                                <span class="text-[10px] px-2.5 py-1 rounded-full font-semibold ${t.endTime ? 'bg-purple-500/20 text-purple-300' : (t.startTime ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300')}">
-                                    ${t.endTime ? 'Finished' : (t.startTime ? 'Racing' : 'Not Started')}
-                                </span>
-                            </td>
-                            <td class="p-3.5 text-center">${reportCardBtnHtml}</td>
-                        </tr>
+                                <div class="text-right shrink-0">
+                                    <div class="font-mono font-bold text-sm leading-tight ${scoreClass}">${scoreValue}</div>
+                                    <div class="text-[9px] uppercase tracking-wide text-slate-500">${isScavenger ? 'Score' : (t.endTime ? 'Final' : 'Elapsed')}</div>
+                                </div>
+                            </div>
+                            ${extraRow}
+                        </li>
                     `;
                 });
                 tbody.innerHTML = html;
+                if (footnoteEl) footnoteEl.classList.toggle('hidden', loggedInTeamFinished);
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</li>`;
             }
         };
 
@@ -3677,7 +3920,7 @@
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
-            if (!confirm("Are you sure you want to remove this team?")) return;
+            if (!(await appConfirm("Remove this team from the race?", { title: "Remove team", confirmText: "Remove", danger: true }))) return;
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
             loadAdminRaces();
         };
@@ -3687,7 +3930,7 @@
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
-            if (!confirm(`Are you sure you want to delete the entire race (${raceCode})? This will also remove all registered teams and logs permanently.`)) return;
+            if (!(await appConfirm(`This permanently deletes race ${raceCode}, all registered teams and their logs.`, { title: "Delete race?", confirmText: "Delete race", danger: true }))) return;
             
             try {
                 const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
@@ -4190,7 +4433,7 @@
             const isScavenger = raceData.gameMode === 'scavenger';
             const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
 
-            document.getElementById('dashboard-mode-label').innerText = isScavenger ? `Scavenger Hunt (${difficulty.toUpperCase()} Tier)` : `Speed Race (${difficulty.toUpperCase()} Tier)`;
+            document.getElementById('dashboard-mode-label').innerText = isScavenger ? 'Scavenger Hunt' : 'Speed Race';
 
             const checkpoints = raceData.checkpoints || [];
             const finalCheckpointId = raceData.finalCheckpointId;
@@ -4251,45 +4494,44 @@
 
             if (isRaceFinished) {
                 pill.innerText = "Finished";
-                pill.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                pill.className = "race-status-pill bg-purple-500/20 text-purple-300 border-purple-500/40";
                 startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 text-sm";
+                startBtn.className = "race-action race-action--done";
+                startBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Started';
                 
                 finishBtn.disabled = true;
-                finishBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
-                finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
+                finishBtn.className = "race-action race-action--done";
+                finishBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Finished';
 
                 if (reportCardContainer) {
                     reportCardContainer.innerHTML = `
-                        <div class="mt-4 text-center">
-                            <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="px-6 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg hover:scale-105">
-                                <i class="fa-solid fa-award mr-1.5"></i> Report Card
-                            </button>
-                        </div>
+                        <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action w-full mt-2 bg-gradient-to-r from-disneyGold to-yellow-500 !text-slate-950 uppercase tracking-wide text-xs">
+                            <i class="fa-solid fa-award"></i> View Report Card
+                        </button>
                     `;
                 }
             } else {
                 if (reportCardContainer) reportCardContainer.innerHTML = '';
                 if (tData.startTime) {
                     pill.innerText = "In Progress";
-                    pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    pill.className = "race-status-pill bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
                     startBtn.disabled = true;
-                    startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
-                    startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
+                    startBtn.className = "race-action race-action--done";
+                    startBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Started';
 
                     finishBtn.disabled = false;
-                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                    finishBtn.className = "race-action race-action--finish";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race';
                 } else {
                     pill.innerText = "Not Started";
-                    pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    pill.className = "race-status-pill bg-amber-500/20 text-amber-300 border-amber-500/40";
                     startBtn.disabled = false;
-                    startBtn.className = "flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
+                    startBtn.className = "race-action race-action--start";
+                    startBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i> Start Race';
 
                     finishBtn.disabled = false;
-                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                    finishBtn.className = "race-action race-action--finish";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race';
                 }
             }
 
@@ -4417,6 +4659,23 @@
                                     numSpan.innerText = `#${index + 1}`;
                                 }
                             });
+                            if (journeyTimerState) {
+                                const stopById = new Map(journeyTimerState.stops.map(cp => [cp.id, cp]));
+                                const reordered = newOrder.map(id => stopById.get(id)).filter(Boolean);
+                                journeyTimerState.stops.forEach(cp => { if (!newOrder.includes(cp.id)) reordered.push(cp); });
+                                journeyTimerState.stops = reordered;
+                                const { stops, completed, details, started, finished } = journeyTimerState;
+                                renderRaceJourney(stops, completed, details, started, finished);
+                                const journeyTimeline = document.getElementById('journey-timeline');
+                                if (journeyTimeline) {
+                                    clearTimeout(journeyTimeline._updatedTimeout);
+                                    journeyTimeline.classList.remove('journey-updated');
+                                    void journeyTimeline.offsetWidth;
+                                    journeyTimeline.classList.add('journey-updated');
+                                    // The 1s timer re-renders the timeline children, so the class must not linger or the animation replays every tick.
+                                    journeyTimeline._updatedTimeout = setTimeout(() => journeyTimeline.classList.remove('journey-updated'), 400);
+                                }
+                            }
                             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
                             await fastUpdate(teamRef, { customRouteOrder: newOrder });
                         }
@@ -4464,7 +4723,7 @@
         };
 
         window.undoManualCheckIn = async function(cpId) {
-            if (!confirm("Are you sure you want to undo this manual check-in? This will remove your completion status for this stop so you can retry when you reach the correct location.")) return;
+            if (!(await appConfirm("This removes your completion for this stop so you can retry when you reach the correct location.", { title: "Undo check-in?", confirmText: "Undo", danger: true }))) return;
 
             try {
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
@@ -4507,7 +4766,7 @@
 
             if (!navigator.geolocation) {
                 alert("Geolocation is not supported by your browser.");
-                const forceManual = confirm("Do you want to submit a manual check-in without GPS coordinates?");
+                const forceManual = await appConfirm("Submit a manual check-in without GPS coordinates?", { title: "Manual check-in", confirmText: "Check in" });
                 if (forceManual) {
                     await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
@@ -4550,7 +4809,7 @@
                     const ALLOWED_RADIUS_METERS = 150;
                     const isManual = distance > ALLOWED_RADIUS_METERS;
 
-                    if (!isManual || confirm(`You appear to be outside the check-in area (${Math.round(distance)}m away). Record manual override? (Note: You can undo this later if you realize you were in the wrong spot).`)) {
+                    if (!isManual || await appConfirm(`You appear to be ${Math.round(distance)}m outside the check-in area. You can undo this later if you were in the wrong spot.`, { title: "Record manual override?", confirmText: "Record", tone: "warning" })) {
                         await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
                     }
                 },
@@ -4560,7 +4819,7 @@
                         btn.disabled = false;
                     }
                     alert("Unable to retrieve GPS location.");
-                    if (confirm("Submit a manual check-in anyway?")) {
+                    if (await appConfirm("Submit a manual check-in anyway?", { title: "Manual check-in", confirmText: "Check in" })) {
                         await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
                     }
                 },
@@ -4804,6 +5063,126 @@
     }
     </script>
     <div id="sync-status" class="hidden fixed left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);"></div>
+    <script>
+        (function () {
+            const TONES = {
+                success: { icon: 'fa-circle-check', ring: 'bg-emerald-500/15 text-emerald-400', title: 'Done' },
+                error:   { icon: 'fa-circle-xmark', ring: 'bg-rose-500/15 text-rose-400', title: 'Something went wrong' },
+                warning: { icon: 'fa-triangle-exclamation', ring: 'bg-amber-500/15 text-amber-400', title: 'Heads up' },
+                info:    { icon: 'fa-circle-info', ring: 'bg-sky-500/15 text-sky-400', title: 'Notice' }
+            };
+
+            function inferTone(msg) {
+                if (/error|incorrect|unable|not found|not supported|do not match|failed|duplicate/i.test(msg)) return 'error';
+                if (/rule|warning|must|cannot|please|still pending|you must/i.test(msg)) return 'warning';
+                if (/success|approved|correct|copied|started|finished|unlocked|locked|created|updated|saved|undone|refreshed|added|submitted|deleted|earned|uploaded/i.test(msg)) return 'success';
+                return 'info';
+            }
+
+            let root = null;
+            let queue = Promise.resolve();
+
+            function ensureRoot() {
+                if (root) return root;
+                root = document.createElement('div');
+                root.id = 'app-dialog';
+                root.setAttribute('role', 'alertdialog');
+                root.setAttribute('aria-modal', 'true');
+                root.className = 'fixed inset-0 z-[120] flex items-center justify-center p-6 pointer-events-none';
+                root.innerHTML = `
+                    <div data-backdrop class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
+                    <div data-panel class="relative w-full max-w-xs bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl p-5 text-center opacity-0 scale-95 transition duration-200 ease-out">
+                        <div data-icon class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-xl mb-3"></div>
+                        <h2 data-title id="app-dialog-title" class="text-base font-bold text-white text-balance"></h2>
+                        <p data-msg id="app-dialog-msg" class="text-sm text-slate-300 mt-1.5 leading-relaxed text-pretty whitespace-pre-line"></p>
+                        <div data-actions class="flex gap-2 mt-5"></div>
+                    </div>`;
+                root.setAttribute('aria-labelledby', 'app-dialog-title');
+                root.setAttribute('aria-describedby', 'app-dialog-msg');
+                root.style.visibility = 'hidden';
+                document.body.appendChild(root);
+                return root;
+            }
+
+            function show(message, opts, withCancel) {
+                return new Promise(resolve => {
+                    const el = ensureRoot();
+                    const msg = String(message ?? '');
+                    const tone = opts.tone || (opts.danger ? 'error' : (withCancel ? 'info' : inferTone(msg)));
+                    const t = TONES[tone] || TONES.info;
+                    const iconEl = el.querySelector('[data-icon]');
+                    iconEl.className = `w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-xl mb-3 ${t.ring}`;
+                    iconEl.innerHTML = `<i class="fa-solid ${opts.danger ? 'fa-trash' : t.icon}" aria-hidden="true"></i>`;
+                    el.querySelector('[data-title]').textContent = opts.title || (withCancel ? 'Are you sure?' : t.title);
+                    el.querySelector('[data-msg]').textContent = msg;
+
+                    const actions = el.querySelector('[data-actions]');
+                    actions.innerHTML = '';
+                    const primaryClass = opts.danger
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                        : 'bg-disneyGold hover:brightness-110 text-slate-900';
+                    let cancelBtn = null;
+                    if (withCancel) {
+                        cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.className = 'flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-[0.97]';
+                        cancelBtn.textContent = opts.cancelText || 'Cancel';
+                        actions.appendChild(cancelBtn);
+                    }
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.className = `flex-1 py-3 rounded-2xl text-sm font-bold transition active:scale-[0.97] ${primaryClass}`;
+                    okBtn.textContent = opts.confirmText || 'OK';
+                    actions.appendChild(okBtn);
+
+                    const backdrop = el.querySelector('[data-backdrop]');
+                    const panel = el.querySelector('[data-panel]');
+                    const previousFocus = document.activeElement;
+
+                    const close = (result) => {
+                        document.removeEventListener('keydown', onKey);
+                        backdrop.classList.add('opacity-0');
+                        panel.classList.add('opacity-0', 'scale-95');
+                        el.classList.add('pointer-events-none');
+                        setTimeout(() => {
+                            el.style.visibility = 'hidden';
+                            if (previousFocus && previousFocus.focus) previousFocus.focus({ preventScroll: true });
+                            resolve(result);
+                        }, 180);
+                    };
+                    const onKey = (e) => {
+                        if (e.key === 'Escape') close(withCancel ? false : true);
+                        if (e.key === 'Enter') { e.preventDefault(); close(true); }
+                    };
+
+                    okBtn.onclick = () => close(true);
+                    if (cancelBtn) cancelBtn.onclick = () => close(false);
+                    backdrop.onclick = () => close(withCancel ? false : true);
+                    document.addEventListener('keydown', onKey);
+
+                    el.style.visibility = 'visible';
+                    el.classList.remove('pointer-events-none');
+                    requestAnimationFrame(() => {
+                        backdrop.classList.remove('opacity-0');
+                        panel.classList.remove('opacity-0', 'scale-95');
+                        okBtn.focus({ preventScroll: true });
+                    });
+                });
+            }
+
+            function enqueue(message, opts, withCancel) {
+                const run = queue.then(() => show(message, opts || {}, withCancel));
+                queue = run.catch(() => {});
+                return run;
+            }
+
+            window.appAlert = (message, opts) => enqueue(message, opts, false);
+            window.appConfirm = (message, opts) => enqueue(message, opts, true);
+            // Route every legacy alert() through the in-app dialog so no native browser popup ever appears.
+            window.alert = (message) => { window.appAlert(message); };
+        })();
+    </script>
+
     <div id="app-sheet" aria-hidden="true">
         <div class="sheet-backdrop" onclick="closeAppSheet()"></div>
         <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="app-sheet-title">
