@@ -467,6 +467,27 @@
             #race-journey-card { border-radius: 1.35rem; }
             #journey-timeline .race-stop-dot { width: 1.5rem; height: 1.5rem; font-size: .65rem; }
         }
+        /* Compact, app-like race timer card */
+        #race-timer-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
+        .race-stat-chip {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-width: 3.6rem; padding: .4rem .55rem; border-radius: .9rem;
+            background: rgba(2,6,23,.55); border: 1px solid rgba(255,255,255,.06);
+        }
+        .race-action {
+            display: flex; align-items: center; justify-content: center; gap: .4rem;
+            height: 2.6rem; padding: 0 .9rem; border-radius: 999px;
+            font-size: .8rem; font-weight: 700; color: #fff;
+            transition: transform .12s ease, background-color .15s ease, opacity .15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .race-action:not(:disabled):active { transform: scale(.96); }
+        .race-action--start { background: #059669; box-shadow: 0 6px 16px rgba(5,150,105,.3); }
+        .race-action--start:hover { background: #10b981; }
+        .race-action--finish { background: var(--theme-highlight); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+        .race-action--finish:hover { filter: brightness(1.08); }
+        .race-action--done { background: rgba(51,65,85,.6); color: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        .race-status-pill { font-size: 10px; line-height: 1; padding: .3rem .5rem; border-radius: 999px; font-weight: 700; border-width: 1px; white-space: nowrap; }
         .hidden { display: none !important; }
         /* Keep focused form fields visible above mobile keyboards. */
         input, select, textarea, button { scroll-margin-bottom: 180px; }
@@ -900,35 +921,34 @@
                 </div>
 
                 <div id="team-dashboard-active" class="hidden space-y-6">
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                                <span class="text-xs font-semibold uppercase tracking-wider text-disneyGold" id="dashboard-mode-label">Live Race Status</span>
-                                <div class="flex items-baseline gap-3 mt-1">
-                                    <span id="elapsed-time-display" class="font-mono text-3xl sm:text-4xl font-bold text-white tracking-wider">00:00:00</span>
-                                    <span id="race-status-pill" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold">Not Started</span>
+                    <div id="race-timer-card" class="bg-slate-800 border border-slate-700 rounded-3xl p-3.5 sm:p-4 relative overflow-hidden app-surface">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <span id="race-status-pill" class="race-status-pill bg-amber-500/20 text-amber-300 border-amber-500/40">Not Started</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-disneyGold truncate" id="dashboard-mode-label">Live Race Status</span>
                                 </div>
+                                <span id="elapsed-time-display" class="block mt-1 font-mono text-[1.85rem] sm:text-3xl leading-none font-bold text-white tabular-nums">00:00:00</span>
                             </div>
 
-                            <div class="flex items-center gap-4 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
-                                <div class="text-center px-2">
-                                    <p class="text-[10px] text-slate-400 uppercase font-semibold" id="score-progress-label">Stops Progress</p>
-                                    <p id="checkpoint-ratio" class="text-2xl font-bold text-disneyGold font-mono">0/0</p>
+                            <div class="flex items-stretch gap-1.5 shrink-0">
+                                <div class="race-stat-chip">
+                                    <p id="checkpoint-ratio" class="text-base font-bold text-disneyGold font-mono leading-none">0/0</p>
+                                    <p class="text-[8px] text-slate-400 uppercase font-semibold mt-1 leading-none max-w-[3.5rem] truncate" id="score-progress-label">Stops Progress</p>
                                 </div>
-                                <div class="h-8 w-px bg-slate-700"></div>
-                                <div class="text-center px-2">
-                                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Bonuses / Pts</p>
-                                    <p id="deduction-total" class="text-2xl font-bold text-emerald-400 font-mono">-0m</p>
+                                <div class="race-stat-chip">
+                                    <p id="deduction-total" class="text-base font-bold text-emerald-400 font-mono leading-none">-0m</p>
+                                    <p class="text-[8px] text-slate-400 uppercase font-semibold mt-1 leading-none">Bonus</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mt-5 pt-4 border-t border-slate-700/80 flex flex-wrap gap-3">
-                            <button id="btn-start-race" onclick="startTeamRace()" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                                <i class="fa-solid fa-play"></i> Start Race
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <button id="btn-start-race" onclick="startTeamRace()" class="race-action race-action--start">
+                                <i class="fa-solid fa-play text-xs"></i> Start Race
                             </button>
-                            <button id="btn-finish-race" onclick="finishTeamRace()" class="flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
-                                <i class="fa-solid fa-flag-checkered"></i> Finish Race
+                            <button id="btn-finish-race" onclick="finishTeamRace()" class="race-action race-action--finish">
+                                <i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race
                             </button>
                         </div>
                         <div id="report-card-container"></div>
@@ -4251,45 +4271,44 @@
 
             if (isRaceFinished) {
                 pill.innerText = "Finished";
-                pill.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                pill.className = "race-status-pill bg-purple-500/20 text-purple-300 border-purple-500/40";
                 startBtn.disabled = true;
-                startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 text-sm";
+                startBtn.className = "race-action race-action--done";
+                startBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Started';
                 
                 finishBtn.disabled = true;
-                finishBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
-                finishBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Finished';
+                finishBtn.className = "race-action race-action--done";
+                finishBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Finished';
 
                 if (reportCardContainer) {
                     reportCardContainer.innerHTML = `
-                        <div class="mt-4 text-center">
-                            <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="px-6 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wide transition shadow-lg hover:scale-105">
-                                <i class="fa-solid fa-award mr-1.5"></i> Report Card
-                            </button>
-                        </div>
+                        <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action w-full mt-2 bg-gradient-to-r from-disneyGold to-yellow-500 !text-slate-950 uppercase tracking-wide text-xs">
+                            <i class="fa-solid fa-award"></i> View Report Card
+                        </button>
                     `;
                 }
             } else {
                 if (reportCardContainer) reportCardContainer.innerHTML = '';
                 if (tData.startTime) {
                     pill.innerText = "In Progress";
-                    pill.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    pill.className = "race-status-pill bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
                     startBtn.disabled = true;
-                    startBtn.className = "flex-1 py-3.5 px-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed opacity-50 flex items-center justify-center gap-2 shadow-inner text-sm";
-                    startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Race Started';
+                    startBtn.className = "race-action race-action--done";
+                    startBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Started';
 
                     finishBtn.disabled = false;
-                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                    finishBtn.className = "race-action race-action--finish";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race';
                 } else {
                     pill.innerText = "Not Started";
-                    pill.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-semibold";
+                    pill.className = "race-status-pill bg-amber-500/20 text-amber-300 border-amber-500/40";
                     startBtn.disabled = false;
-                    startBtn.className = "flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Race';
+                    startBtn.className = "race-action race-action--start";
+                    startBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i> Start Race';
 
                     finishBtn.disabled = false;
-                    finishBtn.className = "flex-1 py-3.5 px-4 bg-disneyPink hover:bg-pink-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm";
-                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Finish Race';
+                    finishBtn.className = "race-action race-action--finish";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-flag-checkered text-xs"></i> Finish Race';
                 }
             }
 
