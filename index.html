@@ -70,6 +70,7 @@
             -webkit-overflow-scrolling: touch;
             overflow-x: hidden;
             overflow-y: auto;
+            overscroll-behavior-y: none;
             min-height: 100vh;
         }
 
@@ -461,11 +462,11 @@
         .race-stop-dot.next { border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 0 4px rgba(255,184,0,.12); }
         /* Compact, app-like journey panel while preserving the full timeline and live timer. */
         #race-journey-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
-        #journey-timeline { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
+        #journey-timeline { overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
         #journey-timeline > div:not(.race-stop-dot) { flex-shrink: 0; }
         @keyframes journeyRouteUpdated {
-            0% { opacity: .35; transform: translateY(3px); }
-            100% { opacity: 1; transform: translateY(0); }
+            0% { opacity: .7; }
+            100% { opacity: 1; }
         }
         #journey-timeline.journey-updated > div { animation: journeyRouteUpdated .35s ease-out both; }
         #journey-timeline.journey-updated .race-stop-dot { animation: journeyRouteUpdated .35s ease-out both; }
