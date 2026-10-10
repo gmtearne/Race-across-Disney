@@ -758,6 +758,30 @@
         </div>
     </div>
 
+    <!-- Bonus photo: preview & confirm before submitting -->
+    <div id="bonus-preview-modal" class="fixed inset-0 z-[75] bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900/80 backdrop-blur-md border border-amber-300/25 rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2"><i class="fa-solid fa-camera"></i> Check your photo</h3>
+                <button onclick="cancelBonusPreview()" class="text-slate-400 hover:text-white px-2 py-1 text-sm" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p id="bonus-preview-task" class="text-sm font-bold text-amber-300 leading-snug"></p>
+            <div class="flex justify-center bg-slate-900 p-2 rounded-xl border border-slate-700/60 overflow-hidden">
+                <img id="bonus-preview-img" src="" alt="Photo preview" class="max-h-[50vh] max-w-full rounded-lg object-contain">
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">Is the whole team and the task clearly visible? Once you submit, the bonus is claimed.</p>
+            <div class="flex gap-2">
+                <label class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs text-center cursor-pointer transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Choose another
+                    <input type="file" accept="image/*" class="hidden" onchange="replaceBonusPreview(this)">
+                </label>
+                <button id="bonus-preview-submit" onclick="submitBonusPhoto()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase transition shadow">
+                    <i class="fa-solid fa-check mr-1"></i> Submit photo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Image Viewer Modal Overlay -->
     <div id="image-modal" class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-slate-900/80 backdrop-blur-md border border-amber-300/25 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
@@ -1947,6 +1971,40 @@
             else attach();
         })();
 
+        // ---- Team timing (single source of truth for ticker, leaderboard and report card) ----
+        // Pause time that happened BEFORE this team started is never deducted from it, and
+        // pauses that happen AFTER it finished are ignored (endPauseAccumulatedMs).
+        window.teamPauseBaseline = function(team, race) {
+            if (team.startPauseAccumulatedMs != null) return Number(team.startPauseAccumulatedMs);
+            const start = team.startTime ? new Date(team.startTime).getTime() : 0;
+            const raceStart = Number((race && race.raceStartedAt) || 0);
+            return (raceStart && start > raceStart) ? Number(race.pauseAccumulatedMs || 0) : 0;
+        };
+        window.teamElapsedMs = function(team, race, nowMs) {
+            if (!team || !team.startTime) return 0;
+            race = race || {};
+            nowMs = nowMs || Date.now();
+            const start = new Date(team.startTime).getTime();
+            const ended = !!team.endTime;
+            const end = ended ? new Date(team.endTime).getTime() : (race.paused && race.pausedAt ? Number(race.pausedAt) : nowMs);
+            const baseline = window.teamPauseBaseline(team, race);
+            const pauseTotal = ended
+                ? (team.endPauseAccumulatedMs != null ? Number(team.endPauseAccumulatedMs) : baseline)
+                : Number(race.pauseAccumulatedMs || 0);
+            let ms = Math.max(0, end - start - Math.max(0, pauseTotal - baseline));
+            const limitMs = race.gameMode === 'scavenger' ? Number(race.timeLimitMinutes || 0) * 60000 : 0;
+            if (limitMs > 0) ms = Math.min(ms, limitMs);   // a Scavenger Hunt never runs past its time limit
+            return ms;
+        };
+
+        // Can this device share an image file through the native share sheet?
+        window.canShareReportImage = function() {
+            try {
+                return !!(navigator.share && navigator.canShare &&
+                    navigator.canShare({ files: [new File(['x'], 'x.png', { type: 'image/png' })] }));
+            } catch (e) { return false; }
+        };
+
         window.resetPageScroll = function() {
             const m = document.querySelector('main');
             if (m && m.scrollTop !== 0) m.scrollTop = 0;
@@ -2043,7 +2101,7 @@
         (function initAppModalMotion() {
             const modalIds = [
                 'image-modal', 'app-map-modal', 'checkpoint-info-modal', 'trivia-modal',
-                'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal'
+                'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal', 'bonus-preview-modal'
             ];
             const guarded = new WeakSet();
             const modalObserver = new MutationObserver(mutations => {
@@ -2871,6 +2929,7 @@
             if (teamRaceUnsubscribe) teamRaceUnsubscribe();
             if (teamDocUnsubscribe) teamDocUnsubscribe();
             teamListenerKey = key;
+            window.liveTeamData = null;
             const raceRef = doc(window.db, "races", code);
             const teamRef = doc(window.db, "races", code, "teams", teamId);
 
@@ -2888,6 +2947,7 @@
             teamDocUnsubscribe = onSnapshot(teamRef, (snap) => {
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 const team = snap.data();
+                window.liveTeamData = { id: teamId, ...team };
                 if (team.isApproved) {
                     const pending = document.getElementById('team-pending-card');
                     if (pending && !pending.classList.contains('hidden')) {
@@ -3154,6 +3214,8 @@
                     defaultPoints: defaultPoints,
                     chatEnabled: true,
                     hideBonuses: true,
+                    hideLiveTimers: true,
+                    resultsRevealed: false,
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -3507,6 +3569,23 @@
             }
         };
 
+        window.toggleHideLiveTimersSetting = async function(raceCode, checkbox) {
+            const owned = await getOwnedRaceForHost(raceCode); if (!owned) { checkbox.checked = !checkbox.checked; return; }
+            await fastUpdate(owned.ref, { hideLiveTimers: checkbox.checked });
+        };
+        window.hostToggleResultsReveal = async function(raceCode) {
+            const owned = await getOwnedRaceForHost(raceCode); if (!owned) return;
+            const revealed = owned.data.resultsRevealed === true;
+            const ok = await appConfirm(revealed
+                ? "Hide the final results again and go back to live standings (ranked by stops)?"
+                : "Reveal final results now? Everyone will see the final standings, including bonuses and times.",
+                { title: revealed ? "Back to live standings" : "Reveal final results", confirmText: revealed ? "Hide results" : "Reveal results" });
+            if (!ok) return;
+            await fastUpdate(owned.ref, { resultsRevealed: !revealed });
+            window.appToast(revealed ? "Back to live standings." : "Final results revealed.");
+            loadAdminRaces();
+        };
+
         window.toggleHideBonusesSetting = async function(raceCode, checkbox) {
             const currentUser = window.auth.currentUser;
             try {
@@ -3856,6 +3935,18 @@
                                     </div>
                                 </div>
 
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 text-xs">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-semibold text-slate-300 flex items-center gap-2"><i class="fa-regular fa-clock text-disneyGold"></i> Hide live timers:</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" ${race.hideLiveTimers === true ? 'checked' : ''} onchange="toggleHideLiveTimersSetting('${race.code}', this)" class="sr-only peer">
+                                            <div class="w-12 h-7 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-[22px] after:w-[22px] after:transition-all peer-checked:bg-disneyGold/80"></div>
+                                        </label>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500">While racing, the leaderboard ranks teams by stops completed only. Final results (times and bonuses) show automatically once every approved team has finished${race.gameMode === 'scavenger' ? ' or run out of time' : ''}, or when you reveal them.</p>
+                                    <button onclick="hostToggleResultsReveal('${race.code}')" class="w-full px-3 py-2.5 ${race.resultsRevealed === true ? 'bg-slate-700 hover:bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.resultsRevealed === true ? 'fa-eye-slash' : 'fa-ranking-star'} mr-1"></i> ${race.resultsRevealed === true ? 'Results revealed - tap to hide again' : 'Reveal Final Results Now'}</button>
+                                </div>
+
                                 <div class="pt-3 border-t border-slate-800 space-y-3">
                                   ${(() => {
                                     const hasStarted = !!race.raceStartedAt || teamList.some(t => !!t.startTime) || !!(race.staggerSchedule && race.staggerSchedule.length);
@@ -4005,6 +4096,7 @@
                 const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
                 const isHideBonuses = raceData.hideBonuses === true;
+                const hideLiveTimers = raceData.hideLiveTimers === true;
 
                 subtitleEl.innerText = `Race ${targetCode} · ${isScavenger ? 'Scavenger Hunt' : 'Speed Race'}`;
 
@@ -4060,31 +4152,39 @@
                         if (match) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
                     });
 
-                    let rawElapsedMin = 0;
-                    if (t.startTime) {
-                        const start = new Date(t.startTime).getTime();
-                        const end = t.endTime ? new Date(t.endTime).getTime() : (raceData.paused && raceData.pausedAt ? Number(raceData.pausedAt) : Date.now());
-                        // Count only host-paused time that happened after this team's timer began.
-                        // A team that starts after an earlier pause must not have that earlier pause
-                        // deducted from its own elapsed time.
-                        const raceStartMs = Number(raceData.raceStartedAt || 0);
-                        // Legacy teams have no baseline field. For teams that started after the
-                        // host race start, treat already-recorded pauses as pre-start pauses.
-                        const pauseAtStart = t.startPauseAccumulatedMs != null
-                            ? Number(t.startPauseAccumulatedMs)
-                            : (raceStartMs && start > raceStartMs ? Number(raceData.pauseAccumulatedMs || 0) : 0);
-                        const pausesSinceStart = Math.max(0, Number(raceData.pauseAccumulatedMs || 0) - pauseAtStart);
-                        rawElapsedMin = Math.max(0, (end - start - pausesSinceStart) / 60000);
-                    }
+                    const rawElapsedMin = window.teamElapsedMs(t, raceData) / 60000;
 
                     t.totalPoints = totalPoints;
                     t.rawMin = rawElapsedMin;
                     t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
                     t.progressCount = completed.length;
                     t.bonusCount = claimed.length;
+
+                    // When did this team reach its latest stop? (tie-breaker for live standings)
+                    let lastTs = 0;
+                    const details = t.checkinDetails || {};
+                    completed.forEach(id => {
+                        const ts = details[id] && details[id].timestamp ? new Date(details[id].timestamp).getTime() : 0;
+                        if (ts > lastTs) lastTs = ts;
+                    });
+                    t.lastStopMs = (t.startTime && lastTs) ? Math.max(0, lastTs - new Date(t.startTime).getTime()) : Infinity;
                 });
 
-                if (isScavenger) {
+                // LIVE vs FINAL. Final once every approved team is done (finished, or out of Scavenger time),
+                // or when the host reveals results. Until then ranks use stops completed only.
+                const limitMs = isScavenger ? Number(raceData.timeLimitMinutes || 0) * 60000 : 0;
+                const isTeamDone = (t) => !!t.endTime || (limitMs > 0 && !!t.startTime && t.rawMin * 60000 >= limitMs - 500);
+                const approvedTeams = teamList.filter(t => t.isApproved !== false);
+                const isFinal = raceData.resultsRevealed === true || (approvedTeams.length > 0 && approvedTeams.every(isTeamDone));
+
+                if (!isFinal) {
+                    // Live: purely stops completed (bonuses, trivia and penalties stay hidden until the end)
+                    teamList.sort((a, b) => {
+                        if (b.progressCount !== a.progressCount) return b.progressCount - a.progressCount;
+                        if (a.lastStopMs !== b.lastStopMs) return a.lastStopMs < b.lastStopMs ? -1 : 1;
+                        return String(a.teamName).localeCompare(String(b.teamName));
+                    });
+                } else if (isScavenger) {
                     teamList.sort((a, b) => {
                         if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
                         return a.rawMin - b.rawMin;
@@ -4099,6 +4199,11 @@
                     });
                 }
 
+                const phaseChip = isFinal
+                    ? '<span class="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase align-middle">Final results</span>'
+                    : '<span class="ml-2 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase align-middle animate-pulse">Live · by stops</span>';
+                subtitleEl.innerHTML = `Race ${targetCode} · ${isScavenger ? 'Scavenger Hunt' : 'Speed Race'}${phaseChip}`;
+
                 const rankStyles = [
                     'bg-disneyGold text-slate-950',
                     'bg-slate-300 text-slate-900',
@@ -4109,7 +4214,10 @@
                 teamList.forEach((t, index) => {
                     let scoreValue = "";
                     let scoreClass = "text-slate-200";
-                    if (isScavenger) {
+                    if (!isFinal) {
+                        scoreValue = `${t.progressCount}<span class="text-[10px] font-semibold text-slate-400 ml-0.5">/${mandatory.length}</span>`;
+                        scoreClass = "text-disneyGold";
+                    } else if (isScavenger) {
                         scoreValue = `${t.totalPoints}<span class="text-[10px] font-semibold text-slate-400 ml-0.5">pts</span>`;
                         scoreClass = "text-disneyGold";
                     } else {
@@ -4128,12 +4236,16 @@
                     const teamDiff = t.difficultyOverride || raceBaseDiff;
                     const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-px rounded uppercase font-semibold shrink-0" title="Difficulty Override">${teamDiff}</span>` : '';
 
-                    const bonusCountHtml = isHideBonuses
+                    const liveMin = Math.floor(t.rawMin);
+                    const liveTimeHtml = (!isFinal && !hideLiveTimers && t.startTime)
+                        ? `<span class="flex items-center gap-1" title="Time so far"><i class="fa-regular fa-clock text-slate-500 text-[9px]"></i>${Math.floor(liveMin / 60)}h ${String(liveMin % 60).padStart(2, '0')}m</span>`
+                        : '';
+                    const bonusCountHtml = (isHideBonuses || !isFinal)
                         ? `<span class="flex items-center gap-1" title="Bonuses are hidden by host"><i class="fa-solid fa-star text-amber-400/70 text-[9px]"></i>?</span>`
                         : `<span class="flex items-center gap-1" title="Bonuses claimed"><i class="fa-solid fa-star text-amber-400 text-[9px]"></i>${t.bonusCount}</span>`;
 
                     let photosHtml = '';
-                    const bonusPhotos = (!isHideBonuses && t.bonusPhotos) ? t.bonusPhotos : {};
+                    const bonusPhotos = (!isHideBonuses && isFinal && t.bonusPhotos) ? t.bonusPhotos : {};
                     const photoEntries = Object.entries(bonusPhotos);
                     if (photoEntries.length > 0) {
                         photosHtml = `<div class="flex -space-x-1.5">` + photoEntries.map(([bId, imgUrl]) => {
@@ -4144,7 +4256,7 @@
                         }).join('') + `</div>`;
                     }
 
-                    const reportBtnHtml = (loggedInTeamFinished && t.endTime)
+                    const reportBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
                         ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
                         : '';
 
@@ -4169,12 +4281,12 @@
                                     <div class="flex items-center gap-2.5 text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
                                         <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.dot}"></span>${status.label}</span>
                                         <span class="flex items-center gap-1" title="${isScavenger ? 'Stops' : 'Checkpoints'} completed"><i class="fa-solid fa-flag text-slate-500 text-[9px]"></i>${t.progressCount}/${mandatory.length}</span>
-                                        ${bonusCountHtml}
+                                        ${bonusCountHtml}${liveTimeHtml}
                                     </div>
                                 </div>
                                 <div class="text-right shrink-0">
                                     <div class="font-mono font-bold text-sm leading-tight ${scoreClass}">${scoreValue}</div>
-                                    <div class="text-[9px] uppercase tracking-wide text-slate-500">${isScavenger ? 'Score' : (t.endTime ? 'Final' : 'Elapsed')}</div>
+                                    <div class="text-[9px] uppercase tracking-wide text-slate-500">${!isFinal ? 'Stops' : (isScavenger ? 'Score' : (t.endTime ? 'Final' : 'Elapsed'))}</div>
                                 </div>
                             </div>
                             ${extraRow}
@@ -4182,7 +4294,17 @@
                     `;
                 });
                 tbody.innerHTML = html;
-                if (footnoteEl) footnoteEl.classList.toggle('hidden', loggedInTeamFinished);
+                if (footnoteEl) {
+                    if (!isFinal) {
+                        footnoteEl.innerHTML = '<i class="fa-solid fa-lock mr-1"></i>Live standings are ranked by stops completed. Bonuses and final times are revealed when the race ends.';
+                        footnoteEl.classList.remove('hidden');
+                    } else if (!loggedInTeamFinished) {
+                        footnoteEl.innerHTML = '<i class="fa-solid fa-lock mr-1"></i>Report cards unlock once your team finishes.';
+                        footnoteEl.classList.remove('hidden');
+                    } else {
+                        footnoteEl.classList.add('hidden');
+                    }
+                }
             } catch (e) {
                 tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</li>`;
             }
@@ -4447,6 +4569,7 @@
             teamDocUnsubscribe = null;
             teamListenerKey = null;
             window.liveTeamRaceData = null;
+            window.liveTeamData = null;
             if (chatUnsubscribe) chatUnsubscribe();
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
@@ -4472,17 +4595,23 @@
         }
 
         // Fun facts: stop-specific ones first, then the park-level ones as extras/fallback
-        window.getFunFacts = function(cpName, cpPark) {
+        window.getFunFacts = function(cpName, cpPark, cpLand) {
             const byName = window.LOCATION_FUN_FACTS || {};
             const nameKey = Object.keys(byName).find(k => k.trim().toLowerCase() === String(cpName || '').trim().toLowerCase());
-            const own = nameKey ? byName[nameKey] : [];
+            const own = nameKey ? [...byName[nameKey]] : [];
+            // facts shared by groups of stops (matched on name and/or land)
+            (window.PATTERN_FUN_FACTS || []).forEach(p => {
+                const nameOk = !p.name || p.name.test(String(cpName || ''));
+                const landOk = !p.land || p.land.test(String(cpLand || ''));
+                if ((p.name || p.land) && nameOk && landOk) own.push(...p.facts);
+            });
             const parks = window.PARK_FUN_FACTS || {};
             const park = String(cpPark || '').toLowerCase();
             const parkKey = Object.keys(parks).find(k => park.includes(k.toLowerCase()));
             const shared = parkKey ? parks[parkKey] : [];
             return { own: own, all: [...own, ...shared] };
         };
-        window.hasFunFacts = function(cpName, cpPark) { return window.getFunFacts(cpName, cpPark).all.length > 0; };
+        window.hasFunFacts = function(cpName, cpPark, cpLand) { return window.getFunFacts(cpName, cpPark, cpLand).all.length > 0; };
         let funFactState = { list: [], i: 0 };
         window.nextFunFact = function() {
             if (!funFactState.list.length) return;
@@ -4499,7 +4628,7 @@
             const extraBox = document.getElementById('cp-modal-extra');
             const iframeEl = document.getElementById('cp-modal-iframe');
 
-            const facts = window.getFunFacts(cpName, cpPark);
+            const facts = window.getFunFacts(cpName, cpPark, cpLand);
             descEl.classList.remove('hidden');
 
             if (difficulty === 'hard') {
@@ -4569,9 +4698,7 @@
             if (isScavenger) {
                 scoreText = `${team.totalPoints || 0} Points`;
             } else {
-                const start = new Date(team.startTime).getTime();
-                const end = new Date(team.endTime).getTime();
-                const diffMin = (end - start) / 60000;
+                const diffMin = window.teamElapsedMs(team, race) / 60000;
                 const hrs = Math.floor(diffMin / 60);
                 const mins = Math.floor(diffMin % 60);
                 scoreText = `${hrs}h ${mins}m Elapsed Time`;
@@ -4714,9 +4841,14 @@
                     </div>
 
                     <div class="flex gap-2 pt-2">
-                        <button onclick="downloadReportCardAsImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-download"></i> Save / Share Image
+                        ${window.canShareReportImage() ? `<button onclick="shareReportCardImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-share-nodes"></i> Share
                         </button>
+                        <button onclick="downloadReportCardAsImage()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl uppercase transition shadow flex items-center justify-center gap-2" aria-label="Save image">
+                            <i class="fa-solid fa-download"></i> Save
+                        </button>` : `<button onclick="downloadReportCardAsImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> Save Image
+                        </button>`}
                         <button onclick="document.getElementById('team-report-card-modal').remove()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl uppercase transition shadow">
                             Close
                         </button>
@@ -4725,20 +4857,41 @@
             `;
         };
 
-        window.downloadReportCardAsImage = async function() {
+        async function renderReportCardBlob() {
             const cardEl = document.getElementById('shareable-report-card-canvas');
-            if (!cardEl) return;
+            if (!cardEl) return null;
+            const canvas = await html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: null });
+            return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        }
+        window.downloadReportCardAsImage = async function() {
             try {
-                alert("Generating your branded shareable report card image...");
-                const canvas = await html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: null });
-                const imageUri = canvas.toDataURL("image/png");
-
+                window.appToast("Creating your report card image…", 2500);
+                const blob = await renderReportCardBlob();
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.download = 'Mouse_Race_Report_Card.png';
-                link.href = imageUri;
+                link.href = url;
                 link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
             } catch (e) {
                 alert("Error generating image: " + e.message);
+            }
+        };
+        window.shareReportCardImage = async function() {
+            try {
+                window.appToast("Preparing your report card…", 2500);
+                const blob = await renderReportCardBlob();
+                if (!blob) return;
+                const file = new File([blob], 'Mouse_Race_Report_Card.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'The Amazing Mouse Race', text: 'Our Mouse Race report card!' });
+                } else {
+                    await window.downloadReportCardAsImage();
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;   // they closed the share sheet
+                alert("Could not share the image: " + e.message);
             }
         };
 
@@ -5020,7 +5173,7 @@
                         `;
                     }
 
-                    const hasFacts = window.hasFunFacts(cp.name, cp.park);
+                    const hasFacts = window.hasFunFacts(cp.name, cp.park, cp.land);
                     const canOpen = difficulty !== 'hard' || hasFacts;
                     const clickAction = !canOpen ? '' : `onclick="openCheckpointModal('${cp.name.replace(/'/g, "\\'")}', '${(cp.park || 'Disney Park').replace(/'/g, "\\'")}', '${(cp.land || 'Attraction Area').replace(/'/g, "\\'")}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}')"`;
                     const hoverCursor = !canOpen ? 'cursor-default' : 'cursor-pointer hover:border-disneyGold/60';
@@ -5129,7 +5282,7 @@
                     actionHtml = `
                         <label class="w-full h-10 flex items-center justify-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow whitespace-nowrap">
                             <i class="fa-solid fa-camera"></i> Upload Proof
-                            <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}')">
+                            <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}', this)">
                         </label>
                     `;
                 }
@@ -5415,32 +5568,69 @@
             loadTeamDashboardData(raceSnap.data());
         }
 
-        window.uploadBonusPhoto = async function(cpId) {
-            const liveRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
-            if (liveRaceSnap.exists() && liveRaceSnap.data().paused) { alert("The host has paused the race. Bonus uploads are temporarily locked."); return; }
-            const file = event.target.files[0];
+        // Step 1: pick a photo -> show a preview. (The file is read immediately; reading
+        // event.target after an await returned nothing and silently broke uploads.)
+        let pendingBonusUpload = null;
+        function setBonusPreview(file) {
+            if (pendingBonusUpload && pendingBonusUpload.url) URL.revokeObjectURL(pendingBonusUpload.url);
+            pendingBonusUpload.file = file;
+            pendingBonusUpload.url = URL.createObjectURL(file);
+            document.getElementById('bonus-preview-img').src = pendingBonusUpload.url;
+        }
+        window.uploadBonusPhoto = function(cpId, inputEl) {
+            const file = inputEl && inputEl.files && inputEl.files[0];
             if (!file) return;
-
-            const compressedBase64 = await compressImage(file, 600, 600, 0.7);
-            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
-            const teamSnap = await safeGetDoc(teamRef);
-            const claimed = teamSnap.data().claimedBonus || [];
-            const bonusPhotos = teamSnap.data().bonusPhotos || {};
-
-            if (!claimed.includes(cpId)) {
-                claimed.push(cpId);
+            inputEl.value = '';   // lets the same photo be picked again later
+            if (window.teamCheckinState && window.teamCheckinState.paused) { alert("The host has paused the race. Bonus uploads are temporarily locked."); return; }
+            const cps = (window.liveTeamRaceData && window.liveTeamRaceData.checkpoints) || [];
+            const cp = cps.find(c => c.id === cpId);
+            pendingBonusUpload = { cpId, file: null, url: null };
+            setBonusPreview(file);
+            const taskEl = document.getElementById('bonus-preview-task');
+            taskEl.textContent = cp ? `⭐ ${cp.name}` : '⭐ Bonus challenge';
+            const btn = document.getElementById('bonus-preview-submit');
+            btn.disabled = false; btn.classList.remove('opacity-60');
+            document.getElementById('bonus-preview-modal').classList.remove('hidden');
+        };
+        window.replaceBonusPreview = function(inputEl) {
+            const file = inputEl && inputEl.files && inputEl.files[0];
+            if (!file || !pendingBonusUpload) return;
+            inputEl.value = '';
+            setBonusPreview(file);
+        };
+        window.cancelBonusPreview = function() {
+            if (pendingBonusUpload && pendingBonusUpload.url) URL.revokeObjectURL(pendingBonusUpload.url);
+            pendingBonusUpload = null;
+            closeAppModal('bonus-preview-modal');
+        };
+        // Step 2: confirmed -> compress and save
+        window.submitBonusPhoto = async function() {
+            const pending = pendingBonusUpload;
+            if (!pending || !pending.file) return;
+            const btn = document.getElementById('bonus-preview-submit');
+            btn.disabled = true; btn.classList.add('opacity-60');
+            try {
+                const liveRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+                if (liveRaceSnap.exists() && liveRaceSnap.data().paused) { alert("The host has paused the race. Bonus uploads are temporarily locked."); return; }
+                const compressedBase64 = await compressImage(pending.file, 600, 600, 0.7);
+                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                const teamSnap = await safeGetDoc(teamRef);
+                const teamData = teamSnap.data();
+                if (teamData.endTime) { alert("The race is completed, so bonus uploads are locked."); return; }
+                const claimed = teamData.claimedBonus || [];
+                const bonusPhotos = teamData.bonusPhotos || {};
+                if (!claimed.includes(pending.cpId)) claimed.push(pending.cpId);
+                bonusPhotos[pending.cpId] = compressedBase64;
+                await fastUpdate(teamRef, { claimedBonus: claimed, bonusPhotos: bonusPhotos });
+                window.cancelBonusPreview();
+                const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+                loadTeamDashboardData(raceSnap.data());
+                window.appToast("Photo submitted! Bonus claimed.", 2600);
+            } catch (e) {
+                alert("Could not upload the photo: " + e.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-60');
             }
-        
-            bonusPhotos[cpId] = compressedBase64;
-
-            await fastUpdate(teamRef, {
-                claimedBonus: claimed,
-                bonusPhotos: bonusPhotos
-            });
-
-            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
-            loadTeamDashboardData(raceSnap.data());
-            alert("Photo proof uploaded successfully! Bonus/deduction claimed.");
         };
 
         // Host-only race-wide controls. Verify ownership for every host mutation.
@@ -5594,30 +5784,56 @@
             } else {
                 await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})});
             }
-            if (!race.raceStartedAt) await fastUpdate(doc(window.db, "races", window.activeRaceCode), { raceStartedAt: now });
+            if (!race.raceStartedAt) {
+                try { await fastUpdate(doc(window.db, "races", window.activeRaceCode), { raceStartedAt: now }); }
+                catch (e) { console.warn("Could not record raceStartedAt (host-only race document?)", e); }
+            }
             window.appToast("Your timer has started."); loadTeamDashboardData(race);
         };
 
-        window.finishTeamRace = async function() {
-            const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
-            const raceData = raceSnap.data();
-            if (raceData.paused) return alert("The host has paused the race. Please wait for the host to resume it before finishing.");
-            const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
-            const tData = teamSnap.data();
-
-            if (raceData.gameMode === 'race' && raceData.finalCheckpointId) {
-                const completed = tData.completedCheckpoints || [];
-                if (!completed.includes(raceData.finalCheckpointId)) {
-                    alert("Host Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
+        let finishInFlight = false;
+        window.finishTeamRace = async function(opts = {}) {
+            const auto = !!(opts && opts.auto === true);
+            if (finishInFlight) return;
+            finishInFlight = true;
+            try {
+                const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+                const raceData = raceSnap.data();
+                if (raceData.paused) {
+                    if (!auto) alert("The host has paused the race. Please wait for the host to resume it before finishing.");
                     return;
                 }
-            }
+                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                const teamSnap = await safeGetDoc(teamRef);
+                const tData = teamSnap.data();
+                if (tData.endTime) return;
 
-            const now = new Date().toISOString();
-            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { endTime: now });
-            alert("Race finished! Final results submitted to the leaderboard.");
-            loadTeamDashboardData(raceData);
-            switchTab('leaderboard');
+                if (!auto && raceData.gameMode === 'race' && raceData.finalCheckpointId) {
+                    const completed = tData.completedCheckpoints || [];
+                    if (!completed.includes(raceData.finalCheckpointId)) {
+                        alert("Host Rule Warning: You cannot finish the race until you have checked in at the designated final ending location!");
+                        return;
+                    }
+                }
+
+                let endMs = Date.now();
+                if (auto) {
+                    // Record the moment the countdown actually hit zero, even if the app was reopened later
+                    const limitMs = Number(raceData.timeLimitMinutes || 0) * 60000;
+                    const startMs = tData.startTime ? new Date(tData.startTime).getTime() : 0;
+                    if (limitMs > 0 && startMs) {
+                        const pausesSinceStart = Math.max(0, Number(raceData.pauseAccumulatedMs || 0) - window.teamPauseBaseline(tData, raceData));
+                        endMs = Math.min(endMs, startMs + limitMs + pausesSinceStart);
+                    }
+                }
+                await fastUpdate(teamRef, { endTime: new Date(endMs).toISOString(), endPauseAccumulatedMs: Number(raceData.pauseAccumulatedMs || 0) });
+                if (auto) window.appToast("Time's up! Your hunt is finished.", 3500);
+                else alert("Race finished! Final results submitted to the leaderboard.");
+                loadTeamDashboardData(raceData);
+                if (!auto) switchTab('leaderboard');
+            } finally {
+                finishInFlight = false;
+            }
         };
 
         function startTimerTicker() {
@@ -5625,60 +5841,73 @@
             const tickerGeneration = ++timerTickerGeneration;
             const tickerRaceCode = window.activeRaceCode;
             const tickerTeamId = window.activeTeamId;
+            const stale = () => tickerGeneration !== timerTickerGeneration ||
+                window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId;
+            let lastFallbackFetch = 0, scheduledStartInFlight = false, baselineBackfilled = false;
+
+            // The live listeners keep window.liveTeamData / liveTeamRaceData current, so the clock
+            // needs no Firestore reads. Only fetch (at most every 5s) if they haven't arrived yet.
+            async function ensureLiveData() {
+                const haveTeam = !!(window.liveTeamData && window.liveTeamData.id === tickerTeamId);
+                const haveRace = !!window.liveTeamRaceData;
+                if (haveTeam && haveRace) return true;
+                if (Date.now() - lastFallbackFetch < 5000) return false;
+                lastFallbackFetch = Date.now();
+                try {
+                    const [t, r] = await Promise.all([
+                        safeGetDoc(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId)),
+                        safeGetDoc(doc(window.db, "races", tickerRaceCode))
+                    ]);
+                    if (stale()) return false;
+                    if (!haveTeam && t.exists()) window.liveTeamData = { id: tickerTeamId, ...t.data() };
+                    if (!haveRace && r.exists()) window.liveTeamRaceData = r.data();
+                } catch (e) { /* offline: try again shortly */ }
+                return !!(window.liveTeamData && window.liveTeamData.id === tickerTeamId && window.liveTeamRaceData);
+            }
+
             timerInterval = setInterval(async () => {
-                // A previous async tick can finish after a team switch. Never let it
-                // overwrite the newly selected team's timer or write to its document.
-                if (tickerGeneration !== timerTickerGeneration || !tickerRaceCode || !tickerTeamId ||
-                    window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                const teamSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId));
-                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                if (!teamSnap.exists()) return;
-                const data = teamSnap.data();
+                if (stale() || !tickerRaceCode || !tickerTeamId) return;
+                if (!(await ensureLiveData()) || stale()) return;
+                const data = window.liveTeamData;
+                const race = window.liveTeamRaceData;
+
                 if (!data.startTime) {
+                    // Waiting for a scheduled (staggered / late-join) start
                     if (data.scheduledTeamStartAt) {
                         const scheduledAt = Number(data.scheduledTeamStartAt);
                         const startBtn = document.getElementById('btn-start-race');
-                        const raceSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode));
-                        if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                        const race = raceSnap.exists() ? raceSnap.data() : {};
                         if (!race.paused && Date.now() >= scheduledAt) {
-                            await fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startTime: new Date(scheduledAt).toISOString(), startPauseAccumulatedMs:Number(race.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
-                            if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                            if (raceSnap.exists()) loadTeamDashboardData(race);
+                            if (scheduledStartInFlight) return;
+                            scheduledStartInFlight = true;
+                            try {
+                                await fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startTime: new Date(scheduledAt).toISOString(), startPauseAccumulatedMs: Number(race.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
+                                if (!stale()) loadTeamDashboardData(race);
+                            } finally { scheduledStartInFlight = false; }
                         } else if (startBtn) {
                             startBtn.disabled = true;
-                            startBtn.innerHTML = `<i class="fa-solid fa-hourglass-half text-xs"></i> ${race.paused ? 'Race paused' : 'Starts in ' + Math.ceil((scheduledAt-Date.now())/1000) + ' sec'}`;
+                            startBtn.innerHTML = `<i class="fa-solid fa-hourglass-half text-xs"></i> ${race.paused ? 'Race paused' : 'Starts in ' + Math.max(0, Math.ceil((scheduledAt - Date.now()) / 1000)) + ' sec'}`;
                         }
                     }
                     return;
                 }
 
-                const start = new Date(data.startTime).getTime();
-                const raceSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode));
-                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                const race = raceSnap.exists() ? raceSnap.data() : {};
-                const end = data.endTime ? new Date(data.endTime).getTime() : (race.paused && race.pausedAt ? Number(race.pausedAt) : Date.now());
-                const raceStartMs = Number(race.raceStartedAt || 0);
-                // Backfill a sensible baseline for teams already in an older live race.
-                // Historical pause timestamps weren't stored previously, so this legacy
-                // fallback assumes accumulated pauses preceded a late team's start.
-                const pauseAtStart = data.startPauseAccumulatedMs != null
-                    ? Number(data.startPauseAccumulatedMs)
-                    : (raceStartMs && start > raceStartMs ? Number(race.pauseAccumulatedMs || 0) : 0);
-                if (data.startPauseAccumulatedMs == null && pauseAtStart > 0) {
-                    fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startPauseAccumulatedMs: pauseAtStart }).catch(() => {});
+                // Legacy teams had no pause baseline stored: save it once so it stays fixed
+                if (!baselineBackfilled && data.startPauseAccumulatedMs == null) {
+                    baselineBackfilled = true;
+                    const baseline = window.teamPauseBaseline(data, race);
+                    if (baseline > 0) fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startPauseAccumulatedMs: baseline }).catch(() => {});
                 }
-                const pausedMsSinceStart = Math.max(0, Number(race.pauseAccumulatedMs || 0) - pauseAtStart);
-                const diffSec = Math.max(0, Math.floor((end - start - pausedMsSinceStart) / 1000));
 
+                const diffSec = Math.floor(window.teamElapsedMs(data, race) / 1000);
                 const isScavengerCountdown = race.gameMode === 'scavenger' && Number(race.timeLimitMinutes) > 0;
                 const shownSeconds = isScavengerCountdown ? Math.max(0, Number(race.timeLimitMinutes) * 60 - diffSec) : diffSec;
                 const hrs = String(Math.floor(shownSeconds / 3600)).padStart(2, '0');
                 const mins = String(Math.floor((shownSeconds % 3600) / 60)).padStart(2, '0');
                 const secs = String(shownSeconds % 60).padStart(2, '0');
-                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
-                document.getElementById('elapsed-time-display').innerText = `${hrs}:${mins}:${secs}`;
-                if (isScavengerCountdown && shownSeconds <= 0 && !data.endTime && !race.paused) finishTeamRace();
+                if (stale()) return;
+                const timerEl = document.getElementById('elapsed-time-display');
+                if (timerEl) timerEl.innerText = `${hrs}:${mins}:${secs}`;
+                if (isScavengerCountdown && shownSeconds <= 0 && !data.endTime && !race.paused) finishTeamRace({ auto: true });
             }, 1000);
         }
     </script>
