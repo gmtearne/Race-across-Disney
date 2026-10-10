@@ -1173,8 +1173,9 @@
                     </div>
                     <h2 class="text-xl font-disney font-bold text-white">Awaiting Host Approval</h2>
                     <p class="text-slate-300 text-sm max-w-md mx-auto">Your team registration has been received! Please wait for the host to approve your team before you can see checkpoints and start the race.</p>
-                    <button onclick="checkApprovalStatus()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
-                        <i class="fa-solid fa-rotate mr-1"></i> Check Approval Status
+                    <p id="approval-live-status" class="text-emerald-300 text-xs font-semibold"><i class="fa-solid fa-tower-broadcast mr-1"></i> Automatically checking for host approval…</p>
+                    <button onclick="checkApprovalStatus()" class="px-4 py-2 bg-slate-700/70 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] font-medium transition border border-slate-600">
+                        <i class="fa-solid fa-rotate mr-1"></i> Check manually instead
                     </button>
                 </div>
 
@@ -2709,6 +2710,10 @@
         window.activeRaceCode = null;
         window.activeTeamId = null;
         let timerInterval = null;
+        let teamRaceUnsubscribe = null;
+        let teamDocUnsubscribe = null;
+        let teamListenerKey = null;
+        window.liveTeamRaceData = null;
         let isRegisterMode = false;
         window.globalDashboardLockState = false;
         window.globalDashboardLockPin = "";
@@ -2856,6 +2861,40 @@
             }
         };
 
+        function attachTeamLiveListeners(code, teamId) {
+            const key = `${code}::${teamId}`;
+            if (teamListenerKey === key && teamRaceUnsubscribe && teamDocUnsubscribe) return;
+            if (teamRaceUnsubscribe) teamRaceUnsubscribe();
+            if (teamDocUnsubscribe) teamDocUnsubscribe();
+            teamListenerKey = key;
+            const raceRef = doc(window.db, "races", code);
+            const teamRef = doc(window.db, "races", code, "teams", teamId);
+
+            // Live race document updates keep paused state, logos, and all race controls in sync.
+            teamRaceUnsubscribe = onSnapshot(raceRef, (snap) => {
+                if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
+                window.liveTeamRaceData = snap.data();
+                const active = document.getElementById('team-dashboard-active');
+                if (active && !active.classList.contains('hidden')) {
+                    loadTeamDashboardData(window.liveTeamRaceData).catch(err => console.error('Live race refresh failed:', err));
+                }
+            }, (err) => console.error('Race live listener error:', err));
+
+            // Team document listener automatically detects host approval (no button needed).
+            teamDocUnsubscribe = onSnapshot(teamRef, (snap) => {
+                if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
+                const team = snap.data();
+                if (team.isApproved) {
+                    const pending = document.getElementById('team-pending-card');
+                    if (pending && !pending.classList.contains('hidden')) {
+                        restoreSession(code, teamId);
+                    } else if (document.getElementById('team-dashboard-active') && !document.getElementById('team-dashboard-active').classList.contains('hidden')) {
+                        loadTeamDashboardData(window.liveTeamRaceData || {}).catch(err => console.error('Live team refresh failed:', err));
+                    }
+                }
+            }, (err) => console.error('Team approval live listener error:', err));
+        }
+
         async function restoreSession(code, teamId) {
             try {
                 const raceSnap = await safeGetDoc(doc(window.db, "races", code));
@@ -2872,6 +2911,8 @@
                 const tData = teamSnap.data();
                 window.activeRaceCode = code;
                 window.activeTeamId = teamId;
+                window.liveTeamRaceData = raceSnap.data();
+                attachTeamLiveListeners(code, teamId);
                 updateLeaderboardLoginNotice();
 
                 if (!tData.isApproved) {
@@ -4325,6 +4366,8 @@
 
                 window.activeRaceCode = code;
                 window.activeTeamId = teamId;
+                window.liveTeamRaceData = raceSnap.data();
+                attachTeamLiveListeners(code, teamId);
                 updateLeaderboardLoginNotice();
 
                 localStorage.setItem('rad_race_code', code);
@@ -4370,6 +4413,12 @@
             localStorage.removeItem('rad_race_code');
             localStorage.removeItem('rad_team_id');
             clearInterval(timerInterval);
+            if (teamRaceUnsubscribe) teamRaceUnsubscribe();
+            if (teamDocUnsubscribe) teamDocUnsubscribe();
+            teamRaceUnsubscribe = null;
+            teamDocUnsubscribe = null;
+            teamListenerKey = null;
+            window.liveTeamRaceData = null;
             if (chatUnsubscribe) chatUnsubscribe();
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
