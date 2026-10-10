@@ -370,6 +370,9 @@
         .app-page-pop { animation: appPagePop 280ms var(--app-motion) backwards; }
         @keyframes appPagePop { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         .report-glass { box-shadow: 0 18px 48px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,235,160,.10); }
+        #wildcard-banner .wc-card { animation: wcGlow 2.2s ease-in-out infinite; }
+        @keyframes wcGlow { 0%,100% { box-shadow: 0 0 0 1px rgba(255,200,60,.35), 0 8px 24px rgba(0,0,0,.35); } 50% { box-shadow: 0 0 0 2px rgba(255,200,60,.7), 0 0 26px rgba(232,31,118,.35); } }
+        @media (prefers-reduced-motion: reduce) { #wildcard-banner .wc-card { animation: none; } }
         #app-toast {
             position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 300;
             transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
@@ -1124,6 +1127,8 @@
 
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
                 <section id="tab-race" class="px-3 space-y-6">
+                <!-- Wildcard challenge notification (filled by renderWildcardBanner) -->
+                <div id="wildcard-banner" class="hidden"></div>
                 <div id="login-prompt-card" class="space-y-4">
                     <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
                     <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
@@ -1323,6 +1328,32 @@
                     <p id="leaderboard-footnote" class="hidden text-[10px] text-slate-500 text-center mt-3">
                         <i class="fa-solid fa-lock mr-1"></i>Report cards unlock once your team finishes.
                     </p>
+                </div>
+
+                <div id="race-awards-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-3.5 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-3 px-0.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30 shrink-0">
+                            <i class="fa-solid fa-award text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-sm text-white leading-tight">Race Awards</h2>
+                            <p class="text-[11px] text-slate-400">Each award goes to one team only.</p>
+                        </div>
+                    </div>
+                    <div id="race-awards-list" class="space-y-2"></div>
+                </div>
+
+                <div id="race-gallery-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-3.5 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-3 px-0.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-disneyGold flex items-center justify-center border border-amber-400/30 shrink-0">
+                            <i class="fa-solid fa-images text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-sm text-white leading-tight">Photo Gallery</h2>
+                            <p class="text-[11px] text-slate-400">Everyone's bonus photos. Tap an emoji to react!</p>
+                        </div>
+                    </div>
+                    <div id="race-gallery-grid" class="grid grid-cols-2 gap-2.5"></div>
                 </div>
 
                 <div id="team-chat-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
@@ -1995,6 +2026,127 @@
             const limitMs = race.gameMode === 'scavenger' ? Number(race.timeLimitMinutes || 0) * 60000 : 0;
             if (limitMs > 0) ms = Math.min(ms, limitMs);   // a Scavenger Hunt never runs past its time limit
             return ms;
+        };
+
+        // Is the race over for scoring purposes? (every approved team done, or the host revealed results)
+        window.raceIsFinal = function(race, teams) {
+            race = race || {};
+            if (race.resultsRevealed === true) return true;
+            const approved = (teams || []).filter(t => t.isApproved !== false);
+            if (!approved.length) return false;
+            const limitMs = race.gameMode === 'scavenger' ? Number(race.timeLimitMinutes || 0) * 60000 : 0;
+            return approved.every(t => !!t.endTime || (limitMs > 0 && !!t.startTime && window.teamElapsedMs(t, race) >= limitMs - 500));
+        };
+
+        // ---------------------------------------------------------------------------------
+        // AWARDS. Six awards, each given to exactly ONE team (the best in that category).
+        // Set AWARDS_ONE_PER_TEAM = true if a team should only ever win one: an award then
+        // passes to the next-best team that doesn't have one yet.
+        //
+        // Iron Legs reads  team.distanceMiles.walk  (a number of miles). Phase 8 (transport tracking)
+        // only has to write that field. Until some team has it, Iron Legs simply isn't given out.
+        // ---------------------------------------------------------------------------------
+        window.AWARDS_ONE_PER_TEAM = false;
+        window.computeRaceAwards = function(race, teams) {
+            const eligible = (teams || []).filter(t => t.isApproved !== false && t.startTime);
+            const nameById = {};
+            (race.checkpoints || []).forEach(c => { nameById[c.id] = c.name; });
+            const byName = (a, b) => String(a.t.teamName).localeCompare(String(b.t.teamName));
+            const fmt = (ms) => { const s = Math.round(ms / 1000), m = Math.floor(s / 60); return m > 0 ? `${m}m ${String(s % 60).padStart(2, '0')}s` : `${s}s`; };
+            // GPS check-ins in order (manual ones are ignored: they can be done back-to-back)
+            const legsOf = (t) => {
+                const d = t.checkinDetails || {};
+                const pts = (t.completedCheckpoints || [])
+                    .filter(id => d[id] && d[id].timestamp && !d[id].isManual)
+                    .map(id => ({ id, ts: new Date(d[id].timestamp).getTime() }))
+                    .filter(p => p.ts).sort((a, b) => a.ts - b.ts);
+                const legs = [];
+                for (let i = 1; i < pts.length; i++) legs.push({ ms: pts[i].ts - pts[i - 1].ts, from: pts[i - 1].id, to: pts[i].id });
+                return legs;
+            };
+            const triviaOf = (t) => {
+                const vals = Object.values(t.triviaAttempts || {}).filter(a => a && a.asked);
+                if (vals.length) return { asked: vals.length, correct: vals.filter(a => a.isCorrect).length };
+                const logs = t.triviaLogs || [];
+                return { asked: logs.length, correct: logs.filter(l => l.isCorrect).length };
+            };
+            const wcIds = race.wildcardBonusIds || [];
+
+            const defs = [
+                { key: 'fastest', emoji: '⚡', name: 'Fastest Check-In', candidates: () => eligible.map(t => {
+                    const legs = legsOf(t).filter(l => l.ms >= 15000);
+                    if (!legs.length) return null;
+                    const best = legs.reduce((a, b) => (b.ms < a.ms ? b : a));
+                    return { t, score: best.ms, detail: `${fmt(best.ms)} between ${nameById[best.from] || 'a stop'} and ${nameById[best.to] || 'the next stop'}` };
+                }).filter(Boolean).sort((a, b) => a.score - b.score || byName(a, b)) },
+
+                { key: 'trivia', emoji: '🧠', name: 'Trivia Master', candidates: () => eligible.map(t => {
+                    const tv = triviaOf(t);
+                    if (tv.correct < 1) return null;
+                    return { t, score: tv.correct, acc: tv.correct / tv.asked, detail: `${tv.correct} of ${tv.asked} trivia questions correct` };
+                }).filter(Boolean).sort((a, b) => b.score - a.score || b.acc - a.acc || byName(a, b)) },
+
+                { key: 'shutterbug', emoji: '📸', name: 'Shutterbug', candidates: () => eligible.map(t => {
+                    const n = Object.keys(t.bonusPhotos || {}).length;
+                    if (n < 1) return null;
+                    return { t, score: n, stops: (t.completedCheckpoints || []).length, detail: `${n} bonus photo${n === 1 ? '' : 's'} submitted` };
+                }).filter(Boolean).sort((a, b) => b.score - a.score || b.stops - a.stops || byName(a, b)) },
+
+                { key: 'steady', emoji: '🎯', name: 'Steady Eddie', candidates: () => eligible.map(t => {
+                    const legs = legsOf(t).map(l => l.ms);
+                    if (legs.length < 3) return null;
+                    const mean = legs.reduce((a, b) => a + b, 0) / legs.length;
+                    if (mean <= 0) return null;
+                    const sd = Math.sqrt(legs.reduce((a, b) => a + (b - mean) * (b - mean), 0) / legs.length);
+                    const cv = sd / mean;
+                    return { t, score: cv, detail: `Most consistent pace: legs varied by only ${Math.round(cv * 100)}%` };
+                }).filter(Boolean).sort((a, b) => a.score - b.score || byName(a, b)) },
+
+                { key: 'wildcard', emoji: '🃏', name: 'Wildcard Champion', candidates: () => eligible.map(t => {
+                    const won = (t.claimedBonus || []).filter(id => wcIds.includes(id));
+                    if (!won.length) return null;
+                    return { t, score: won.length, detail: `Won the wildcard: ${won.map(id => nameById[id] || 'Bonus challenge').join(', ')}` };
+                }).filter(Boolean).sort((a, b) => b.score - a.score || byName(a, b)) },
+
+                { key: 'iron', emoji: '🦵', name: 'Iron Legs', candidates: () => eligible.map(t => {
+                    const miles = Number(t.distanceMiles && t.distanceMiles.walk);
+                    if (!(miles > 0)) return null;
+                    return { t, score: miles, detail: `${miles.toFixed(1)} miles covered on foot` };
+                }).filter(Boolean).sort((a, b) => b.score - a.score || byName(a, b)) }
+            ];
+
+            const list = [];
+            const taken = {};
+            defs.forEach(def => {
+                const cands = def.candidates();
+                if (!cands.length) return;
+                const pick = window.AWARDS_ONE_PER_TEAM ? cands.find(c => !taken[c.t.id]) : cands[0];
+                if (!pick) return;
+                taken[pick.t.id] = (taken[pick.t.id] || 0) + 1;
+                list.push({ key: def.key, emoji: def.emoji, name: def.name, detail: pick.detail, teamId: pick.t.id, teamName: pick.t.teamName, photoUrl: pick.t.photoUrl });
+            });
+            const byTeam = {};
+            list.forEach(a => { (byTeam[a.teamId] = byTeam[a.teamId] || []).push(a); });
+            return { list, byTeam };
+        };
+        window.renderRaceAwardsCard = function(awards) {
+            const card = document.getElementById('race-awards-card');
+            const listEl = document.getElementById('race-awards-list');
+            if (!card || !listEl) return;
+            if (!awards || !awards.list.length) { card.classList.add('hidden'); return; }
+            listEl.innerHTML = awards.list.map(a => `
+                <div class="flex items-center gap-3 p-2.5 bg-slate-900 rounded-xl border border-slate-700/70">
+                    <div class="text-2xl w-9 text-center shrink-0">${a.emoji}</div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[13px] font-bold text-amber-300 leading-tight">${a.name}</p>
+                        <p class="text-[11px] text-slate-400 leading-snug">${a.detail}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 max-w-[38%]">
+                        <img src="${a.photoUrl || DEFAULT_AVATAR}" class="w-6 h-6 rounded-full object-cover border border-disneyGold/60 shrink-0" alt="">
+                        <span class="text-[11px] font-bold text-white truncate">${a.teamName}</span>
+                    </div>
+                </div>`).join('');
+            card.classList.remove('hidden');
         };
 
         // Can this device share an image file through the native share sheet?
@@ -2757,7 +2909,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getDocFromCache, waitForPendingWrites, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getDocFromCache, waitForPendingWrites, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, arrayRemove, runTransaction, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -2923,6 +3075,359 @@
             }
         };
 
+
+        // =====================================================================
+        // PHOTO GALLERY (final results only) + EMOJI REACTIONS
+        // =====================================================================
+        const GALLERY_REACTIONS = [['laugh', '😂'], ['heart', '❤️'], ['wow', '😮'], ['fire', '🔥'], ['clap', '👏']];
+
+        function collectGalleryPhotos(race, teams, includeHidden) {
+            const hidden = new Set(race.hiddenPhotos || []);
+            const bonuses = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
+            const out = [];
+            teams.forEach(t => {
+                Object.entries(t.bonusPhotos || {}).forEach(([bonusId, url]) => {
+                    if (!url) return;
+                    const key = `${t.id}__${bonusId}`;
+                    const isHidden = hidden.has(key);
+                    if (isHidden && !includeHidden) return;
+                    const b = bonuses.find(x => x.id === bonusId);
+                    out.push({ key, teamId: t.id, teamName: t.teamName, avatar: t.photoUrl || DEFAULT_AVATAR, bonusName: b ? b.name : 'Bonus challenge', url, hidden: isHidden });
+                });
+            });
+            return out;
+        }
+
+        async function loadPhotoReactions(code) {
+            const map = {};
+            try {
+                const snap = await getDocs(collection(window.db, "races", code, "photoReactions"));
+                snap.forEach(d => { map[d.id] = d.data(); });
+            } catch (e) { console.warn('Could not load reactions', e); }
+            return map;
+        }
+
+        function galleryTilesHtml(state) {
+            const me = window.activeTeamId;
+            return state.photos.map(p => {
+                const r = state.reactions[p.key] || {};
+                const reactionsHtml = GALLERY_REACTIONS.map(([rk, emoji]) => {
+                    const arr = Array.isArray(r['r_' + rk]) ? r['r_' + rk] : [];
+                    const mine = !!me && arr.includes(me);
+                    const count = arr.length ? ` ${arr.length}` : '';
+                    if (state.moderate) return `<span class="px-1.5 py-0.5 rounded-full text-[11px] border bg-slate-800 border-slate-700 text-slate-300">${emoji}${count}</span>`;
+                    return `<button type="button" onclick="toggleGalleryReaction('${p.key}', '${rk}')" class="px-1.5 py-0.5 rounded-full text-[11px] border transition active:scale-90 ${mine ? 'bg-amber-400/20 border-amber-400/60 text-amber-200' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'}">${emoji}${count}</button>`;
+                }).join('');
+                const moderateHtml = state.moderate
+                    ? `<button type="button" onclick="hostToggleHiddenPhoto('${state.raceCode}', '${p.key}')" class="w-full mt-1 py-1.5 rounded-lg text-[10px] font-bold ${p.hidden ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'} text-white">${p.hidden ? 'Hidden - tap to show' : 'Hide from gallery'}</button>`
+                    : '';
+                return `
+                    <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-700/80 flex flex-col ${p.hidden ? 'opacity-50' : ''}">
+                        <button type="button" onclick="openGalleryPhoto('${p.key}')" class="block w-full aspect-square bg-slate-950" aria-label="View photo">
+                            <img src="${p.url}" loading="lazy" alt="" class="w-full h-full object-cover">
+                        </button>
+                        <div class="p-2 space-y-1.5">
+                            <p class="text-[11px] font-bold text-amber-300 leading-tight">⭐ ${p.bonusName}</p>
+                            <p class="text-[10px] text-slate-400 flex items-center gap-1 min-w-0"><img src="${p.avatar}" class="w-4 h-4 rounded-full object-cover shrink-0" alt=""><span class="truncate">${p.teamName}</span></p>
+                            <div class="flex flex-wrap gap-1">${reactionsHtml}</div>
+                            ${moderateHtml}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function repaintGallery() {
+            const st = window.galleryState;
+            if (!st) return;
+            const grid = document.getElementById(st.gridId);
+            if (grid) grid.innerHTML = galleryTilesHtml(st);
+        }
+
+        async function renderRaceGallery(raceData, teamList, isFinal, raceCode) {
+            const card = document.getElementById('race-gallery-card');
+            if (!card) return;
+            const photos = collectGalleryPhotos(raceData, teamList, false);
+            if (!isFinal || !photos.length) { card.classList.add('hidden'); return; }
+            const reactions = await loadPhotoReactions(raceCode);
+            window.galleryState = { raceCode, photos, reactions, moderate: false, gridId: 'race-gallery-grid' };
+            repaintGallery();
+            card.classList.remove('hidden');
+        }
+
+        window.openGalleryPhoto = function(key) {
+            const st = window.galleryState;
+            const p = st && st.photos.find(x => x.key === key);
+            if (p) window.openImageModal(p.url, `${p.bonusName} · ${p.teamName}`);
+        };
+
+        window.toggleGalleryReaction = async function(key, rk) {
+            const st = window.galleryState;
+            const me = window.activeTeamId;
+            if (!st || st.moderate) return;
+            if (!me) { window.appToast('Log in as a team to react'); return; }
+            const field = 'r_' + rk;
+            const rec = st.reactions[key] = st.reactions[key] || {};
+            const arr = Array.isArray(rec[field]) ? rec[field] : [];
+            const had = arr.includes(me);
+            rec[field] = had ? arr.filter(x => x !== me) : [...arr, me];   // instant feedback
+            repaintGallery();
+            try {
+                await setDoc(doc(window.db, "races", st.raceCode, "photoReactions", key),
+                    { [field]: had ? arrayRemove(me) : arrayUnion(me) }, { merge: true });
+            } catch (e) {
+                rec[field] = arr;   // put it back
+                repaintGallery();
+                window.appToast('Could not save your reaction');
+            }
+        };
+
+        // Host: view every photo and hide any that shouldn't be shared
+        window.openHostGallery = async function(raceCode) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
+            const teams = [];
+            teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
+            const photos = collectGalleryPhotos(owned.data, teams, true);
+            if (!photos.length) { window.appToast('No bonus photos have been submitted yet.'); return; }
+            const reactions = await loadPhotoReactions(raceCode);
+            window.galleryState = { raceCode, photos, reactions, moderate: true, gridId: 'host-gallery-grid', teams, race: owned.data };
+            let modalEl = document.getElementById('host-gallery-modal');
+            if (!modalEl) {
+                modalEl = document.createElement('div');
+                modalEl.id = 'host-gallery-modal';
+                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4';
+                document.body.appendChild(modalEl);
+            }
+            modalEl.innerHTML = `
+                <div class="bg-slate-900/85 backdrop-blur-md border border-amber-300/25 rounded-3xl max-w-lg w-full p-5 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-images text-disneyGold"></i> Photo gallery (host)</h3>
+                        <button onclick="document.getElementById('host-gallery-modal').remove()" class="text-slate-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Players only see this gallery once final results are out. Hide anything that shouldn't be shared.</p>
+                    <div id="host-gallery-grid" class="grid grid-cols-2 gap-2.5"></div>
+                </div>`;
+            repaintGallery();
+        };
+
+        window.hostToggleHiddenPhoto = async function(raceCode, key) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const st = window.galleryState;
+            const isHidden = (owned.data.hiddenPhotos || []).includes(key);
+            await fastUpdate(owned.ref, { hiddenPhotos: isHidden ? arrayRemove(key) : arrayUnion(key) });
+            if (st && st.photos) {
+                const p = st.photos.find(x => x.key === key);
+                if (p) p.hidden = !isHidden;
+                repaintGallery();
+            }
+        };
+
+        // =====================================================================
+        // WILDCARD CHALLENGE: the host pushes one unused bonus to every team for a limited time.
+        // First team to submit proof wins it; everyone else is locked out and told.
+        //   races/{code}.wildcard            = { id, bonusId, bonusName, startedAt, expiresAt, durationMin, cancelled }
+        //   races/{code}.wildcardBonusIds    = every bonus that has ever been used as a wildcard
+        //   races/{code}/wildcardClaims/{id} = { teamId, teamName, claimedAt }  (written once, in a transaction)
+        // =====================================================================
+        function wildcardStatus(race, claim, now) {
+            const wc = race && race.wildcard;
+            if (!wc) return null;
+            now = now || Date.now();
+            if (claim) return { state: 'claimed', wc, claim };
+            if (wc.cancelled) return { state: 'cancelled', wc };
+            if (now >= wc.expiresAt) return { state: 'expired', wc };
+            return { state: 'active', wc, msLeft: wc.expiresAt - now };
+        }
+        window.wildcardStatus = wildcardStatus;
+
+        let wildcardClaimUnsub = null, wildcardClaimFor = null, wildcardCountdownTimer = null;
+
+        function wildcardRewardText(race, bonus) {
+            const v = bonus && bonus.bonusMinDeduction !== undefined ? bonus.bonusMinDeduction : 10;
+            return race.gameMode === 'scavenger' ? `+${v} pts` : `-${v} min off your time`;
+        }
+
+        window.cleanupWildcard = function() {
+            if (wildcardClaimUnsub) { wildcardClaimUnsub(); wildcardClaimUnsub = null; }
+            wildcardClaimFor = null;
+            window.liveWildcardClaim = null;
+            clearInterval(wildcardCountdownTimer);
+            const el = document.getElementById('wildcard-banner');
+            if (el) { el.classList.add('hidden'); el.innerHTML = ''; }
+        };
+
+        function notifyWildcardOnce(kind, code, wcId, title, message) {
+            const key = `rad_wc_seen_${kind}_${code}`;
+            try { if (localStorage.getItem(key) === wcId) return; localStorage.setItem(key, wcId); } catch (e) {}
+            if (navigator.vibrate) { try { navigator.vibrate(kind === 'start' ? [200, 100, 200, 100, 400] : [250, 120, 250]); } catch (e) {} }
+            window.appAlert(message, { title, tone: 'info' });
+        }
+
+        window.handleWildcardRaceUpdate = function(race) {
+            const code = window.activeRaceCode;
+            const wc = race && race.wildcard;
+            if (!wc || !window.activeTeamId) { window.cleanupWildcard(); return; }
+            if (wildcardClaimFor !== wc.id) {
+                if (wildcardClaimUnsub) { wildcardClaimUnsub(); wildcardClaimUnsub = null; }
+                wildcardClaimFor = wc.id;
+                window.liveWildcardClaim = null;
+                wildcardClaimUnsub = onSnapshot(doc(window.db, "races", code, "wildcardClaims", wc.id), (snap) => {
+                    window.liveWildcardClaim = snap.exists() ? snap.data() : null;
+                    const claim = window.liveWildcardClaim;
+                    if (claim && claim.teamId !== window.activeTeamId) {
+                        notifyWildcardOnce('claim', code, wc.id, '🃏 Wildcard taken!', `${claim.teamName} already completed the wildcard challenge "${wc.bonusName}". It's locked for everyone else.`);
+                    }
+                    window.renderWildcardBanner();
+                    const active = document.getElementById('team-dashboard-active');
+                    if (active && !active.classList.contains('hidden') && window.liveTeamRaceData) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+                }, (err) => console.warn('Wildcard claim listener error', err));
+            }
+            const st = wildcardStatus(race, window.liveWildcardClaim);
+            if (st && st.state === 'active' && !(window.liveTeamData && window.liveTeamData.endTime)) {
+                const rewards = wildcardRewardText(race, (race.checkpoints || []).find(c => c.id === wc.bonusId));
+                notifyWildcardOnce('start', code, wc.id, '⚡ Wildcard challenge!', `"${wc.bonusName}" - the first team to submit a photo wins ${rewards}. You have ${wc.durationMin} minutes. Check the top of your Team Portal!`);
+            }
+            window.renderWildcardBanner();
+        };
+
+        window.renderWildcardBanner = function() {
+            const el = document.getElementById('wildcard-banner');
+            if (!el) return;
+            clearInterval(wildcardCountdownTimer);
+            const race = window.liveTeamRaceData;
+            const st = wildcardStatus(race, window.liveWildcardClaim);
+            const finished = !!(window.liveTeamData && window.liveTeamData.endTime);
+            if (!st || !window.activeTeamId || finished) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+            const wc = st.wc;
+            const bonus = (race.checkpoints || []).find(c => c.id === wc.bonusId);
+            const reward = wildcardRewardText(race, bonus);
+            const now = Date.now();
+
+            if (st.state === 'active') {
+                const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+                el.innerHTML = `
+                    <div class="wc-card rounded-2xl p-3.5 border border-amber-300/60 bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-purple-500/25 backdrop-blur-md">
+                        <div class="flex items-start gap-3">
+                            <div class="text-3xl leading-none">⚡</div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-amber-300">Wildcard challenge</p>
+                                <p class="font-bold text-white text-sm leading-snug">${wc.bonusName}</p>
+                                <p class="text-[11px] text-amber-100/90 mt-0.5">First team to submit a photo wins ${reward}. Other teams are locked out.</p>
+                                ${race.paused ? '<p class="text-[11px] text-amber-300 font-bold mt-1">Race paused - claims reopen when the host resumes.</p>' : ''}
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-[10px] text-slate-300">Time left</p>
+                                <p id="wildcard-countdown" class="font-mono font-bold text-lg text-white">${fmt(st.msLeft)}</p>
+                            </div>
+                        </div>
+                        <button onclick="scrollToWildcardTask('${wc.bonusId}')" class="mt-2.5 w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase transition">Go to the challenge</button>
+                    </div>`;
+                el.classList.remove('hidden');
+                wildcardCountdownTimer = setInterval(() => {
+                    const left = wc.expiresAt - Date.now();
+                    if (left <= 0 || window.liveWildcardClaim) { window.renderWildcardBanner(); window.liveTeamRaceData && loadTeamDashboardData(window.liveTeamRaceData).catch(() => {}); return; }
+                    const c = document.getElementById('wildcard-countdown');
+                    if (c) c.textContent = fmt(left);
+                }, 1000);
+                return;
+            }
+
+            if (st.state === 'claimed') {
+                if (now - st.claim.claimedAt > 15 * 60000) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+                const mine = st.claim.teamId === window.activeTeamId;
+                el.innerHTML = `
+                    <div class="rounded-2xl p-3.5 border ${mine ? 'border-emerald-400/50 bg-emerald-500/15' : 'border-slate-600 bg-slate-800/80'} backdrop-blur-md flex items-center gap-3">
+                        <div class="text-2xl leading-none">${mine ? '🏆' : '🔒'}</div>
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-black uppercase tracking-widest ${mine ? 'text-emerald-300' : 'text-slate-400'}">Wildcard challenge</p>
+                            <p class="text-[12px] text-white leading-snug">${mine ? `You won "${wc.bonusName}"! ${reward}` : `${st.claim.teamName} already completed "${wc.bonusName}". It's locked for other teams.`}</p>
+                        </div>
+                    </div>`;
+                el.classList.remove('hidden');
+                return;
+            }
+
+            // expired or cancelled: show briefly, then disappear
+            const endedAt = st.state === 'cancelled' ? (wc.cancelledAt || wc.expiresAt) : wc.expiresAt;
+            if (now - endedAt > 5 * 60000) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+            el.innerHTML = `
+                <div class="rounded-2xl p-3.5 border border-slate-600 bg-slate-800/80 backdrop-blur-md flex items-center gap-3">
+                    <div class="text-2xl leading-none">⌛</div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Wildcard challenge</p>
+                        <p class="text-[12px] text-white leading-snug">${st.state === 'cancelled' ? 'The host cancelled the wildcard' : 'The wildcard expired. Nobody claimed it'}: "${wc.bonusName}".</p>
+                    </div>
+                </div>`;
+            el.classList.remove('hidden');
+        };
+
+        window.scrollToWildcardTask = function(bonusId) {
+            const card = document.getElementById('bonus-card-' + bonusId);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('ring-2', 'ring-amber-300');
+                setTimeout(() => card.classList.remove('ring-2', 'ring-amber-300'), 2500);
+            }
+        };
+
+        // First-team-wins claim, done as a transaction so two simultaneous submissions can't both win.
+        async function claimWildcardForTeam(race, bonusId, teamData) {
+            const wc = race.wildcard;
+            const me = window.activeTeamId;
+            if (!wc || wc.bonusId !== bonusId) return { ok: false, message: "This wildcard challenge has already ended, so it can't be completed any more." };
+            if (wc.cancelled) return { ok: false, message: "The host cancelled this wildcard." };
+            if (Date.now() >= wc.expiresAt) return { ok: false, message: "Too late - this wildcard has expired." };
+            if (!navigator.onLine) return { ok: false, message: "You need a connection to claim a wildcard, so we can check no other team beat you to it." };
+            const claimRef = doc(window.db, "races", window.activeRaceCode, "wildcardClaims", wc.id);
+            try {
+                const result = await runTransaction(window.db, async (tx) => {
+                    const snap = await tx.get(claimRef);
+                    if (snap.exists()) return { ok: snap.data().teamId === me, claim: snap.data() };   // already ours (e.g. retrying an upload)
+                    tx.set(claimRef, { teamId: me, teamName: teamData.teamName || 'A team', claimedAt: Date.now(), bonusId });
+                    return { ok: true };
+                });
+                if (!result.ok) return { ok: false, message: `${result.claim.teamName} already completed this wildcard first!` };
+                return { ok: true };
+            } catch (e) {
+                return { ok: false, message: "Could not claim the wildcard: " + e.message };
+            }
+        }
+
+        window.hostSendWildcard = async function(raceCode) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const race = owned.data;
+            const bonusId = document.getElementById('wc-bonus-' + raceCode).value;
+            const dur = Number(document.getElementById('wc-dur-' + raceCode).value) || 15;
+            if (!bonusId) return alert("Pick a bonus challenge first.");
+            if (race.paused) return alert("The race is paused. Resume it before sending a wildcard.");
+            const live = race.wildcard && !race.wildcard.cancelled && Date.now() < race.wildcard.expiresAt;
+            if (live) return alert("A wildcard is already live. Wait for it to finish or cancel it first.");
+            const bonus = (race.checkpoints || []).find(c => c.id === bonusId);
+            if (!bonus) return;
+            const ok = await appConfirm(`Send "${bonus.name}" to every team as a wildcard for ${dur} minutes? The first team to submit a photo wins it, and all other teams are locked out of it.`, { title: "Send wildcard", confirmText: "Send to all teams" });
+            if (!ok) return;
+            const now = Date.now();
+            await fastUpdate(owned.ref, {
+                wildcard: { id: 'wc_' + now, bonusId, bonusName: bonus.name, startedAt: now, expiresAt: now + dur * 60000, durationMin: dur, cancelled: false },
+                wildcardBonusIds: arrayUnion(bonusId)
+            });
+            window.appToast("Wildcard sent to all teams!");
+            loadAdminRaces();
+        };
+
+        window.hostCancelWildcard = async function(raceCode) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned || !owned.data.wildcard) return;
+            const ok = await appConfirm("Cancel the live wildcard? Teams will be told it's cancelled and nobody can claim it.", { title: "Cancel wildcard", confirmText: "Cancel wildcard", danger: true });
+            if (!ok) return;
+            await fastUpdate(owned.ref, { 'wildcard.cancelled': true, 'wildcard.cancelledAt': Date.now() });
+            window.appToast("Wildcard cancelled.");
+            loadAdminRaces();
+        };
+
         function attachTeamLiveListeners(code, teamId) {
             const key = `${code}::${teamId}`;
             if (teamListenerKey === key && teamRaceUnsubscribe && teamDocUnsubscribe) return;
@@ -2937,6 +3442,7 @@
             teamRaceUnsubscribe = onSnapshot(raceRef, (snap) => {
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 window.liveTeamRaceData = snap.data();
+                window.handleWildcardRaceUpdate(window.liveTeamRaceData);
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) {
                     loadTeamDashboardData(window.liveTeamRaceData).catch(err => console.error('Live race refresh failed:', err));
@@ -3870,6 +4376,13 @@
                     const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
+                    let wcClaim = null;
+                    if (race.wildcard) {
+                        try {
+                            const cs = await getDoc(doc(window.db, "races", race.code, "wildcardClaims", race.wildcard.id));
+                            if (cs.exists()) wcClaim = cs.data();
+                        } catch (e) { /* claim lookup is best-effort */ }
+                    }
                     const isChatEnabled = race.chatEnabled !== false;
                     const isHideBonuses = race.hideBonuses === true;
 
@@ -3945,7 +4458,53 @@
                                     </div>
                                     <p class="text-[10px] text-slate-500">While racing, the leaderboard ranks teams by stops completed only. Final results (times and bonuses) show automatically once every approved team has finished${race.gameMode === 'scavenger' ? ' or run out of time' : ''}, or when you reveal them.</p>
                                     <button onclick="hostToggleResultsReveal('${race.code}')" class="w-full px-3 py-2.5 ${race.resultsRevealed === true ? 'bg-slate-700 hover:bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.resultsRevealed === true ? 'fa-eye-slash' : 'fa-ranking-star'} mr-1"></i> ${race.resultsRevealed === true ? 'Results revealed - tap to hide again' : 'Reveal Final Results Now'}</button>
+                                    <button onclick="openHostGallery('${race.code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold"><i class="fa-solid fa-images mr-1"></i> View / moderate photo gallery</button>
                                 </div>
+
+                                ${(() => {
+                                    const bonusList = cps.filter(c => c.type === 'BONUS_PHOTO');
+                                    const usedIds = new Set(race.wildcardBonusIds || []);
+                                    const claimedByAnyone = (id) => teamList.some(t => (t.claimedBonus || []).includes(id));
+                                    const available = bonusList.filter(b => !usedIds.has(b.id) && !claimedByAnyone(b.id));
+                                    const wc = race.wildcard;
+                                    const isLive = !!wc && !wc.cancelled && !wcClaim && Date.now() < wc.expiresAt;
+                                    const started = teamList.some(t => t.startTime);
+                                    let status = '';
+                                    if (isLive) {
+                                        status = `<p class="text-fuchsia-200">⚡ Live now: <b>${wc.bonusName}</b> · about ${Math.max(1, Math.ceil((wc.expiresAt - Date.now()) / 60000))} min left · nobody has claimed it yet</p>
+                                            <button onclick="hostCancelWildcard('${race.code}')" class="w-full px-3 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold">Cancel wildcard</button>`;
+                                    } else if (wc && wcClaim) {
+                                        status = `<p class="text-emerald-300">✅ <b>${wc.bonusName}</b> was won by <b>${wcClaim.teamName}</b>.</p>`;
+                                    } else if (wc && wc.cancelled) {
+                                        status = `<p class="text-slate-400">Last wildcard (${wc.bonusName}) was cancelled.</p>`;
+                                    } else if (wc) {
+                                        status = `<p class="text-slate-400">Last wildcard (${wc.bonusName}) expired unclaimed.</p>`;
+                                    }
+                                    let form = '';
+                                    if (!isLive) {
+                                        if (available.length && started && !race.paused) {
+                                            form = `
+                                                <div class="grid grid-cols-3 gap-2">
+                                                    <select id="wc-bonus-${race.code}" class="col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs text-white">
+                                                        ${available.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
+                                                    </select>
+                                                    <select id="wc-dur-${race.code}" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs text-white">
+                                                        ${[5, 10, 15, 20, 30, 45, 60].map(m => `<option value="${m}" ${m === 15 ? 'selected' : ''}>${m} min</option>`).join('')}
+                                                    </select>
+                                                </div>
+                                                <button onclick="hostSendWildcard('${race.code}')" class="w-full px-3 py-2.5 bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase">Send wildcard to all teams</button>`;
+                                        } else {
+                                            form = `<p class="text-[10px] text-slate-500">${!available.length ? 'No unused bonus challenges left to use as a wildcard.' : (!started ? 'Available once teams have started racing.' : 'Resume the race to send a wildcard.')}</p>`;
+                                        }
+                                    }
+                                    return `
+                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-fuchsia-500/30 space-y-3 text-xs">
+                                        <div class="flex items-center gap-2 font-semibold text-slate-200"><i class="fa-solid fa-bolt text-fuchsia-300"></i> Wildcard challenge</div>
+                                        <p class="text-[10px] text-slate-500">Pick an unused bonus challenge and push it to every team for a set time. The first team to submit proof wins it; the rest are locked out and told.</p>
+                                        ${status}
+                                        ${form}
+                                    </div>`;
+                                })()}
 
                                 <div class="pt-3 border-t border-slate-800 space-y-3">
                                   ${(() => {
@@ -4172,10 +4731,8 @@
 
                 // LIVE vs FINAL. Final once every approved team is done (finished, or out of Scavenger time),
                 // or when the host reveals results. Until then ranks use stops completed only.
-                const limitMs = isScavenger ? Number(raceData.timeLimitMinutes || 0) * 60000 : 0;
-                const isTeamDone = (t) => !!t.endTime || (limitMs > 0 && !!t.startTime && t.rawMin * 60000 >= limitMs - 500);
-                const approvedTeams = teamList.filter(t => t.isApproved !== false);
-                const isFinal = raceData.resultsRevealed === true || (approvedTeams.length > 0 && approvedTeams.every(isTeamDone));
+                const isFinal = window.raceIsFinal(raceData, teamList);
+                const awards = isFinal ? window.computeRaceAwards(raceData, teamList) : null;
 
                 if (!isFinal) {
                     // Live: purely stops completed (bonuses, trivia and penalties stay hidden until the end)
@@ -4236,6 +4793,10 @@
                     const teamDiff = t.difficultyOverride || raceBaseDiff;
                     const diffBadge = teamDiff !== raceBaseDiff ? `<span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-px rounded uppercase font-semibold shrink-0" title="Difficulty Override">${teamDiff}</span>` : '';
 
+                    const teamAwards = (awards && awards.byTeam[t.id]) || [];
+                    const awardsHtml = teamAwards.length
+                        ? `<div class="flex flex-wrap gap-1 mt-1.5">${teamAwards.map(a => `<span title="${a.name}" class="px-1.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] text-amber-200 font-semibold whitespace-nowrap">${a.emoji} ${a.name}</span>`).join('')}</div>`
+                        : '';
                     const liveMin = Math.floor(t.rawMin);
                     const liveTimeHtml = (!isFinal && !hideLiveTimers && t.startTime)
                         ? `<span class="flex items-center gap-1" title="Time so far"><i class="fa-regular fa-clock text-slate-500 text-[9px]"></i>${Math.floor(liveMin / 60)}h ${String(liveMin % 60).padStart(2, '0')}m</span>`
@@ -4283,6 +4844,7 @@
                                         <span class="flex items-center gap-1" title="${isScavenger ? 'Stops' : 'Checkpoints'} completed"><i class="fa-solid fa-flag text-slate-500 text-[9px]"></i>${t.progressCount}/${mandatory.length}</span>
                                         ${bonusCountHtml}${liveTimeHtml}
                                     </div>
+                                    ${awardsHtml}
                                 </div>
                                 <div class="text-right shrink-0">
                                     <div class="font-mono font-bold text-sm leading-tight ${scoreClass}">${scoreValue}</div>
@@ -4305,6 +4867,10 @@
                         footnoteEl.classList.add('hidden');
                     }
                 }
+
+                // Awards + photo gallery only appear once the race is final
+                window.renderRaceAwardsCard(awards);
+                renderRaceGallery(raceData, teamList, isFinal, targetCode).catch(err => console.warn('Gallery failed:', err));
             } catch (e) {
                 tbody.innerHTML = `<li class="text-center py-6 text-rose-400 text-xs">Error loading leaderboard: ${e.message}</li>`;
             }
@@ -4570,6 +5136,7 @@
             teamListenerKey = null;
             window.liveTeamRaceData = null;
             window.liveTeamData = null;
+            if (window.cleanupWildcard) window.cleanupWildcard();
             if (chatUnsubscribe) chatUnsubscribe();
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
@@ -4763,6 +5330,24 @@
                 `).join('');
             }
 
+            // Awards (only once the whole race is final, so nothing is spoiled early)
+            let awardsBlockHtml = '';
+            try {
+                const allTeamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
+                const allTeams = [];
+                allTeamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
+                if (window.raceIsFinal(race, allTeams)) {
+                    const won = (window.computeRaceAwards(race, allTeams).byTeam[teamId]) || [];
+                    if (won.length) {
+                        awardsBlockHtml = `
+                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+                            <span class="text-blue-200 font-semibold block text-[11px]"><i class="fa-solid fa-award mr-1 text-disneyGold"></i> Awards Won:</span>
+                            ${won.map(a => `<div class="flex items-start gap-2 text-[11px]"><span class="text-lg leading-none">${a.emoji}</span><div><p class="font-bold text-amber-300">${a.name}</p><p class="text-slate-300">${a.detail}</p></div></div>`).join('')}
+                        </div>`;
+                    }
+                }
+            } catch (e) { console.warn('Could not work out awards for the report card', e); }
+
             let modalEl = document.getElementById('team-report-card-modal');
             if (!modalEl) {
                 modalEl = document.createElement('div');
@@ -4802,6 +5387,8 @@
                                 <p class="text-[11px] text-amber-300 font-mono font-bold">${scoreText}</p>
                             </div>
                         </div>
+
+                        ${awardsBlockHtml}
 
                         <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2.5">
                             <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
@@ -5267,9 +5854,13 @@
                 }
             }
 
+            const wcState = wildcardStatus(raceData, window.liveWildcardClaim);
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
                 const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
+                const isWildcardBonus = (raceData.wildcardBonusIds || []).includes(cp.id);
+                const isLiveWildcard = !!(wcState && wcState.state === 'active' && wcState.wc.bonusId === cp.id);
+                const wildcardTakenBy = (wcState && wcState.state === 'claimed' && wcState.wc.bonusId === cp.id) ? wcState.claim : null;
                 
                 let actionHtml = '';
                 if (isRaceFinished) {
@@ -5277,7 +5868,9 @@
                 } else if (isRacePaused && !isClaimed) {
                     actionHtml = `<span title="Race paused by host" class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-amber-300 font-bold bg-amber-500/10 rounded-xl border border-amber-500/30 whitespace-nowrap"><i class="fa-solid fa-pause"></i> Paused</span>`;
                 } else if (isClaimed) {
-                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-xs text-amber-400 font-bold whitespace-nowrap"><i class="fa-solid fa-star"></i> Claimed</span>`;
+                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-xs text-amber-400 font-bold whitespace-nowrap"><i class="fa-solid fa-star"></i> ${isWildcardBonus ? 'Wildcard won!' : 'Claimed'}</span>`;
+                } else if (isWildcardBonus && !isLiveWildcard) {
+                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-slate-400 font-bold bg-slate-800 rounded-xl border border-slate-700 text-center leading-tight px-1"><i class="fa-solid fa-lock"></i> ${wildcardTakenBy ? wildcardTakenBy.teamName + ' got it' : 'Wildcard ended'}</span>`;
                 } else {
                     actionHtml = `
                         <label class="w-full h-10 flex items-center justify-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow whitespace-nowrap">
@@ -5288,8 +5881,9 @@
                 }
 
                 return `
-                    <div class="p-3 bg-slate-900 rounded-2xl border ${isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'} flex items-center gap-3 shadow-sm">
+                    <div id="bonus-card-${cp.id}" class="p-3 bg-slate-900 rounded-2xl border ${isLiveWildcard ? 'border-fuchsia-400/70 bg-fuchsia-950/20' : (isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80')} flex items-center gap-3 shadow-sm">
                         <div class="min-w-0 flex-1">
+                            ${isWildcardBonus ? '<p class="text-[10px] font-black uppercase tracking-widest text-fuchsia-300">⚡ Wildcard - first team wins</p>' : ''}
                             <p class="font-bold text-[13px] leading-snug text-amber-300">⭐ ${cp.name}</p>
                             <p class="text-[11px] text-amber-400/80 mt-0.5">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
                         </div>
@@ -5582,7 +6176,12 @@
             if (!file) return;
             inputEl.value = '';   // lets the same photo be picked again later
             if (window.teamCheckinState && window.teamCheckinState.paused) { alert("The host has paused the race. Bonus uploads are temporarily locked."); return; }
-            const cps = (window.liveTeamRaceData && window.liveTeamRaceData.checkpoints) || [];
+            const liveRace = window.liveTeamRaceData || {};
+            if ((liveRace.wildcardBonusIds || []).includes(cpId) && !((window.liveTeamData && window.liveTeamData.claimedBonus) || []).includes(cpId)) {
+                const wst = wildcardStatus(liveRace, window.liveWildcardClaim);
+                if (!(wst && wst.state === 'active' && wst.wc.bonusId === cpId)) { alert("This wildcard challenge has ended, so it can't be completed any more."); return; }
+            }
+            const cps = liveRace.checkpoints || [];
             const cp = cps.find(c => c.id === cpId);
             pendingBonusUpload = { cpId, file: null, url: null };
             setBonusPreview(file);
@@ -5617,6 +6216,11 @@
                 const teamSnap = await safeGetDoc(teamRef);
                 const teamData = teamSnap.data();
                 if (teamData.endTime) { alert("The race is completed, so bonus uploads are locked."); return; }
+                const freshRace = liveRaceSnap.exists() ? liveRaceSnap.data() : {};
+                if ((freshRace.wildcardBonusIds || []).includes(pending.cpId) && !(teamData.claimedBonus || []).includes(pending.cpId)) {
+                    const claimResult = await claimWildcardForTeam(freshRace, pending.cpId, teamData);
+                    if (!claimResult.ok) { alert(claimResult.message); window.cancelBonusPreview(); return; }
+                }
                 const claimed = teamData.claimedBonus || [];
                 const bonusPhotos = teamData.bonusPhotos || {};
                 if (!claimed.includes(pending.cpId)) claimed.push(pending.cpId);
