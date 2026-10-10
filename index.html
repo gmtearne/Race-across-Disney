@@ -375,6 +375,7 @@
         .cp-flip-inner { display: grid; transform-style: preserve-3d; }
         .cp-face { grid-area: 1 / 1; -webkit-backface-visibility: hidden; backface-visibility: hidden; min-width: 0; }
         .cp-back { transform: rotateY(180deg); background: linear-gradient(135deg, #FFF176 0%, #FFE600 60%, #FFD600 100%); border: 1px solid #FFF59D; color: #1e293b; }
+        .cp-back.cp-back-rejected { background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%); border-color: #FECACA; }
         .cp-flip.is-flipped .cp-flip-inner { transform: rotateY(180deg); }
         .cp-flip:not(.is-flipped) .cp-back, .cp-flip.is-flipped .cp-front { pointer-events: none; }
         .cp-flip.flip-anim .cp-flip-inner { animation: cpFlip .75s cubic-bezier(.3,.7,.2,1) both; animation-delay: var(--cp-flip-delay, 0ms); }
@@ -1565,11 +1566,11 @@
                                             <p class="text-[11px] text-slate-400 mt-0.5">Ask a question at check-in for bonus rewards</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                            <input type="checkbox" id="create-trivia-switch" onchange="toggleTriviaSettings()" class="sr-only peer">
+                                            <input type="checkbox" id="create-trivia-switch" checked onchange="toggleTriviaSettings()" class="sr-only peer">
                                             <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
                                         </label>
                                     </div>
-                                    <div id="trivia-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                    <div id="trivia-sub-settings" class="space-y-3 pt-3 border-t border-slate-800">
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
                                         <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                             <option value="every">Every Check-in</option>
@@ -3569,6 +3570,37 @@
             }
         };
 
+        // TESTING: host fires the wildcard immediately (only offered when the race was created with wildcard on).
+        window.hostFireWildcardNow = async function(raceCode) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const race = owned.data;
+            const cfg = race.wildcardAuto;
+            if (!cfg || !cfg.enabled) return alert("This race was not created with the wildcard enabled.");
+            const offerRef = doc(window.db, "races", raceCode, "wildcardClaims", "offer");
+            const existing = await getDoc(offerRef);
+            const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
+            const teams = [];
+            teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
+            const cps = race.checkpoints || [];
+            const mandatory = cps.filter(c => c.type !== 'BONUS_PHOTO');
+            const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
+            const taken = new Set();
+            teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
+            const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && parks.has(c.park) && !taken.has(c.id));
+            if (!pool.length) return alert("No unused bonus challenges are available from the parks where this race has stops.");
+            const dur = Number(cfg.durationMin) || 15;
+            const replacing = existing.exists();
+            const msg = replacing
+                ? `A wildcard was already ${existing.data().status === 'live' ? 'offered' : 'resolved (' + (existing.data().reason || 'skipped') + ')'} for this race. Fire a new one now for ${dur} minutes? (Testing only.)`
+                : `Fire the wildcard to every team now for ${dur} minutes?`;
+            if (!(await appConfirm(msg, { title: "Fire wildcard now", confirmText: "Fire it" }))) return;
+            const bonus = pool[Math.floor(Math.random() * pool.length)];
+            const t0 = Date.now();
+            await setDoc(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: false, manual: true });
+            window.appToast("Wildcard fired to all teams!");
+        };
+
         function startWildcardWatcher() {
             clearInterval(wildcardEvalTimer);
             wildcardEvalTimer = setInterval(() => { window.wildcardAutoCheck(); }, 20000);
@@ -4289,6 +4321,34 @@
             }
         };
 
+        // Host rejects (or restores) a team's check-in. The check-in stays on record, but it stops counting:
+        // Speed Race = the stop is treated as missed (+60 min); Scavenger Hunt = the stop's points are lost.
+        window.hostRejectCheckin = async function(raceCode, teamId, cpId, reject) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const isHunt = owned.data.gameMode === 'scavenger';
+            const cp = (owned.data.checkpoints || []).find(c => c.id === cpId);
+            if (reject) {
+                const ok = await appConfirm(`Reject this check-in${cp ? ' at ' + cp.name : ''}? ${isHunt ? "The team loses that stop's points." : 'The team gets a 60-minute penalty.'} You can restore it later.`, { title: "Reject check-in", confirmText: "Reject", danger: true });
+                if (!ok) return;
+            }
+            try {
+                const teamRef = doc(window.db, "races", raceCode, "teams", teamId);
+                const snap = await getDoc(teamRef);
+                if (!snap.exists()) return;
+                const rejected = snap.data().rejectedCheckins || {};
+                if (reject) rejected[cpId] = { at: Date.now(), by: window.auth.currentUser ? window.auth.currentUser.uid : null };
+                else delete rejected[cpId];
+                await fastUpdate(teamRef, { rejectedCheckins: rejected });
+                window.appToast(reject ? "Check-in rejected." : "Check-in restored.");
+                const nm = snap.data().teamName || '';
+                window.openTeamVerificationModal(raceCode, teamId, nm);
+                if (window.loadAdminRaces) loadAdminRaces();
+            } catch (e) {
+                alert("Could not update the check-in: " + e.message);
+            }
+        };
+
         window.openTeamVerificationModal = async function(raceCode, teamId, teamName) {
             const modal = document.getElementById('team-verify-modal');
             const titleEl = document.getElementById('verify-modal-title');
@@ -4317,6 +4377,8 @@
                 const bonusPhotos = team.bonusPhotos || {};
                 const triviaBonus = team.triviaBonus || 0;
                 const triviaLogs = team.triviaLogs || [];
+                const rejectedMap = team.rejectedCheckins || {};
+                const rejectPenaltyText = race.gameMode === 'scavenger' ? 'the stop\'s points are removed' : 'a 60-minute penalty is added';
 
                 let html = `
                     <div class="space-y-4">
@@ -4351,15 +4413,23 @@
                                </button>`
                             : `<span class="text-emerald-400 font-bold text-[10px]">GPS Verified</span>`;
 
+                        const isRejected = !!rejectedMap[cpId];
+                        const rejectBtn = isRejected
+                            ? `<button type="button" onclick="hostRejectCheckin('${raceCode}', '${teamId}', '${cpId}', false)" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1 rounded-lg font-bold transition"><i class="fa-solid fa-rotate-left mr-1"></i>Restore</button>`
+                            : `<button type="button" onclick="hostRejectCheckin('${raceCode}', '${teamId}', '${cpId}', true)" class="text-[10px] bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-lg font-bold transition"><i class="fa-solid fa-ban mr-1"></i>Reject</button>`;
                         html += `
-                            <div class="p-3 bg-slate-900 rounded-xl border ${isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800'} space-y-1 mb-2">
+                            <div class="p-3 bg-slate-900 rounded-xl border ${isRejected ? 'border-rose-500/50 bg-rose-950/20' : (isManual ? 'border-amber-500/40 bg-amber-950/10' : 'border-slate-800')} space-y-1 mb-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-white">📍 ${cp ? cp.name : 'Unknown Stop'}</span>
+                                    <span class="font-bold ${isRejected ? 'text-rose-300 line-through' : 'text-white'}">📍 ${cp ? cp.name : 'Unknown Stop'}</span>
                                     <span class="text-[11px] text-disneyGold font-mono">${timeStr}</span>
                                 </div>
                                 <div class="flex justify-between items-center text-[11px] text-slate-400">
                                     <span>GPS: <span class="text-slate-300 font-mono">${latLngText}</span> (${detail.note || 'Verified'})</span>
                                     ${overrideBadgeHtml}
+                                </div>
+                                <div class="flex justify-between items-center gap-2 pt-1">
+                                    <span class="text-[10px] ${isRejected ? 'text-rose-300 font-bold' : 'text-slate-500'}">${isRejected ? '⛔ Rejected: ' + rejectPenaltyText : ''}</span>
+                                    ${rejectBtn}
                                 </div>
                             </div>
                         `;
@@ -4626,6 +4696,13 @@
                                     <button onclick="openHostGallery('${race.code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold"><i class="fa-solid fa-images mr-1"></i> View / moderate photo gallery</button>
                                 </div>
 
+                                ${race.wildcardAuto && race.wildcardAuto.enabled ? `
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-fuchsia-500/30 space-y-2 text-xs">
+                                    <div class="flex items-center gap-2 font-semibold text-slate-200"><i class="fa-solid fa-bolt text-fuchsia-300"></i> Manual wildcard <span class="text-[9px] font-black uppercase tracking-widest bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-500/30 rounded-full px-2 py-0.5">Testing</span></div>
+                                    <p class="text-[10px] text-slate-500">Fires the wildcard right now instead of waiting for the random timing. Uses the same rules for which bonus is picked, and the duration set at race creation (${Number(race.wildcardAuto.durationMin) || 15} min).</p>
+                                    <button onclick="hostFireWildcardNow('${race.code}')" class="w-full px-3 py-2.5 bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase">Fire wildcard now</button>
+                                </div>` : ''}
+
                                 <div class="pt-3 border-t border-slate-800 space-y-3">
                                   ${(() => {
                                     const hasStarted = !!race.raceStartedAt || teamList.some(t => !!t.startTime) || !!(race.staggerSchedule && race.staggerSchedule.length);
@@ -4808,10 +4885,12 @@
                     const triviaBonusPts = isScavenger ? (t.triviaBonus || 0) : 0;
                     const triviaTimeDed = !isScavenger ? (t.triviaBonus || 0) : 0;
                     
+                    const rejectedMap = t.rejectedCheckins || {};
+                    const rejectedCount = completed.filter(id => rejectedMap[id] && mandatory.some(m => m.id === id)).length;
                     let totalPoints = triviaBonusPts;
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
-                        if (match) {
+                        if (match && !rejectedMap[cpId]) {      // host-rejected check-ins lose their points
                             totalPoints += window.stopPoints(match, raceData);
                         }
                     });
@@ -4823,7 +4902,7 @@
                     });
 
                     const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = missedCount * 60;
+                    const penaltyMin = (missedCount + rejectedCount) * 60;   // a rejected check-in counts as a missed stop
 
                     let bonusMinDeduction = triviaTimeDed;
                     claimed.forEach(bId => {
@@ -4836,7 +4915,7 @@
                     t.totalPoints = totalPoints;
                     t.rawMin = rawElapsedMin;
                     t.adjustedMin = Math.max(0, rawElapsedMin + penaltyMin - bonusMinDeduction);
-                    t.progressCount = completed.length;
+                    t.progressCount = completed.length - rejectedCount;
                     t.bonusCount = claimed.length;
 
                     // When did this team reach its latest stop? (tie-breaker for live standings)
@@ -5892,9 +5971,10 @@
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
                 
                 let currentPoints = triviaBonusPts;
+                const rejectedForPts = tData.rejectedCheckins || {};
                 completedIds.forEach(cpId => {
                     const match = mandatory.find(m => m.id === cpId);
-                    if (match) currentPoints += window.stopPoints(match, raceData);
+                    if (match && !rejectedForPts[cpId]) currentPoints += window.stopPoints(match, raceData);
                 });
                 claimedBonus.forEach(bId => {
                     const match = bonus.find(b => b.id === bId);
@@ -6045,8 +6125,11 @@
 
                     // BACK of the card (bright yellow): name, time, and Undo + warning for manual check-ins
                     const doneTime = (detail && detail.timestamp) ? new Date(detail.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+                    const isRejected = isDone && !!((tData.rejectedCheckins || {})[cp.id]);
                     let backAction = '';
-                    if (isManualOverride) {
+                    if (isRejected) {
+                        backAction = `<div class="w-[4.5rem] shrink-0 flex items-center justify-center"><i class="fa-solid fa-ban text-3xl text-rose-700"></i></div>`;
+                    } else if (isManualOverride) {
                         backAction = `
                             <div class="w-[4.5rem] shrink-0 flex flex-col gap-1" onclick="event.stopPropagation()">
                                 ${isRaceFinished ? '' : isRacePaused ? `<span title="Race paused by host" class="h-9 bg-slate-900/10 text-slate-800 border border-slate-800/30 font-bold rounded-lg text-[10px] whitespace-nowrap flex items-center justify-center gap-1"><i class="fa-solid fa-pause"></i> Paused</span>` : `<button onclick="undoManualCheckIn('${cp.id}')" class="h-9 bg-slate-900 hover:bg-slate-800 active:scale-95 text-yellow-300 font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1"><i class="fa-solid fa-rotate-left"></i> Undo</button>`}
@@ -6099,7 +6182,7 @@
                                         </div>
                                         ${frontAction}
                                     </div>
-                                    <div class="cp-face cp-back p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
+                                    <div class="cp-face cp-back ${isRejected ? 'cp-back-rejected' : ''} p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
                                         ${handle('text-slate-700 hover:text-slate-900')}
                                         <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
                                             <span class="checkpoint-number font-mono font-extrabold text-slate-800 text-sm">#${idx + 1}</span>
@@ -6108,7 +6191,7 @@
                                         <div class="min-w-0 flex-1">
                                             <p class="font-extrabold text-[13px] leading-snug text-slate-900">${cp.name}</p>
                                             <p class="text-[11px] font-semibold text-slate-800 leading-snug mt-0.5">Checked in${doneTime ? ' at ' + doneTime : ''}</p>
-                                            ${isManualOverride ? '<p class="text-[10px] font-bold text-amber-900 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Manual check-in</p>' : ''}
+                                            ${isRejected ? '<p class="text-[10px] font-bold text-rose-800 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-ban"></i> Rejected by the host</p>' : (isManualOverride ? '<p class="text-[10px] font-bold text-amber-900 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Manual check-in</p>' : '')}
                                             ${offlineNote}
                                         </div>
                                         ${backAction}
