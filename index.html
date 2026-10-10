@@ -1201,6 +1201,19 @@
                             </div>
                         </div>
 
+                        <div id="phase4-race-controls" class="mt-3 rounded-xl border border-amber-400/20 bg-slate-950/40 p-3 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span id="phase4-timer-label" class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Race clock</span>
+                                <span id="phase4-countdown" class="font-mono text-lg font-bold text-disneyGold tabular-nums">--:--:--</span>
+                            </div>
+                            <p id="phase4-race-notice" class="text-xs text-slate-400">Waiting for race start.</p>
+                            <div id="phase4-host-controls" class="hidden grid grid-cols-2 gap-2">
+                                <button onclick="configurePhase4Race()" class="race-action bg-slate-700 hover:bg-slate-600"><i class="fa-solid fa-sliders"></i> Timer settings</button>
+                                <button id="phase4-pause-btn" onclick="togglePhase4Pause()" class="race-action bg-amber-600 hover:bg-amber-500"><i class="fa-solid fa-pause"></i> Pause race</button>
+                                <button onclick="startGlobalRaceCountdown()" class="race-action race-action--start col-span-2"><i class="fa-solid fa-flag"></i> Global start (30 sec)</button>
+                            </div>
+                            <button id="phase4-late-join-btn" onclick="startTeamRace(true)" class="hidden race-action bg-sky-700 hover:bg-sky-600 w-full"><i class="fa-solid fa-forward"></i> Start my timer now</button>
+                        </div>
                         <div class="mt-3 grid grid-cols-2 gap-2">
                             <button id="btn-start-race" onclick="startTeamRace()" class="race-action race-action--start">
                                 <i class="fa-solid fa-play text-xs"></i> Start Race
@@ -4682,6 +4695,34 @@
             const difficulty = (tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
 
             document.getElementById('dashboard-mode-label').innerText = isScavenger ? 'Scavenger Hunt' : 'Speed Race';
+            const p4Host = document.getElementById('phase4-host-controls');
+            const p4Pause = document.getElementById('phase4-pause-btn');
+            const p4Late = document.getElementById('phase4-late-join-btn');
+            const p4Notice = document.getElementById('phase4-race-notice');
+            const p4Label = document.getElementById('phase4-timer-label');
+            const p4Clock = document.getElementById('phase4-countdown');
+            const p4IsHost = !!(window.auth && window.auth.currentUser);
+            if (p4Host) p4Host.classList.toggle('hidden', !p4IsHost);
+            if (p4Pause) p4Pause.innerHTML = raceData.paused ? '<i class="fa-solid fa-play"></i> Resume race' : '<i class="fa-solid fa-pause"></i> Pause race';
+            if (p4Late) p4Late.classList.toggle('hidden', !!tData.startTime || !raceData.scheduledStartAt || Date.now() < raceData.scheduledStartAt);
+            if (p4Label) p4Label.textContent = isScavenger && raceData.timeLimitMinutes ? 'Time remaining' : 'Race clock';
+            if (p4Notice) {
+                p4Notice.textContent = raceData.paused ? '⏸ Race paused by host. Check-ins are temporarily locked.' :
+                    (raceData.scheduledStartAt && Date.now() < raceData.scheduledStartAt ? 'Global start in ' + Math.ceil((raceData.scheduledStartAt-Date.now())/1000) + ' seconds.' :
+                    (raceData.staggerMinutes ? 'Staggered start enabled: ' + raceData.staggerMinutes + ' min between teams.' : ''));
+            }
+            if (p4Clock) {
+                if (raceData.paused) p4Clock.textContent = 'PAUSED';
+                else if (isScavenger && raceData.timeLimitMinutes && tData.startTime) {
+                    const elapsed = Date.now() - Date.parse(tData.startTime) - (raceData.pauseAccumulatedMs || 0) - (raceData.pausedAt ? Math.max(0, Date.now() - raceData.pausedAt) : 0);
+                    const remain = Math.max(0, raceData.timeLimitMinutes * 60000 - elapsed);
+                    p4Clock.textContent = new Date(remain).toISOString().slice(11,19);
+                    if (remain === 0 && !tData.endTime) finishTeamRace(true);
+                } else if (tData.startTime) {
+                    const elapsed = Math.max(0, Date.now() - Date.parse(tData.startTime));
+                    p4Clock.textContent = new Date(elapsed).toISOString().slice(11,19);
+                } else p4Clock.textContent = raceData.scheduledStartAt ? new Date(Math.max(0,raceData.scheduledStartAt-Date.now())).toISOString().slice(11,19) : '--:--:--';
+            }
 
             const checkpoints = raceData.checkpoints || [];
             const finalCheckpointId = raceData.finalCheckpointId;
@@ -5195,6 +5236,10 @@
             const tData = teamSnap.data();
 
             // Final safety net (data may have changed on another device)
+            const liveRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+            const liveRace = liveRaceSnap.exists() ? liveRaceSnap.data() : {};
+            if (liveRace.paused) return alert("The host has paused the race. Check-ins are temporarily locked.");
+            if (liveRace.scheduledStartAt && Date.now() < liveRace.scheduledStartAt) return alert("Check-ins unlock when the global countdown reaches zero.");
             if (tData.endTime) return alert("Race completed - check-ins are locked.");
             if (!tData.startTime) return alert("Start the race first - check-ins unlock when your timer starts.");
             
@@ -5262,12 +5307,71 @@
             alert("Photo proof uploaded successfully! Bonus/deduction claimed.");
         };
 
-        window.startTeamRace = async function() {
-            const now = new Date().toISOString();
-            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: now });
-            alert("Race started! Your timer is now locked and running.");
+        // Phase 4 race mechanics. Timestamps are stored in Firestore so all clients derive
+        // the same countdown from a shared deadline rather than relying on local intervals.
+        window.configurePhase4Race = async function() {
+            if (!window.activeRaceCode) return;
+            const raceRef = doc(window.db, "races", window.activeRaceCode);
+            const snap = await safeGetDoc(raceRef);
+            if (!snap.exists()) return alert("Race not found.");
+            const data = snap.data();
+            const minutes = prompt("Scavenger hunt time limit in minutes (0 = no limit):", String(data.timeLimitMinutes || 60));
+            if (minutes === null) return;
+            const limit = Number(minutes);
+            if (!Number.isFinite(limit) || limit < 0 || limit > 1440) return alert("Enter a number from 0 to 1440.");
+            const offset = prompt("Staggered start offset in minutes per team (0 = simultaneous):", String(data.staggerMinutes || 0));
+            if (offset === null) return;
+            const stagger = Number(offset);
+            if (!Number.isFinite(stagger) || stagger < 0 || stagger > 120) return alert("Enter a number from 0 to 120.");
+            await fastUpdate(raceRef, { timeLimitMinutes: limit, staggerMinutes: stagger });
+            alert("Race timer settings saved.");
+        };
+
+        window.startGlobalRaceCountdown = async function() {
+            if (!window.activeRaceCode) return;
+            const raceRef = doc(window.db, "races", window.activeRaceCode);
+            const snap = await safeGetDoc(raceRef);
+            if (!snap.exists()) return alert("Race not found.");
+            if (!await appConfirm("Schedule a shared start in 30 seconds for every team?", {title:"Global race start", confirmText:"Start countdown"})) return;
+            await fastUpdate(raceRef, { scheduledStartAt: Date.now() + 30000, paused: false, pausedAt: null, pauseAccumulatedMs: 0 });
+            alert("Global start scheduled. Teams can join before the countdown ends.");
+        };
+
+        window.togglePhase4Pause = async function() {
+            if (!window.activeRaceCode) return;
+            const raceRef = doc(window.db, "races", window.activeRaceCode);
+            const snap = await safeGetDoc(raceRef);
+            if (!snap.exists()) return;
+            const race = snap.data();
+            const pause = !race.paused;
+            await fastUpdate(raceRef, { paused: pause, pausedAt: pause ? Date.now() : null,
+                pauseAccumulatedMs: (race.pauseAccumulatedMs || 0) + (!pause && race.pausedAt ? Math.max(0, Date.now() - race.pausedAt) : 0) });
+            window.appToast(pause ? "Race paused for all teams" : "Race resumed");
+        };
+
+        window.startTeamRace = async function(lateJoin = false) {
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
-            loadTeamDashboardData(raceSnap.data());
+            if (!raceSnap.exists()) return alert("Race not found.");
+            const race = raceSnap.data();
+            const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+            const teamSnap = await safeGetDoc(teamRef);
+            const team = teamSnap.data() || {};
+            if (team.startTime) return;
+            const now = Date.now();
+            let startAt = now;
+            if (race.scheduledStartAt && !lateJoin) {
+                if (now < race.scheduledStartAt) return alert("The global countdown has not reached zero yet.");
+                startAt = race.scheduledStartAt;
+            } else if (race.staggerMinutes > 0 && !lateJoin) {
+                const teamsSnap = await getDocs(collection(window.db, "races", window.activeRaceCode, "teams"));
+                const approved = [];
+                teamsSnap.forEach(d => { if (d.data().isApproved) approved.push(d.id); });
+                const index = Math.max(0, approved.sort().indexOf(window.activeTeamId));
+                startAt = now + index * race.staggerMinutes * 60000;
+            }
+            await fastUpdate(teamRef, { startTime: new Date(startAt).toISOString(), joinedLate: !!lateJoin });
+            window.appToast(lateJoin ? "Your timer has started" : "Race started!");
+            loadTeamDashboardData(race);
         };
 
         window.finishTeamRace = async function() {
