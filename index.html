@@ -4907,12 +4907,18 @@
             }
 
             const scheduledForTeam = !!tData.scheduledTeamStartAt || (raceData.staggerSchedule || []).some(entry => entry.teamId === window.activeTeamId);
-            if (scheduledForTeam && !tData.startTime && !tData.endTime) {
+            if (raceData.paused && !tData.startTime && !tData.endTime) {
+                // A team joining during a global pause must not start or reveal checkpoints.
+                startBtn.disabled = true;
+                startBtn.className = "race-action race-action--start opacity-60 cursor-not-allowed";
+                startBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i> Paused';
+                finishBtn.disabled = true;
+                finishBtn.className = "race-action race-action--finish opacity-60 cursor-not-allowed";
+                finishBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i> Paused';
+            } else if (scheduledForTeam && !tData.startTime && !tData.endTime) {
                 startBtn.disabled = true; startBtn.className = "race-action race-action--start opacity-60 cursor-not-allowed";
                 const scheduledAt = tData.scheduledTeamStartAt || ((raceData.staggerSchedule || []).find(entry => entry.teamId === window.activeTeamId) || {}).scheduledAt;
                 startBtn.innerHTML = `<i class="fa-solid fa-hourglass-half text-xs"></i> Starts in ${scheduledAt ? Math.max(0, Math.ceil((scheduledAt-Date.now())/1000)) + ' sec' : 'schedule'}`;
-            } else if (raceData.paused && !tData.startTime && !tData.endTime) {
-                startBtn.disabled = true; startBtn.className = "race-action race-action--start opacity-60 cursor-not-allowed";
             }
             const isSpeedRace = raceData.gameMode !== 'scavenger';
             const hasStarted = !!tData.startTime;
@@ -5499,12 +5505,31 @@
             if (race.gameMode === 'scavenger' && !race.raceStartedAt) return alert("Please wait for the host to start the hunt.");
 
             const now=Date.now();
+            // Re-read immediately before writing so a stale portal cannot start a team while paused.
+            const latestRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+            if (!latestRaceSnap.exists()) return alert("Race not found.");
+            const latestRace = latestRaceSnap.data();
+            if (latestRace.paused) {
+                loadTeamDashboardData(latestRace);
+                return alert("The host has paused the race. Your start button will be available when the race resumes.");
+            }
             const staggeredMode = race.gameMode !== 'scavenger' && race.startMode === 'staggered' && !!race.raceStartedAt;
             if (staggeredMode) {
                 const teamSnapAll = await getDocs(collection(window.db, "races", window.activeRaceCode, "teams"));
-                const latestLateStart = teamSnapAll.docs.map(d => d.data()).filter(t => t.lateJoinStartAt).reduce((latest, t) => Math.max(latest, Number(t.lateJoinStartAt) || 0), 0);
                 const intervalMs = Math.max(1, Number(race.staggerMinutes || 10)) * 60000;
-                const earliestStart = latestLateStart ? latestLateStart + intervalMs : now;
+                let queueTail = 0;
+                teamSnapAll.docs.forEach(d => {
+                    const other = d.data();
+                    if (d.id === window.activeTeamId || other.endTime) return;
+                    // Count both actual starts and every scheduled-but-not-started team, so late
+                    // joiners are appended behind the entire existing stagger queue.
+                    const actualStart = other.startTime ? new Date(other.startTime).getTime() : 0;
+                    const scheduledStart = Number(other.scheduledTeamStartAt) || 0;
+                    const scheduleEntry = (race.staggerSchedule || []).find(entry => entry.teamId === d.id);
+                    const plannedStart = scheduleEntry && !other.startTime ? Number(scheduleEntry.scheduledAt) || 0 : 0;
+                    queueTail = Math.max(queueTail, actualStart, scheduledStart, plannedStart, Number(other.lateJoinStartAt) || 0);
+                });
+                const earliestStart = queueTail ? Math.max(now, queueTail + intervalMs) : now;
                 if (earliestStart > now) {
                     await fastUpdate(teamRef, { startTime:null, scheduledTeamStartAt:earliestStart, lateJoinPending:true, joinedLate:true });
                     window.appToast(`Your race starts in ${Math.ceil((earliestStart-now)/60000)} minute(s).`);
