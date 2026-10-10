@@ -753,7 +753,7 @@
         @keyframes checkpoint-flip-forward { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
         @keyframes checkpoint-flip-back { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
         .checkpoint-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 1rem; min-height: 82px; width: 100%; display: flex; align-items: center; gap: .5rem; }
-        .checkpoint-face-front { position: relative; z-index: 1; }
+        .checkpoint-face-front { position: relative; }
         .checkpoint-face-back { position: absolute; inset: 0; transform: rotateY(180deg); padding: .65rem .75rem; background: linear-gradient(135deg,#fff176 0%,#facc15 50%,#fbbf24 100%); color: #422006; border: 1px solid rgba(217,119,6,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 5px 18px rgba(250,204,21,.16); }
         .checkpoint-face-back .checkpoint-complete-title { color: #422006; font-size: 13px; line-height: 1.2; font-weight: 900; }
         .checkpoint-face-back .checkpoint-complete-meta { color: #713f12; font-size: 10px; line-height: 1.25; margin-top: 4px; font-weight: 700; }
@@ -1512,8 +1512,11 @@
                                         <p class="text-[10px] text-slate-500">Use 0 for no time limit. The host starts the hunt globally; teams joining later start their own timers.</p>
                                     </div>
                                     <div id="create-speed-start-box" class="space-y-3">
-                                        <label class="flex items-start gap-2.5 text-xs text-slate-200 cursor-pointer"><input id="create-enforce-host-start" type="checkbox" onchange="toggleHostStartCreationOptions()" class="mt-0.5 accent-amber-400"><span><strong>Enforce host start</strong><span class="block text-[10px] text-slate-400 mt-1">Teams cannot start until the host launches the race.</span></span></label>
-                                        <div id="create-host-start-options" class="pl-5 space-y-2">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div class="min-w-0"><span class="font-bold text-sm text-white">Enforce host start</span><p class="text-[11px] text-slate-400 mt-0.5">Teams cannot start until the host launches the race.</p></div>
+                                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input id="create-enforce-host-start" type="checkbox" onchange="toggleHostStartCreationOptions()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-emerald-600 shadow-inner"></div></label>
+                                        </div>
+                                        <div id="create-host-start-options" class="pl-1 space-y-2">
                                             <span class="block text-[10px] text-slate-400 uppercase font-bold">When ready, start using</span>
                                             <label class="flex items-center gap-2 text-xs text-slate-200"><input type="radio" name="create_start_method" value="global" checked class="accent-amber-400"> Global start — all currently approved teams together</label>
                                             <label class="flex items-center gap-2 text-xs text-slate-200"><input type="radio" name="create_start_method" value="staggered" class="accent-amber-400"> Staggered start — host sets team order</label>
@@ -1521,20 +1524,20 @@
                                         </div>
                                         <p id="create-manual-start-note" class="hidden text-[10px] text-slate-500">Teams can start individually. The host can pause/resume all active timers.</p>
                                     </div>
+                                </div>
+
                                 <div id="create-random-wildcard-settings" class="bg-slate-900 p-4 rounded-3xl border border-fuchsia-500/25 space-y-3">
-                                    <label class="flex items-start gap-2.5 text-xs text-slate-200 cursor-pointer">
-                                        <input id="create-random-wildcard-enabled" type="checkbox" class="mt-0.5 accent-fuchsia-400">
-                                        <span><strong>Enable surprise random wildcard</strong><span class="block text-[10px] text-slate-400 mt-1">One bonus challenge is automatically offered at a random eligible moment. The host cannot choose when it appears.</span></span>
-                                    </label>
-                                    <div class="space-y-1">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0"><span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-fuchsia-300"></i> Surprise Wildcard</span><p class="text-[11px] text-slate-400 mt-0.5">A random bonus challenge appears at a surprise moment. You won't know when.</p></div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0"><input id="create-random-wildcard-enabled" type="checkbox" onchange="toggleRandomWildcardSettings()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-fuchsia-600 shadow-inner"></div></label>
+                                    </div>
+                                    <div id="create-random-wildcard-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800">
                                         <label for="create-random-wildcard-duration" class="block text-[10px] text-slate-400 uppercase font-bold">Wildcard offer duration</label>
                                         <select id="create-random-wildcard-duration" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white">
                                             <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
                                         </select>
+                                        <p class="text-[10px] text-slate-500">Speed Race reward: 20 minutes off. Scavenger Hunt reward: 20 points. Requires at least two checkpoints completed and two remaining for every team.</p>
                                     </div>
-                                    <p class="text-[10px] text-slate-500">Speed Race reward: 20 minutes off. Scavenger Hunt reward: 20 points. Requires at least two checkpoints completed and two remaining for every team.</p>
-                                </div>
-
                                 </div>
 
                                 <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
@@ -2485,8 +2488,13 @@
             document.getElementById('create-host-start-options')?.classList.toggle('hidden', !enforced);
             document.getElementById('create-manual-start-note')?.classList.toggle('hidden', enforced);
         };
+        window.toggleRandomWildcardSettings = function() {
+            const enabled = !!document.getElementById('create-random-wildcard-enabled')?.checked;
+            document.getElementById('create-random-wildcard-sub-settings')?.classList.toggle('hidden', !enabled);
+        };
         window.toggleGameModeSelection();
         window.toggleHostStartCreationOptions();
+        window.toggleRandomWildcardSettings();
 
         window.toggleTriviaSettings = function() {
             const val = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
@@ -6095,12 +6103,12 @@
                 const checkinDetails = tData.checkinDetails || {};
                 delete checkinDetails[cpId];
 
+                window.justUndoneCheckpointIds.add(cpId);
                 await fastUpdate(teamRef, {
                     completedCheckpoints: completed,
                     checkinDetails: checkinDetails
                 });
 
-                window.justUndoneCheckpointIds.add(cpId);
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
             } catch (e) {
@@ -6120,18 +6128,17 @@
 
         window.checkInGps = async function(cpId, btnElement) {
             if (window.teamCheckinState) {
-                if (window.teamCheckinState.paused) return alert("The host has paused the race. Check-ins are temporarily locked.");
-                if (window.teamCheckinState.finished) return alert("Race completed - check-ins are locked.");
-                if (!window.teamCheckinState.started) return alert("Start the race first - check-ins unlock when your timer starts.");
+                if (window.teamCheckinState.paused) { window.appToast?.("The host has paused the race. Check-ins are locked.", 2500); return; }
+                if (window.teamCheckinState.finished) { window.appToast?.("Race completed — check-ins are locked.", 2500); return; }
+                if (!window.teamCheckinState.started) { window.appToast?.("Start the race first to unlock check-ins.", 2500); return; }
             }
             if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                alert("Error: Geolocation requires a secure HTTPS connection. Your site is currently loading over insecure HTTP.");
+                window.appToast?.("GPS check-in requires a secure HTTPS connection.", 3000);
                 return;
             }
 
             if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your browser.");
-                const forceManual = await appConfirm("Submit a manual check-in without GPS coordinates?", { title: "Manual check-in", confirmText: "Check in" });
+                const forceManual = await appConfirm("GPS isn't supported by this browser. You can record this checkpoint manually instead.", { title: "Manual check-in", confirmText: "Record manually", tone: "warning" });
                 if (forceManual) {
                     await handleTriviaOrSave(cpId, null, null, null, true, "Not Supported");
                 }
@@ -6153,18 +6160,18 @@
                     }
 
                     const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
-                    if (!raceSnap.exists()) return alert("Race not found.");
+                    if (!raceSnap.exists()) { window.appToast?.("Race not found. Please rejoin the race.", 2500); return; }
                     const raceData = raceSnap.data();
                     const checkpoints = raceData.checkpoints || [];
                     const targetCp = checkpoints.find(c => c.id === cpId);
-                    if (!targetCp) return alert("Checkpoint not found.");
+                    if (!targetCp) { window.appToast?.("Checkpoint not found. Please refresh your race.", 2500); return; }
 
                     if (raceData.finalCheckpointId && cpId !== raceData.finalCheckpointId) {
                         const completed = (await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId))).data().completedCheckpoints || [];
                         const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
                         const othersLeft = mandatory.filter(m => m.id !== raceData.finalCheckpointId && !completed.includes(m.id));
                         if (othersLeft.length === 0 && !completed.includes(raceData.finalCheckpointId)) {
-                            alert("Host Rule Alert: You must complete the designated final ending location before checking off all other stops last!");
+                            window.appToast?.("Remember: save the designated final location for your last checkpoint!", 3000);
                         }
                     }
 
@@ -6255,13 +6262,13 @@
             if (isCorrect) {
                 if (isScavenger) {
                     triviaBonus = 1;
-                    alert("Correct answer! You earned +1 bonus point!");
+                    window.appToast("Correct answer! +1 bonus point!", 2400);
                 } else {
                     triviaBonus = 5;
-                    alert("Correct answer! You earned a 5-minute time deduction!");
+                    window.appToast("Correct answer! 5 minutes deducted!", 2400);
                 }
             } else {
-                alert("Incorrect answer! Check-in recorded with no bonus.");
+                window.appToast("Not quite! Check-in recorded with no bonus.", 2400);
             }
 
             const triviaLogEntry = {
@@ -6292,11 +6299,11 @@
             // Final safety net (data may have changed on another device)
             const liveRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             const liveRace = liveRaceSnap.exists() ? liveRaceSnap.data() : {};
-            if (liveRace.paused) return alert("The host has paused the race. Check-ins are temporarily locked.");
-            if (liveRace.scheduledStartAt && Date.now() < liveRace.scheduledStartAt) return alert("Check-ins unlock when the global countdown reaches zero.");
-            if (tData.scheduledTeamStartAt && Date.now() < tData.scheduledTeamStartAt) return alert("Check-ins unlock when your scheduled start time arrives.");
-            if (tData.endTime) return alert("Race completed - check-ins are locked.");
-            if (!tData.startTime) return alert("Your timer has not started yet - check-ins unlock when your timer starts.");
+            if (liveRace.paused) { window.appToast?.("The host has paused the race. Check-ins are locked.", 2500); return; }
+            if (liveRace.scheduledStartAt && Date.now() < liveRace.scheduledStartAt) { window.appToast?.("Check-ins unlock when the global countdown reaches zero.", 2500); return; }
+            if (tData.scheduledTeamStartAt && Date.now() < tData.scheduledTeamStartAt) { window.appToast?.("Check-ins unlock when your scheduled start time arrives.", 2500); return; }
+            if (tData.endTime) { window.appToast?.("Race completed — check-ins are locked.", 2500); return; }
+            if (!tData.startTime) { window.appToast?.("Your timer has not started yet. Check-ins unlock when it starts.", 2500); return; }
             
             const completed = tData.completedCheckpoints || [];
             if (!completed.includes(cpId)) {
@@ -6324,6 +6331,9 @@
                 triviaAttempts[cpId] = triviaAttempt;   // first outcome is kept for good, even if the check-in is undone
             }
 
+            // Set the animation flag before writing: Firestore's live listener can
+            // re-render immediately after the write, before the awaited write returns.
+            window.justCompletedCheckpointIds.add(cpId);
             await fastUpdate(teamRef, {
                 completedCheckpoints: completed,
                 checkinDetails: checkinDetails,
@@ -6332,10 +6342,10 @@
                 triviaAttempts: triviaAttempts
             });
 
-            window.justCompletedCheckpointIds.add(cpId);
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             if (!navigator.onLine) window.appToast?.("Saved on this phone; it will sync when you're back online.");
+            else window.appToast?.(isManual ? "Checkpoint recorded manually." : "Checkpoint complete!", 1800);
         }
 
         // Step 1: pick a photo -> show a preview. (The file is read immediately; reading
