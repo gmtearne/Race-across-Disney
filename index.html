@@ -4049,8 +4049,18 @@
                     let rawElapsedMin = 0;
                     if (t.startTime) {
                         const start = new Date(t.startTime).getTime();
-                        const end = t.endTime ? new Date(t.endTime).getTime() : Date.now();
-                        rawElapsedMin = (end - start) / 60000;
+                        const end = t.endTime ? new Date(t.endTime).getTime() : (raceData.paused && raceData.pausedAt ? Number(raceData.pausedAt) : Date.now());
+                        // Count only host-paused time that happened after this team's timer began.
+                        // A team that starts after an earlier pause must not have that earlier pause
+                        // deducted from its own elapsed time.
+                        const raceStartMs = Number(raceData.raceStartedAt || 0);
+                        // Legacy teams have no baseline field. For teams that started after the
+                        // host race start, treat already-recorded pauses as pre-start pauses.
+                        const pauseAtStart = t.startPauseAccumulatedMs != null
+                            ? Number(t.startPauseAccumulatedMs)
+                            : (raceStartMs && start > raceStartMs ? Number(raceData.pauseAccumulatedMs || 0) : 0);
+                        const pausesSinceStart = Math.max(0, Number(raceData.pauseAccumulatedMs || 0) - pauseAtStart);
+                        rawElapsedMin = Math.max(0, (end - start - pausesSinceStart) / 60000);
                     }
 
                     t.totalPoints = totalPoints;
@@ -4771,7 +4781,7 @@
             }
             let tData = teamSnap.data();
             if (tData.scheduledTeamStartAt && Date.now() >= tData.scheduledTeamStartAt && !tData.startTime && !raceData.paused) {
-                await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(tData.scheduledTeamStartAt).toISOString(), scheduledTeamStartAt: null, ...(tData.lateJoinPending ? { lateJoinStartAt: Number(tData.scheduledTeamStartAt), lateJoinPending: false } : {}) });
+                await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(tData.scheduledTeamStartAt).toISOString(), startPauseAccumulatedMs: Number(raceData.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(tData.lateJoinPending ? { lateJoinStartAt: Number(tData.scheduledTeamStartAt), lateJoinPending: false } : {}) });
                 const refreshed = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
                 if (refreshed.exists()) tData = refreshed.data();
             }
@@ -5440,7 +5450,8 @@
             const teams = await getDocs(collection(window.db, "races", code, "teams"));
             const startTime = new Date().toISOString();
             const writes = [];
-            teams.forEach(d => { const t=d.data(); if (t.isApproved && !t.endTime && !t.startTime) writes.push(fastUpdate(doc(window.db,"races",code,"teams",d.id), {startTime, scheduledTeamStartAt:null, staggerOrder:null, joinedLate:false})); });
+            const pauseBaseline = Number(raceConfig.pauseAccumulatedMs || 0);
+            teams.forEach(d => { const t=d.data(); if (t.isApproved && !t.endTime && !t.startTime) writes.push(fastUpdate(doc(window.db,"races",code,"teams",d.id), {startTime, startPauseAccumulatedMs:pauseBaseline, scheduledTeamStartAt:null, staggerOrder:null, joinedLate:false})); });
             await Promise.all(writes);
             await fastUpdate(owned.ref, { scheduledStartAt:null, staggerSchedule:null, paused:false, pausedAt:null, pauseAccumulatedMs:0, raceStartedAt:Date.now(), startMode: raceConfig.gameMode === 'scavenger' ? 'global' : (raceConfig.startMode || 'global') });
             window.appToast("All eligible team timers started."); loadAdminRaces();
@@ -5489,7 +5500,8 @@
             order.sort((a,b)=>a.position-b.position);
             if(!await appConfirm(`Start the first team immediately and each following team every ${interval} minute(s)? Scheduled teams cannot start manually.`,{title:"Staggered speed-race start",confirmText:"Save order & start"})) return;
             const now=Date.now(), schedule=order.map((x,i)=>({teamId:x.id,order:i+1,scheduledAt:now+i*interval*60000}));
-            await Promise.all(schedule.map(e=>fastUpdate(doc(window.db,"races",code,"teams",e.teamId), e.order===1?{startTime:new Date(e.scheduledAt).toISOString(),scheduledTeamStartAt:null,staggerOrder:e.order,joinedLate:false}:{startTime:null,scheduledTeamStartAt:e.scheduledAt,staggerOrder:e.order,joinedLate:false})));
+            const pauseBaseline = Number(owned.data.pauseAccumulatedMs || 0);
+            await Promise.all(schedule.map(e=>fastUpdate(doc(window.db,"races",code,"teams",e.teamId), e.order===1?{startTime:new Date(e.scheduledAt).toISOString(),startPauseAccumulatedMs:pauseBaseline,scheduledTeamStartAt:null,staggerOrder:e.order,joinedLate:false}:{startTime:null,startPauseAccumulatedMs:null,scheduledTeamStartAt:e.scheduledAt,staggerOrder:e.order,joinedLate:false})));
             await fastUpdate(owned.ref,{staggerMinutes:interval,staggerSchedule:schedule,scheduledStartAt:null,paused:false,pausedAt:null,pauseAccumulatedMs:0,raceStartedAt:now,startMode:'staggered'});
             window.appToast("Staggered start schedule is live."); loadAdminRaces();
         };
@@ -5536,9 +5548,9 @@
                     loadTeamDashboardData(race);
                     return;
                 }
-                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),scheduledTeamStartAt:null,joinedLate:true,lateJoinPending:false,lateJoinStartAt:now});
+                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:true,lateJoinPending:false,lateJoinStartAt:now});
             } else {
-                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})});
+                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})});
             }
             if (!race.raceStartedAt) await fastUpdate(doc(window.db, "races", window.activeRaceCode), { raceStartedAt: now });
             window.appToast("Your timer has started."); loadTeamDashboardData(race);
@@ -5580,7 +5592,7 @@
                         const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                         const race = raceSnap.exists() ? raceSnap.data() : {};
                         if (!race.paused && Date.now() >= scheduledAt) {
-                            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(scheduledAt).toISOString(), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
+                            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(scheduledAt).toISOString(), startPauseAccumulatedMs:Number(race.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
                             if (raceSnap.exists()) loadTeamDashboardData(race);
                         } else if (startBtn) {
                             startBtn.disabled = true;
@@ -5593,9 +5605,19 @@
                 const start = new Date(data.startTime).getTime();
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 const race = raceSnap.exists() ? raceSnap.data() : {};
-                const end = data.endTime ? new Date(data.endTime).getTime() : (race.paused && race.pausedAt ? race.pausedAt : Date.now());
-                const pausedMs = race.pauseAccumulatedMs || 0;
-                const diffSec = Math.max(0, Math.floor((end - start - pausedMs) / 1000));
+                const end = data.endTime ? new Date(data.endTime).getTime() : (race.paused && race.pausedAt ? Number(race.pausedAt) : Date.now());
+                const raceStartMs = Number(race.raceStartedAt || 0);
+                // Backfill a sensible baseline for teams already in an older live race.
+                // Historical pause timestamps weren't stored previously, so this legacy
+                // fallback assumes accumulated pauses preceded a late team's start.
+                const pauseAtStart = data.startPauseAccumulatedMs != null
+                    ? Number(data.startPauseAccumulatedMs)
+                    : (raceStartMs && start > raceStartMs ? Number(race.pauseAccumulatedMs || 0) : 0);
+                if (data.startPauseAccumulatedMs == null && pauseAtStart > 0) {
+                    fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startPauseAccumulatedMs: pauseAtStart }).catch(() => {});
+                }
+                const pausedMsSinceStart = Math.max(0, Number(race.pauseAccumulatedMs || 0) - pauseAtStart);
+                const diffSec = Math.max(0, Math.floor((end - start - pausedMsSinceStart) / 1000));
 
                 const isScavengerCountdown = race.gameMode === 'scavenger' && Number(race.timeLimitMinutes) > 0;
                 const shownSeconds = isScavengerCountdown ? Math.max(0, Number(race.timeLimitMinutes) * 60 - diffSec) : diffSec;
