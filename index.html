@@ -155,9 +155,20 @@
             margin-top: 0.5rem;
             margin-bottom: 0.5rem !important;
         }
-        /* With the team card showing, the gap below it matches the gap above it */
+        /* With the team card showing, the gap below it matches the card-to-card gap */
         html.has-team-banner #portal-track > section {
             padding-top: 0;
+        }
+        html.portal-locked #team-status-banner { margin-bottom: 1.5rem !important; }
+
+        /* One consistent gap between cards on every portal page. Tailwind's space-y also counted
+           display:none cards as neighbours, which pushed the first visible card further down. */
+        #portal-track > section.space-y-6 > * { margin-top: 0 !important; }
+        #portal-track > section.space-y-6 > :not(.hidden) ~ :not(.hidden) { margin-top: 1.5rem !important; }
+
+        /* Maps / Rules (and any non-portal page): clear the taller header with the same 1rem breathing room */
+        html:not(.portal-locked) body > main {
+            padding-top: calc(var(--nav-h, 146px) + 1rem) !important;
         }
 
         /* ---------- Bottom sheet picker ---------- */
@@ -355,6 +366,16 @@
         /* vertical-only motion so the horizontal scroll-snap position is never shifted */
         .app-page-pop { animation: appPagePop 280ms var(--app-motion) backwards; }
         @keyframes appPagePop { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        #app-toast {
+            position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 300;
+            transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+            padding: .6rem 1.1rem; border-radius: 9999px;
+            font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: .85rem; color: #fff;
+            background: rgba(15,23,42,.92); border: 1px solid rgba(52,211,153,.55);
+            box-shadow: 0 8px 24px rgba(0,0,0,.45);
+            transition: opacity .2s ease, transform .25s var(--app-motion);
+        }
+        #app-toast.show { opacity: 1; transform: translate(-50%, 0); }
         .app-page-fade { animation: appPageFade 380ms var(--app-motion) backwards; }
         @keyframes appPageFade { from { opacity: .35; } to { opacity: 1; } }
         @media (prefers-reduced-motion: reduce) { .app-page-fade, .app-page-pop { animation: none !important; } }
@@ -843,20 +864,29 @@
                 <div class="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-700/80">
                     <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Base Difficulty Level</h4>
                     <div class="grid grid-cols-3 gap-2">
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                            <input type="radio" name="edit_difficulty" value="easy" class="mb-1 text-disneyGold">
-                            <span class="font-bold text-xs text-white">Easy</span>
-                            <span class="text-[9px] text-slate-400">Pins + Transit</span>
+                        <label class="relative block cursor-pointer select-none">
+                            <input type="radio" name="edit_difficulty" value="easy" class="sr-only peer">
+                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                <span class="block font-bold text-sm text-white">Easy</span>
+                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Pins + Transit</span>
+                            </div>
+                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                            <input type="radio" name="edit_difficulty" value="medium" class="mb-1 text-disneyGold">
-                            <span class="font-bold text-xs text-white">Medium</span>
-                            <span class="text-[9px] text-slate-400">Park Lands</span>
+                        <label class="relative block cursor-pointer select-none">
+                            <input type="radio" name="edit_difficulty" value="medium" class="sr-only peer">
+                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                <span class="block font-bold text-sm text-white">Medium</span>
+                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Park Lands</span>
+                            </div>
+                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 cursor-pointer hover:border-disneyGold transition text-center">
-                            <input type="radio" name="edit_difficulty" value="hard" class="mb-1 text-disneyGold">
-                            <span class="font-bold text-xs text-white">Hard</span>
-                            <span class="text-[9px] text-slate-400">Blind (Locked)</span>
+                        <label class="relative block cursor-pointer select-none">
+                            <input type="radio" name="edit_difficulty" value="hard" class="sr-only peer">
+                            <div class="h-full px-2 py-3.5 rounded-2xl border border-slate-700 bg-slate-950 text-center transition active:scale-95 peer-checked:border-disneyGold peer-checked:bg-disneyGold/10 peer-checked:shadow-[0_0_0_1px_rgba(255,184,0,0.6)]">
+                                <span class="block font-bold text-sm text-white">Hard</span>
+                                <span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">Blind</span>
+                            </div>
+                            <span class="hidden peer-checked:flex absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-disneyGold text-slate-950 items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
                         </label>
                     </div>
                 </div>
@@ -1012,6 +1042,9 @@
                 <h2 id="active-team-name" class="font-bold text-sm text-white truncate"></h2>
                 <span class="font-mono text-xs text-disneyGold font-bold shrink-0" id="active-team-racecode">---</span>
             </div>
+            <button onclick="copyTeamInvite(this)" id="team-invite-btn" title="Copy invite (race code + link)" aria-label="Copy invite" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-disneyGold text-xs rounded-xl transition flex items-center justify-center">
+                <i class="fa-solid fa-user-plus"></i>
+            </button>
             <button onclick="logoutTeam()" title="Switch Team" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center justify-center">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
@@ -1792,7 +1825,53 @@
             }
         };
 
+        // <main> is overflow:hidden on portal pages but can still be scrolled programmatically
+        // (focusing a field, or a leftover scroll position from Rules/Maps), which pushed the
+        // team status bar up under the header. Keep it pinned to the top.
+        // Points a completed stop is worth. Scavenger stops are worth 10 (or the race's own default);
+        // older/edited races stored 0 on some stops, which is what caused the "0 instead of 10" bug.
+        window.stopPoints = function(cp, raceData) {
+            if (!cp) return 0;
+            if (cp.type === 'BONUS_PHOTO') {
+                return cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10);
+            }
+            if (raceData && raceData.gameMode === 'scavenger') {
+                if (cp.points > 0) return cp.points;
+                return raceData.defaultPoints > 0 ? raceData.defaultPoints : 10;
+            }
+            return 0;
+        };
+
+        // Small non-blocking confirmation pill
+        window.appToast = function(message, ms = 1800) {
+            let el = document.getElementById('app-toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'app-toast';
+                el.setAttribute('role', 'status');
+                document.body.appendChild(el);
+            }
+            el.textContent = message;
+            el.classList.add('show');
+            clearTimeout(el._t);
+            el._t = setTimeout(() => el.classList.remove('show'), ms);
+        };
+
+        window.resetPageScroll = function() {
+            const m = document.querySelector('main');
+            if (m && m.scrollTop !== 0) m.scrollTop = 0;
+            if (document.documentElement.scrollTop) document.documentElement.scrollTop = 0;
+            if (document.body.scrollTop) document.body.scrollTop = 0;
+        };
+        (function () {
+            const m = document.querySelector('main');
+            const guard = () => { if (document.documentElement.classList.contains('portal-locked')) window.resetPageScroll(); };
+            if (m) m.addEventListener('scroll', guard, { passive: true });
+            window.addEventListener('scroll', guard, { passive: true });
+        })();
+
         function switchTab(tabName, saveState = true, instant = false) {
+            window.resetPageScroll();
             const PORTAL_PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
             const prevTab = window.currentTab;
             ['maps', 'rules'].forEach(t => {
@@ -2447,6 +2526,39 @@
                 }
             } catch (error) {
                 appAlert(`Race code: ${code}`, { title: "Copy this code", tone: "info" });
+            }
+        };
+
+        // Any player can copy a ready-to-paste invite (race code + link) from the team status bar
+        window.copyTeamInvite = async function(btn) {
+            const codeEl = document.getElementById('active-team-racecode');
+            const code = codeEl ? codeEl.textContent.trim() : '';
+            if (!code || code === '---') return;
+            const link = window.location.href.split('#')[0];
+            const text = `Join my race on The Amazing Mouse Race! Race Code: ${code}\nLink: ${link}`;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const field = document.createElement('textarea');
+                    field.value = text;
+                    field.setAttribute('readonly', '');
+                    field.style.cssText = 'position:fixed;opacity:0;top:0;left:0;-webkit-user-select:text;user-select:text;';
+                    document.body.appendChild(field);
+                    field.select();
+                    const ok = document.execCommand('copy');
+                    field.remove();
+                    if (!ok) throw new Error('Clipboard unavailable');
+                }
+                window.appToast('Copied!');
+                if (btn) {
+                    if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    btn.classList.add('text-emerald-300');
+                    setTimeout(() => { btn.innerHTML = btn.dataset.orig; btn.classList.remove('text-emerald-300'); }, 1600);
+                }
+            } catch (error) {
+                appAlert(text, { title: "Copy this invite", tone: "info" });
             }
         };
 
@@ -3192,7 +3304,7 @@
                     type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
-                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : 0,
+                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction || 10) : (editingRaceGameMode === 'scavenger' ? 10 : 0),
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney",
                     land: p.land || "Attraction Area"
@@ -3753,7 +3865,7 @@
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
                         if (match) {
-                            totalPoints += (match.points !== undefined ? match.points : 0);
+                            totalPoints += window.stopPoints(match, raceData);
                         }
                     });
                     claimed.forEach(bId => {
@@ -4492,7 +4604,7 @@
                 let currentPoints = triviaBonusPts;
                 completedIds.forEach(cpId => {
                     const match = mandatory.find(m => m.id === cpId);
-                    if (match) currentPoints += (match.points !== undefined ? match.points : 0);
+                    if (match) currentPoints += window.stopPoints(match, raceData);
                 });
                 claimedBonus.forEach(bId => {
                     const match = bonus.find(b => b.id === bId);
@@ -4516,6 +4628,8 @@
             const reportCardContainer = document.getElementById('report-card-container');
 
             const isRaceFinished = !!tData.endTime;
+            const checkinsLocked = isRaceFinished || !tData.startTime;
+            window.teamCheckinState = { started: !!tData.startTime, finished: isRaceFinished };
 
             if (isRaceFinished) {
                 pill.innerText = "Finished";
@@ -4577,7 +4691,7 @@
                 document.getElementById('team-checkpoints-list').innerHTML = orderedMandatory.map((cp, idx) => {
                     const isDone = completedIds.includes(cp.id);
                     const isFinal = finalCheckpointId === cp.id;
-                    const ptValue = cp.points !== undefined ? cp.points : (isScavenger ? 10 : 0);
+                    const ptValue = window.stopPoints(cp, raceData);
                     const detail = checkinDetails[cp.id];
                     const isManualOverride = detail && detail.isManual;
                     
@@ -4598,14 +4712,22 @@
                                     <span class="text-[9px] leading-none bg-amber-500/20 text-amber-300 py-1 rounded-md border border-amber-500/40 font-bold text-center whitespace-nowrap">
                                         <i class="fa-solid fa-triangle-exclamation"></i> Manual
                                     </span>
-                                    <button onclick="undoManualCheckIn('${cp.id}')" class="h-8 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1">
+                                    ${isRaceFinished ? '' : `<button onclick="undoManualCheckIn('${cp.id}')" class="h-8 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1">
                                         <i class="fa-solid fa-rotate-left"></i> Undo
-                                    </button>
+                                    </button>`}
                                 </div>
                             `;
                         } else {
                             statusBadgeOrButton = '<div class="w-[4.5rem] shrink-0 flex flex-col items-center justify-center gap-0.5 text-emerald-400"><i class="fa-solid fa-circle-check text-lg"></i><span class="text-[10px] font-bold whitespace-nowrap">Checked in</span></div>';
                         }
+                    } else if (checkinsLocked) {
+                        statusBadgeOrButton = `
+                            <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
+                                <button type="button" disabled aria-disabled="true" class="w-full h-12 bg-slate-700/70 text-slate-400 font-bold rounded-xl text-[10px] leading-tight flex flex-col items-center justify-center gap-0.5 cursor-not-allowed opacity-70">
+                                    <i class="fa-solid fa-lock text-base"></i><span class="text-center">${isRaceFinished ? 'Race Completed' : 'Locked'}</span>
+                                </button>
+                            </div>
+                        `;
                     } else {
                         statusBadgeOrButton = `
                             <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
@@ -4748,6 +4870,9 @@
         };
 
         window.undoManualCheckIn = async function(cpId) {
+            if (window.teamCheckinState && window.teamCheckinState.finished) {
+                return alert("The race is completed, so check-ins are locked.");
+            }
             if (!(await appConfirm("This removes your completion for this stop so you can retry when you reach the correct location.", { title: "Undo check-in?", confirmText: "Undo", danger: true }))) return;
 
             try {
@@ -4784,6 +4909,10 @@
         }
 
         window.checkInGps = async function(cpId, btnElement) {
+            if (window.teamCheckinState) {
+                if (window.teamCheckinState.finished) return alert("Race completed - check-ins are locked.");
+                if (!window.teamCheckinState.started) return alert("Start the race first - check-ins unlock when your timer starts.");
+            }
             if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
                 alert("Error: Geolocation requires a secure HTTPS connection. Your site is currently loading over insecure HTTP.");
                 return;
@@ -4863,7 +4992,10 @@
             const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
             const locTrivia = cp ? triviaDb[cp.name] : null;
 
-            if (triviaSettings && triviaSettings.enabled && locTrivia) {
+            // The first attempt at a stop is final: undoing and re-checking-in never re-asks (or re-rolls) the question
+            const priorAttempt = (tData.triviaAttempts || {})[cpId];
+
+            if (!priorAttempt && triviaSettings && triviaSettings.enabled && locTrivia) {
                 let triggerTrivia = false;
                 if (triviaSettings.frequency === 'every') {
                     triggerTrivia = true;
@@ -4896,7 +5028,7 @@
                 }
             }
 
-            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null);
+            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null, priorAttempt ? null : { asked: false });
             alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         }
 
@@ -4938,15 +5070,20 @@
                 pendingCheckInIsManual, 
                 pendingCheckInNote + (isCorrect ? " (Trivia Correct)" : " (Trivia Incorrect)"),
                 triviaBonus,
-                triviaLogEntry
+                triviaLogEntry,
+                { asked: true, isCorrect: isCorrect, bonus: triviaBonus }
             );
             alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         };
 
-        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null) {
+        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null, triviaAttempt = null) {
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
             const teamSnap = await safeGetDoc(teamRef);
             const tData = teamSnap.data();
+
+            // Final safety net (data may have changed on another device)
+            if (tData.endTime) return alert("Race completed - check-ins are locked.");
+            if (!tData.startTime) return alert("Start the race first - check-ins unlock when your timer starts.");
             
             const completed = tData.completedCheckpoints || [];
             if (!completed.includes(cpId)) {
@@ -4969,11 +5106,17 @@
                 triviaLogs.push(triviaLogEntry);
             }
 
+            const triviaAttempts = tData.triviaAttempts || {};
+            if (triviaAttempt && !triviaAttempts[cpId]) {
+                triviaAttempts[cpId] = triviaAttempt;   // first outcome is kept for good, even if the check-in is undone
+            }
+
             await fastUpdate(teamRef, {
                 completedCheckpoints: completed,
                 checkinDetails: checkinDetails,
                 triviaBonus: currentTriviaBonus,
-                triviaLogs: triviaLogs
+                triviaLogs: triviaLogs,
+                triviaAttempts: triviaAttempts
             });
 
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
