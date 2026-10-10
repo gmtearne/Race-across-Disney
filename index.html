@@ -1429,7 +1429,7 @@
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
                                 <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-400">
                             </div>
-                            <button id="auth-submit-btn" onclick="handleAdminAuth()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
+                            <button id="auth-submit-btn" type="button" onclick="window.handleAdminAuth()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase shadow-lg transition">
                                 Sign In to Dashboard
                             </button>
                         </div>
@@ -2855,7 +2855,8 @@
 
             setTimeout(() => {
                 const savedTab = localStorage.getItem('rad_active_tab') || 'race';
-                switchTab(savedTab, false);
+                // The menu is navigation, not the app's landing page. Migrate old saved menu state to Team Portal.
+                switchTab(savedTab === 'menu' ? 'race' : savedTab, false, true);
                 if (!window.activeRaceCode) {
                     hideSplashScreen();
                 }
@@ -2995,8 +2996,9 @@
                 return;
             }
             if (!window.auth) {
-                alert("Login is still initializing. Please wait a moment and try again.");
-                console.error("Host login clicked before Firebase Auth was initialized.");
+                const msg = "Firebase login is not ready yet. Refresh the page and try again.";
+                console.error(msg);
+                alert(msg);
                 return;
             }
             const originalText = submitBtn ? submitBtn.innerHTML : '';
