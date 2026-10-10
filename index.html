@@ -743,6 +743,36 @@
         @media (prefers-reduced-motion: reduce) {
             .app-header::before, .brand-medallion i { animation: none; }
         }
+
+        /* Celebration flip for completed checkpoints */
+        .checkpoint-card.checkpoint-flip-card { perspective: 900px; position: relative; min-height: 82px; overflow: visible; border-color: rgba(250,204,21,.85) !important; background: #facc15 !important; color: #422006; }
+        .checkpoint-flip-inner { position: relative; min-height: 82px; width: 100%; transform-style: preserve-3d; transition: transform .72s cubic-bezier(.2,.8,.2,1); }
+        .checkpoint-flip-card.is-complete .checkpoint-flip-inner { transform: rotateY(180deg); }
+        .checkpoint-flip-card.celebrate .checkpoint-flip-inner { animation: checkpoint-flip-forward .72s cubic-bezier(.2,.8,.2,1) both; }
+        .checkpoint-flip-card.is-flipping-back .checkpoint-flip-inner { animation: checkpoint-flip-back .72s cubic-bezier(.2,.8,.2,1) both; }
+        @keyframes checkpoint-flip-forward { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+        @keyframes checkpoint-flip-back { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+        .checkpoint-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 1rem; min-height: 82px; width: 100%; display: flex; align-items: center; gap: .5rem; }
+        .checkpoint-face-front { position: relative; z-index: 1; }
+        .checkpoint-face-back { position: absolute; inset: 0; transform: rotateY(180deg); padding: .65rem .75rem; background: linear-gradient(135deg,#fff176 0%,#facc15 50%,#fbbf24 100%); color: #422006; border: 1px solid rgba(217,119,6,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 5px 18px rgba(250,204,21,.16); }
+        .checkpoint-face-back .checkpoint-complete-title { color: #422006; font-size: 13px; line-height: 1.2; font-weight: 900; }
+        .checkpoint-face-back .checkpoint-complete-meta { color: #713f12; font-size: 10px; line-height: 1.25; margin-top: 4px; font-weight: 700; }
+        .checkpoint-face-back .checkpoint-drag { color: rgba(120,53,15,.55); }
+        .checkpoint-confetti { position: absolute; z-index: 5; top: 50%; left: 50%; width: 7px; height: 7px; pointer-events: none; opacity: 0; border-radius: 2px; }
+        .checkpoint-flip-card.celebrate .checkpoint-confetti { animation: checkpoint-firework 1.15s ease-out forwards; }
+        .checkpoint-confetti:nth-child(1) { --dx:-65px; --dy:-42px; background:#ef4444; }
+        .checkpoint-confetti:nth-child(2) { --dx:-42px; --dy:-62px; background:#2563eb; animation-delay:.04s; }
+        .checkpoint-confetti:nth-child(3) { --dx:-12px; --dy:-70px; background:#f97316; animation-delay:.08s; }
+        .checkpoint-confetti:nth-child(4) { --dx:22px; --dy:-64px; background:#9333ea; animation-delay:.02s; }
+        .checkpoint-confetti:nth-child(5) { --dx:55px; --dy:-45px; background:#16a34a; animation-delay:.06s; }
+        .checkpoint-confetti:nth-child(6) { --dx:68px; --dy:-12px; background:#db2777; animation-delay:.1s; }
+        .checkpoint-confetti:nth-child(7) { --dx:54px; --dy:25px; background:#0284c7; animation-delay:.03s; }
+        .checkpoint-confetti:nth-child(8) { --dx:18px; --dy:42px; background:#ea580c; animation-delay:.07s; }
+        .checkpoint-confetti:nth-child(9) { --dx:-25px; --dy:38px; background:#7c3aed; animation-delay:.05s; }
+        .checkpoint-confetti:nth-child(10) { --dx:-58px; --dy:18px; background:#059669; animation-delay:.09s; }
+        @keyframes checkpoint-firework { 0% { opacity:0; transform:translate(-50%,-50%) scale(.3) rotate(0deg); } 12% { opacity:1; } 100% { opacity:0; transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(220deg); } }
+        @media (prefers-reduced-motion: reduce) { .checkpoint-flip-inner { transition:none; animation:none !important; } .checkpoint-flip-card.celebrate .checkpoint-confetti { animation:none; } }
+
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
@@ -2943,6 +2973,46 @@
         let teamListenerKey = null;
         window.liveTeamRaceData = null;
         let isRegisterMode = false;
+
+        // Register the host-login handler early so later dashboard feature setup
+        // cannot leave the visible sign-in button without a handler.
+        window.handleAdminAuth = async function() {
+            const emailEl = document.getElementById('admin-email');
+            const passEl = document.getElementById('admin-password');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const email = emailEl ? emailEl.value.trim() : '';
+            const pass = passEl ? passEl.value : '';
+            if (!email || !pass) {
+                alert("Please enter email and password.");
+                return;
+            }
+            if (!window.auth) {
+                alert("Login is still initializing. Please wait a moment and try again.");
+                console.error("Host login clicked before Firebase Auth was initialized.");
+                return;
+            }
+            const originalText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Please wait…';
+            }
+            try {
+                if (isRegisterMode) {
+                    await createUserWithEmailAndPassword(window.auth, email, pass);
+                    alert("Host account created successfully!");
+                } else {
+                    await signInWithEmailAndPassword(window.auth, email, pass);
+                }
+            } catch (err) {
+                console.error("Host dashboard authentication failed:", err);
+                alert("Authentication Error: " + (err && err.message ? err.message : String(err)));
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText || (isRegisterMode ? 'Register Host Account' : 'Sign In to Dashboard');
+                }
+            }
+        };
         window.globalDashboardLockState = false;
         window.globalDashboardLockPin = "";
         let currentEditingRaceCode = null;
@@ -3635,23 +3705,6 @@
                 }
             } catch (e) {
                 console.error(e);
-            }
-        };
-
-        window.handleAdminAuth = async function() {
-            const email = document.getElementById('admin-email').value.trim();
-            const pass = document.getElementById('admin-password').value.trim();
-            if (!email || !pass) return alert("Please enter email and password.");
-
-            try {
-                if (isRegisterMode) {
-                    await createUserWithEmailAndPassword(window.auth, email, pass);
-                    alert("Host account created successfully!");
-                } else {
-                    await signInWithEmailAndPassword(window.auth, email, pass);
-                }
-            } catch (err) {
-                alert("Authentication Error: " + err.message);
             }
         };
 
@@ -5637,6 +5690,9 @@
             renderRaceJourney(stops, completed, details, started, finished);
         }, 1000);
 
+        window.justCompletedCheckpointIds = window.justCompletedCheckpointIds || new Set();
+        window.justUndoneCheckpointIds = window.justUndoneCheckpointIds || new Set();
+
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
@@ -5880,20 +5936,35 @@
                         ? `<span class="text-disneyGold">${hintText}</span>${hasFacts ? ' • <span class="text-amber-200">💡 Fun fact</span>' : ''}`
                         : `${cp.park || 'Disney Park'}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-disneyGold">${hintText}</span>`;
 
+                    const justCompleted = isDone && window.justCompletedCheckpointIds.has(cp.id);
+                    const justUndone = !isDone && window.justUndoneCheckpointIds.has(cp.id);
+                    if (justCompleted) window.justCompletedCheckpointIds.delete(cp.id);
+                    if (justUndone) window.justUndoneCheckpointIds.delete(cp.id);
+                    const checkedAt = detail && detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable';
+                    const manualUndo = isDone && isManualOverride && !isRaceFinished
+                        ? `<button onclick="event.stopPropagation(); undoManualCheckIn('${cp.id}')" class="mt-1.5 px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-[10px] font-extrabold shadow-sm"><i class="fa-solid fa-rotate-left mr-1"></i>Undo manual check-in</button>`
+                        : '';
+                    const confetti = justCompleted ? Array.from({length:10}, () => '<span class="checkpoint-confetti"></span>').join('') : '';
                     return `
-                        <div data-id="${cp.id}" ${clickAction} ${bgStyle} class="checkpoint-card p-2.5 bg-slate-900 rounded-2xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex items-center gap-2 shadow-sm">
-                            <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1 py-3 shrink-0" title="Drag to reorder route">
-                                <i class="fa-solid fa-grip-vertical text-sm"></i>
+                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card ${isDone || justUndone ? 'checkpoint-flip-card' : ''} ${isDone ? 'is-complete' : ''} ${justUndone ? 'is-flipping-back' : ''} ${justCompleted ? 'celebrate' : ''} ${hoverCursor} rounded-2xl shadow-sm ${isDone ? '' : 'border border-slate-700/80 bg-slate-900'}" style="${isDone ? '' : (locImg ? `background-image: linear-gradient(90deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.80) 100%), url('${locImg}'); background-size: cover; background-position: center;` : ''}"
+                            >
+                            <div class="checkpoint-flip-inner">
+                                <div class="checkpoint-face checkpoint-face-front p-2.5 ${isDone ? 'bg-slate-900 rounded-2xl' : ''}">
+                                    <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1 py-3 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>
+                                    <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
+                                        <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
+                                        ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
+                                    </div>
+                                    <div class="min-w-0 flex-1"><p class="font-bold text-[13px] leading-snug text-white">${cp.name}</p><p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p></div>
+                                    ${isDone ? '<div class="w-[4.5rem] shrink-0 text-center text-amber-300 text-[10px] font-bold"><i class="fa-solid fa-check-circle text-lg block"></i>Complete</div>' : statusBadgeOrButton}
+                                </div>
+                                <div class="checkpoint-face checkpoint-face-back">
+                                    ${confetti}
+                                    <div class="cursor-grab checkpoint-drag px-1 py-2 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>
+                                    <div class="min-w-0 flex-1"><p class="checkpoint-complete-title"><i class="fa-solid fa-star mr-1"></i>${cp.name}</p><p class="checkpoint-complete-meta"><i class="fa-solid fa-clock mr-1"></i>Checked in at ${checkedAt}${isManualOverride ? ' · MANUAL' : ''}</p>${manualUndo}</div>
+                                    <div class="shrink-0 text-amber-900 text-center px-1"><i class="fa-solid fa-circle-check text-2xl"></i><p class="text-[9px] font-black">DONE!</p></div>
+                                </div>
                             </div>
-                            <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
-                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
-                                ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-bold text-[13px] leading-snug ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">${cp.name}</p>
-                                <p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p>
-                            </div>
-                            ${statusBadgeOrButton}
                         </div>
                     `;
                 }).join('');
@@ -6029,9 +6100,9 @@
                     checkinDetails: checkinDetails
                 });
 
+                window.justUndoneCheckpointIds.add(cpId);
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
-                alert("Manual check-in undone successfully. You can now try checking in again!");
             } catch (e) {
                 alert("Error undoing check-in: " + e.message);
             }
@@ -6112,8 +6183,7 @@
                         btn.innerHTML = originalHtml;
                         btn.disabled = false;
                     }
-                    alert("Unable to retrieve GPS location.");
-                    if (await appConfirm("Submit a manual check-in anyway?", { title: "Manual check-in", confirmText: "Check in" })) {
+                    if (await appConfirm("We couldn't verify your GPS location. You can record this checkpoint manually and undo it later if needed. Continue with a manual check-in?", { title: "GPS unavailable — manual check-in", confirmText: "Record manually", tone: "warning" })) {
                         await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
                     }
                 },
@@ -6169,7 +6239,6 @@
             }
 
             await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null, priorAttempt ? null : { asked: false });
-            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         }
 
         window.submitTriviaAnswer = async function(selected, correct) {
@@ -6213,7 +6282,6 @@
                 triviaLogEntry,
                 { asked: true, isCorrect: isCorrect, bonus: triviaBonus }
             );
-            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         };
 
         async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null, triviaAttempt = null) {
@@ -6264,8 +6332,10 @@
                 triviaAttempts: triviaAttempts
             });
 
+            window.justCompletedCheckpointIds.add(cpId);
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
+            if (!navigator.onLine) window.appToast?.("Saved on this phone; it will sync when you're back online.");
         }
 
         // Step 1: pick a photo -> show a preview. (The file is read immediately; reading
