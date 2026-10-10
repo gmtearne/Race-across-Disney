@@ -4752,8 +4752,9 @@
             const reportCardContainer = document.getElementById('report-card-container');
 
             const isRaceFinished = !!tData.endTime;
-            const checkinsLocked = isRaceFinished || !tData.startTime;
-            window.teamCheckinState = { started: !!tData.startTime, finished: isRaceFinished };
+            const isRacePaused = !!raceData.paused;
+            const checkinsLocked = isRaceFinished || !tData.startTime || isRacePaused;
+            window.teamCheckinState = { started: !!tData.startTime, finished: isRaceFinished, paused: isRacePaused };
 
             if (isRaceFinished) {
                 pill.innerText = "Finished";
@@ -4775,7 +4776,16 @@
                 }
             } else {
                 if (reportCardContainer) reportCardContainer.innerHTML = '';
-                if (tData.startTime) {
+                if (tData.startTime && isRacePaused) {
+                    pill.innerText = "Paused";
+                    pill.className = "race-status-pill bg-amber-500/20 text-amber-300 border-amber-500/40";
+                    startBtn.disabled = true;
+                    startBtn.className = "race-action race-action--done opacity-60 cursor-not-allowed";
+                    startBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i> Paused';
+                    finishBtn.disabled = true;
+                    finishBtn.className = "race-action race-action--finish opacity-60 cursor-not-allowed";
+                    finishBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i> Paused';
+                } else if (tData.startTime) {
                     pill.innerText = "In Progress";
                     pill.className = "race-status-pill bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
                     startBtn.disabled = true;
@@ -4844,7 +4854,7 @@
                                     <span class="text-[9px] leading-none bg-amber-500/20 text-amber-300 py-1 rounded-md border border-amber-500/40 font-bold text-center whitespace-nowrap">
                                         <i class="fa-solid fa-triangle-exclamation"></i> Manual
                                     </span>
-                                    ${isRaceFinished ? '' : `<button onclick="undoManualCheckIn('${cp.id}')" class="h-8 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1">
+                                    ${isRaceFinished ? '' : isRacePaused ? `<span title="Race paused by host" class="h-8 bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold rounded-lg text-[10px] whitespace-nowrap flex items-center justify-center gap-1"><i class="fa-solid fa-pause"></i> Paused</span>` : `<button onclick="undoManualCheckIn('${cp.id}')" class="h-8 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1">
                                         <i class="fa-solid fa-rotate-left"></i> Undo
                                     </button>`}
                                 </div>
@@ -4852,6 +4862,14 @@
                         } else {
                             statusBadgeOrButton = '<div class="w-[4.5rem] shrink-0 flex flex-col items-center justify-center gap-0.5 text-emerald-400"><i class="fa-solid fa-circle-check text-lg"></i><span class="text-[10px] font-bold whitespace-nowrap">Checked in</span></div>';
                         }
+                    } else if (isRacePaused) {
+                        statusBadgeOrButton = `
+                            <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
+                                <button type="button" disabled aria-disabled="true" title="Race paused by host" class="w-full h-12 bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold rounded-xl text-[10px] leading-tight flex flex-col items-center justify-center gap-0.5 cursor-not-allowed">
+                                    <i class="fa-solid fa-pause text-base"></i><span class="text-center">Paused</span>
+                                </button>
+                            </div>
+                        `;
                     } else if (checkinsLocked) {
                         statusBadgeOrButton = `
                             <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
@@ -4971,6 +4989,8 @@
                 let actionHtml = '';
                 if (isRaceFinished) {
                     actionHtml = `<span class="w-full h-10 flex items-center justify-center text-[11px] text-slate-400 font-bold bg-slate-800 rounded-xl border border-slate-700 whitespace-nowrap">Race Finished</span>`;
+                } else if (isRacePaused && !isClaimed) {
+                    actionHtml = `<span title="Race paused by host" class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-amber-300 font-bold bg-amber-500/10 rounded-xl border border-amber-500/30 whitespace-nowrap"><i class="fa-solid fa-pause"></i> Paused</span>`;
                 } else if (isClaimed) {
                     actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-xs text-amber-400 font-bold whitespace-nowrap"><i class="fa-solid fa-star"></i> Claimed</span>`;
                 } else {
@@ -5044,6 +5064,7 @@
 
         window.checkInGps = async function(cpId, btnElement) {
             if (window.teamCheckinState) {
+                if (window.teamCheckinState.paused) return alert("The host has paused the race. Check-ins are temporarily locked.");
                 if (window.teamCheckinState.finished) return alert("Race completed - check-ins are locked.");
                 if (!window.teamCheckinState.started) return alert("Start the race first - check-ins unlock when your timer starts.");
             }
@@ -5263,6 +5284,8 @@
         }
 
         window.uploadBonusPhoto = async function(cpId) {
+            const liveRaceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+            if (liveRaceSnap.exists() && liveRaceSnap.data().paused) { alert("The host has paused the race. Bonus uploads are temporarily locked."); return; }
             const file = event.target.files[0];
             if (!file) return;
 
