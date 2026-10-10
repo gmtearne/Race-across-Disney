@@ -5528,20 +5528,44 @@
             const staggeredMode = race.gameMode !== 'scavenger' && race.startMode === 'staggered' && !!race.raceStartedAt;
             if (staggeredMode) {
                 const teamSnapAll = await getDocs(collection(window.db, "races", window.activeRaceCode, "teams"));
-                const intervalMs = Math.max(1, Number(race.staggerMinutes || 10)) * 60000;
-                let queueTail = 0;
+                // Use the freshest race state for pause totals and the current schedule.
+                const queueRace = latestRace;
+                const intervalMs = Math.max(1, Number(queueRace.staggerMinutes || 10)) * 60000;
+                let earliestAllowedStart = 0;
                 teamSnapAll.docs.forEach(d => {
                     const other = d.data();
                     if (d.id === window.activeTeamId || other.endTime) return;
-                    // Count both actual starts and every scheduled-but-not-started team, so late
-                    // joiners are appended behind the entire existing stagger queue.
+
                     const actualStart = other.startTime ? new Date(other.startTime).getTime() : 0;
                     const scheduledStart = Number(other.scheduledTeamStartAt) || 0;
-                    const scheduleEntry = (race.staggerSchedule || []).find(entry => entry.teamId === d.id);
+                    const scheduleEntry = (queueRace.staggerSchedule || []).find(entry => entry.teamId === d.id);
                     const plannedStart = scheduleEntry && !other.startTime ? Number(scheduleEntry.scheduledAt) || 0 : 0;
-                    queueTail = Math.max(queueTail, actualStart, scheduledStart, plannedStart, Number(other.lateJoinStartAt) || 0);
+
+                    if (actualStart) {
+                        // Enforce a full interval of active race time since this team's start.
+                        // Pauses accumulated after this team started extend its next-start deadline.
+                        const pauseBaseline = other.startPauseAccumulatedMs != null
+                            ? Number(other.startPauseAccumulatedMs)
+                            : 0;
+                        const pausesSinceThisTeamStarted = Math.max(
+                            0,
+                            Number(queueRace.pauseAccumulatedMs || 0) - pauseBaseline
+                        );
+                        earliestAllowedStart = Math.max(
+                            earliestAllowedStart,
+                            actualStart + pausesSinceThisTeamStarted + intervalMs
+                        );
+                    } else {
+                        // Teams already waiting in either the original stagger schedule or the
+                        // late-join queue reserve their place; append behind the latest one.
+                        const pendingStart = Math.max(scheduledStart, plannedStart);
+                        if (pendingStart) earliestAllowedStart = Math.max(
+                            earliestAllowedStart,
+                            pendingStart + intervalMs
+                        );
+                    }
                 });
-                const earliestStart = queueTail ? Math.max(now, queueTail + intervalMs) : now;
+                const earliestStart = Math.max(now, earliestAllowedStart || now);
                 if (earliestStart > now) {
                     await fastUpdate(teamRef, { startTime:null, scheduledTeamStartAt:earliestStart, lateJoinPending:true, joinedLate:true });
                     window.appToast(`Your race starts in ${Math.ceil((earliestStart-now)/60000)} minute(s).`);
