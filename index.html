@@ -366,6 +366,7 @@
         /* vertical-only motion so the horizontal scroll-snap position is never shifted */
         .app-page-pop { animation: appPagePop 280ms var(--app-motion) backwards; }
         @keyframes appPagePop { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .report-glass { box-shadow: 0 18px 48px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,235,160,.10); }
         #app-toast {
             position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 300;
             transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
@@ -532,7 +533,8 @@
         .race-stop-dot.next { border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 0 4px rgba(255,184,0,.12); }
         /* Compact, app-like journey panel while preserving the full timeline and live timer. */
         #race-journey-card { box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035); }
-        #journey-timeline { overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.28) transparent; }
+        #journey-timeline { overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
+        #journey-timeline::-webkit-scrollbar { display: none; width: 0; height: 0; }
         #journey-timeline > div:not(.race-stop-dot) { flex-shrink: 0; }
         @keyframes journeyRouteUpdated {
             0% { opacity: .7; }
@@ -707,18 +709,29 @@
         .app-header [data-tab]::after { display: none; }
         .app-header .brass-btn[data-tab] { overflow: visible; }
         .app-header .brass-btn.tab-active {
-            filter: brightness(1.12);
-            box-shadow: 0 0 0 2px rgba(255,229,143,.55), 0 0 18px rgba(255,184,0,.65), 0 3px 0 rgba(0,0,0,.45), inset 0 0 6px rgba(0,0,0,.6) !important;
+            box-shadow: 0 3px 0 rgba(0,0,0,.45), inset 0 0 6px rgba(0,0,0,.6) !important;
         }
+        /* Menu + settings circles: quieter ring until they are the current page, so they don't read as "selected" */
+        .app-header #nav-org-cog:not(.tab-active),
+        .app-header #hamburger-btn:not(.tab-active) {
+            opacity: .7;
+            border-width: 2px !important;
+            box-shadow: 0 2px 0 rgba(0,0,0,.4), inset 0 0 6px rgba(0,0,0,.6) !important;
+        }
+        .app-header #nav-org-cog:not(.tab-active):hover,
+        .app-header #hamburger-btn:not(.tab-active):hover { opacity: .95; }
         /* Menu page */
         #tab-menu .menu-page-title { font-family: 'Fredoka', sans-serif; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--theme-accent); text-align: center; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
         #tab-menu .app-glass-button { background: var(--theme-card-bg) !important; border-color: var(--theme-card-border) !important; -webkit-backdrop-filter: blur(var(--theme-card-blur)); backdrop-filter: blur(var(--theme-card-blur)); font-family: 'Fredoka', sans-serif; }
+        /* Active = brighter, bolder brass outline (same gradient as the round buttons) + gold label.
+           The fill stays dark: no yellow tint over the button. */
         .app-header [data-tab].text-disneyGold {
             color: var(--theme-accent);
-            border-color: var(--theme-metal-light);
-            background: linear-gradient(180deg, rgba(92,58,12,.62), rgba(28,16,6,.82));
-            box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 14px rgba(255,184,0,.38), inset 0 1px 0 rgba(255,235,160,.40);
-            text-shadow: 0 0 8px rgba(255,184,0,.45);
+            border: 3px solid transparent;
+            background: linear-gradient(rgb(13,11,42), rgb(13,11,42)) padding-box,
+                        linear-gradient(180deg, var(--theme-metal-light) 0%, var(--theme-metal-mid) 50%, var(--theme-metal-dark) 100%) border-box;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,.45);
+            text-shadow: none;
         }
         .app-header [data-tab] i { filter: drop-shadow(0 0 4px rgba(255,200,60,.4)); }
         @media (prefers-reduced-motion: reduce) {
@@ -743,8 +756,8 @@
     </div>
 
     <!-- Image Viewer Modal Overlay -->
-    <div id="image-modal" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
+    <div id="image-modal" class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900/80 backdrop-blur-md border border-amber-300/25 rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <h3 class="font-bold text-sm text-disneyGold flex items-center gap-2">
                     <i class="fa-solid fa-camera"></i> Bonus Proof Preview
@@ -753,6 +766,7 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+            <p id="modal-image-task" class="hidden text-sm font-bold text-amber-300 leading-snug"></p>
             <div class="flex justify-center bg-slate-900 p-2 rounded-xl border border-slate-700/60 overflow-hidden">
                 <img id="modal-image-element" src="" class="max-h-[70vh] max-w-full rounded-lg object-contain">
             </div>
@@ -1796,9 +1810,14 @@
             closeAppModal('team-verify-modal');
         };
 
-        window.openImageModal = function(imgSrc) {
+        window.openImageModal = function(imgSrc, taskName) {
             const modal = document.getElementById('image-modal');
             const imgEl = document.getElementById('modal-image-element');
+            const taskEl = document.getElementById('modal-image-task');
+            if (taskEl) {
+                taskEl.textContent = taskName ? `⭐ ${taskName}` : '';
+                taskEl.classList.toggle('hidden', !taskName);
+            }
             if (modal && imgEl) {
                 imgEl.src = imgSrc;
                 modal.classList.remove('hidden');
@@ -3466,7 +3485,7 @@
                                     <p class="font-bold text-amber-300">⭐ ${b ? b.name : 'Bonus Checkpoint'}</p>
                                     <p class="text-[10px] text-slate-400">Reward Claimed</p>
                                 </div>
-                                ${imgUrl ? `<button type="button" onclick="openImageModal('${imgUrl.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-disneyBlue text-white font-bold rounded-lg text-xs hover:bg-blue-600 transition">View Photo</button>` : '<span class="text-slate-500 text-[10px]">No Image</span>'}
+                                ${imgUrl ? `<button type="button" onclick="openImageModal('${imgUrl.replace(/'/g, "\\'")}', '${String(b ? b.name : 'Bonus Checkpoint').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-3 py-1.5 bg-disneyBlue text-white font-bold rounded-lg text-xs hover:bg-blue-600 transition">View Photo</button>` : '<span class="text-slate-500 text-[10px]">No Image</span>'}
                             </div>
                         `;
                     });
@@ -3950,9 +3969,11 @@
                     const bonusPhotos = (!isHideBonuses && t.bonusPhotos) ? t.bonusPhotos : {};
                     const photoEntries = Object.entries(bonusPhotos);
                     if (photoEntries.length > 0) {
-                        photosHtml = `<div class="flex -space-x-1.5">` + photoEntries.map(([, imgUrl]) => {
+                        photosHtml = `<div class="flex -space-x-1.5">` + photoEntries.map(([bId, imgUrl]) => {
                             const safeString = imgUrl.replace(/'/g, "\\'");
-                            return `<button type="button" onclick="openImageModal('${safeString}')" aria-label="View bonus proof photo" class="focus:outline-none focus-visible:ring-2 focus-visible:ring-disneyGold rounded-full"><img src="${imgUrl}" alt="" class="w-6 h-6 rounded-full object-cover border-2 border-slate-900 ring-1 ring-disneyGold/60 hover:scale-110 transition"></button>`;
+                            const bMatch = bonuses.find(item => item.id === bId);
+                            const safeName = String(bMatch ? bMatch.name : 'Bonus Checkpoint').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                            return `<button type="button" onclick="openImageModal('${safeString}', '${safeName}')" aria-label="View bonus proof photo" class="focus:outline-none focus-visible:ring-2 focus-visible:ring-disneyGold rounded-full"><img src="${imgUrl}" alt="" class="w-6 h-6 rounded-full object-cover border-2 border-slate-900 ring-1 ring-disneyGold/60 hover:scale-110 transition"></button>`;
                         }).join('') + `</div>`;
                     }
 
@@ -4398,19 +4419,19 @@
             if (!modalEl) {
                 modalEl = document.createElement('div');
                 modalEl.id = 'team-report-card-modal';
-                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4';
+                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4';
                 document.body.appendChild(modalEl);
             }
 
             modalEl.innerHTML = `
-                <div class="bg-slate-800 border-2 border-disneyGold rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-center text-xs overflow-y-auto max-h-[90vh] custom-scrollbar">
+                <div class="report-glass bg-slate-900/70 backdrop-blur-md border border-amber-300/25 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-center text-xs overflow-y-auto max-h-[90vh] custom-scrollbar">
                     <div class="absolute top-4 right-4 z-10">
                         <button onclick="document.getElementById('team-report-card-modal').remove()" class="text-slate-400 hover:text-white font-bold text-sm bg-slate-900/80 w-8 h-8 rounded-full flex items-center justify-center border border-slate-700">
                             <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
 
-                    <div id="shareable-report-card-canvas" class="magical-gradient p-6 rounded-2xl border-2 border-amber-300/40 shadow-xl space-y-4 text-left relative overflow-hidden text-slate-100">
+                    <div id="shareable-report-card-canvas" class="magical-gradient p-6 rounded-2xl border border-amber-300/30 shadow-xl space-y-4 text-left relative overflow-hidden text-slate-100">
                         <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
                         
                         <div class="flex items-center justify-between border-b border-white/20 pb-3">
