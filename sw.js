@@ -6,6 +6,7 @@ self.addEventListener('install', (e) => {
         './index.html',
         './trivia-data.js',
         './locations-data.js'
+        './fun-facts.js'
       ]);
     })
   );
