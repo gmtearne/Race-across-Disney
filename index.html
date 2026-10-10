@@ -1177,6 +1177,9 @@
                     <button onclick="checkApprovalStatus()" class="px-4 py-2 bg-slate-700/70 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] font-medium transition border border-slate-600">
                         <i class="fa-solid fa-rotate mr-1"></i> Check manually instead
                     </button>
+                    <button onclick="logoutTeam()" class="block mx-auto px-4 py-2 bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 rounded-lg text-[11px] font-bold transition border border-rose-500/30">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> Log out / Switch race or team
+                    </button>
                 </div>
 
                 <div id="team-dashboard-active" class="hidden space-y-6">
@@ -2710,6 +2713,7 @@
         window.activeRaceCode = null;
         window.activeTeamId = null;
         let timerInterval = null;
+        let timerTickerGeneration = 0;
         let teamRaceUnsubscribe = null;
         let teamDocUnsubscribe = null;
         let teamListenerKey = null;
@@ -2932,6 +2936,7 @@
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
+                document.getElementById('elapsed-time-display').innerText = '00:00:00';
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
@@ -3162,7 +3167,14 @@
                 alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
                 document.getElementById('new-race-title').value = '';
                 generateRandomRaceCode();
-                loadAdminRaces();
+                const createBox = document.getElementById('create-race-collapsible-box');
+                const createIcon = document.getElementById('create-race-toggle-icon');
+                if (createBox) createBox.classList.add('hidden');
+                if (createIcon) createIcon.classList.remove('rotate-180');
+                window.raceCollapseStates[code] = false;
+                await loadAdminRaces();
+                const newRaceCard = document.getElementById(`admin-race-card-${code}`);
+                if (newRaceCard) newRaceCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (err) {
                 alert("Error creating race: " + err.message);
             }
@@ -3797,12 +3809,14 @@
                         window.raceCollapseStates[race.code] = true;
                     }
                     const isCollapsed = window.raceCollapseStates[race.code];
+                    const racePendingCount = teamList.filter(t => !t.isApproved).length;
+                    const racePendingBadge = racePendingCount > 0 ? `<span class="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-200 text-[10px] font-black align-middle animate-pulse" title="${racePendingCount} team approval${racePendingCount === 1 ? '' : 's'} pending"><i class="fa-solid fa-bell"></i> ${racePendingCount} PENDING</span>` : '';
 
                     html += `
-                        <div class="p-4 bg-slate-900 rounded-2xl border border-slate-700/80 space-y-3.5 shadow-sm">
+                        <div id="admin-race-card-${race.code}" class="p-4 bg-slate-900 rounded-2xl border border-slate-700/80 space-y-3.5 shadow-sm">
                             <div class="flex justify-between items-center flex-wrap gap-2">
                                 <div>
-                                    <p class="font-bold text-white text-sm">${race.title} ${finalCpObj ? '<span class="text-disneyGold text-xs ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
+                                    <p class="font-bold text-white text-sm">${race.title} ${racePendingBadge} ${finalCpObj ? '<span class="text-disneyGold text-xs ml-2">🏁 Final: ' + finalCpObj.name + '</span>' : ''}</p>
                                     <p class="text-xs text-disneyGold font-mono mt-0.5">CODE: ${race.code} | MODE: ${modeLabel} | DIFF: ${diffLabel} | Teams: ${teamList.length} | Checkpoints: ${cps.length}</p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -4404,6 +4418,7 @@
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
+                document.getElementById('elapsed-time-display').innerText = '00:00:00';
 
                 document.getElementById('nav-team-badge').classList.remove('hidden');
                 document.getElementById('nav-team-avatar').classList.remove('hidden');
@@ -4423,6 +4438,9 @@
             localStorage.removeItem('rad_race_code');
             localStorage.removeItem('rad_team_id');
             clearInterval(timerInterval);
+            timerTickerGeneration++;
+            const timerDisplay = document.getElementById('elapsed-time-display');
+            if (timerDisplay) timerDisplay.innerText = '00:00:00';
             if (teamRaceUnsubscribe) teamRaceUnsubscribe();
             if (teamDocUnsubscribe) teamDocUnsubscribe();
             teamRaceUnsubscribe = null;
@@ -5604,19 +5622,28 @@
 
         function startTimerTicker() {
             clearInterval(timerInterval);
+            const tickerGeneration = ++timerTickerGeneration;
+            const tickerRaceCode = window.activeRaceCode;
+            const tickerTeamId = window.activeTeamId;
             timerInterval = setInterval(async () => {
-                if (!window.activeRaceCode || !window.activeTeamId) return;
-                const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
+                // A previous async tick can finish after a team switch. Never let it
+                // overwrite the newly selected team's timer or write to its document.
+                if (tickerGeneration !== timerTickerGeneration || !tickerRaceCode || !tickerTeamId ||
+                    window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
+                const teamSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId));
+                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
                 if (!teamSnap.exists()) return;
                 const data = teamSnap.data();
                 if (!data.startTime) {
                     if (data.scheduledTeamStartAt) {
                         const scheduledAt = Number(data.scheduledTeamStartAt);
                         const startBtn = document.getElementById('btn-start-race');
-                        const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+                        const raceSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode));
+                        if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
                         const race = raceSnap.exists() ? raceSnap.data() : {};
                         if (!race.paused && Date.now() >= scheduledAt) {
-                            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(scheduledAt).toISOString(), startPauseAccumulatedMs:Number(race.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
+                            await fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startTime: new Date(scheduledAt).toISOString(), startPauseAccumulatedMs:Number(race.pauseAccumulatedMs || 0), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
+                            if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
                             if (raceSnap.exists()) loadTeamDashboardData(race);
                         } else if (startBtn) {
                             startBtn.disabled = true;
@@ -5627,7 +5654,8 @@
                 }
 
                 const start = new Date(data.startTime).getTime();
-                const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
+                const raceSnap = await safeGetDoc(doc(window.db, "races", tickerRaceCode));
+                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
                 const race = raceSnap.exists() ? raceSnap.data() : {};
                 const end = data.endTime ? new Date(data.endTime).getTime() : (race.paused && race.pausedAt ? Number(race.pausedAt) : Date.now());
                 const raceStartMs = Number(race.raceStartedAt || 0);
@@ -5638,7 +5666,7 @@
                     ? Number(data.startPauseAccumulatedMs)
                     : (raceStartMs && start > raceStartMs ? Number(race.pauseAccumulatedMs || 0) : 0);
                 if (data.startPauseAccumulatedMs == null && pauseAtStart > 0) {
-                    fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startPauseAccumulatedMs: pauseAtStart }).catch(() => {});
+                    fastUpdate(doc(window.db, "races", tickerRaceCode, "teams", tickerTeamId), { startPauseAccumulatedMs: pauseAtStart }).catch(() => {});
                 }
                 const pausedMsSinceStart = Math.max(0, Number(race.pauseAccumulatedMs || 0) - pauseAtStart);
                 const diffSec = Math.max(0, Math.floor((end - start - pausedMsSinceStart) / 1000));
@@ -5648,6 +5676,7 @@
                 const hrs = String(Math.floor(shownSeconds / 3600)).padStart(2, '0');
                 const mins = String(Math.floor((shownSeconds % 3600) / 60)).padStart(2, '0');
                 const secs = String(shownSeconds % 60).padStart(2, '0');
+                if (tickerGeneration !== timerTickerGeneration || window.activeRaceCode !== tickerRaceCode || window.activeTeamId !== tickerTeamId) return;
                 document.getElementById('elapsed-time-display').innerText = `${hrs}:${mins}:${secs}`;
                 if (isScavengerCountdown && shownSeconds <= 0 && !data.endTime && !race.paused) finishTeamRace();
             }, 1000);
