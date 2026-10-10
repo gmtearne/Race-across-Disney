@@ -1415,6 +1415,25 @@
                                     </div>
                                 </div>
 
+                                <div id="create-race-start-settings" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
+                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Race Start Settings</label>
+                                    <div id="create-scavenger-limit-box" class="hidden space-y-2">
+                                        <label for="create-scavenger-time-limit" class="block text-xs text-slate-300 font-semibold">Scavenger Hunt time limit (minutes)</label>
+                                        <input id="create-scavenger-time-limit" type="number" min="0" max="1440" step="1" value="60" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white">
+                                        <p class="text-[10px] text-slate-500">Use 0 for no time limit. The host starts the hunt globally; teams joining later start their own timers.</p>
+                                    </div>
+                                    <div id="create-speed-start-box" class="space-y-3">
+                                        <label class="flex items-start gap-2.5 text-xs text-slate-200 cursor-pointer"><input id="create-enforce-host-start" type="checkbox" onchange="toggleHostStartCreationOptions()" class="mt-0.5 accent-amber-400"><span><strong>Enforce host start</strong><span class="block text-[10px] text-slate-400 mt-1">Teams cannot start until the host launches the race.</span></span></label>
+                                        <div id="create-host-start-options" class="pl-5 space-y-2">
+                                            <span class="block text-[10px] text-slate-400 uppercase font-bold">When ready, start using</span>
+                                            <label class="flex items-center gap-2 text-xs text-slate-200"><input type="radio" name="create_start_method" value="global" checked class="accent-amber-400"> Global start — all currently approved teams together</label>
+                                            <label class="flex items-center gap-2 text-xs text-slate-200"><input type="radio" name="create_start_method" value="staggered" class="accent-amber-400"> Staggered start — host sets team order</label>
+                                            <label class="flex items-center gap-2 text-[11px] text-slate-300">Late-team minimum interval (minutes)<input id="create-stagger-interval" type="number" min="1" max="120" step="1" value="10" class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label>
+                                        </div>
+                                        <p id="create-manual-start-note" class="hidden text-[10px] text-slate-500">Teams can start individually. The host can pause/resume all active timers.</p>
+                                    </div>
+                                </div>
+
                                 <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Base Difficulty</label>
                                     <div class="grid grid-cols-3 gap-2">
@@ -2196,12 +2215,20 @@
         window.toggleGameModeSelection = function() {
             const isScavenger = document.getElementById('create-mode-scavenger').checked;
             const finalStopContainer = document.getElementById('speed-final-stop-container');
-            if (isScavenger) {
-                finalStopContainer.classList.add('hidden');
-            } else {
-                finalStopContainer.classList.remove('hidden');
-            }
+            if (finalStopContainer) finalStopContainer.classList.toggle('hidden', isScavenger);
+            const scavengerLimit = document.getElementById('create-scavenger-limit-box');
+            const speedStart = document.getElementById('create-speed-start-box');
+            if (scavengerLimit) scavengerLimit.classList.toggle('hidden', !isScavenger);
+            if (speedStart) speedStart.classList.toggle('hidden', isScavenger);
         };
+
+        window.toggleHostStartCreationOptions = function() {
+            const enforced = !!document.getElementById('create-enforce-host-start')?.checked;
+            document.getElementById('create-host-start-options')?.classList.toggle('hidden', !enforced);
+            document.getElementById('create-manual-start-note')?.classList.toggle('hidden', enforced);
+        };
+        window.toggleGameModeSelection();
+        window.toggleHostStartCreationOptions();
 
         window.toggleTriviaSettings = function() {
             const val = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
@@ -2928,6 +2955,14 @@
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
             const defaultPoints = gameMode === 'scavenger' ? 10 : 0;
+            const isScavengerMode = gameMode === 'scavenger';
+            const timeLimitMinutes = isScavengerMode ? Number(document.getElementById('create-scavenger-time-limit')?.value ?? 60) : 0;
+            const enforceHostStart = isScavengerMode || !!document.getElementById('create-enforce-host-start')?.checked;
+            const requestedStartMode = isScavengerMode ? 'global' : (document.querySelector('input[name="create_start_method"]:checked')?.value || 'global');
+            const startMode = enforceHostStart ? requestedStartMode : 'manual';
+            const staggerMinutes = Number(document.getElementById('create-stagger-interval')?.value ?? 10);
+            if (isScavengerMode && (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0 || timeLimitMinutes > 1440)) return alert('Scavenger time limit must be a whole number from 0 to 1440 minutes.');
+            if (!isScavengerMode && enforceHostStart && startMode === 'staggered' && (!Number.isFinite(staggerMinutes) || staggerMinutes < 1 || staggerMinutes > 120)) return alert('Late-team interval must be between 1 and 120 minutes.');
             const presets = window.DISNEY_PRESETS || [];
             
             const triviaToggle = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
@@ -3063,6 +3098,13 @@
                     code: code,
                     gameMode: gameMode,
                     difficulty: difficulty,
+                    timeLimitMinutes: timeLimitMinutes,
+                    enforceHostStart: enforceHostStart,
+                    startMode: startMode,
+                    staggerMinutes: startMode === 'staggered' ? staggerMinutes : 0,
+                    raceStartedAt: null,
+                    paused: false,
+                    pauseAccumulatedMs: 0,
                     defaultPoints: defaultPoints,
                     chatEnabled: true,
                     hideBonuses: true,
@@ -3760,9 +3802,16 @@
                                 </div>
 
                                 <div class="pt-3 border-t border-slate-800 space-y-3">
-                                  <div class="flex items-center justify-between gap-2 flex-wrap"><div><span class="text-xs text-disneyGold font-bold block">Host Race Controls</span><span class="text-[10px] text-slate-400">Manage every team's timer from this active race panel.</span></div><span class="text-[10px] font-bold rounded-full px-2 py-1 ${race.paused ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}">${race.paused ? 'PAUSED' : 'READY'}</span></div>
-                                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button onclick="hostGlobalStart('${race.code}')" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-flag mr-1"></i> Global Start — All Teams</button><button onclick="hostToggleGlobalPause('${race.code}')" class="px-3 py-2.5 ${race.paused ? 'bg-amber-600 hover:bg-amber-500' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.paused ? 'fa-play' : 'fa-pause'} mr-1"></i> ${race.paused ? 'Resume All Timers' : 'Pause All Timers'}</button></div>
-                                  ${race.gameMode === 'scavenger' ? `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2"><label class="block text-[11px] text-slate-300 font-bold">Scavenger Hunt countdown limit (minutes)</label><div class="flex gap-2"><input id="p4-limit-${race.code}" type="number" min="0" max="1440" value="${Number(race.timeLimitMinutes || 60)}" class="w-28 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"><button onclick="hostSaveScavengerLimit('${race.code}')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold">Save Limit</button></div><p class="text-[10px] text-slate-500">Use 0 for no limit.</p></div>` : `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] text-slate-200 font-bold">Staggered Start Order</span><span class="text-[10px] text-slate-500">Speed races only</span></div><label class="flex items-center gap-2 text-[11px] text-slate-300">Interval between teams (minutes)<input id="p4-interval-${race.code}" type="number" min="0" max="120" step="0.5" value="${Number(race.staggerMinutes || 5)}" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label><div class="space-y-2">${teamList.filter(t => t.isApproved && !t.endTime && !t.startTime).map((t, idx, arr) => `<div class="flex items-center gap-2"><span class="text-[10px] text-slate-400 flex-1 min-w-0 truncate">${t.teamName}</span><label class="text-[10px] text-slate-500">Start # <select id="p4-order-${race.code}-${t.id}" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white">${arr.map((_, i) => `<option value="${i+1}" ${(Number(t.staggerOrder) === i+1 || (!t.staggerOrder && idx === i)) ? 'selected' : ''}>${i+1}</option>`).join('')}</select></label></div>`).join('') || '<p class="text-[10px] text-slate-500">Approve teams to configure a staggered start.</p>'}</div><button onclick="hostStartStaggeredRace('${race.code}')" class="w-full px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-list-ol mr-1"></i> Save Order & Start Staggered Race</button><p class="text-[10px] text-slate-500">Scheduled teams cannot start manually. Later approved teams outside this schedule can start their own timer.</p></div>`}
+                                  ${(() => {
+                                    const hasStarted = !!race.raceStartedAt || teamList.some(t => !!t.startTime) || !!(race.staggerSchedule && race.staggerSchedule.length);
+                                    const canHostStart = race.gameMode === 'scavenger' || race.enforceHostStart === true;
+                                    const configuredMode = race.gameMode === 'scavenger' ? 'global' : (race.startMode || (race.enforceHostStart ? 'global' : 'manual'));
+                                    const pauseControl = hasStarted ? `<button onclick="hostToggleGlobalPause('${race.code}')" class="px-3 py-2.5 ${race.paused ? 'bg-amber-600 hover:bg-amber-500' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.paused ? 'fa-play' : 'fa-pause'} mr-1"></i> ${race.paused ? 'Resume All Timers' : 'Pause All Timers'}</button>` : '';
+                                    const globalStart = !hasStarted && canHostStart && configuredMode === 'global' ? `<button onclick="hostGlobalStart('${race.code}')" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-flag mr-1"></i> Start All Teams</button>` : '';
+                                    const staggerSetup = !hasStarted && canHostStart && configuredMode === 'staggered' && race.gameMode !== 'scavenger' ? `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] text-slate-200 font-bold">Staggered Start Order</span><span class="text-[10px] text-slate-500">Speed race</span></div><label class="flex items-center gap-2 text-[11px] text-slate-300">Interval between scheduled teams (minutes)<input id="p4-interval-${race.code}" type="number" min="1" max="120" step="1" value="${Math.max(1, Number(race.staggerMinutes || 10))}" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label><div class="space-y-2">${teamList.filter(t => t.isApproved && !t.endTime && !t.startTime).map((t, idx, arr) => `<div class="flex items-center gap-2"><span class="text-[10px] text-slate-400 flex-1 min-w-0 truncate">${t.teamName}</span><label class="text-[10px] text-slate-500">Start # <select id="p4-order-${race.code}-${t.id}" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white">${arr.map((_, i) => `<option value="${i+1}" ${(Number(t.staggerOrder) === i+1 || (!t.staggerOrder && idx === i)) ? 'selected' : ''}>${i+1}</option>`).join('')}</select></label></div>`).join('') || '<p class="text-[10px] text-slate-500">Approve teams to configure a staggered start.</p>'}</div><button onclick="hostStartStaggeredRace('${race.code}')" class="w-full px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-list-ol mr-1"></i> Start Staggered Race</button><p class="text-[10px] text-slate-500">Scheduled teams cannot start manually. Later approved teams can start manually, with the configured minimum interval between late starts.</p></div>` : '';
+                                    const limitEditor = race.gameMode === 'scavenger' ? `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2"><label class="block text-[11px] text-slate-300 font-bold">Scavenger Hunt countdown limit (minutes)</label><div class="flex gap-2"><input id="p4-limit-${race.code}" type="number" min="0" max="1440" value="${Number(race.timeLimitMinutes ?? 60)}" class="w-28 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"><button onclick="hostSaveScavengerLimit('${race.code}')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold">Save Limit</button></div><p class="text-[10px] text-slate-500">Use 0 for no limit.</p></div>` : '';
+                                    return `<div class="pt-3 border-t border-slate-800 space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><div><span class="text-xs text-disneyGold font-bold block">Host Race Controls</span><span class="text-[10px] text-slate-400">${hasStarted ? 'Race is live. Start controls are replaced by pause/resume.' : (canHostStart ? `Configured start: ${configuredMode === 'staggered' ? 'Staggered' : 'Global'}` : 'Teams start individually; host can pause/resume once a team starts.')}</span></div><span class="text-[10px] font-bold rounded-full px-2 py-1 ${race.paused ? 'bg-amber-500/20 text-amber-300' : hasStarted ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'}">${race.paused ? 'PAUSED' : hasStarted ? 'IN PROGRESS' : 'READY'}</span></div>${(globalStart || pauseControl) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${globalStart}${pauseControl}</div>` : ''}${staggerSetup}${limitEditor}</div>`;
+                                  })()}
                                 </div>
                                 <div class="pt-2 border-t border-slate-800">
                                     <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamList.length})</span>
@@ -4673,7 +4722,7 @@
             }
             let tData = teamSnap.data();
             if (tData.scheduledTeamStartAt && Date.now() >= tData.scheduledTeamStartAt && !tData.startTime && !raceData.paused) {
-                await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(tData.scheduledTeamStartAt).toISOString(), scheduledTeamStartAt: null });
+                await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(tData.scheduledTeamStartAt).toISOString(), scheduledTeamStartAt: null, ...(tData.lateJoinPending ? { lateJoinStartAt: Number(tData.scheduledTeamStartAt), lateJoinPending: false } : {}) });
                 const refreshed = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
                 if (refreshed.exists()) tData = refreshed.data();
             }
@@ -5328,13 +5377,17 @@
         };
         window.hostGlobalStart = async function(code) {
             const owned = await getOwnedRaceForHost(code); if (!owned) return;
-            if (!await appConfirm("Start every approved, unfinished team's timer at the same time?", {title:"Global start", confirmText:"Start all teams"})) return;
+            const raceConfig = owned.data;
+            if (raceConfig.gameMode !== 'scavenger' && raceConfig.enforceHostStart !== true) return alert('This race was created for individual team starts.');
+            if ((raceConfig.startMode || 'global') !== 'global' || raceConfig.gameMode === 'race' && raceConfig.startMode === 'staggered') return alert('This race is configured for staggered start.');
+            if (raceConfig.raceStartedAt || raceConfig.staggerSchedule?.length) return alert('This race has already started. Use pause/resume instead.');
+            if (!await appConfirm("Start every currently approved, unfinished team's timer at the same time? Teams approved later can start individually.", {title:"Global start", confirmText:"Start all teams"})) return;
             const teams = await getDocs(collection(window.db, "races", code, "teams"));
             const startTime = new Date().toISOString();
             const writes = [];
             teams.forEach(d => { const t=d.data(); if (t.isApproved && !t.endTime && !t.startTime) writes.push(fastUpdate(doc(window.db,"races",code,"teams",d.id), {startTime, scheduledTeamStartAt:null, staggerOrder:null, joinedLate:false})); });
             await Promise.all(writes);
-            await fastUpdate(owned.ref, { scheduledStartAt:null, staggerSchedule:null, staggerMinutes:0, paused:false, pausedAt:null, raceStartedAt:Date.now() });
+            await fastUpdate(owned.ref, { scheduledStartAt:null, staggerSchedule:null, paused:false, pausedAt:null, pauseAccumulatedMs:0, raceStartedAt:Date.now(), startMode: raceConfig.gameMode === 'scavenger' ? 'global' : (raceConfig.startMode || 'global') });
             window.appToast("All eligible team timers started."); loadAdminRaces();
         };
         window.hostToggleGlobalPause = async function(code) {
@@ -5342,16 +5395,26 @@
             const race=owned.data, pause=!race.paused, now=Date.now();
             const pauseDuration = !pause && race.pausedAt ? Math.max(0, now - race.pausedAt) : 0;
             let schedule = race.staggerSchedule || [];
-            if (!pause && pauseDuration && schedule.length) {
+            if (!pause && pauseDuration) {
                 const teamSnap = await getDocs(collection(window.db, "races", code, "teams"));
                 const teamById = new Map(teamSnap.docs.map(d => [d.id, d.data()]));
-                schedule = schedule.map(entry => {
-                    const team = teamById.get(entry.teamId) || {};
-                    if (team.startTime || team.endTime) return entry;
-                    const scheduledAt = Number(entry.scheduledAt) + pauseDuration;
-                    fastUpdate(doc(window.db, "races", code, "teams", entry.teamId), { scheduledTeamStartAt: scheduledAt });
-                    return { ...entry, scheduledAt };
+                if (schedule.length) {
+                    schedule = schedule.map(entry => {
+                        const team = teamById.get(entry.teamId) || {};
+                        if (team.startTime || team.endTime) return entry;
+                        const scheduledAt = Number(entry.scheduledAt) + pauseDuration;
+                        fastUpdate(doc(window.db, "races", code, "teams", entry.teamId), { scheduledTeamStartAt: scheduledAt });
+                        return { ...entry, scheduledAt };
+                    });
+                }
+                const pendingLateWrites = [];
+                teamSnap.forEach(d => {
+                    const team = d.data();
+                    if (team.lateJoinPending && team.scheduledTeamStartAt && !team.startTime) {
+                        pendingLateWrites.push(fastUpdate(doc(window.db, "races", code, "teams", d.id), { scheduledTeamStartAt: Number(team.scheduledTeamStartAt) + pauseDuration }));
+                    }
                 });
+                await Promise.all(pendingLateWrites);
             }
             await fastUpdate(owned.ref,{paused:pause,pausedAt:pause?now:null,pauseAccumulatedMs:(race.pauseAccumulatedMs||0)+pauseDuration,staggerSchedule:schedule});
             window.appToast(pause?"All race timers paused.":"All race timers resumed."); loadAdminRaces();
@@ -5359,29 +5422,52 @@
         window.hostStartStaggeredRace = async function(code) {
             const owned=await getOwnedRaceForHost(code); if (!owned) return;
             if (owned.data.gameMode==='scavenger') return alert("Staggered starts are available for Speed Races only.");
+            if (owned.data.enforceHostStart !== true || (owned.data.startMode || 'global') !== 'staggered') return alert("This race was not configured for a host-controlled staggered start.");
+            if (owned.data.raceStartedAt || owned.data.staggerSchedule?.length) return alert("This race has already started. Use pause/resume instead.");
             const teams=await getDocs(collection(window.db,"races",code,"teams"));
             const eligible=teams.docs.filter(d=>d.data().isApproved&&!d.data().endTime&&!d.data().startTime);
             if (!eligible.length) return alert("There are no approved, not-yet-started teams to schedule.");
             const interval=Number(document.getElementById(`p4-interval-${code}`)?.value);
-            if (!Number.isFinite(interval)||interval<0||interval>120) return alert("Enter an interval from 0 to 120 minutes.");
+            if (!Number.isFinite(interval)||interval<1||interval>120) return alert("Enter an interval from 1 to 120 minutes.");
             const order=eligible.map(d=>({id:d.id,position:Number(document.getElementById(`p4-order-${code}-${d.id}`)?.value)}));
             if(order.some(x=>!Number.isInteger(x.position)||x.position<1||x.position>eligible.length)||new Set(order.map(x=>x.position)).size!==order.length) return alert("Choose a unique start position for every eligible team.");
             order.sort((a,b)=>a.position-b.position);
             if(!await appConfirm(`Start the first team immediately and each following team every ${interval} minute(s)? Scheduled teams cannot start manually.`,{title:"Staggered speed-race start",confirmText:"Save order & start"})) return;
             const now=Date.now(), schedule=order.map((x,i)=>({teamId:x.id,order:i+1,scheduledAt:now+i*interval*60000}));
             await Promise.all(schedule.map(e=>fastUpdate(doc(window.db,"races",code,"teams",e.teamId), e.order===1?{startTime:new Date(e.scheduledAt).toISOString(),scheduledTeamStartAt:null,staggerOrder:e.order,joinedLate:false}:{startTime:null,scheduledTeamStartAt:e.scheduledAt,staggerOrder:e.order,joinedLate:false})));
-            await fastUpdate(owned.ref,{staggerMinutes:interval,staggerSchedule:schedule,scheduledStartAt:null,paused:false,pausedAt:null,pauseAccumulatedMs:0,raceStartedAt:now});
+            await fastUpdate(owned.ref,{staggerMinutes:interval,staggerSchedule:schedule,scheduledStartAt:null,paused:false,pausedAt:null,pauseAccumulatedMs:0,raceStartedAt:now,startMode:'staggered'});
             window.appToast("Staggered start schedule is live."); loadAdminRaces();
         };
         window.startTeamRace = async function(lateJoin = false) {
-            const raceSnap=await safeGetDoc(doc(window.db,"races",window.activeRaceCode)); if(!raceSnap.exists()) return alert("Race not found.");
-            const race=raceSnap.data(), teamRef=doc(window.db,"races",window.activeRaceCode,"teams",window.activeTeamId);
+            const raceSnap=await safeGetDoc(doc(window.db, "races", window.activeRaceCode)); if(!raceSnap.exists()) return alert("Race not found.");
+            const race=raceSnap.data(), teamRef=doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
             const teamSnap=await safeGetDoc(teamRef), team=teamSnap.data()||{};
             if(team.startTime||team.endTime) return;
             if(race.paused) return alert("The host has paused the race. Please wait for the host to resume it.");
-            if(team.scheduledTeamStartAt||(race.staggerSchedule||[]).some(e=>e.teamId===window.activeTeamId)) return alert("Your team is in the host's staggered start schedule. Your timer will start automatically at your assigned time.");
-            if(race.gameMode==='scavenger'&&race.scheduledStartAt&&Date.now()<race.scheduledStartAt) return alert("The host's global start countdown has not reached zero yet.");
-            await fastUpdate(teamRef,{startTime:new Date().toISOString(),scheduledTeamStartAt:null,joinedLate:!!lateJoin}); window.appToast("Your timer has started."); loadTeamDashboardData(race);
+            if(team.scheduledTeamStartAt || (race.staggerSchedule||[]).some(e=>e.teamId===window.activeTeamId)) return alert("Your team is in the host's staggered start schedule. Your timer will start automatically at its assigned time.");
+            const hostStartRequired = race.gameMode === 'scavenger' || race.enforceHostStart === true;
+            if (hostStartRequired && !race.raceStartedAt && !(race.staggerSchedule||[]).length) return alert("Please wait for the host to start the race.");
+            if (race.gameMode === 'scavenger' && !race.raceStartedAt) return alert("Please wait for the host to start the hunt.");
+
+            const now=Date.now();
+            const staggeredMode = race.gameMode !== 'scavenger' && race.startMode === 'staggered' && !!race.raceStartedAt;
+            if (staggeredMode) {
+                const teamSnapAll = await getDocs(collection(window.db, "races", window.activeRaceCode, "teams"));
+                const latestLateStart = teamSnapAll.docs.map(d => d.data()).filter(t => t.lateJoinStartAt).reduce((latest, t) => Math.max(latest, Number(t.lateJoinStartAt) || 0), 0);
+                const intervalMs = Math.max(1, Number(race.staggerMinutes || 10)) * 60000;
+                const earliestStart = latestLateStart ? latestLateStart + intervalMs : now;
+                if (earliestStart > now) {
+                    await fastUpdate(teamRef, { startTime:null, scheduledTeamStartAt:earliestStart, lateJoinPending:true, joinedLate:true });
+                    window.appToast(`Your race starts in ${Math.ceil((earliestStart-now)/60000)} minute(s).`);
+                    loadTeamDashboardData(race);
+                    return;
+                }
+                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),scheduledTeamStartAt:null,joinedLate:true,lateJoinPending:false,lateJoinStartAt:now});
+            } else {
+                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})});
+            }
+            if (!race.raceStartedAt) await fastUpdate(doc(window.db, "races", window.activeRaceCode), { raceStartedAt: now });
+            window.appToast("Your timer has started."); loadTeamDashboardData(race);
         };
 
         window.finishTeamRace = async function() {
@@ -5420,7 +5506,7 @@
                         const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                         const race = raceSnap.exists() ? raceSnap.data() : {};
                         if (!race.paused && Date.now() >= scheduledAt) {
-                            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(scheduledAt).toISOString(), scheduledTeamStartAt: null });
+                            await fastUpdate(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId), { startTime: new Date(scheduledAt).toISOString(), scheduledTeamStartAt: null, ...(data.lateJoinPending ? { lateJoinStartAt: scheduledAt, lateJoinPending: false } : {}) });
                             if (raceSnap.exists()) loadTeamDashboardData(race);
                         } else if (startBtn) {
                             startBtn.disabled = true;
