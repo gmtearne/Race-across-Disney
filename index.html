@@ -1553,6 +1553,26 @@
                                     </div>
                                 </div>
 
+                                <div class="bg-slate-900 p-4 rounded-3xl border border-fuchsia-500/30 space-y-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-fuchsia-300"></i> Wildcard Challenge</span>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">One surprise bonus offered to every team at a random moment</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                            <input type="checkbox" id="create-wildcard-switch" onchange="toggleWildcardCreateSettings()" class="sr-only peer">
+                                            <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
+                                        </label>
+                                    </div>
+                                    <div id="create-wildcard-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Offered for</label>
+                                        <select id="create-wildcard-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                            <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
+                                        </select>
+                                        <p class="text-[10px] text-slate-500 leading-relaxed">Uses an unused bonus challenge from a park where the race already has stops. The first team to submit a photo wins it. It appears automatically (the host can't trigger or cancel it). Speed Race and untimed hunts: after every team has done 2 stops and before anyone has fewer than 2 left. Timed hunts: never in the first or last 15 minutes. If the window passes, it is cancelled.</p>
+                                    </div>
+                                </div>
+
                                 <input type="number" id="create-default-points" value="0" class="hidden">
 
                                 <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
@@ -2444,6 +2464,11 @@
         window.toggleGameModeSelection();
         window.toggleHostStartCreationOptions();
 
+        window.toggleWildcardCreateSettings = function() {
+            const on = document.getElementById('create-wildcard-switch')?.checked;
+            const box = document.getElementById('create-wildcard-sub-settings');
+            if (box) box.classList.toggle('hidden', !on);
+        };
         window.toggleTriviaSettings = function() {
             const val = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
             document.getElementById('trivia-sub-settings').classList.toggle('hidden', val === 'off');
@@ -3395,38 +3420,131 @@
             }
         }
 
-        window.hostSendWildcard = async function(raceCode) {
-            const owned = await getOwnedRaceForHost(raceCode);
-            if (!owned) return;
-            const race = owned.data;
-            const bonusId = document.getElementById('wc-bonus-' + raceCode).value;
-            const dur = Number(document.getElementById('wc-dur-' + raceCode).value) || 15;
-            if (!bonusId) return alert("Pick a bonus challenge first.");
-            if (race.paused) return alert("The race is paused. Resume it before sending a wildcard.");
-            const live = race.wildcard && !race.wildcard.cancelled && Date.now() < race.wildcard.expiresAt;
-            if (live) return alert("A wildcard is already live. Wait for it to finish or cancel it first.");
-            const bonus = (race.checkpoints || []).find(c => c.id === bonusId);
-            if (!bonus) return;
-            const ok = await appConfirm(`Send "${bonus.name}" to every team as a wildcard for ${dur} minutes? The first team to submit a photo wins it, and all other teams are locked out of it.`, { title: "Send wildcard", confirmText: "Send to all teams" });
-            if (!ok) return;
+        // ---------------------------------------------------------------------------------
+        // AUTOMATIC WILDCARD. Configured at race creation (race.wildcardAuto = { enabled, durationMin }).
+        // The host cannot trigger or cancel it. Team phones run the check; whichever gets there first
+        // writes races/{code}/wildcardClaims/offer in a transaction, so it can only ever happen once:
+        //   { status:'live', id, bonusId, bonusName, startedAt, expiresAt, durationMin, cancelled:false }
+        //   { status:'skipped', reason }   (the window passed without it being offered)
+        // The offer is overlaid onto the race data as race.wildcard / race.wildcardBonusIds, so everything
+        // else (banner, bonus cards, claim lock, awards) keeps working unchanged.
+        // The random moment comes from a seed built from the race, so every phone agrees without talking.
+        // ---------------------------------------------------------------------------------
+        window.applyWildcardOffer = function(race, offer) {
+            if (!race) return race;
+            const out = { ...race };
+            if (offer && offer.status === 'live') {
+                out.wildcard = offer;
+                out.wildcardBonusIds = Array.from(new Set([...(race.wildcardBonusIds || []), offer.bonusId]));
+            } else if (offer && offer.status === 'skipped') {
+                out.wildcardSkipped = offer.reason || true;
+            }
+            return out;
+        };
+        window.fetchWildcardOffer = async function(code) {
+            try {
+                const snap = await getDoc(doc(window.db, "races", code, "wildcardClaims", "offer"));
+                return snap.exists() ? snap.data() : null;
+            } catch (e) { return null; }
+        };
+        function wildcardSeed(race) {
+            let h = 2166136261;
+            const str = String(race.code || '') + '|' + String(race.createdAt || '');
+            for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+            return ((h >>> 0) % 100000) / 100000;   // 0 <= seed < 1
+        }
+        function wildcardRaceElapsedMs(race, now) {
+            const start = Number(race.raceStartedAt || 0);
+            if (!start) return 0;
+            const end = (race.paused && race.pausedAt) ? Number(race.pausedAt) : now;
+            return Math.max(0, end - start - Number(race.pauseAccumulatedMs || 0));
+        }
+        let wildcardEvalBusy = false, wildcardEvalLast = 0, wildcardEvalTimer = null;
+
+        window.wildcardAutoCheck = async function() {
+            const race = window.liveTeamRaceData;
+            const code = window.activeRaceCode;
+            const cfg = race && race.wildcardAuto;
+            if (!cfg || !cfg.enabled || !code || !window.activeTeamId) return;
+            if (race.wildcard || race.wildcardSkipped || race.paused || wildcardEvalBusy) return;
+            if (!navigator.onLine) return;
             const now = Date.now();
-            await fastUpdate(owned.ref, {
-                wildcard: { id: 'wc_' + now, bonusId, bonusName: bonus.name, startedAt: now, expiresAt: now + dur * 60000, durationMin: dur, cancelled: false },
-                wildcardBonusIds: arrayUnion(bonusId)
-            });
-            window.appToast("Wildcard sent to all teams!");
-            loadAdminRaces();
+            if (now - wildcardEvalLast < 15000) return;
+            wildcardEvalLast = now;
+            wildcardEvalBusy = true;
+            try {
+                const offerRef = doc(window.db, "races", code, "wildcardClaims", "offer");
+                const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
+                const teams = [];
+                teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
+                const approved = teams.filter(t => t.isApproved !== false);
+                if (!approved.length) return;
+
+                const cps = race.checkpoints || [];
+                const mandatory = cps.filter(c => c.type !== 'BONUS_PHOTO');
+                const mIds = new Set(mandatory.map(c => c.id));
+                const N = mandatory.length;
+                const done = approved.map(t => (t.completedCheckpoints || []).filter(id => mIds.has(id)).length);
+                const seed = wildcardSeed(race);
+                const timedHunt = race.gameMode === 'scavenger' && Number(race.timeLimitMinutes) > 0;
+
+                let closed = null, due = false;
+                if (timedHunt) {
+                    // Timed hunt: never in the first or last 15 minutes.
+                    if (!race.raceStartedAt) return;
+                    const first = 15 * 60000, last = Number(race.timeLimitMinutes) * 60000 - 15 * 60000;
+                    const elapsed = wildcardRaceElapsedMs(race, now);
+                    if (last <= first) closed = 'hunt_too_short';
+                    else if (elapsed > last) closed = 'window_passed';
+                    else due = elapsed >= first + seed * (last - first);
+                } else {
+                    // Speed race / untimed hunt: after every team has done 2 stops, before any team has fewer than 2 to go.
+                    if (N < 4) closed = 'too_few_stops';
+                    else if (Math.max(...done) > N - 2) closed = 'window_passed';
+                    else due = Math.min(...done) >= 2 + Math.floor(seed * (N - 3));
+                }
+
+                if (closed) {
+                    await runTransaction(window.db, async (tx) => {
+                        const s = await tx.get(offerRef);
+                        if (!s.exists()) tx.set(offerRef, { status: 'skipped', reason: closed, at: Date.now() });
+                    });
+                    return;
+                }
+                if (!due) return;
+
+                // Only unused bonuses, and only from parks where the race already has stops.
+                const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
+                const taken = new Set(race.wildcardBonusIds || []);
+                teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
+                const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && parks.has(c.park) && !taken.has(c.id));
+                if (!pool.length) return;   // nothing eligible yet; the window-closed check above will cancel it if that never changes
+                const bonus = pool[Math.floor(Math.random() * pool.length)];
+                const dur = Number(cfg.durationMin) || 15;
+                await runTransaction(window.db, async (tx) => {
+                    const s = await tx.get(offerRef);
+                    if (s.exists()) return;
+                    const t0 = Date.now();
+                    tx.set(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: true });
+                });
+            } catch (e) {
+                console.warn('Wildcard auto-check failed', e);
+            } finally {
+                wildcardEvalBusy = false;
+            }
         };
 
-        window.hostCancelWildcard = async function(raceCode) {
-            const owned = await getOwnedRaceForHost(raceCode);
-            if (!owned || !owned.data.wildcard) return;
-            const ok = await appConfirm("Cancel the live wildcard? Teams will be told it's cancelled and nobody can claim it.", { title: "Cancel wildcard", confirmText: "Cancel wildcard", danger: true });
-            if (!ok) return;
-            await fastUpdate(owned.ref, { 'wildcard.cancelled': true, 'wildcard.cancelledAt': Date.now() });
-            window.appToast("Wildcard cancelled.");
-            loadAdminRaces();
-        };
+        function startWildcardWatcher() {
+            clearInterval(wildcardEvalTimer);
+            wildcardEvalTimer = setInterval(() => { window.wildcardAutoCheck(); }, 20000);
+            window.wildcardAutoCheck();
+        }
+        function stopWildcardWatcher() {
+            clearInterval(wildcardEvalTimer);
+            wildcardEvalTimer = null;
+            if (window.wildcardOfferUnsub) { window.wildcardOfferUnsub(); window.wildcardOfferUnsub = null; }
+            window.liveWildcardOffer = null;
+        }
 
         function attachTeamLiveListeners(code, teamId) {
             const key = `${code}::${teamId}`;
@@ -3435,14 +3553,26 @@
             if (teamDocUnsubscribe) teamDocUnsubscribe();
             teamListenerKey = key;
             window.liveTeamData = null;
+            if (window.wildcardOfferUnsub) { window.wildcardOfferUnsub(); window.wildcardOfferUnsub = null; }
+            window.liveWildcardOffer = null;
+            window.wildcardOfferUnsub = onSnapshot(doc(window.db, "races", code, "wildcardClaims", "offer"), (snap) => {
+                window.liveWildcardOffer = snap.exists() ? snap.data() : null;
+                if (!window.liveTeamRaceData || window.activeRaceCode !== code) return;
+                window.liveTeamRaceData = window.applyWildcardOffer(window.liveTeamRaceData, window.liveWildcardOffer);
+                window.handleWildcardRaceUpdate(window.liveTeamRaceData);
+                const active = document.getElementById('team-dashboard-active');
+                if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+            }, (err) => console.warn('Wildcard offer listener error', err));
+            startWildcardWatcher();
             const raceRef = doc(window.db, "races", code);
             const teamRef = doc(window.db, "races", code, "teams", teamId);
 
             // Live race document updates keep paused state, logos, and all race controls in sync.
             teamRaceUnsubscribe = onSnapshot(raceRef, (snap) => {
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
-                window.liveTeamRaceData = snap.data();
+                window.liveTeamRaceData = window.applyWildcardOffer(snap.data(), window.liveWildcardOffer);
                 window.handleWildcardRaceUpdate(window.liveTeamRaceData);
+                window.wildcardAutoCheck();
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) {
                     loadTeamDashboardData(window.liveTeamRaceData).catch(err => console.error('Live race refresh failed:', err));
@@ -3454,6 +3584,7 @@
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 const team = snap.data();
                 window.liveTeamData = { id: teamId, ...team };
+                window.wildcardAutoCheck();
                 if (team.isApproved) {
                     const pending = document.getElementById('team-pending-card');
                     if (pending && !pending.classList.contains('hidden')) {
@@ -3580,6 +3711,10 @@
             const triviaToggle = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
             const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
+            const wildcardAuto = {
+                enabled: !!document.getElementById('create-wildcard-switch')?.checked,
+                durationMin: Number(document.getElementById('create-wildcard-duration')?.value) || 15
+            };
 
             if (!title || !code) return alert("Please enter a race title and generate a code.");
 
@@ -3722,6 +3857,7 @@
                     hideBonuses: true,
                     hideLiveTimers: true,
                     resultsRevealed: false,
+                    wildcardAuto: wildcardAuto,
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -3734,6 +3870,7 @@
                 });
                 alert(`Race "${title}" created successfully with code ${code} and ${initialCps.length} checkpoints!`);
                 document.getElementById('new-race-title').value = '';
+                const wcSw = document.getElementById('create-wildcard-switch'); if (wcSw) { wcSw.checked = false; window.toggleWildcardCreateSettings(); }
                 generateRandomRaceCode();
                 const createBox = document.getElementById('create-race-collapsible-box');
                 const createIcon = document.getElementById('create-race-toggle-icon');
@@ -4376,13 +4513,6 @@
                     const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
                     const cps = race.checkpoints || [];
                     const teamsSnap = await getDocs(collection(window.db, "races", race.code, "teams"));
-                    let wcClaim = null;
-                    if (race.wildcard) {
-                        try {
-                            const cs = await getDoc(doc(window.db, "races", race.code, "wildcardClaims", race.wildcard.id));
-                            if (cs.exists()) wcClaim = cs.data();
-                        } catch (e) { /* claim lookup is best-effort */ }
-                    }
                     const isChatEnabled = race.chatEnabled !== false;
                     const isHideBonuses = race.hideBonuses === true;
 
@@ -4460,51 +4590,6 @@
                                     <button onclick="hostToggleResultsReveal('${race.code}')" class="w-full px-3 py-2.5 ${race.resultsRevealed === true ? 'bg-slate-700 hover:bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.resultsRevealed === true ? 'fa-eye-slash' : 'fa-ranking-star'} mr-1"></i> ${race.resultsRevealed === true ? 'Results revealed - tap to hide again' : 'Reveal Final Results Now'}</button>
                                     <button onclick="openHostGallery('${race.code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold"><i class="fa-solid fa-images mr-1"></i> View / moderate photo gallery</button>
                                 </div>
-
-                                ${(() => {
-                                    const bonusList = cps.filter(c => c.type === 'BONUS_PHOTO');
-                                    const usedIds = new Set(race.wildcardBonusIds || []);
-                                    const claimedByAnyone = (id) => teamList.some(t => (t.claimedBonus || []).includes(id));
-                                    const available = bonusList.filter(b => !usedIds.has(b.id) && !claimedByAnyone(b.id));
-                                    const wc = race.wildcard;
-                                    const isLive = !!wc && !wc.cancelled && !wcClaim && Date.now() < wc.expiresAt;
-                                    const started = teamList.some(t => t.startTime);
-                                    let status = '';
-                                    if (isLive) {
-                                        status = `<p class="text-fuchsia-200">⚡ Live now: <b>${wc.bonusName}</b> · about ${Math.max(1, Math.ceil((wc.expiresAt - Date.now()) / 60000))} min left · nobody has claimed it yet</p>
-                                            <button onclick="hostCancelWildcard('${race.code}')" class="w-full px-3 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold">Cancel wildcard</button>`;
-                                    } else if (wc && wcClaim) {
-                                        status = `<p class="text-emerald-300">✅ <b>${wc.bonusName}</b> was won by <b>${wcClaim.teamName}</b>.</p>`;
-                                    } else if (wc && wc.cancelled) {
-                                        status = `<p class="text-slate-400">Last wildcard (${wc.bonusName}) was cancelled.</p>`;
-                                    } else if (wc) {
-                                        status = `<p class="text-slate-400">Last wildcard (${wc.bonusName}) expired unclaimed.</p>`;
-                                    }
-                                    let form = '';
-                                    if (!isLive) {
-                                        if (available.length && started && !race.paused) {
-                                            form = `
-                                                <div class="grid grid-cols-3 gap-2">
-                                                    <select id="wc-bonus-${race.code}" class="col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs text-white">
-                                                        ${available.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
-                                                    </select>
-                                                    <select id="wc-dur-${race.code}" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2.5 text-xs text-white">
-                                                        ${[5, 10, 15, 20, 30, 45, 60].map(m => `<option value="${m}" ${m === 15 ? 'selected' : ''}>${m} min</option>`).join('')}
-                                                    </select>
-                                                </div>
-                                                <button onclick="hostSendWildcard('${race.code}')" class="w-full px-3 py-2.5 bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase">Send wildcard to all teams</button>`;
-                                        } else {
-                                            form = `<p class="text-[10px] text-slate-500">${!available.length ? 'No unused bonus challenges left to use as a wildcard.' : (!started ? 'Available once teams have started racing.' : 'Resume the race to send a wildcard.')}</p>`;
-                                        }
-                                    }
-                                    return `
-                                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-fuchsia-500/30 space-y-3 text-xs">
-                                        <div class="flex items-center gap-2 font-semibold text-slate-200"><i class="fa-solid fa-bolt text-fuchsia-300"></i> Wildcard challenge</div>
-                                        <p class="text-[10px] text-slate-500">Pick an unused bonus challenge and push it to every team for a set time. The first team to submit proof wins it; the rest are locked out and told.</p>
-                                        ${status}
-                                        ${form}
-                                    </div>`;
-                                })()}
 
                                 <div class="pt-3 border-t border-slate-800 space-y-3">
                                   ${(() => {
@@ -4732,7 +4817,8 @@
                 // LIVE vs FINAL. Final once every approved team is done (finished, or out of Scavenger time),
                 // or when the host reveals results. Until then ranks use stops completed only.
                 const isFinal = window.raceIsFinal(raceData, teamList);
-                const awards = isFinal ? window.computeRaceAwards(raceData, teamList) : null;
+                const awardOffer = isFinal ? await window.fetchWildcardOffer(targetCode) : null;
+                const awards = isFinal ? window.computeRaceAwards(window.applyWildcardOffer(raceData, awardOffer), teamList) : null;
 
                 if (!isFinal) {
                     // Live: purely stops completed (bonuses, trivia and penalties stay hidden until the end)
@@ -5137,6 +5223,7 @@
             window.liveTeamRaceData = null;
             window.liveTeamData = null;
             if (window.cleanupWildcard) window.cleanupWildcard();
+            stopWildcardWatcher();
             if (chatUnsubscribe) chatUnsubscribe();
             document.getElementById('team-status-banner').classList.add('hidden');
             document.getElementById('team-dashboard-active').classList.add('hidden');
@@ -5337,7 +5424,8 @@
                 const allTeams = [];
                 allTeamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
                 if (window.raceIsFinal(race, allTeams)) {
-                    const won = (window.computeRaceAwards(race, allTeams).byTeam[teamId]) || [];
+                    const awardOffer = await window.fetchWildcardOffer(raceCode);
+                    const won = (window.computeRaceAwards(window.applyWildcardOffer(race, awardOffer), allTeams).byTeam[teamId]) || [];
                     if (won.length) {
                         awardsBlockHtml = `
                         <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
