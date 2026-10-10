@@ -743,6 +743,36 @@
         @media (prefers-reduced-motion: reduce) {
             .app-header::before, .brand-medallion i { animation: none; }
         }
+
+        /* Celebration flip for completed checkpoints */
+        .checkpoint-card.checkpoint-flip-card { perspective: 900px; position: relative; min-height: 82px; overflow: visible; border-color: rgba(250,204,21,.85) !important; background: #facc15 !important; color: #422006; }
+        .checkpoint-flip-inner { position: relative; min-height: 82px; width: 100%; transform-style: preserve-3d; transition: transform .72s cubic-bezier(.2,.8,.2,1); }
+        .checkpoint-flip-card.is-complete .checkpoint-flip-inner { transform: rotateY(180deg); }
+        .checkpoint-flip-card.celebrate .checkpoint-flip-inner { animation: checkpoint-flip-forward .72s cubic-bezier(.2,.8,.2,1) both; }
+        .checkpoint-flip-card.is-flipping-back .checkpoint-flip-inner { animation: checkpoint-flip-back .72s cubic-bezier(.2,.8,.2,1) both; }
+        @keyframes checkpoint-flip-forward { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+        @keyframes checkpoint-flip-back { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+        .checkpoint-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 1rem; min-height: 82px; width: 100%; display: flex; align-items: center; gap: .5rem; }
+        .checkpoint-face-front { position: relative; z-index: 1; }
+        .checkpoint-face-back { position: absolute; inset: 0; transform: rotateY(180deg); padding: .65rem .75rem; background: linear-gradient(135deg,#fff176 0%,#facc15 50%,#fbbf24 100%); color: #422006; border: 1px solid rgba(217,119,6,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 5px 18px rgba(250,204,21,.16); }
+        .checkpoint-face-back .checkpoint-complete-title { color: #422006; font-size: 13px; line-height: 1.2; font-weight: 900; }
+        .checkpoint-face-back .checkpoint-complete-meta { color: #713f12; font-size: 10px; line-height: 1.25; margin-top: 4px; font-weight: 700; }
+        .checkpoint-face-back .checkpoint-drag { color: rgba(120,53,15,.55); }
+        .checkpoint-confetti { position: absolute; z-index: 5; top: 50%; left: 50%; width: 7px; height: 7px; pointer-events: none; opacity: 0; border-radius: 2px; }
+        .checkpoint-flip-card.celebrate .checkpoint-confetti { animation: checkpoint-firework 1.15s ease-out forwards; }
+        .checkpoint-confetti:nth-child(1) { --dx:-65px; --dy:-42px; background:#ef4444; }
+        .checkpoint-confetti:nth-child(2) { --dx:-42px; --dy:-62px; background:#2563eb; animation-delay:.04s; }
+        .checkpoint-confetti:nth-child(3) { --dx:-12px; --dy:-70px; background:#f97316; animation-delay:.08s; }
+        .checkpoint-confetti:nth-child(4) { --dx:22px; --dy:-64px; background:#9333ea; animation-delay:.02s; }
+        .checkpoint-confetti:nth-child(5) { --dx:55px; --dy:-45px; background:#16a34a; animation-delay:.06s; }
+        .checkpoint-confetti:nth-child(6) { --dx:68px; --dy:-12px; background:#db2777; animation-delay:.1s; }
+        .checkpoint-confetti:nth-child(7) { --dx:54px; --dy:25px; background:#0284c7; animation-delay:.03s; }
+        .checkpoint-confetti:nth-child(8) { --dx:18px; --dy:42px; background:#ea580c; animation-delay:.07s; }
+        .checkpoint-confetti:nth-child(9) { --dx:-25px; --dy:38px; background:#7c3aed; animation-delay:.05s; }
+        .checkpoint-confetti:nth-child(10) { --dx:-58px; --dy:18px; background:#059669; animation-delay:.09s; }
+        @keyframes checkpoint-firework { 0% { opacity:0; transform:translate(-50%,-50%) scale(.3) rotate(0deg); } 12% { opacity:1; } 100% { opacity:0; transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(220deg); } }
+        @media (prefers-reduced-motion: reduce) { .checkpoint-flip-inner { transition:none; animation:none !important; } .checkpoint-flip-card.celebrate .checkpoint-confetti { animation:none; } }
+
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
@@ -1491,6 +1521,20 @@
                                         </div>
                                         <p id="create-manual-start-note" class="hidden text-[10px] text-slate-500">Teams can start individually. The host can pause/resume all active timers.</p>
                                     </div>
+                                <div id="create-random-wildcard-settings" class="bg-slate-900 p-4 rounded-3xl border border-fuchsia-500/25 space-y-3">
+                                    <label class="flex items-start gap-2.5 text-xs text-slate-200 cursor-pointer">
+                                        <input id="create-random-wildcard-enabled" type="checkbox" class="mt-0.5 accent-fuchsia-400">
+                                        <span><strong>Enable surprise random wildcard</strong><span class="block text-[10px] text-slate-400 mt-1">One bonus challenge is automatically offered at a random eligible moment. The host cannot choose when it appears.</span></span>
+                                    </label>
+                                    <div class="space-y-1">
+                                        <label for="create-random-wildcard-duration" class="block text-[10px] text-slate-400 uppercase font-bold">Wildcard offer duration</label>
+                                        <select id="create-random-wildcard-duration" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white">
+                                            <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500">Speed Race reward: 20 minutes off. Scavenger Hunt reward: 20 points. Requires at least two checkpoints completed and two remaining for every team.</p>
+                                </div>
+
                                 </div>
 
                                 <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
@@ -3245,7 +3289,8 @@
         let wildcardClaimUnsub = null, wildcardClaimFor = null, wildcardCountdownTimer = null;
 
         function wildcardRewardText(race, bonus) {
-            const v = bonus && bonus.bonusMinDeduction !== undefined ? bonus.bonusMinDeduction : 10;
+            const wc = race && race.wildcard;
+            const v = wc && wc.automatic ? 20 : (bonus && bonus.bonusMinDeduction !== undefined ? bonus.bonusMinDeduction : 10);
             return race.gameMode === 'scavenger' ? `+${v} pts` : `-${v} min off your time`;
         }
 
@@ -3395,6 +3440,87 @@
             }
         }
 
+        // Automatic surprise wildcard. Any connected team portal can evaluate eligibility;
+        // a transaction on the race document ensures only one client can issue it.
+        let autoWildcardCheckBusy = false;
+        window.maybeIssueRandomWildcard = async function(code, raceHint) {
+            if (autoWildcardCheckBusy || !code) return;
+            autoWildcardCheckBusy = true;
+            try {
+                const raceRef = doc(window.db, "races", code);
+                const raceSnap = await safeGetDoc(raceRef);
+                if (!raceSnap.exists()) return;
+                const race = raceSnap.data();
+                if (!race.randomWildcardEnabled || race.randomWildcardIssued || race.randomWildcardCancelled ||
+                    race.wildcard || race.paused || race.resultsRevealed) return;
+                const now = Date.now();
+                const mandatory = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
+                const bonus = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
+                if (mandatory.length < 4 || !bonus.length) return;
+                if (race.gameMode === 'scavenger' && Number(race.timeLimitMinutes) > 0) {
+                    if (!race.raceStartedAt) return;
+                    const pausedMs = Number(race.pauseAccumulatedMs || 0) +
+                        (race.paused && race.pausedAt ? Math.max(0, now - Number(race.pausedAt)) : 0);
+                    const elapsed = Math.max(0, now - new Date(race.raceStartedAt).getTime() - pausedMs);
+                    const total = Number(race.timeLimitMinutes) * 60000;
+                    if (elapsed < 15 * 60000) return;
+                    if (total - elapsed < 15 * 60000) {
+                        await fastUpdate(raceRef, { randomWildcardCancelled: true, randomWildcardCancelledAt: now });
+                        return;
+                    }
+                }
+                const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
+                const teams = teamsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .filter(t => t.isApproved && !t.disqualified);
+                if (!teams.length) return;
+                let eligible = true;
+                const playedAreas = new Set();
+                for (const team of teams) {
+                    if (team.endTime) { eligible = false; break; }
+                    const completed = new Set(team.completedCheckpoints || []);
+                    const count = mandatory.filter(c => completed.has(c.id)).length;
+                    const left = mandatory.length - count;
+                    if (count < 2 || left < 2) { eligible = false; break; }
+                    mandatory.filter(c => completed.has(c.id)).forEach(c => {
+                        if (c.park) playedAreas.add(String(c.park));
+                        if (c.land) playedAreas.add(`${c.park || ''}::${c.land}`);
+                    });
+                }
+                if (!eligible) {
+                    // Once a team reaches the final two checkpoints before issuance, the surprise is forfeited.
+                    const anyTeamTooLate = teams.some(t => mandatory.length - mandatory.filter(c => (t.completedCheckpoints || []).includes(c.id)).length < 2);
+                    if (anyTeamTooLate) await fastUpdate(raceRef, { randomWildcardCancelled: true, randomWildcardCancelledAt: now });
+                    return;
+                }
+                const eligibleBonus = bonus.filter(b => {
+                    const park = String(b.park || '');
+                    const landKey = `${b.park || ''}::${b.land || ''}`;
+                    return playedAreas.has(park) || playedAreas.has(landKey);
+                }).filter(b => !(race.wildcardBonusIds || []).includes(b.id));
+                if (!eligibleBonus.length) {
+                    await fastUpdate(raceRef, { randomWildcardCancelled: true, randomWildcardCancelledAt: now });
+                    return;
+                }
+                const selected = eligibleBonus[Math.floor(Math.random() * eligibleBonus.length)];
+                const duration = Math.max(1, Number(race.randomWildcardDurationMin) || 15);
+                await runTransaction(window.db, async tx => {
+                    const fresh = await tx.get(raceRef);
+                    if (!fresh.exists()) return;
+                    const current = fresh.data();
+                    if (!current.randomWildcardEnabled || current.randomWildcardIssued || current.randomWildcardCancelled || current.wildcard || current.paused) return;
+                    const start = Date.now();
+                    tx.update(raceRef, {
+                        wildcard: { id: 'wc_auto_' + start, bonusId: selected.id, bonusName: selected.name, startedAt: start,
+                            expiresAt: start + duration * 60000, durationMin: duration, cancelled: false, automatic: true, rewardValue: 20 },
+                        wildcardBonusIds: arrayUnion(selected.id),
+                        randomWildcardIssued: true,
+                        randomWildcardIssuedAt: start
+                    });
+                });
+            } catch (e) { console.warn('Automatic wildcard check failed:', e); }
+            finally { autoWildcardCheckBusy = false; }
+        };
+
         window.hostSendWildcard = async function(raceCode) {
             const owned = await getOwnedRaceForHost(raceCode);
             if (!owned) return;
@@ -3442,6 +3568,7 @@
             teamRaceUnsubscribe = onSnapshot(raceRef, (snap) => {
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 window.liveTeamRaceData = snap.data();
+                window.maybeIssueRandomWildcard(code, window.liveTeamRaceData).catch(() => {});
                 window.handleWildcardRaceUpdate(window.liveTeamRaceData);
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) {
@@ -3454,6 +3581,7 @@
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 const team = snap.data();
                 window.liveTeamData = { id: teamId, ...team };
+                window.maybeIssueRandomWildcard(code, window.liveTeamRaceData).catch(() => {});
                 if (team.isApproved) {
                     const pending = document.getElementById('team-pending-card');
                     if (pending && !pending.classList.contains('hidden')) {
@@ -3573,6 +3701,8 @@
             const requestedStartMode = isScavengerMode ? 'global' : (document.querySelector('input[name="create_start_method"]:checked')?.value || 'global');
             const startMode = enforceHostStart ? requestedStartMode : 'manual';
             const staggerMinutes = Number(document.getElementById('create-stagger-interval')?.value ?? 10);
+            const randomWildcardEnabled = !!document.getElementById('create-random-wildcard-enabled')?.checked;
+            const randomWildcardDurationMin = Number(document.getElementById('create-random-wildcard-duration')?.value || 15);
             if (isScavengerMode && (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0 || timeLimitMinutes > 1440)) return alert('Scavenger time limit must be a whole number from 0 to 1440 minutes.');
             if (!isScavengerMode && enforceHostStart && startMode === 'staggered' && (!Number.isFinite(staggerMinutes) || staggerMinutes < 1 || staggerMinutes > 120)) return alert('Late-team interval must be between 1 and 120 minutes.');
             const presets = window.DISNEY_PRESETS || [];
@@ -3714,6 +3844,10 @@
                     enforceHostStart: enforceHostStart,
                     startMode: startMode,
                     staggerMinutes: startMode === 'staggered' ? staggerMinutes : 0,
+                    randomWildcardEnabled: randomWildcardEnabled,
+                    randomWildcardDurationMin: randomWildcardDurationMin,
+                    randomWildcardIssued: false,
+                    randomWildcardCancelled: false,
                     raceStartedAt: null,
                     paused: false,
                     pauseAccumulatedMs: 0,
@@ -4481,7 +4615,9 @@
                                         status = `<p class="text-slate-400">Last wildcard (${wc.bonusName}) expired unclaimed.</p>`;
                                     }
                                     let form = '';
-                                    if (!isLive) {
+                                    if (!isLive && race.randomWildcardEnabled) {
+                                        form = `<p class="text-[10px] text-fuchsia-300">Surprise wildcard is enabled. It will be issued automatically when the race conditions are met.</p>`;
+                                    } else if (!isLive) {
                                         if (available.length && started && !race.paused) {
                                             form = `
                                                 <div class="grid grid-cols-3 gap-2">
@@ -5531,6 +5667,9 @@
             renderRaceJourney(stops, completed, details, started, finished);
         }, 1000);
 
+        window.justCompletedCheckpointIds = window.justCompletedCheckpointIds || new Set();
+        window.justUndoneCheckpointIds = window.justUndoneCheckpointIds || new Set();
+
         async function loadTeamDashboardData(raceData) {
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
@@ -5598,7 +5737,7 @@
                 });
                 claimedBonus.forEach(bId => {
                     const match = bonus.find(b => b.id === bId);
-                    if (match) currentPoints += (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10));
+                    if (match) currentPoints += ((raceData.wildcard && raceData.wildcard.automatic && raceData.wildcard.bonusId === bId) ? 20 : (match.points !== undefined ? match.points : (match.bonusMinDeduction || 10)));
                 });
                 document.getElementById('deduction-total').innerText = `${currentPoints} pts`;
             } else {
@@ -5607,7 +5746,7 @@
                 
                 let totalDeductionMin = triviaTimeDed;
                 bonus.forEach(b => {
-                    if (claimedBonus.includes(b.id)) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
+                    if (claimedBonus.includes(b.id)) totalDeductionMin += ((raceData.wildcard && raceData.wildcard.automatic && raceData.wildcard.bonusId === b.id) ? 20 : (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10));
                 });
                 document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
             }
@@ -5774,20 +5913,35 @@
                         ? `<span class="text-disneyGold">${hintText}</span>${hasFacts ? ' • <span class="text-amber-200">💡 Fun fact</span>' : ''}`
                         : `${cp.park || 'Disney Park'}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-disneyGold">${hintText}</span>`;
 
+                    const justCompleted = isDone && window.justCompletedCheckpointIds.has(cp.id);
+                    const justUndone = !isDone && window.justUndoneCheckpointIds.has(cp.id);
+                    if (justCompleted) window.justCompletedCheckpointIds.delete(cp.id);
+                    if (justUndone) window.justUndoneCheckpointIds.delete(cp.id);
+                    const checkedAt = detail && detail.timestamp ? new Date(detail.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable';
+                    const manualUndo = isDone && isManualOverride && !isRaceFinished
+                        ? `<button onclick="event.stopPropagation(); undoManualCheckIn('${cp.id}')" class="mt-1.5 px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-[10px] font-extrabold shadow-sm"><i class="fa-solid fa-rotate-left mr-1"></i>Undo manual check-in</button>`
+                        : '';
+                    const confetti = justCompleted ? Array.from({length:10}, () => '<span class="checkpoint-confetti"></span>').join('') : '';
                     return `
-                        <div data-id="${cp.id}" ${clickAction} ${bgStyle} class="checkpoint-card p-2.5 bg-slate-900 rounded-2xl border ${isDone ? (isManualOverride ? 'border-amber-500/40 bg-amber-950/10' : 'border-emerald-500/40 bg-emerald-950/20') : 'border-slate-700/80'} ${hoverCursor} transition flex items-center gap-2 shadow-sm">
-                            <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1 py-3 shrink-0" title="Drag to reorder route">
-                                <i class="fa-solid fa-grip-vertical text-sm"></i>
+                        <div data-id="${cp.id}" ${clickAction} class="checkpoint-card ${isDone || justUndone ? 'checkpoint-flip-card' : ''} ${isDone ? 'is-complete' : ''} ${justUndone ? 'is-flipping-back' : ''} ${justCompleted ? 'celebrate' : ''} ${hoverCursor} rounded-2xl shadow-sm ${isDone ? '' : 'border border-slate-700/80 bg-slate-900'}" style="${isDone ? '' : (locImg ? `background-image: linear-gradient(90deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.80) 100%), url('${locImg}'); background-size: cover; background-position: center;` : ''}"
+                            >
+                            <div class="checkpoint-flip-inner">
+                                <div class="checkpoint-face checkpoint-face-front p-2.5 ${isDone ? 'bg-slate-900 rounded-2xl' : ''}">
+                                    <div class="cursor-grab text-slate-500 hover:text-slate-300 px-1 py-3 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>
+                                    <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
+                                        <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
+                                        ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
+                                    </div>
+                                    <div class="min-w-0 flex-1"><p class="font-bold text-[13px] leading-snug text-white">${cp.name}</p><p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p></div>
+                                    ${isDone ? '<div class="w-[4.5rem] shrink-0 text-center text-amber-300 text-[10px] font-bold"><i class="fa-solid fa-check-circle text-lg block"></i>Complete</div>' : statusBadgeOrButton}
+                                </div>
+                                <div class="checkpoint-face checkpoint-face-back">
+                                    ${confetti}
+                                    <div class="cursor-grab checkpoint-drag px-1 py-2 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>
+                                    <div class="min-w-0 flex-1"><p class="checkpoint-complete-title"><i class="fa-solid fa-star mr-1"></i>${cp.name}</p><p class="checkpoint-complete-meta"><i class="fa-solid fa-clock mr-1"></i>Checked in at ${checkedAt}${isManualOverride ? ' · MANUAL' : ''}</p>${manualUndo}</div>
+                                    <div class="shrink-0 text-amber-900 text-center px-1"><i class="fa-solid fa-circle-check text-2xl"></i><p class="text-[9px] font-black">DONE!</p></div>
+                                </div>
                             </div>
-                            <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
-                                <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
-                                ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-bold text-[13px] leading-snug ${isDone ? (isManualOverride ? 'text-amber-200' : 'text-emerald-300') : 'text-white'}">${cp.name}</p>
-                                <p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p>
-                            </div>
-                            ${statusBadgeOrButton}
                         </div>
                     `;
                 }).join('');
@@ -5857,7 +6011,7 @@
             const wcState = wildcardStatus(raceData, window.liveWildcardClaim);
             document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
-                const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
+                const deductionVal = (raceData.wildcard && raceData.wildcard.automatic && raceData.wildcard.bonusId === cp.id) ? 20 : (cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10);
                 const isWildcardBonus = (raceData.wildcardBonusIds || []).includes(cp.id);
                 const isLiveWildcard = !!(wcState && wcState.state === 'active' && wcState.wc.bonusId === cp.id);
                 const wildcardTakenBy = (wcState && wcState.state === 'claimed' && wcState.wc.bonusId === cp.id) ? wcState.claim : null;
@@ -5923,9 +6077,9 @@
                     checkinDetails: checkinDetails
                 });
 
+                window.justUndoneCheckpointIds.add(cpId);
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
-                alert("Manual check-in undone successfully. You can now try checking in again!");
             } catch (e) {
                 alert("Error undoing check-in: " + e.message);
             }
@@ -6006,8 +6160,7 @@
                         btn.innerHTML = originalHtml;
                         btn.disabled = false;
                     }
-                    alert("Unable to retrieve GPS location.");
-                    if (await appConfirm("Submit a manual check-in anyway?", { title: "Manual check-in", confirmText: "Check in" })) {
+                    if (await appConfirm("We couldn't verify your GPS location. You can record this checkpoint manually and undo it later if needed. Continue with a manual check-in?", { title: "GPS unavailable — manual check-in", confirmText: "Record manually", tone: "warning" })) {
                         await handleTriviaOrSave(cpId, null, null, null, true, "GPS Error", btnElement);
                     }
                 },
@@ -6063,7 +6216,6 @@
             }
 
             await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null, priorAttempt ? null : { asked: false });
-            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         }
 
         window.submitTriviaAnswer = async function(selected, correct) {
@@ -6107,7 +6259,6 @@
                 triviaLogEntry,
                 { asked: true, isCorrect: isCorrect, bonus: triviaBonus }
             );
-            alert(navigator.onLine ? "Check-in successful!" : "Check-in saved on your phone. It will upload automatically when you are back online.");
         };
 
         async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null, triviaAttempt = null) {
@@ -6158,8 +6309,10 @@
                 triviaAttempts: triviaAttempts
             });
 
+            window.justCompletedCheckpointIds.add(cpId);
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
+            if (!navigator.onLine) window.appToast?.("Saved on this phone; it will sync when you're back online.");
         }
 
         // Step 1: pick a photo -> show a preview. (The file is read immediately; reading
