@@ -6035,7 +6035,7 @@
                       <div class="flex items-center justify-between gap-3"><div class="min-w-0"><p id="replay-stop-name" class="font-bold text-white truncate">Race start</p><p id="replay-stop-meta" class="text-xs text-slate-400">Starting point</p></div><button id="replay-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button></div>
                       <input id="replay-slider" type="range" min="0" max="${Math.max(0,events.length-1)}" value="0" step="1" class="w-full accent-amber-400">
                       <div class="flex justify-between text-[10px] text-slate-500"><span>Start</span><span id="replay-progress-label">Stop 1 of ${events.length}</span><span>Finish</span></div>
-                      <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400"><span><i class="fa-solid fa-minus text-sky-400"></i> Walk</span><span><i class="fa-solid fa-minus text-amber-400"></i> Bus / transport</span><span><i class="fa-solid fa-minus text-fuchsia-400"></i> Bonus check-in</span><span class="text-slate-500">Straight-line legs; not a GPS track</span></div>
+                      <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300"><span><i class="fa-solid fa-minus" style="color:#38bdf8"></i> Walk</span><span><i class="fa-solid fa-minus" style="color:#34d399"></i> Bus</span><span><i class="fa-solid fa-minus" style="color:#a78bfa"></i> Monorail</span><span><i class="fa-solid fa-minus" style="color:#fb923c"></i> Skyliner</span><span><i class="fa-solid fa-minus" style="color:#f87171"></i> Boat</span><span><i class="fa-solid fa-minus" style="color:#94a3b8"></i> Other</span><span><i class="fa-solid fa-minus" style="color:#f472b6"></i> Bonus</span><span class="text-slate-500">Straight-line legs; not a GPS track</span></div>
                     </div>
                   </div>`;
                 document.body.appendChild(modal);
@@ -6057,34 +6057,79 @@
                     icon:L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#0f172a;border:3px solid #fbbf24;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 12px #0009">🐭</div>',iconSize:[34,34],iconAnchor:[17,17]})
                 }).addTo(map);
                 const slider = modal.querySelector('#replay-slider'), nameEl=modal.querySelector('#replay-stop-name'), metaEl=modal.querySelector('#replay-stop-meta'), prog=modal.querySelector('#replay-progress-label'), play=modal.querySelector('#replay-play');
-                let step=0, playing=false;
+                let step=0, playing=false, playToken=0;
                 const timeText = ts => ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : 'Time not recorded';
-                const renderStep = n => {
+                const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', other:'#94a3b8' };
+                const modeLabels = { walk:'Walk', none:'Walk', bus:'Bus', monorail:'Monorail', skyliner:'Skyliner', boat:'Boat', other:'Other transport' };
+                const routeColor = ev => {
+                    if (ev.kind === 'bonus') return '#f472b6';
+                    const modes = (ev.transit && ev.transit.modes || []).map(m => String(m).toLowerCase());
+                    // When multiple modes were selected for a leg, use the first recorded mode consistently.
+                    const mode = modes.find(m => modeColors[m]) || 'walk';
+                    return modeColors[mode] || modeColors.other;
+                };
+                const renderStep = (n, camera=true) => {
                     step=Math.max(0,Math.min(events.length-1,Number(n)||0)); slider.value=String(step);
                     routeLayer.clearLayers();
                     for(let i=1;i<=step;i++){
                         const prev=events[i-1], cur=events[i];
-                        let color=cur.kind==='bonus'?'#f472b6':'#38bdf8';
-                        const modes=(cur.transit && cur.transit.modes)||[];
-                        if(modes.some(m=>/bus|boat|monorail|skyliner|transport/i.test(m))) color='#fbbf24';
-                        if(modes.includes('walk')) color='#38bdf8';
-                        L.polyline([[prev.lat,prev.lng],[cur.lat,cur.lng]],{color,weight:5,opacity:.9,lineCap:'round'}).addTo(routeLayer);
+                        let modes=(cur.transit && cur.transit.modes || []).map(m => String(m).toLowerCase()).filter(m => modeColors[m]);
+                        if(cur.kind==='bonus') modes=['bonus'];
+                        if(!modes.length) modes=['walk'];
+                        // If a team recorded more than one mode for a leg, colour successive portions of
+                        // the illustrative straight line by each selected mode rather than hiding a mode.
+                        for(let j=0;j<modes.length;j++){
+                            const t0=j/modes.length, t1=(j+1)/modes.length;
+                            const a=[prev.lat+(cur.lat-prev.lat)*t0, prev.lng+(cur.lng-prev.lng)*t0];
+                            const b=[prev.lat+(cur.lat-prev.lat)*t1, prev.lng+(cur.lng-prev.lng)*t1];
+                            const color=modes[j]==='bonus'?'#f472b6':(modeColors[modes[j]]||modeColors.other);
+                            L.polyline([a,b],{color,weight:5,opacity:.94,lineCap:'round'}).addTo(routeLayer);
+                        }
                     }
                     const ev=events[step]; avatar.setLatLng([ev.lat,ev.lng]);
                     nameEl.textContent=ev.label; metaEl.textContent=`${ev.kind==='start'?'Race start':ev.kind==='bonus'?'Bonus check-in':'Checkpoint'} · ${timeText(ev.ts)}`;
                     prog.textContent=`Stop ${step+1} of ${events.length}`;
-                    map.panTo([ev.lat,ev.lng], {animate:true,duration:.25});
-                    if(step===events.length-1 && playing) stopPlay();
+                    if(camera) map.setView([ev.lat,ev.lng], 16, {animate:true,duration:.6});
                 };
-                const stopPlay=()=>{ playing=false; if(window.__raceReplayTimer) clearInterval(window.__raceReplayTimer); window.__raceReplayTimer=null; play.innerHTML='<i class="fa-solid fa-play"></i> Play'; };
-                slider.addEventListener('input',()=>{stopPlay();renderStep(slider.value);});
+                const stopPlay=()=>{ playing=false; playToken++; if(window.__raceReplayTimer) clearTimeout(window.__raceReplayTimer); window.__raceReplayTimer=null; play.innerHTML='<i class="fa-solid fa-play"></i> Play'; };
+                const wait = (ms, token) => new Promise(resolve => {
+                    window.__raceReplayTimer=setTimeout(()=>resolve(token===playToken && playing), ms);
+                });
+                const animateLeg = async (from, to, token) => {
+                    const duration=1600, started=performance.now();
+                    return await new Promise(resolve => {
+                        const frame = now => {
+                            if(token!==playToken || !playing) return resolve(false);
+                            const t=Math.min(1,(now-started)/duration);
+                            const lat=from.lat+(to.lat-from.lat)*t, lng=from.lng+(to.lng-from.lng)*t;
+                            avatar.setLatLng([lat,lng]);
+                            if(t<1) requestAnimationFrame(frame); else resolve(true);
+                        };
+                        requestAnimationFrame(frame);
+                    });
+                };
+                const playSequence = async token => {
+                    while(token===playToken && playing && step<events.length-1){
+                        const next=step+1, prevEv=events[step], nextEv=events[next];
+                        // Pull back to the race overview while the avatar travels to the next recorded stop.
+                        const bounds=L.latLngBounds(allLatLngs);
+                        map.flyToBounds(bounds, {padding:[38,38], maxZoom:13, duration:1.0});
+                        const moved=await animateLeg(prevEv,nextEv,token); if(!moved) return;
+                        step=next; renderStep(step,false);
+                        // Arrival: zoom into the stop, show its marker and timestamp, then pause briefly.
+                        map.flyTo([nextEv.lat,nextEv.lng], 17, {duration:1.0});
+                        const arrived=await wait(1500,token); if(!arrived) return;
+                    }
+                    if(token===playToken) stopPlay();
+                };
+                slider.addEventListener('input',()=>{stopPlay();renderStep(slider.value,true);});
                 play.onclick=()=>{
                     if(playing){stopPlay();return;}
-                    if(step>=events.length-1) renderStep(0);
+                    if(step>=events.length-1) { step=0; renderStep(0,true); }
                     playing=true; play.innerHTML='<i class="fa-solid fa-pause"></i> Pause';
-                    window.__raceReplayTimer=setInterval(()=>{ if(step>=events.length-1){stopPlay();return;} renderStep(step+1); }, 1100);
+                    const token=++playToken; playSequence(token);
                 };
-                renderStep(0);
+                renderStep(0,true);
                 setTimeout(()=>map.invalidateSize(),100);
             } catch (e) {
                 console.error('Could not open race replay', e);
