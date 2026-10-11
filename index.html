@@ -394,16 +394,22 @@
         #wildcard-banner .wc-card { animation: wcGlow 2.2s ease-in-out infinite; }
         @keyframes wcGlow { 0%,100% { box-shadow: 0 0 0 1px rgba(255,200,60,.35), 0 8px 24px rgba(0,0,0,.35); } 50% { box-shadow: 0 0 0 2px rgba(255,200,60,.7), 0 0 26px rgba(232,31,118,.35); } }
         @media (prefers-reduced-motion: reduce) { #wildcard-banner .wc-card { animation: none; } }
-        #app-toast {
-            position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 300;
-            transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
-            padding: .6rem 1.1rem; border-radius: 9999px;
+        /* One shared stack for every bottom notification, so they sit above each other instead of overlapping */
+        #toast-stack {
+            position: fixed; left: 50%; transform: translateX(-50%); z-index: 300;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            display: flex; flex-direction: column-reverse; align-items: center; gap: 8px;
+            max-width: calc(100vw - 24px); pointer-events: none;
+        }
+        .app-toast-item {
+            padding: .6rem 1.1rem; border-radius: 9999px; text-align: center;
             font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: .85rem; color: #fff;
             background: rgba(15,23,42,.92); border: 1px solid rgba(52,211,153,.55);
             box-shadow: 0 8px 24px rgba(0,0,0,.45);
+            opacity: 0; transform: translateY(12px);
             transition: opacity .2s ease, transform .25s var(--app-motion);
         }
-        #app-toast.show { opacity: 1; transform: translate(-50%, 0); }
+        .app-toast-item.show { opacity: 1; transform: translateY(0); }
         .app-page-fade { animation: appPageFade 380ms var(--app-motion) backwards; }
         @keyframes appPageFade { from { opacity: .35; } to { opacity: 1; } }
         @media (prefers-reduced-motion: reduce) { .app-page-fade, .app-page-pop { animation: none !important; } }
@@ -1605,7 +1611,7 @@
                                     <div id="create-wildcard-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Offered for</label>
                                         <select id="create-wildcard-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                            <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
+                                            <option value="5" data-icon="⚡" data-sub="Quick scramble">5 minutes</option><option value="10" data-icon="⏱️" data-sub="">10 minutes</option><option value="15" data-icon="⏱️" data-sub="Default" selected>15 minutes</option><option value="20" data-icon="⏱️" data-sub="">20 minutes</option><option value="30" data-icon="⏱️" data-sub="">30 minutes</option><option value="45" data-icon="⏱️" data-sub="">45 minutes</option><option value="60" data-icon="🕐" data-sub="Plenty of time">60 minutes</option>
                                         </select>
                                         <p class="text-[10px] text-slate-500 leading-relaxed">Uses an unused bonus challenge from a park where the race already has stops. The first team to submit a photo wins it. It appears automatically (the host can't trigger or cancel it). Speed Race and untimed hunts: after every team has done 2 stops and before anyone has fewer than 2 left. Timed hunts: never in the first or last 15 minutes. If the window passes, it is cancelled.</p>
                                     </div>
@@ -2011,17 +2017,19 @@
 
         // Small non-blocking confirmation pill
         window.appToast = function(message, ms = 1800) {
-            let el = document.getElementById('app-toast');
+            let stack = document.getElementById('toast-stack');
+            if (!stack) { stack = document.createElement('div'); stack.id = 'toast-stack'; document.body.appendChild(stack); }
+            let el = Array.from(stack.querySelectorAll('.app-toast-item')).find(e => e.textContent === message);
             if (!el) {
                 el = document.createElement('div');
-                el.id = 'app-toast';
+                el.className = 'app-toast-item';
                 el.setAttribute('role', 'status');
-                document.body.appendChild(el);
+                el.textContent = message;
+                stack.appendChild(el);
+                requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
             }
-            el.textContent = message;
-            el.classList.add('show');
             clearTimeout(el._t);
-            el._t = setTimeout(() => el.classList.remove('show'), ms);
+            el._t = setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
         };
 
         // Swipe right on Rules / Park Maps to go back to the menu.
@@ -7206,7 +7214,9 @@
         });
     }
     </script>
-    <div id="sync-status" class="hidden fixed left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);"></div>
+    <div id="toast-stack">
+        <div id="sync-status" class="hidden px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs font-semibold text-disneyGold shadow-xl whitespace-nowrap"></div>
+    </div>
     <script>
         (function () {
             const TONES = {
@@ -7549,6 +7559,7 @@
         window.enhanceSelect('preset-park-select', { title: 'Choose a park group', searchable: false });
         window.enhanceSelect('create-final-stop-select', { title: 'Final location', searchable: true });
         window.enhanceSelect('edit-final-stop-select', { title: 'Final location', searchable: true });
+        window.enhanceSelect('create-wildcard-duration', { title: 'Wildcard offered for', searchable: false });
         window.enhanceSegmented('trivia-frequency');
         window.enhanceSegmented('edit-trivia-frequency');
 
