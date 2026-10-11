@@ -182,14 +182,17 @@ window.DISNEY_PRESETS = [
     { name: "Animal Kingdom Lodge (Jambo House)", lat: 28.3528, lng: -81.6025, type: "GPS", park: "Disney Resorts", land: "Deluxe Resort" },
 
     // ================= BONUS PHOTO CHALLENGES =================
-    { name: "Photo with the Lady Godiva Statue", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "City Centre" },
-    { name: "Photo eating a Batch / Cob from a Coventry Bakery", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Food & Snacks" },
-    { name: "Photo with a Peeping Tom Clock Scene", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "City Centre" },
-    { name: "Photo feeding ducks at Coombe Abbey Lake", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Coombe Park" },
-    { name: "Photo in front of a Coventry City Sky Blues Logo", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Sports / CBS Arena" },
-    { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
-    { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Character Meet & Greet" },
-    { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "All Parks" },
-    { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Dining Locations" },
-    { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", land: "Transportation Hubs" }
+    // Bonuses have no GPS point, so "areas" says which parks they can physically be done in.
+    // A wildcard is only picked from bonuses whose areas match a park/area the race already has stops in.
+    // Use ["*"] for a bonus that can be done anywhere. The names must match the "park" values above.
+    { name: "Photo with the Lady Godiva Statue", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
+    { name: "Photo eating a Batch / Cob from a Coventry Bakery", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Food & Snacks" },
+    { name: "Photo with a Peeping Tom Clock Scene", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
+    { name: "Photo feeding ducks at Coombe Abbey Lake", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Coombe Park" },
+    { name: "Photo in front of a Coventry City Sky Blues Logo", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Sports / CBS Arena" },
+    { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Character Meet & Greet" },
+    { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios"], land: "Character Meet & Greet" },
+    { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "All Parks" },
+    { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["*"], land: "Dining Locations" },
+    { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Disney Resorts"], land: "Transportation Hubs" }
 ];

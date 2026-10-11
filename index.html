@@ -3478,6 +3478,16 @@
         // else (banner, bonus cards, claim lock, awards) keeps working unchanged.
         // The random moment comes from a seed built from the race, so every phone agrees without talking.
         // ---------------------------------------------------------------------------------
+        // Bonuses have no GPS point. locations-data.js gives each one an "areas" list (parks it can physically be done in,
+        // or ["*"] for anywhere). A wildcard may only pick a bonus whose areas overlap a park the race already has stops in.
+        // Bonuses without areas (e.g. ones a host typed in): a real park name must match; anything else counts as "anywhere".
+        window.bonusAppliesToAreas = function(bonus, parks) {
+            const preset = (window.DISNEY_PRESETS || []).find(pr => pr.type === 'BONUS_PHOTO' && pr.name === bonus.name);
+            const areas = bonus.areas || (preset && preset.areas);
+            if (areas && areas.length) return areas.includes('*') ? parks.size > 0 : areas.some(a => parks.has(a));
+            if (bonus.park && bonus.park !== 'Bonus Challenge') return parks.has(bonus.park);
+            return parks.size > 0;
+        };
         window.applyWildcardOffer = function(race, offer) {
             if (!race) return race;
             const out = { ...race };
@@ -3565,7 +3575,7 @@
                 const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
                 const taken = new Set(race.wildcardBonusIds || []);
                 teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
-                const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && parks.has(c.park) && !taken.has(c.id));
+                const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
                 if (!pool.length) return;   // nothing eligible yet; the window-closed check above will cancel it if that never changes
                 const bonus = pool[Math.floor(Math.random() * pool.length)];
                 const dur = Number(cfg.durationMin) || 15;
@@ -3599,8 +3609,8 @@
             const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
             const taken = new Set();
             teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
-            const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && parks.has(c.park) && !taken.has(c.id));
-            if (!pool.length) return alert("No unused bonus challenges are available from the parks where this race has stops.");
+            const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
+            if (!pool.length) return alert("No unused bonus challenges in this race apply to the parks and areas it visits.");
             const dur = Number(cfg.durationMin) || 15;
             const replacing = existing.exists();
             const msg = replacing
