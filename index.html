@@ -10,6 +10,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Amazing Mouse Race: Magic Kingdom & Beyond</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -5980,6 +5982,116 @@
             modal.classList.remove('hidden');
         };
 
+
+        // ---- Finished-race replay (v1: straight-line legs between recorded stop locations) ----
+        window.openTeamRaceReplay = async function(raceCode, teamId) {
+            try {
+                const [raceSnap, teamSnap] = await Promise.all([
+                    safeGetDoc(doc(window.db, "races", raceCode)),
+                    safeGetDoc(doc(window.db, "races", raceCode, "teams", teamId))
+                ]);
+                if (!raceSnap.exists() || !teamSnap.exists()) return window.appToast("Race replay data could not be found.");
+                const race = raceSnap.data(), team = teamSnap.data();
+                const checkpoints = race.checkpoints || [];
+                const details = team.checkinDetails || {};
+                const events = [];
+                const validPos = p => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng));
+                if (validPos(team.startLocation)) events.push({
+                    kind: 'start', label: 'Race start', ts: Number(team.startTime) || Date.parse(team.startTime) || 0,
+                    lat: Number(team.startLocation.lat), lng: Number(team.startLocation.lng), color: '#38bdf8'
+                });
+                (team.completedCheckpoints || []).forEach(id => {
+                    const cp = checkpoints.find(c => c.id === id), d = details[id] || {};
+                    const lat = d.latitude != null ? Number(d.latitude) : (cp && Number(cp.lat));
+                    const lng = d.longitude != null ? Number(d.longitude) : (cp && Number(cp.lng));
+                    if (!cp || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                    const ts = typeof d.timestamp === 'number' ? d.timestamp : (Date.parse(d.timestamp) || 0);
+                    events.push({kind:'checkpoint', label:cp.name || 'Checkpoint', ts, lat, lng, color:'#34d399', cpId:id,
+                        transit: (team.transitLegs || {})[id] || null});
+                });
+                Object.entries(team.bonusLocations || {}).forEach(([id, pos]) => {
+                    if (!validPos(pos)) return;
+                    const bonus = (race.bonusCheckpoints || race.bonuses || []).find(b => b.id === id);
+                    const ts = Number((team.bonusClaimTimes || {})[id]) || 0;
+                    events.push({kind:'bonus', label:bonus ? bonus.name : 'Bonus check-in', ts,
+                        lat:Number(pos.lat), lng:Number(pos.lng), color:'#f472b6'});
+                });
+                events.sort((a,b) => (a.ts || 0) - (b.ts || 0));
+                // If a start location was not captured, the first verified checkpoint still anchors the replay.
+                if (!events.length) return window.appToast("There are no recorded locations to replay yet.");
+                const old = document.getElementById('team-race-replay-modal'); if (old) old.remove();
+                const modal = document.createElement('div');
+                modal.id = 'team-race-replay-modal';
+                modal.className = 'fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5';
+                modal.innerHTML = `
+                  <div class="w-full max-w-4xl max-h-[94dvh] flex flex-col overflow-hidden rounded-3xl border border-sky-400/30 bg-slate-900 shadow-2xl">
+                    <div class="flex items-center gap-3 p-4 border-b border-slate-700">
+                      <div class="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><i class="fa-solid fa-route text-lg"></i></div>
+                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Race Replay</h2><p class="text-xs text-slate-400">${String(team.teamName || 'Team').replace(/[<>&"]/g,'')}</p></div>
+                      <button id="replay-close" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white" aria-label="Close replay"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="team-replay-map" class="w-full bg-slate-800" style="height:min(52dvh,460px);min-height:240px"></div>
+                    <div class="p-4 space-y-3 overflow-y-auto">
+                      <div class="flex items-center justify-between gap-3"><div class="min-w-0"><p id="replay-stop-name" class="font-bold text-white truncate">Race start</p><p id="replay-stop-meta" class="text-xs text-slate-400">Starting point</p></div><button id="replay-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button></div>
+                      <input id="replay-slider" type="range" min="0" max="${Math.max(0,events.length-1)}" value="0" step="1" class="w-full accent-amber-400">
+                      <div class="flex justify-between text-[10px] text-slate-500"><span>Start</span><span id="replay-progress-label">Stop 1 of ${events.length}</span><span>Finish</span></div>
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400"><span><i class="fa-solid fa-minus text-sky-400"></i> Walk</span><span><i class="fa-solid fa-minus text-amber-400"></i> Bus / transport</span><span><i class="fa-solid fa-minus text-fuchsia-400"></i> Bonus check-in</span><span class="text-slate-500">Straight-line legs; not a GPS track</span></div>
+                    </div>
+                  </div>`;
+                document.body.appendChild(modal);
+                const close = () => { if (window.__raceReplayTimer) clearInterval(window.__raceReplayTimer); window.__raceReplayTimer = null; modal.remove(); };
+                modal.querySelector('#replay-close').onclick = close;
+                modal.addEventListener('click', e => { if (e.target === modal) close(); });
+                if (!window.L) { modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
+                const map = L.map('team-replay-map', {zoomControl:true}).setView([events[0].lat, events[0].lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+                const allLatLngs = events.map(e => [e.lat,e.lng]);
+                if (allLatLngs.length > 1) map.fitBounds(allLatLngs, {padding:[28,28]});
+                const pins = L.layerGroup().addTo(map);
+                events.forEach((ev,i) => {
+                    L.circleMarker([ev.lat,ev.lng], {radius: i===0?7:5, color:ev.color, fillColor:ev.color, fillOpacity:.95, weight:2})
+                      .bindTooltip(`${i+1}. ${ev.label}`).addTo(pins);
+                });
+                const routeLayer = L.layerGroup().addTo(map);
+                const avatar = L.marker([events[0].lat,events[0].lng], {
+                    icon:L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#0f172a;border:3px solid #fbbf24;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 12px #0009">🐭</div>',iconSize:[34,34],iconAnchor:[17,17]})
+                }).addTo(map);
+                const slider = modal.querySelector('#replay-slider'), nameEl=modal.querySelector('#replay-stop-name'), metaEl=modal.querySelector('#replay-stop-meta'), prog=modal.querySelector('#replay-progress-label'), play=modal.querySelector('#replay-play');
+                let step=0, playing=false;
+                const timeText = ts => ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : 'Time not recorded';
+                const renderStep = n => {
+                    step=Math.max(0,Math.min(events.length-1,Number(n)||0)); slider.value=String(step);
+                    routeLayer.clearLayers();
+                    for(let i=1;i<=step;i++){
+                        const prev=events[i-1], cur=events[i];
+                        let color=cur.kind==='bonus'?'#f472b6':'#38bdf8';
+                        const modes=(cur.transit && cur.transit.modes)||[];
+                        if(modes.some(m=>/bus|boat|monorail|skyliner|transport/i.test(m))) color='#fbbf24';
+                        if(modes.includes('walk')) color='#38bdf8';
+                        L.polyline([[prev.lat,prev.lng],[cur.lat,cur.lng]],{color,weight:5,opacity:.9,lineCap:'round'}).addTo(routeLayer);
+                    }
+                    const ev=events[step]; avatar.setLatLng([ev.lat,ev.lng]);
+                    nameEl.textContent=ev.label; metaEl.textContent=`${ev.kind==='start'?'Race start':ev.kind==='bonus'?'Bonus check-in':'Checkpoint'} · ${timeText(ev.ts)}`;
+                    prog.textContent=`Stop ${step+1} of ${events.length}`;
+                    map.panTo([ev.lat,ev.lng], {animate:true,duration:.25});
+                    if(step===events.length-1 && playing) stopPlay();
+                };
+                const stopPlay=()=>{ playing=false; if(window.__raceReplayTimer) clearInterval(window.__raceReplayTimer); window.__raceReplayTimer=null; play.innerHTML='<i class="fa-solid fa-play"></i> Play'; };
+                slider.addEventListener('input',()=>{stopPlay();renderStep(slider.value);});
+                play.onclick=()=>{
+                    if(playing){stopPlay();return;}
+                    if(step>=events.length-1) renderStep(0);
+                    playing=true; play.innerHTML='<i class="fa-solid fa-pause"></i> Pause';
+                    window.__raceReplayTimer=setInterval(()=>{ if(step>=events.length-1){stopPlay();return;} renderStep(step+1); }, 1100);
+                };
+                renderStep(0);
+                setTimeout(()=>map.invalidateSize(),100);
+            } catch (e) {
+                console.error('Could not open race replay', e);
+                window.appToast("Could not load race replay. Please try again.");
+            }
+        };
+
         window.openTeamReportCard = async function(raceCode, teamId) {
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             const teamSnap = await getDoc(doc(window.db, "races", raceCode, "teams", teamId));
@@ -6405,9 +6517,14 @@
 
                 if (reportCardContainer) {
                     reportCardContainer.innerHTML = `
-                        <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action w-full mt-2 bg-gradient-to-r from-disneyGold to-yellow-500 !text-slate-950 uppercase tracking-wide text-xs">
-                            <i class="fa-solid fa-award"></i> View Report Card
-                        </button>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="openTeamRaceReplay('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action bg-sky-600 hover:bg-sky-500 uppercase tracking-wide text-[11px]">
+                                <i class="fa-solid fa-route"></i> Race Replay
+                            </button>
+                            <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action bg-gradient-to-r from-disneyGold to-yellow-500 !text-slate-950 uppercase tracking-wide text-[11px]">
+                                <i class="fa-solid fa-award"></i> Report Card
+                            </button>
+                        </div>
                     `;
                 }
             } else {
