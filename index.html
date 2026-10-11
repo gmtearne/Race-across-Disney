@@ -3696,6 +3696,19 @@
                 if (!snap.exists() || window.activeRaceCode !== code || window.activeTeamId !== teamId) return;
                 const team = snap.data();
                 window.liveTeamData = { id: teamId, ...team };
+                // Tell the team how their challenge went (not on the first snapshot).
+                {
+                    const prev = window.__challengeSeen && window.__challengeSeen.team === teamId ? window.__challengeSeen.map : null;
+                    const now = {};
+                    Object.entries(team.checkinChallenges || {}).forEach(([id, c]) => {
+                        now[id] = c && c.status;
+                        if (prev && prev[id] === 'pending' && c.status !== 'pending') {
+                            const cpName = ((window.liveTeamRaceData || {}).checkpoints || []).find(x => x.id === id);
+                            window.appToast(c.status === 'accepted' ? `✅ Challenge accepted! ${cpName ? cpName.name : 'Your stop'} is reinstated.` : `⛔ Challenge rejected for ${cpName ? cpName.name : 'your stop'}.`, 5000);
+                        }
+                    });
+                    window.__challengeSeen = { team: teamId, map: now };
+                }
                 window.wildcardAutoCheck();
                 if (team.isApproved) {
                     const pending = document.getElementById('team-pending-card');
@@ -4368,6 +4381,68 @@
 
         // Host rejects (or restores) a team's check-in. The check-in stays on record, but it stops counting:
         // Speed Race = the stop is treated as missed (+60 min); Scavenger Hunt = the stop's points are lost.
+        // ---- Host side of a challenged ruling ----
+        window.hostChallengeBox = function(raceCode, teamId, cpId, team, cp) {
+            const ch = (team.checkinChallenges || {})[cpId];
+            if (!ch) return '';
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const key = teamId + ':' + cpId;
+            (window.__challengePhotos = window.__challengePhotos || {})[key] = ch.photo || '';
+            let distTxt = '';
+            if (ch.pos && cp && cp.type !== 'BONUS_PHOTO' && [cp.lat, cp.lng].every(v => v !== undefined && v !== null && isFinite(Number(v)))) {
+                const m = Math.round(calculateDistance(Number(ch.pos.lat), Number(ch.pos.lng), Number(cp.lat), Number(cp.lng)));
+                distTxt = ` · photo sent from ${m >= 1000 ? (m / 1000).toFixed(1) + ' km' : m + ' m'} from the stop`;
+            }
+            const when = ch.at ? new Date(ch.at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : '';
+            const photo = ch.photo ? `<img src="${ch.photo}" alt="Challenge proof" onclick="openImageModal(window.__challengePhotos['${key}'], '${esc((cp && cp.name) || ch.name || 'Challenge proof').replace(/'/g, '&#39;')}')" class="w-20 h-20 object-cover rounded-lg border border-rose-400/50 cursor-pointer shrink-0">` : '';
+            let footer = '';
+            if (ch.status === 'pending') {
+                footer = `<div class="grid grid-cols-2 gap-2 pt-1">
+                    <button type="button" onclick="hostResolveChallenge('${raceCode}', '${teamId}', '${cpId}', true)" class="py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]"><i class="fa-solid fa-check mr-1"></i>Accept &amp; reinstate</button>
+                    <button type="button" onclick="hostResolveChallenge('${raceCode}', '${teamId}', '${cpId}', false)" class="py-2 bg-rose-600/20 hover:bg-rose-600/40 text-rose-200 border border-rose-500/40 font-bold rounded-lg text-[11px]"><i class="fa-solid fa-xmark mr-1"></i>Reject challenge</button>
+                </div>`;
+            } else if (ch.status === 'accepted') {
+                footer = `<p class="text-[10px] font-bold text-emerald-300">✅ Challenge accepted – check-in reinstated</p>`;
+            } else {
+                footer = `<p class="text-[10px] font-bold text-rose-300">⛔ Challenge rejected – ruling stands (use Restore to override)</p>`;
+            }
+            return `<div class="mt-2 p-2.5 rounded-xl border border-rose-400/40 bg-rose-950/30 space-y-2">
+                <p class="text-[10px] font-black uppercase tracking-widest text-rose-300">🚩 Team challenge${when ? ' · ' + when : ''}</p>
+                <div class="flex gap-2.5">${photo}<p class="text-[12px] text-slate-200 leading-snug break-words min-w-0">${esc(ch.comment || '(no comment)')}<span class="block text-[10px] text-slate-500 mt-1">${esc(distTxt.replace(/^ · /, ''))}</span></p></div>
+                ${footer}
+            </div>`;
+        };
+
+        window.hostResolveChallenge = async function(raceCode, teamId, cpId, accept) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            const cp = (owned.data.checkpoints || []).find(c => c.id === cpId);
+            const ok = await appConfirm(
+                accept ? `Accept the challenge${cp ? ' for ' + cp.name : ''}? The check-in is reinstated and its penalty is removed.`
+                       : `Reject the challenge${cp ? ' for ' + cp.name : ''}? The original ruling stands and the team can't challenge it again.`,
+                { title: accept ? 'Accept challenge' : 'Reject challenge', confirmText: accept ? 'Accept & reinstate' : 'Reject challenge', danger: !accept });
+            if (!ok) return;
+            try {
+                const teamRef = doc(window.db, "races", raceCode, "teams", teamId);
+                const snap = await getDoc(teamRef);
+                if (!snap.exists()) return;
+                const t = snap.data();
+                const rejected = t.rejectedCheckins || {}, challenges = t.checkinChallenges || {};
+                const ch = challenges[cpId];
+                if (!ch || ch.status !== 'pending') { window.appToast("That challenge was already resolved."); }
+                else {
+                    if (accept) delete rejected[cpId];
+                    challenges[cpId] = { ...ch, status: accept ? 'accepted' : 'declined', resolvedAt: Date.now(), resolvedBy: window.auth.currentUser ? window.auth.currentUser.uid : null };
+                    await fastUpdate(teamRef, { rejectedCheckins: rejected, checkinChallenges: challenges });
+                    window.appToast(accept ? "Challenge accepted. Check-in reinstated." : "Challenge rejected.");
+                }
+                window.openTeamVerificationModal(raceCode, teamId, t.teamName || '');
+                if (window.loadAdminRaces) loadAdminRaces();
+            } catch (e) {
+                alert("Could not resolve the challenge: " + e.message);
+            }
+        };
+
         window.hostRejectCheckin = async function(raceCode, teamId, cpId, reject) {
             const owned = await getOwnedRaceForHost(raceCode);
             if (!owned) return;
@@ -4380,7 +4455,7 @@
                 const effect = isHunt
                     ? (isBonus ? "The team loses that bonus's points." : "The team loses that stop's points.")
                     : (isBonus ? 'The team loses that bonus time deduction (no time penalty).' : 'The team gets a 60-minute penalty.');
-                const ok = await appConfirm(`Reject this ${what}${cp ? ' (' + cp.name + ')' : ''}? ${effect} You can restore it later.`, { title: "Reject " + what, confirmText: "Reject", danger: true });
+                const ok = await appConfirm(`Reject this ${what}${cp ? ' (' + cp.name + ')' : ''}? ${effect} The team can challenge this ruling, and you can restore it later.`, { title: "Reject " + what, confirmText: "Reject", danger: true });
                 if (!ok) return;
             }
             try {
@@ -4388,9 +4463,13 @@
                 const snap = await getDoc(teamRef);
                 if (!snap.exists()) return;
                 const rejected = snap.data().rejectedCheckins || {};
-                if (reject) rejected[cpId] = { at: Date.now(), by: window.auth.currentUser ? window.auth.currentUser.uid : null };
-                else delete rejected[cpId];
-                await fastUpdate(teamRef, { rejectedCheckins: rejected });
+                const challenges = snap.data().checkinChallenges || {};
+                if (reject) { rejected[cpId] = { at: Date.now(), by: window.auth.currentUser ? window.auth.currentUser.uid : null }; delete challenges[cpId]; }   // a fresh ruling can be challenged afresh
+                else {
+                    delete rejected[cpId];
+                    if (challenges[cpId] && challenges[cpId].status === 'pending') challenges[cpId] = { ...challenges[cpId], status:'accepted', resolvedAt:Date.now() };   // restoring settles an open challenge
+                }
+                await fastUpdate(teamRef, { rejectedCheckins: rejected, checkinChallenges: challenges });
                 window.appToast(reject ? "Check-in rejected." : "Check-in restored.");
                 const nm = snap.data().teamName || '';
                 window.openTeamVerificationModal(raceCode, teamId, nm);
@@ -4486,6 +4565,7 @@
                                     <span class="text-[10px] ${isRejected ? 'text-rose-300 font-bold' : 'text-slate-500'}">${isRejected ? '⛔ Rejected: ' + rejectPenaltyText : ''}</span>
                                     ${rejectBtn}
                                 </div>
+                                ${window.hostChallengeBox(raceCode, teamId, cpId, team, cp)}
                             </div>
                         `;
                     });
@@ -4520,6 +4600,7 @@
                                 ${imgUrl ? `<button type="button" onclick="openImageModal('${imgUrl.replace(/'/g, "\\'")}', '${String(b ? b.name : 'Bonus Checkpoint').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-3 py-1.5 bg-disneyBlue text-white font-bold rounded-lg text-xs hover:bg-blue-600 transition">View Photo</button>` : '<span class="text-slate-500 text-[10px]">No Image</span>'}
                               </div>
                               <div class="flex justify-end">${bRejectBtn}</div>
+                              ${window.hostChallengeBox(raceCode, teamId, bId, team, b)}
                             </div>
                         `;
                     });
@@ -4694,6 +4775,7 @@
                         const tData = tDoc.data();
                         teamList.push({ id: tDoc.id, ...tData });
                         if (!tData.isApproved) totalPendingTeams++;
+                        totalPendingTeams += Object.values(tData.checkinChallenges || {}).filter(c => c && c.status === 'pending').length;   // open challenges need the host too
                     });
 
                     if (window.raceCollapseStates[race.code] === undefined) {
@@ -4812,7 +4894,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[10px]">
-                                                        <span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>
+                                                        <span class="flex items-center gap-1.5"><span class="px-2 py-0.5 rounded-full font-bold ${statusBadgeClass}">${statusText}</span>${(() => { const n = Object.values(t.checkinChallenges || {}).filter(c => c && c.status === 'pending').length; return n ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">🚩 ${n}</span>` : ''; })()}</span>
                                                     </div>
                                                     <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1">
                                                         <span>Diff Override:</span>
@@ -4852,7 +4934,7 @@
 
         // Live listener per host race so the cog badge updates the moment a team registers,
         // without the host having to open the dashboard or expand a race.
-        const hostPendingWatch = { key: '', unsubs: [], counts: {}, refreshTimer: null };
+        const hostPendingWatch = { key: '', unsubs: [], counts: {}, seen: {}, refreshTimer: null };
 
         function renderHostPendingBadge() {
             const badge = document.getElementById('nav-pending-badge');
@@ -4866,6 +4948,7 @@
             hostPendingWatch.unsubs.forEach(unsub => unsub());
             hostPendingWatch.unsubs = [];
             hostPendingWatch.counts = {};
+            hostPendingWatch.seen = {};
             hostPendingWatch.key = '';
             clearTimeout(hostPendingWatch.refreshTimer);
             renderHostPendingBadge();
@@ -4879,7 +4962,21 @@
             hostPendingWatch.key = key;
             codes.forEach(code => {
                 const unsub = onSnapshot(collection(window.db, "races", code, "teams"), snap => {
-                    const pending = snap.docs.filter(d => !d.data().isApproved).length;
+                    let pending = snap.docs.filter(d => !d.data().isApproved).length;
+                    // Challenged rulings also count toward the badge, and each NEW one raises a toast (not on the first load).
+                    const firstLoad = !hostPendingWatch.seen[code];
+                    const seen = hostPendingWatch.seen[code] = hostPendingWatch.seen[code] || new Set();
+                    snap.docs.forEach(d => {
+                        const t = d.data();
+                        Object.entries(t.checkinChallenges || {}).forEach(([cpId, c]) => {
+                            if (!c || c.status !== 'pending') return;
+                            pending++;
+                            const k = d.id + ':' + cpId + ':' + c.at;
+                            if (seen.has(k)) return;
+                            seen.add(k);
+                            if (!firstLoad) window.appToast(`🚩 ${t.teamName || 'A team'} challenged a ruling: ${c.name || 'a stop'}`, 6000);
+                        });
+                    });
                     const previous = hostPendingWatch.counts[code];
                     hostPendingWatch.counts[code] = pending;
                     renderHostPendingBadge();
@@ -6259,7 +6356,7 @@
                     // The transit badge trails behind the avatar (opposite the direction of travel on screen).
                     const p0 = map.latLngToContainerPoint([a.lat, a.lng]), p1 = map.latLngToContainerPoint([b.lat, b.lng]);
                     let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
-                    const ox = -ux * 22, oy = -uy * 22;
+                    const ox = -ux * 34, oy = -uy * 34;
                     let shownIdx = -1;
                     const showMode = idx => {
                         if (idx === shownIdx) return; shownIdx = idx;
@@ -6874,7 +6971,7 @@
                     const isRejected = isDone && !!((tData.rejectedCheckins || {})[cp.id]);
                     let backAction = '';
                     if (isRejected) {
-                        backAction = `<div class="w-[4.5rem] shrink-0 flex items-center justify-center"><i class="fa-solid fa-ban text-3xl text-rose-700"></i></div>`;
+                        backAction = window.challengeBackAction(cp.id, tData);
                     } else if (isManualOverride) {
                         backAction = `
                             <div class="w-[4.5rem] shrink-0 flex flex-col gap-1" onclick="event.stopPropagation()">
@@ -7022,7 +7119,7 @@
                 const isRejectedBonus = isClaimed && !!((tData.rejectedCheckins || {})[cp.id]);
                 let actionHtml = '';
                 if (isRejectedBonus) {
-                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-rose-300 font-bold whitespace-nowrap"><i class="fa-solid fa-ban"></i> Rejected by host</span>`;
+                    actionHtml = window.challengeBonusAction(cp.id, tData);
                 } else if (isRaceFinished) {
                     actionHtml = `<span class="w-full h-10 flex items-center justify-center text-[11px] text-slate-400 font-bold bg-slate-800 rounded-xl border border-slate-700 whitespace-nowrap">Race Finished</span>`;
                 } else if (isRacePaused && !isClaimed) {
@@ -7060,6 +7157,103 @@
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             alert("Dashboard refreshed.");
+        };
+
+        // ===================== CHALLENGE A REJECTED CHECK-IN =====================
+        // Data: teams/{id}.checkinChallenges[cpId] = { status:'pending'|'accepted'|'declined', photo, comment, name, kind, at, pos, resolvedAt }
+        // A new host rejection clears any old challenge (so the team can challenge the new ruling); one challenge per ruling.
+        window.challengeStatus = function(tData, id) { const c = (tData.checkinChallenges || {})[id]; return c ? c.status : null; };
+        window.challengeBackAction = function(cpId, tData) {
+            const st = window.challengeStatus(tData, cpId);
+            const wrap = inner => `<div class="w-[4.5rem] shrink-0 flex flex-col items-center justify-center gap-1 text-center" onclick="event.stopPropagation()">${inner}</div>`;
+            if (st === 'pending') return wrap(`<i class="fa-solid fa-hourglass-half text-lg text-rose-700"></i><span class="text-[10px] font-bold leading-tight text-rose-900">Challenge sent</span>`);
+            if (st === 'declined') return wrap(`<i class="fa-solid fa-ban text-lg text-rose-700"></i><span class="text-[10px] font-bold leading-tight text-rose-900">Challenge declined</span>`);
+            return wrap(`<button type="button" onclick="openChallengeModal('${cpId}')" class="h-9 px-2 bg-rose-900 hover:bg-rose-800 active:scale-95 text-rose-50 font-bold rounded-lg text-[11px] whitespace-nowrap transition shadow flex items-center justify-center gap-1"><i class="fa-solid fa-flag"></i> Challenge</button>`);
+        };
+        window.challengeBonusAction = function(cpId, tData) {
+            const st = window.challengeStatus(tData, cpId);
+            if (st === 'pending') return `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-rose-300 font-bold whitespace-nowrap"><i class="fa-solid fa-hourglass-half"></i> Challenge sent</span>`;
+            if (st === 'declined') return `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-rose-300 font-bold text-center leading-tight"><i class="fa-solid fa-ban"></i> Challenge declined</span>`;
+            return `<button type="button" onclick="openChallengeModal('${cpId}')" class="w-full h-10 flex items-center justify-center gap-1.5 bg-rose-600/20 hover:bg-rose-600/40 active:scale-95 text-rose-200 font-bold rounded-xl text-xs border border-rose-500/40 transition whitespace-nowrap"><i class="fa-solid fa-flag"></i> Challenge</button>`;
+        };
+
+        window.openChallengeModal = function(cpId) {
+            const race = window.liveTeamRaceData || {}, team = window.liveTeamData || {};
+            const cp = (race.checkpoints || []).find(c => c.id === cpId);
+            if (!cp) return;
+            if (!(team.rejectedCheckins || {})[cpId]) return window.appToast("That check-in isn't rejected any more.");
+            const st = window.challengeStatus(team, cpId);
+            if (st === 'pending' || st === 'declined') return;
+            const isBonus = cp.type === 'BONUS_PHOTO';
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const old = document.getElementById('challenge-modal'); if (old) old.remove();
+            const modal = document.createElement('div');
+            modal.id = 'challenge-modal';
+            modal.className = 'fixed inset-0 z-[130] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4';
+            modal.innerHTML = `
+              <div class="w-full max-w-md max-h-[92dvh] overflow-y-auto bg-slate-900 border border-rose-500/40 rounded-3xl shadow-2xl p-5 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-rose-300">🚩 Challenge this ruling</p>
+                    <p class="font-bold text-white leading-snug mt-0.5">${isBonus ? '⭐ ' : '📍 '}${esc(cp.name)}</p>
+                  </div>
+                  <button type="button" id="challenge-cancel-x" class="text-slate-400 hover:text-white px-2 py-1 text-sm" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <p class="text-[12px] text-slate-300 leading-snug">Show the host you were in the right place. Add a photo taken at the location and a short note. You get <b>one challenge</b> per ruling.</p>
+                <label class="flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-slate-600 bg-slate-950 text-slate-200 font-bold text-xs cursor-pointer hover:border-rose-400 transition">
+                  <i class="fa-solid fa-camera"></i><span id="challenge-photo-label">Take or choose a photo</span>
+                  <input id="challenge-file" type="file" accept="image/*" class="hidden">
+                </label>
+                <img id="challenge-preview" alt="" class="hidden w-full max-h-56 object-contain rounded-xl bg-slate-950 border border-slate-700">
+                <div>
+                  <textarea id="challenge-comment" rows="3" maxlength="240" placeholder="Brief comment, e.g. “We were at the entrance sign by the fountain.”" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"></textarea>
+                  <p id="challenge-count" class="text-[10px] text-slate-500 text-right">0 / 240</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" id="challenge-cancel" class="py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs">Cancel</button>
+                  <button type="button" id="challenge-submit" disabled class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs uppercase transition disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-flag mr-1"></i> Send challenge</button>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
+            let file = null, busy = false, previewUrl = null;
+            const q = id => modal.querySelector(id);
+            const close = () => { if (previewUrl) URL.revokeObjectURL(previewUrl); modal.remove(); };
+            const refresh = () => { q('#challenge-submit').disabled = busy || !file || q('#challenge-comment').value.trim().length < 3; q('#challenge-count').textContent = q('#challenge-comment').value.length + ' / 240'; };
+            q('#challenge-cancel').onclick = close; q('#challenge-cancel-x').onclick = close;
+            modal.addEventListener('click', e => { if (e.target === modal && !busy) close(); });
+            q('#challenge-comment').addEventListener('input', refresh);
+            q('#challenge-file').addEventListener('change', e => {
+                file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+                const img = q('#challenge-preview');
+                if (file) { previewUrl = URL.createObjectURL(file); img.src = previewUrl; img.classList.remove('hidden'); q('#challenge-photo-label').textContent = 'Replace photo'; }
+                else { img.classList.add('hidden'); q('#challenge-photo-label').textContent = 'Take or choose a photo'; }
+                refresh();
+            });
+            q('#challenge-submit').onclick = async () => {
+                if (busy || !file) return;
+                busy = true; refresh(); q('#challenge-submit').textContent = 'Sending…';
+                try {
+                    const comment = q('#challenge-comment').value.trim();
+                    // Photo is shrunk to keep the team document small; GPS is attached only if permission is already granted.
+                    const [photo, pos] = await Promise.all([compressImage(file, 800, 800, 0.6), window.getStartPosition ? window.getStartPosition(false) : null]);
+                    const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                    const snap = await safeGetDoc(teamRef);
+                    const t = snap.data() || {};
+                    if (!(t.rejectedCheckins || {})[cpId]) { window.appToast("That check-in was already reinstated."); close(); return; }
+                    const challenges = t.checkinChallenges || {};
+                    if (challenges[cpId] && challenges[cpId].status) { window.appToast("This ruling has already been challenged."); close(); return; }
+                    challenges[cpId] = { status:'pending', photo, comment, name:cp.name || 'Stop', kind:isBonus ? 'bonus' : 'checkin', at:Date.now(),
+                                         pos:pos ? { lat:pos.lat, lng:pos.lng, accuracy:pos.accuracy || 0 } : null };
+                    await fastUpdate(teamRef, { checkinChallenges: challenges });
+                    window.appToast("🚩 Challenge sent. The host will review it.", 3200);
+                    close();
+                } catch (e) {
+                    console.error('Could not send challenge', e);
+                    busy = false; q('#challenge-submit').innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Send challenge'; refresh();
+                    window.appToast("Could not send the challenge. Please try again.", 3000);
+                }
+            };
         };
 
         window.undoManualCheckIn = async function(cpId) {
