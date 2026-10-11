@@ -6069,12 +6069,14 @@
 
                 // ---- State shared by close/play/render ----
                 let step = 0, playing = false, playToken = 0, waitTimer = null, speed = 1, map = null;
+                let postcard = null, modeMarker = null, postcardCount = 0;   // bonus-photo overlay and the transit badge behind the avatar
                 const SPEEDS = [1, 2, 4];
                 const stopWaiting = () => { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; };
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
                     playing = false; playToken++; stopWaiting();
                     document.removeEventListener('keydown', onKey);
+                    clearPostcard(); clearModeMarker();
                     if (map) { try { map.remove(); } catch (e) {} map = null; }
                     modal.remove();
                     if (window.__raceReplayClose === close) window.__raceReplayClose = null;
@@ -6138,6 +6140,53 @@
                     icon:L.divIcon({ className:'', html:avatarEl, iconSize:[44, 44], iconAnchor:[22, 22] }), zIndexOffset:1000, interactive:false
                 }).addTo(map);
 
+
+                // ---- Transit badge: shown behind the avatar only while travelling a leg ----
+                const modeEmoji = { walk:'🚶', none:'🚶', bus:'🚌', monorail:'🚝', skyliner:'🚡', boat:'⛴️' };   // unknown / bonus legs show no badge
+                function clearModeMarker() { if (modeMarker && map) { try { map.removeLayer(modeMarker); } catch (e) {} } modeMarker = null; }
+
+                // ---- Bonus proof "postcard": tilted photo frame, shown at a bonus stop, then swiped away ----
+                function clearPostcard() {
+                    if (!postcard) return;
+                    const pc = postcard; postcard = null;
+                    clearTimeout(pc.holdTimer); try { pc.el.remove(); } catch (e) {}
+                    pc.resolve(false);
+                }
+                const showPostcard = (ev, token) => new Promise(resolve => {
+                    const photo = (team.bonusPhotos || {})[ev.id];
+                    if (!photo || typeof photo !== 'string') return resolve(true);       // no proof photo on file: carry on
+                    clearPostcard();
+                    const tilt = [-5, 4, -3, 5][postcardCount++ % 4];
+                    const size = map.getSize();
+                    const imgH = Math.max(90, Math.min(size.y - 120, 320));
+                    const imgW = Math.max(120, Math.min(imgH * 4 / 3, size.x * 0.78 - 20));
+                    const el = document.createElement('div');
+                    el.style.cssText = `position:absolute;left:50%;top:50%;z-index:1200;background:#fffdf7;padding:10px 10px 0;border-radius:4px;box-shadow:0 14px 40px #000c;cursor:pointer;transform:translate(-50%,-50%) rotate(${tilt}deg);max-width:92%`;
+                    const tape = document.createElement('div');
+                    tape.style.cssText = 'position:absolute;top:-9px;left:50%;width:64px;height:18px;margin-left:-32px;background:rgba(251,191,36,.6);transform:rotate(-3deg);box-shadow:0 1px 3px #0003';
+                    const img = new Image(); img.alt = ''; img.draggable = false; img.src = photo;
+                    img.style.cssText = `display:block;width:${imgW}px;height:${imgH}px;object-fit:cover;background:#e7e5e4`;
+                    const cap = document.createElement('div');
+                    cap.style.cssText = `width:${imgW}px;max-width:100%;padding:8px 2px 10px;font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;color:#44403c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis`;
+                    cap.textContent = '⭐ ' + ev.label;
+                    el.append(tape, img, cap);
+                    map.getContainer().appendChild(el);
+                    const center = 'translate(-50%,-50%)';
+                    el.animate([{ transform:`${center} rotate(${tilt - 12}deg) scale(.5)`, opacity:0 }, { transform:`${center} rotate(${tilt}deg) scale(1)`, opacity:1 }],
+                               { duration:450, easing:'cubic-bezier(.2,1.2,.4,1)', fill:'forwards' });
+                    const pc = postcard = { el, resolve, holdTimer:null };
+                    const swipe = () => {
+                        if (postcard !== pc || pc.leaving) return;
+                        pc.leaving = true; clearTimeout(pc.holdTimer);
+                        const off = size.x + 260;
+                        const anim = el.animate([{ transform:`${center} rotate(${tilt}deg)`, opacity:1 }, { transform:`translate(calc(-50% + ${off}px),-62%) rotate(${tilt + 22}deg)`, opacity:.85 }],
+                                                { duration:500, easing:'ease-in', fill:'forwards' });
+                        anim.onfinish = () => { if (postcard !== pc) return; postcard = null; el.remove(); resolve(token === playToken && playing); };
+                    };
+                    el.addEventListener('click', swipe);                                  // tap the postcard to skip ahead
+                    pc.holdTimer = setTimeout(swipe, 450 + Math.max(1500, 3200 / speed));
+                });
+
                 // ---- Cluster-aware camera ----
                 // Consecutive stops within CLUSTER_M of each other form a cluster (usually one park). The camera
                 // frames the whole cluster so short hops are clearly visible, frames the full leg for long trips
@@ -6197,6 +6246,7 @@
                 };
                 const stopPlay = () => {
                     playing = false; playToken++; stopWaiting();
+                    clearPostcard(); clearModeMarker();
                     liveLayer.clearLayers(); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
                     play.innerHTML = '<i class="fa-solid fa-play"></i> Play';
                 };
@@ -6206,12 +6256,32 @@
                     const dist = map.distance([a.lat, a.lng], [b.lat, b.lng]);
                     const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
                     const modes = legModes(b), started = performance.now();
+                    // The transit badge trails behind the avatar (opposite the direction of travel on screen).
+                    const p0 = map.latLngToContainerPoint([a.lat, a.lng]), p1 = map.latLngToContainerPoint([b.lat, b.lng]);
+                    let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+                    const ox = -ux * 22, oy = -uy * 22;
+                    let shownIdx = -1;
+                    const showMode = idx => {
+                        if (idx === shownIdx) return; shownIdx = idx;
+                        const emoji = modeEmoji[modes[idx]];
+                        if (!emoji) { clearModeMarker(); return; }
+                        const badge = document.createElement('div');
+                        badge.style.cssText = `width:40px;height:40px;border-radius:50%;background:#0f172ae6;border:2px solid ${modeColors[modes[idx]]};display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;box-shadow:0 2px 8px #0008`;
+                        badge.textContent = emoji;
+                        badge.animate([{ transform:'scale(.3)', opacity:0 }, { transform:'scale(1)', opacity:1 }], { duration:240, easing:'ease-out' });
+                        const icon = L.divIcon({ className:'', html:badge, iconSize:[40, 40], iconAnchor:[20 - ox, 20 - oy] });
+                        if (modeMarker) modeMarker.setIcon(icon);
+                        else modeMarker = L.marker(avatar.getLatLng(), { icon, zIndexOffset:900, interactive:false }).addTo(map);
+                    };
                     const frame = now => {
-                        if (token !== playToken || !playing) return resolve(false);
+                        if (token !== playToken || !playing) { clearModeMarker(); return resolve(false); }
                         const t = ease(Math.min(1, (now - started) / duration));
-                        avatar.setLatLng(lerp(a, b, t));
-                        liveLayer.clearLayers(); drawLeg(liveLayer, a, b, modes, t);   // trail follows the avatar
-                        if (t < 1) requestAnimationFrame(frame); else resolve(true);
+                        const pos = lerp(a, b, t);
+                        avatar.setLatLng(pos);
+                        showMode(Math.min(modes.length - 1, Math.floor(t * modes.length)));   // badge changes with the line's colour sections
+                        if (modeMarker) modeMarker.setLatLng(pos);
+                        liveLayer.clearLayers(); drawLeg(liveLayer, a, b, modes, t);         // trail follows the avatar
+                        if (t < 1) requestAnimationFrame(frame); else { clearModeMarker(); resolve(true); }
                     };
                     requestAnimationFrame(frame);
                 });
@@ -6223,6 +6293,7 @@
                         if (camera.leg(a, b, true) && !(await wait(1000 / speed, token))) return;
                         if (!(await animateLeg(a, b, token))) return;
                         renderStep(step + 1, false);
+                        if (b.kind === 'bonus' && !(await showPostcard(b, token))) return;   // proof photo postcard, then swipe away
                         const isLast = step >= events.length - 1;
                         const zoomedIn = isLast ? false : camera.cluster(b, true);      // arrived in a new park: zoom into it
                         if (!(await wait((zoomedIn ? 1300 : 900) / speed, token))) return;
