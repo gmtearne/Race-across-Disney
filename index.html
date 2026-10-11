@@ -5610,6 +5610,13 @@
             if (!u || u.answeredAt || !(u.sel || []).length) return;
             const sel = u.sel.slice();
             u.answeredAt = Date.now();
+            // Clear the pending flag locally right away. The trivia panel refuses to show while transit is
+            // pending, and the saved copy can take longer than the slide animation to come back.
+            const lt = window.liveTeamData;
+            if (lt && lt.transitPending && lt.transitPending[cpId]) {
+                lt.transitPending = { ...lt.transitPending };
+                delete lt.transitPending[cpId];
+            }
             window.refreshTransitPanel(cpId);
             setTimeout(() => {
                 const el = document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-transit`);
@@ -5629,6 +5636,8 @@
                 legs[cpId] = { fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles), modes, at: Date.now() };
                 delete pending[cpId];
                 await fastUpdate(teamRef, { transitPending: pending, transitLegs: legs, distanceMiles: window.transitDistanceTotals(legs) });
+                // Safety net: if the slide-out finished before the save, show the trivia question now.
+                if (!window.cpTransitUi[cpId]) setTimeout(() => window.refreshTriviaPanel(cpId), 60);
             } catch (e) {
                 console.error('Could not save transit answer', e);
             }
@@ -6886,7 +6895,10 @@
                 const teamSnap = await safeGetDoc(teamRef);
                 const teamData = teamSnap.data();
                 if (teamData.endTime) { alert("The race is completed, so bonus uploads are locked."); return; }
-                const freshRace = liveRaceSnap.exists() ? liveRaceSnap.data() : {};
+                // The wildcard offer lives in races/{code}/wildcardClaims/offer, not on the race document,
+                // so it must be overlaid here or the first-team-wins claim below is silently skipped.
+                const freshOffer = await window.fetchWildcardOffer(window.activeRaceCode);
+                const freshRace = window.applyWildcardOffer(liveRaceSnap.exists() ? liveRaceSnap.data() : {}, freshOffer);
                 if ((freshRace.wildcardBonusIds || []).includes(pending.cpId) && !(teamData.claimedBonus || []).includes(pending.cpId)) {
                     const claimResult = await claimWildcardForTeam(freshRace, pending.cpId, teamData);
                     if (!claimResult.ok) { alert(claimResult.message); window.cancelBonusPreview(); return; }
