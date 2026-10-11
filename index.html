@@ -386,6 +386,9 @@
         .cp-trivia-inner { overflow: hidden; min-height: 0; }
         .cp-trivia.opening, .cp-transit.opening { animation: cpSlideDown .45s ease both; animation-delay: var(--cp-trivia-delay, 0ms); }
         .cp-trivia.closing, .cp-transit.closing { animation: cpSlideUp .4s ease both; animation-delay: var(--cp-trivia-delay, 0ms); }
+        @keyframes cpAttn { 0%,100% { border-color: rgba(251,191,36,.35); background-color: #1e293b; } 50% { border-color: #fbbf24; background-color: rgba(251,191,36,.28); } }
+        .cp-attn { animation: cpAttn .6s ease-in-out 4; }
+        @media (prefers-reduced-motion: reduce) { .cp-attn { animation: none; border-color: #fbbf24; } }
         @keyframes cpSlideDown { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
         @keyframes cpSlideUp { from { grid-template-rows: 1fr; opacity: 1; } to { grid-template-rows: 0fr; opacity: 0; } }
         @media (prefers-reduced-motion: reduce) {
@@ -3350,7 +3353,7 @@
                     window.liveWildcardClaim = snap.exists() ? snap.data() : null;
                     const claim = window.liveWildcardClaim;
                     if (claim && claim.teamId !== window.activeTeamId) {
-                        notifyWildcardOnce('claim', code, wc.id, '🃏 Wildcard taken!', `${claim.teamName} already completed the wildcard challenge "${wc.bonusName}". It's locked for everyone else.`);
+                        notifyWildcardOnce('claim', code, wc.id, '🃏 Wildcard taken!', `Another team beat you to the wildcard challenge "${wc.bonusName}". It's locked for everyone else.`);
                     }
                     window.renderWildcardBanner();
                     const active = document.getElementById('team-dashboard-active');
@@ -3408,14 +3411,16 @@
             }
 
             if (st.state === 'claimed') {
-                if (now - st.claim.claimedAt > 15 * 60000) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+                const BANNER_MS = 5 * 60000;   // the top banner clears 5 minutes after the wildcard ends
+                if (now - st.claim.claimedAt > BANNER_MS) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+                wildcardCountdownTimer = setTimeout(() => window.renderWildcardBanner(), st.claim.claimedAt + BANNER_MS - now + 500);
                 const mine = st.claim.teamId === window.activeTeamId;
                 el.innerHTML = `
                     <div class="rounded-2xl p-3.5 border ${mine ? 'border-emerald-400/50 bg-emerald-500/15' : 'border-slate-600 bg-slate-800/80'} backdrop-blur-md flex items-center gap-3">
                         <div class="text-2xl leading-none">${mine ? '🏆' : '🔒'}</div>
                         <div class="min-w-0">
                             <p class="text-[10px] font-black uppercase tracking-widest ${mine ? 'text-emerald-300' : 'text-slate-400'}">Wildcard challenge</p>
-                            <p class="text-[12px] text-white leading-snug">${mine ? `You won "${wc.bonusName}"! ${reward}` : `${st.claim.teamName} already completed "${wc.bonusName}". It's locked for other teams.`}</p>
+                            <p class="text-[12px] text-white leading-snug">${mine ? `You won "${wc.bonusName}"! ${reward}` : `Another team beat you to "${wc.bonusName}". It's locked for other teams.`}</p>
                         </div>
                     </div>`;
                 el.classList.remove('hidden');
@@ -3425,6 +3430,7 @@
             // expired or cancelled: show briefly, then disappear
             const endedAt = st.state === 'cancelled' ? (wc.cancelledAt || wc.expiresAt) : wc.expiresAt;
             if (now - endedAt > 5 * 60000) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+            wildcardCountdownTimer = setTimeout(() => window.renderWildcardBanner(), endedAt + 5 * 60000 - now + 500);
             el.innerHTML = `
                 <div class="rounded-2xl p-3.5 border border-slate-600 bg-slate-800/80 backdrop-blur-md flex items-center gap-3">
                     <div class="text-2xl leading-none">⌛</div>
@@ -3461,7 +3467,7 @@
                     tx.set(claimRef, { teamId: me, teamName: teamData.teamName || 'A team', claimedAt: Date.now(), bonusId });
                     return { ok: true };
                 });
-                if (!result.ok) return { ok: false, message: `${result.claim.teamName} already completed this wildcard first!` };
+                if (!result.ok) return { ok: false, message: `Another team beat you to this wildcard!` };
                 return { ok: true };
             } catch (e) {
                 return { ok: false, message: "Could not claim the wildcard: " + e.message };
@@ -5574,7 +5580,7 @@
                 return `<button type="button" onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
             }).join('');
             return `<div class="cp-transit ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()">
-                <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-sky-400/40 shadow-lg">
+                <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-sky-400/40 shadow-lg ${window.cpAttnClass(cpId, now)}">
                     <p class="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-1">🚏 Transit used</p>
                     <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">What transit did you take to get to ${cp.name}? Pick everything you rode, or None if you only walked.</p>
                     <div class="grid grid-cols-2 gap-1.5">${btns}</div>
@@ -5694,7 +5700,7 @@
                     <div class="space-y-1.5">${q.options.map((opt, i) => `<button type="button" onclick="answerCheckpointTrivia('${cpId}', ${i})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 active:scale-[.99] text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>`).join('')}</div>`;
             }
             return `<div class="cp-trivia ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()">
-                <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-indigo-400/40 shadow-lg">${body}</div></div>
+                <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-indigo-400/40 shadow-lg ${window.cpAttnClass(cpId, now)}">${body}</div></div>
             </div>`;
         };
 
@@ -5705,6 +5711,51 @@
             if (old) old.remove();
             const html = window.buildTriviaPanel(cpId, window.liveTeamData || {}, window.liveTeamRaceData || {}, Date.now());
             if (html) card.insertAdjacentHTML('beforeend', html);
+        };
+
+        // ---- A check-in with an unanswered question (transit or trivia) blocks every further check-in ----
+        window.cpAttn = null;
+        window.cpAttnClass = function(cpId, now) {
+            return (window.cpAttn && window.cpAttn.cpId === cpId && (now || Date.now()) < window.cpAttn.until) ? 'cp-attn' : '';
+        };
+        // Returns the id of the earliest checked-in stop that still has a question to answer, or null.
+        window.getOpenQuestionCpId = function(tData, raceData) {
+            if (!tData || tData.endTime) return null;
+            const cps = (raceData && raceData.checkpoints) || [];
+            const details = tData.checkinDetails || {};
+            const diff = ((tData.difficultyOverride || (raceData && raceData.difficulty)) || 'easy').toLowerCase();
+            const open = [];
+            (tData.completedCheckpoints || []).forEach(id => {
+                const cp = cps.find(c => c.id === id);
+                if (!cp || (tData.rejectedCheckins || {})[id]) return;
+                const t = (details[id] && details[id].timestamp) ? Date.parse(details[id].timestamp) || 0 : 0;
+                if ((tData.transitPending || {})[id]) { open.push({ id, t }); return; }
+                const att = (tData.triviaAttempts || {})[id];
+                if (att && att.pending && !att.asked) {
+                    const locT = (window.DISNEY_TRIVIA_DATABASE || {})[cp.name];
+                    if (locT && (locT[diff] || locT.easy)) open.push({ id, t });
+                }
+            });
+            open.sort((a, b) => a.t - b.t);
+            return open.length ? open[0].id : null;
+        };
+        // Scroll the unanswered question into view (if needed) and flash it.
+        window.focusOpenQuestion = function() {
+            const cpId = window.getOpenQuestionCpId(window.liveTeamData, window.liveTeamRaceData || {});
+            if (!cpId) return;
+            window.cpAttn = { cpId, until: Date.now() + 2600 };
+            const find = () => document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-transit, #team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-trivia`);
+            let panel = find();
+            if (!panel) {
+                if ((window.liveTeamData.transitPending || {})[cpId]) window.refreshTransitPanel(cpId); else window.refreshTriviaPanel(cpId);
+                panel = find();
+            }
+            const target = panel || document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"]`);
+            if (!target) return;
+            const box = panel && panel.querySelector('.rounded-2xl');
+            if (box) { box.classList.remove('cp-attn'); void box.offsetWidth; box.classList.add('cp-attn'); setTimeout(() => box.classList.remove('cp-attn'), 2600); }
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (navigator.vibrate) { try { navigator.vibrate(120); } catch (e) {} }
         };
 
         window.answerCheckpointTrivia = async function(cpId, idx) {
@@ -6188,6 +6239,9 @@
         }, 1000);
 
         async function loadTeamDashboardData(raceData) {
+            // Many callers pass the raw race document, which has no wildcard info (the offer lives in its own record).
+            // Overlay it here so every render, including a late joiner's first one, knows which bonus is the wildcard.
+            raceData = window.applyWildcardOffer(raceData, window.liveWildcardOffer);
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
                 hideSplashScreen();
@@ -6378,6 +6432,7 @@
                     }
 
                     // What the FRONT of the card shows (the Check in button, or a paused/locked state)
+                    const openQuestionCpId = window.getOpenQuestionCpId(tData, raceData);
                     let frontAction = '';
                     if (isRacePaused) {
                         frontAction = `
@@ -6391,6 +6446,13 @@
                             <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
                                 <button type="button" disabled aria-disabled="true" class="w-full h-12 bg-slate-700/70 text-slate-400 font-bold rounded-xl text-[10px] leading-tight flex flex-col items-center justify-center gap-0.5 cursor-not-allowed opacity-70">
                                     <i class="fa-solid fa-lock text-base"></i><span class="text-center">${isRaceFinished ? 'Race Completed' : 'Locked'}</span>
+                                </button>
+                            </div>`;
+                    } else if (openQuestionCpId && openQuestionCpId !== cp.id) {
+                        frontAction = `
+                            <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
+                                <button type="button" aria-disabled="true" onclick="focusOpenQuestion()" title="Answer your open question first" class="w-full h-12 bg-slate-700/70 text-amber-300 border border-amber-500/40 font-bold rounded-xl text-[10px] leading-tight flex flex-col items-center justify-center gap-0.5 opacity-80">
+                                    <i class="fa-solid fa-circle-question text-base"></i><span class="text-center">Answer first</span>
                                 </button>
                             </div>`;
                     } else {
@@ -6563,7 +6625,7 @@
                 } else if (isClaimed) {
                     actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-xs text-amber-400 font-bold whitespace-nowrap"><i class="fa-solid fa-star"></i> ${isWildcardBonus ? 'Wildcard won!' : 'Claimed'}</span>`;
                 } else if (isWildcardBonus && !isLiveWildcard) {
-                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-slate-400 font-bold bg-slate-800 rounded-xl border border-slate-700 text-center leading-tight px-1"><i class="fa-solid fa-lock"></i> ${wildcardTakenBy ? wildcardTakenBy.teamName + ' got it' : 'Wildcard ended'}</span>`;
+                    actionHtml = `<span class="w-full h-10 flex items-center justify-center gap-1 text-[11px] text-fuchsia-200/80 font-bold bg-fuchsia-950/40 rounded-xl border border-fuchsia-500/30 text-center leading-tight px-1"><i class="fa-solid fa-lock"></i> ${wildcardTakenBy ? 'Claimed' : 'Expired'}</span>`;
                 } else {
                     actionHtml = `
                         <label class="w-full h-10 flex items-center justify-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 font-bold rounded-xl text-xs border border-amber-500/40 cursor-pointer transition shadow whitespace-nowrap">
@@ -6574,9 +6636,9 @@
                 }
 
                 return `
-                    <div id="bonus-card-${cp.id}" class="p-3 bg-slate-900 rounded-2xl border ${isRejectedBonus ? 'border-rose-500/50 bg-rose-950/20' : isLiveWildcard ? 'border-fuchsia-400/70 bg-fuchsia-950/20' : (isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80')} flex items-center gap-3 shadow-sm">
+                    <div id="bonus-card-${cp.id}" class="p-3 bg-slate-900 rounded-2xl border ${isRejectedBonus ? 'border-rose-500/50 bg-rose-950/20' : isLiveWildcard ? 'border-fuchsia-400/70 bg-fuchsia-950/20' : (isWildcardBonus ? 'border-fuchsia-500/50 bg-fuchsia-950/10' + (isClaimed ? '' : ' opacity-80') : (isClaimed ? 'border-amber-500/40 bg-amber-950/20' : 'border-slate-700/80'))} flex items-center gap-3 shadow-sm">
                         <div class="min-w-0 flex-1">
-                            ${isWildcardBonus ? '<p class="text-[10px] font-black uppercase tracking-widest text-fuchsia-300">⚡ Wildcard - first team wins</p>' : ''}
+                            ${isWildcardBonus ? `<p class="mb-1"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-fuchsia-500/20 border border-fuchsia-400/50 text-[9px] font-black uppercase tracking-widest text-fuchsia-200">⚡ Wildcard</span>${isLiveWildcard ? '<span class="ml-1.5 text-[10px] font-bold text-fuchsia-300">First team wins</span>' : ''}</p>` : ''}
                             <p class="font-bold text-[13px] leading-snug text-amber-300">⭐ ${cp.name}</p>
                             <p class="text-[11px] text-amber-400/80 mt-0.5">${isScavenger ? '+' + deductionVal + ' Pts' : 'Time Deduction: -' + deductionVal + 'm'}</p>
                         </div>
@@ -6650,6 +6712,8 @@
                 if (window.teamCheckinState.finished) return alert("Race completed - check-ins are locked.");
                 if (!window.teamCheckinState.started) return alert("Start the race first - check-ins unlock when your timer starts.");
             }
+            const blockingQ = window.getOpenQuestionCpId(window.liveTeamData, window.liveTeamRaceData || {});
+            if (blockingQ && blockingQ !== cpId) { window.focusOpenQuestion(); return; }
             if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
                 alert("Error: Geolocation requires a secure HTTPS connection. Your site is currently loading over insecure HTTP.");
                 return;
@@ -6761,6 +6825,8 @@
             if (tData.scheduledTeamStartAt && Date.now() < tData.scheduledTeamStartAt) return alert("Check-ins unlock when your scheduled start time arrives.");
             if (tData.endTime) return alert("Race completed - check-ins are locked.");
             if (!tData.startTime) return alert("Your timer has not started yet - check-ins unlock when your timer starts.");
+            const blockingQ = window.getOpenQuestionCpId(tData, liveRace);
+            if (blockingQ && blockingQ !== cpId) { window.focusOpenQuestion(); return; }
             
             const completed = tData.completedCheckpoints || [];
             const newlyCompleted = !completed.includes(cpId);
