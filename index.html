@@ -6138,25 +6138,39 @@
                     icon:L.divIcon({ className:'', html:avatarEl, iconSize:[44, 44], iconAnchor:[22, 22] }), zIndexOffset:1000, interactive:false
                 }).addTo(map);
 
-                // ---- Adaptive camera ----
-                // Move the camera as little as possible: stay put if the leg is already comfortably in view,
-                // pan if it fits at the current zoom, zoom out only as far as the leg needs, and zoom back in
-                // only when we're far more zoomed out than the leg requires.
-                const MAX_Z = 17, PAD = L.point(120, 120);
+                // ---- Cluster-aware camera ----
+                // Consecutive stops within CLUSTER_M of each other form a cluster (usually one park). The camera
+                // frames the whole cluster so short hops are clearly visible, frames the full leg for long trips
+                // between clusters, zooms back into the next cluster on arrival, and shows the entire route
+                // after the final stop.
+                const CLUSTER_M = 1500, MAX_Z = 17, PAD = L.point(120, 120);
+                let cid = 0;
+                events.forEach((ev, i) => {
+                    if (i > 0 && map.distance([events[i - 1].lat, events[i - 1].lng], [ev.lat, ev.lng]) > CLUSTER_M) cid++;
+                    ev.cluster = cid;
+                });
+                const clusterBounds = {};
+                events.forEach(ev => { (clusterBounds[ev.cluster] = clusterBounds[ev.cluster] || L.latLngBounds([[ev.lat, ev.lng]])).extend([ev.lat, ev.lng]); });
+                let framed = null;      // what the camera is currently framing, so we never re-issue the same move
                 const camera = {
-                    frame(a, b, animate) {
-                        const bounds = L.latLngBounds([[a.lat, a.lng], [b.lat, b.lng]]);
-                        const cur = map.getZoom();
+                    fitTo(bounds, key, animate) {
+                        if (framed === key) return false;
+                        framed = key;
                         let fit = map.getBoundsZoom(bounds, false, PAD);
-                        fit = Number.isFinite(fit) ? Math.min(MAX_Z, fit) : MAX_Z;
-                        const inView = map.getBounds().pad(-0.12).contains(bounds);
-                        if (inView && cur - fit <= 2) return;                   // already well framed
-                        const z = inView ? fit : (fit >= cur ? cur : fit);      // too far out → zoom in; off-screen → pan, or zoom out only as needed
+                        const z = Number.isFinite(fit) ? Math.min(MAX_Z, fit) : MAX_Z;
                         const center = bounds.getCenter();
                         if (!animate) map.setView(center, z, { animate:false });
-                        else if (z === cur) map.panTo(center, { animate:true, duration:.8 });
-                        else map.flyTo(center, z, { duration:.9 });
-                    }
+                        else if (z === map.getZoom()) map.panTo(center, { animate:true, duration:.8 });
+                        else map.flyTo(center, z, { duration:1 });
+                        return true;
+                    },
+                    cluster(ev, animate) { return this.fitTo(clusterBounds[ev.cluster], 'c' + ev.cluster, animate); },
+                    leg(a, b, animate) {
+                        if (a.cluster === b.cluster) return this.cluster(b, animate);          // short hop inside a park: frame the park
+                        return this.fitTo(L.latLngBounds([[a.lat, a.lng], [b.lat, b.lng]]), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg
+                    },
+                    overview(animate) { framed = 'all'; map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16, animate:animate !== false }); },
+                    reset() { framed = null; }
                 };
 
                 // ---- UI ----
@@ -6179,7 +6193,7 @@
                     const leg = (step > 0 && ev.kind !== 'bonus' && window.formatTransitLeg) ? window.formatTransitLeg(ev.transit) : '';
                     metaEl.textContent = [kindLabel(ev), timeText(ev.ts), elapsedText(ev.ts), leg].filter(Boolean).join(' · ');
                     prog.textContent = `Stop ${step + 1} of ${events.length}`;
-                    if (moveCamera) camera.frame(events[Math.max(0, step - 1)], ev, true);
+                    if (moveCamera) { camera.reset(); camera.cluster(ev, true); }
                 };
                 const stopPlay = () => {
                     playing = false; playToken++; stopWaiting();
@@ -6202,14 +6216,21 @@
                     requestAnimationFrame(frame);
                 });
                 const playSequence = async token => {
+                    camera.reset();
                     while (token === playToken && playing && step < events.length - 1) {
                         const a = events[step], b = events[step + 1];
-                        camera.frame(a, b, true);                    // one camera decision per leg, no reset to the overview
+                        // Long leg → zoom out to cover it first; short hop → stay zoomed on the park.
+                        if (camera.leg(a, b, true) && !(await wait(1000 / speed, token))) return;
                         if (!(await animateLeg(a, b, token))) return;
                         renderStep(step + 1, false);
-                        if (!(await wait(900 / speed, token))) return;   // brief dwell at each stop
+                        const isLast = step >= events.length - 1;
+                        const zoomedIn = isLast ? false : camera.cluster(b, true);      // arrived in a new park: zoom into it
+                        if (!(await wait((zoomedIn ? 1300 : 900) / speed, token))) return;
                     }
-                    if (token === playToken) stopPlay();
+                    if (token === playToken) {
+                        if (events.length > 1) { camera.overview(true); await wait(1200, token); }   // finish: show the entire route
+                        if (token === playToken) stopPlay();
+                    }
                 };
                 slider.addEventListener('input', () => { stopPlay(); renderStep(slider.value, true); });
                 speedBtn.onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; speedBtn.textContent = speed + '×'; };
