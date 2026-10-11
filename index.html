@@ -5082,12 +5082,17 @@
                         }).join('') + `</div>`;
                     }
 
+                    // Race Replay is only revealed once the race is final, while each team's
+                    // Report Card keeps its existing visibility rules.
+                    const replayBtnHtml = isFinal
+                        ? `<button onclick="openTeamRaceReplay('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold rounded-lg text-[11px] hover:bg-sky-500/25 transition"><i class="fa-solid fa-play text-[9px]"></i>Race Replay</button>`
+                        : '';
                     const reportBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
                         ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
                         : '';
 
-                    const extraRow = (photosHtml || reportBtnHtml)
-                        ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}${reportBtnHtml}</div>`
+                    const extraRow = (photosHtml || replayBtnHtml || reportBtnHtml)
+                        ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}${replayBtnHtml}${reportBtnHtml}</div>`
                         : '';
 
                     const isMine = t.id === window.activeTeamId;
