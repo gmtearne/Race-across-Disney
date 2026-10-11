@@ -891,6 +891,9 @@
                 <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
                     <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
                 </div>
+                <button type="button" id="cp-modal-photo-btn" onclick="openPhotoClue()" class="hidden w-full py-2.5 bg-slate-900 border border-slate-600 hover:border-disneyGold text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-image text-disneyGold"></i> Photo clue: what does it look like?
+                </button>
             </div>
             <button onclick="closeCheckpointInfoModal()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close
@@ -1891,7 +1894,7 @@
                             <i class="fa-solid fa-ban"></i> Route Planning Restriction
                         </div>
                         <p class="text-slate-300 leading-relaxed">
-                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. Rely on physical park layouts and signage!
+                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
                         </p>
                     </div>
                 </div>
@@ -2108,7 +2111,7 @@
         };
 
         // ---------------------------------------------------------------------------------
-        // AWARDS. Six awards, each given to exactly ONE team (the best in that category).
+        // AWARDS. Ten awards, each given to exactly ONE team (the best in that category).
         // Set AWARDS_ONE_PER_TEAM = true if a team should only ever win one: an award then
         // passes to the next-best team that doesn't have one yet.
         //
@@ -2183,7 +2186,19 @@
                     const miles = Number(t.distanceMiles && t.distanceMiles.walk);
                     if (!(miles > 0)) return null;
                     return { t, score: miles, detail: `${miles.toFixed(1)} miles covered on foot` };
-                }).filter(Boolean).sort((a, b) => b.score - a.score || byName(a, b)) }
+                }).filter(Boolean).sort((a, b) => b.score - a.score || byName(a, b)) },
+
+                // Transport awards: most miles on one mode (team.distanceMiles.<mode>)
+                ...[
+                    { key: 'bus',      emoji: '🚌', name: 'Bus Driver',         mode: 'bus',      what: 'by bus' },
+                    { key: 'boat',     emoji: '🚢', name: 'Steamboat Willie',   mode: 'boat',     what: 'by boat' },
+                    { key: 'monorail', emoji: '🚝', name: 'Beam Me Up',         mode: 'monorail', what: 'by monorail' },
+                    { key: 'skyliner', emoji: '🚡', name: 'Head in the Clouds', mode: 'skyliner', what: 'by Skyliner' }
+                ].map(m => ({ key: m.key, emoji: m.emoji, name: m.name, candidates: () => eligible.map(t => {
+                    const miles = Number(t.distanceMiles && t.distanceMiles[m.mode]);
+                    if (!(miles > 0)) return null;
+                    return { t, score: miles, detail: `${miles.toFixed(1)} miles ${m.what}` };
+                }).filter(Boolean).sort((a, b) => b.score - a.score || byName(a, b)) }))
             ];
 
             const list = [];
@@ -5876,6 +5891,16 @@
             document.getElementById('cp-modal-fact-text').textContent = funFactState.list[funFactState.i];
         };
 
+        // Easy mode "Photo clue": nothing is hosted. The player is sent to a Google Images search for the stop.
+        window.openPhotoClue = async function() {
+            const st = window.photoClueState;
+            if (!st || !st.name) return;
+            const park = (st.park && !/^(Disney Park|Bonus Challenge)$/i.test(st.park)) ? st.park : '';
+            const ok = await window.appConfirm("This opens a Google Images search in your browser. The photos come from a Google web search, are not hosted in this app, and belong to their owners. Use them only to work out what this stop looks like.", { title: "📷 Photo clue", confirmText: "Open Google Images" });
+            if (!ok) return;
+            window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent((st.name + ' ' + park).trim()), '_blank', 'noopener');
+        };
+
         window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty, cpId) {
             const modal = document.getElementById('checkpoint-info-modal');
             const titleEl = document.getElementById('cp-modal-title');
@@ -5887,6 +5912,9 @@
 
             const facts = window.getFunFacts(cpName, cpPark, cpLand);
             descEl.classList.remove('hidden');
+            const photoBtn = document.getElementById('cp-modal-photo-btn');
+            if (photoBtn) photoBtn.classList.add('hidden');
+            window.photoClueState = { name: cpName, park: cpPark };
 
             const triviaRes = cpId ? window.getTriviaResultFor(cpId, cpName) : null;
             const triviaBox = document.getElementById('cp-modal-trivia-box');
@@ -5917,6 +5945,7 @@
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
             } else {
+                if (photoBtn) photoBtn.classList.remove('hidden');   // Easy mode only
                 titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
                 descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
                 
@@ -6036,6 +6065,32 @@
                 `).join('');
             }
 
+            // Distance travelled, by travel mode (team.distanceMiles = { walk, bus, boat, monorail, skyliner })
+            const dm = team.distanceMiles || {};
+            const modeRows = [
+                { id: 'walk', emoji: '🚶', label: 'On foot' },
+                { id: 'bus', emoji: '🚌', label: 'Bus' },
+                { id: 'boat', emoji: '🚢', label: 'Boat' },
+                { id: 'monorail', emoji: '🚝', label: 'Monorail' },
+                { id: 'skyliner', emoji: '🚡', label: 'Skyliner' }
+            ].map(r => ({ ...r, miles: Number(dm[r.id]) || 0 })).filter(r => r.miles > 0);
+            const totalMiles = modeRows.reduce((a, r) => a + r.miles, 0);
+            const fmtMi = (v) => v < 0.1 ? v.toFixed(2) : v.toFixed(1);
+            const distanceBlockHtml = totalMiles > 0 ? `
+                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-blue-200 font-semibold"><i class="fa-solid fa-map-location-dot mr-1 text-disneyGold"></i> Distance Travelled:</span>
+                                <span class="font-bold text-sky-300 font-mono">${fmtMi(totalMiles)} mi</span>
+                            </div>
+                            ${modeRows.map(r => `
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <span class="w-5 text-center text-base leading-none">${r.emoji}</span>
+                                <span class="w-16 text-slate-300 shrink-0">${r.label}</span>
+                                <div class="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden"><div class="h-full rounded-full bg-sky-400" style="width:${Math.max(4, Math.round(r.miles / totalMiles * 100))}%"></div></div>
+                                <span class="w-14 text-right font-mono font-bold text-white shrink-0">${fmtMi(r.miles)} mi</span>
+                            </div>`).join('')}
+                        </div>` : '';
+
             // Awards (only once the whole race is final, so nothing is spoiled early)
             let awardsBlockHtml = '';
             try {
@@ -6096,6 +6151,8 @@
                         </div>
 
                         ${awardsBlockHtml}
+
+                        ${distanceBlockHtml}
 
                         <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2.5">
                             <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
