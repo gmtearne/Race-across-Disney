@@ -5088,11 +5088,11 @@
                         ? `<button onclick="openTeamRaceReplay('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold rounded-lg text-[11px] hover:bg-sky-500/25 transition"><i class="fa-solid fa-play text-[9px]"></i>Race Replay</button>`
                         : '';
                     const reportBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
-                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
+                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
                         : '';
 
                     const extraRow = (photosHtml || replayBtnHtml || reportBtnHtml)
-                        ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}${replayBtnHtml}${reportBtnHtml}</div>`
+                        ? `<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}<div class="ml-auto flex items-center gap-2">${replayBtnHtml}${reportBtnHtml}</div></div>`
                         : '';
 
                     const isMine = t.id === window.activeTeamId;
@@ -5988,154 +5988,243 @@
         };
 
 
-        // ---- Finished-race replay (v1: straight-line legs between recorded stop locations) ----
+        // ---- Finished-race replay (v2: straight-line legs, adaptive camera, team avatar, rejected check-ins) ----
         window.openTeamRaceReplay = async function(raceCode, teamId) {
             try {
+                if (window.__raceReplayClose) { try { window.__raceReplayClose(); } catch (e) {} }
                 const [raceSnap, teamSnap] = await Promise.all([
                     safeGetDoc(doc(window.db, "races", raceCode)),
                     safeGetDoc(doc(window.db, "races", raceCode, "teams", teamId))
                 ]);
                 if (!raceSnap.exists() || !teamSnap.exists()) return window.appToast("Race replay data could not be found.");
                 const race = raceSnap.data(), team = teamSnap.data();
-                const checkpoints = race.checkpoints || [];
+                const checkpoints = race.checkpoints || [];          // mandatory stops AND bonuses live here
                 const details = team.checkinDetails || {};
-                const events = [];
-                const validPos = p => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng));
-                if (validPos(team.startLocation)) events.push({
-                    kind: 'start', label: 'Race start', ts: Number(team.startTime) || Date.parse(team.startTime) || 0,
-                    lat: Number(team.startLocation.lat), lng: Number(team.startLocation.lng), color: '#38bdf8'
-                });
+                const rejected = team.rejectedCheckins || {};         // host-rejected check-ins / bonuses
+                const transitLegs = team.transitLegs || {};
+                const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const num = v => (v === null || v === undefined || v === '') ? NaN : Number(v);
+                const validPos = p => !!p && Number.isFinite(num(p.lat)) && Number.isFinite(num(p.lng));
+                const toMs = v => typeof v === 'number' ? v : (Date.parse(v) || 0);
+                const startMs = toMs(team.startTime);
+
+                // ---- Build the event list ----
+                // `events` is the route (verified only). `skipped` are host-rejected check-ins: shown as ghost
+                // markers but the team's path and avatar never travel to them.
+                const events = [], skipped = [];
+                if (validPos(team.startLocation)) events.push({ kind:'start', label:'Race start', ts:startMs, lat:num(team.startLocation.lat), lng:num(team.startLocation.lng) });
                 (team.completedCheckpoints || []).forEach(id => {
-                    const cp = checkpoints.find(c => c.id === id), d = details[id] || {};
-                    const lat = d.latitude != null ? Number(d.latitude) : (cp && Number(cp.lat));
-                    const lng = d.longitude != null ? Number(d.longitude) : (cp && Number(cp.lng));
-                    if (!cp || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-                    const ts = typeof d.timestamp === 'number' ? d.timestamp : (Date.parse(d.timestamp) || 0);
-                    events.push({kind:'checkpoint', label:cp.name || 'Checkpoint', ts, lat, lng, color:'#34d399', cpId:id,
-                        transit: (team.transitLegs || {})[id] || null});
+                    const cp = checkpoints.find(c => c.id === id); if (!cp) return;
+                    const d = details[id] || {};
+                    // Manual check-ins have no trustworthy GPS, so pin them on the stop itself.
+                    const gps = (!d.isManual && d.latitude != null && d.longitude != null) ? { lat:num(d.latitude), lng:num(d.longitude) } : null;
+                    const pos = validPos(gps) ? gps : (validPos(cp) ? { lat:num(cp.lat), lng:num(cp.lng) } : null);
+                    if (!pos) return;
+                    const ev = { kind:'checkpoint', id, label:cp.name || 'Checkpoint', ts:toMs(d.timestamp), lat:pos.lat, lng:pos.lng, manual:!!d.isManual, transit:transitLegs[id] || null };
+                    (rejected[id] ? skipped : events).push(ev);
                 });
-                Object.entries(team.bonusLocations || {}).forEach(([id, pos]) => {
-                    if (!validPos(pos)) return;
-                    const bonus = (race.bonusCheckpoints || race.bonuses || []).find(b => b.id === id);
-                    const ts = Number((team.bonusClaimTimes || {})[id]) || 0;
-                    events.push({kind:'bonus', label:bonus ? bonus.name : 'Bonus check-in', ts,
-                        lat:Number(pos.lat), lng:Number(pos.lng), color:'#f472b6'});
+                (team.claimedBonus || []).forEach(id => {
+                    const pos = (team.bonusLocations || {})[id]; if (!validPos(pos)) return;
+                    const b = checkpoints.find(c => c.id === id);
+                    const ev = { kind:'bonus', id, label:b ? b.name : 'Bonus check-in', ts:toMs((team.bonusClaimTimes || {})[id]), lat:num(pos.lat), lng:num(pos.lng) };
+                    if (rejected[id]) skipped.push(ev); else if (ev.ts) events.push(ev);   // an untimed bonus can't be placed in the route
                 });
-                events.sort((a,b) => (a.ts || 0) - (b.ts || 0));
-                // If a start location was not captured, the first verified checkpoint still anchors the replay.
-                if (!events.length) return window.appToast("There are no recorded locations to replay yet.");
+                events.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+                if (!events.length) return window.appToast(skipped.length ? "No verified locations to replay (all check-ins were rejected)." : "There are no recorded locations to replay yet.");
+                if (team.endTime) { for (let i = events.length - 1; i >= 0; i--) if (events[i].kind === 'checkpoint') { events[i].finish = true; break; } }
+
+                // ---- Modal ----
                 const old = document.getElementById('team-race-replay-modal'); if (old) old.remove();
                 const modal = document.createElement('div');
                 modal.id = 'team-race-replay-modal';
                 modal.className = 'fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5';
+                const hasManual = events.some(e => e.manual);
                 modal.innerHTML = `
                   <div class="w-full max-w-4xl max-h-[94dvh] flex flex-col overflow-hidden rounded-3xl border border-sky-400/30 bg-slate-900 shadow-2xl">
                     <div class="flex items-center gap-3 p-4 border-b border-slate-700">
                       <div class="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><i class="fa-solid fa-route text-lg"></i></div>
-                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Race Replay</h2><p class="text-xs text-slate-400">${String(team.teamName || 'Team').replace(/[<>&"]/g,'')}</p></div>
+                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Race Replay</h2><p class="text-xs text-slate-400">${esc(team.teamName || 'Team')}</p></div>
                       <button id="replay-close" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white" aria-label="Close replay"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div id="team-replay-map" class="w-full bg-slate-800" style="height:min(52dvh,460px);min-height:240px"></div>
                     <div class="p-4 space-y-3 overflow-y-auto">
-                      <div class="flex items-center justify-between gap-3"><div class="min-w-0"><p id="replay-stop-name" class="font-bold text-white truncate">Race start</p><p id="replay-stop-meta" class="text-xs text-slate-400">Starting point</p></div><button id="replay-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button></div>
-                      <input id="replay-slider" type="range" min="0" max="${Math.max(0,events.length-1)}" value="0" step="1" class="w-full accent-amber-400">
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0"><p id="replay-stop-name" class="font-bold text-white truncate">Race start</p><p id="replay-stop-meta" class="text-xs text-slate-400">Starting point</p></div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <button id="replay-speed" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Playback speed">1×</button>
+                          <button id="replay-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button>
+                        </div>
+                      </div>
+                      <input id="replay-slider" type="range" min="0" max="${Math.max(0, events.length - 1)}" value="0" step="1" class="w-full accent-amber-400">
                       <div class="flex justify-between text-[10px] text-slate-500"><span>Start</span><span id="replay-progress-label">Stop 1 of ${events.length}</span><span>Finish</span></div>
-                      <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300"><span><i class="fa-solid fa-minus" style="color:#38bdf8"></i> Walk</span><span><i class="fa-solid fa-minus" style="color:#34d399"></i> Bus</span><span><i class="fa-solid fa-minus" style="color:#a78bfa"></i> Monorail</span><span><i class="fa-solid fa-minus" style="color:#fb923c"></i> Skyliner</span><span><i class="fa-solid fa-minus" style="color:#f87171"></i> Boat</span><span><i class="fa-solid fa-minus" style="color:#94a3b8"></i> Other</span><span><i class="fa-solid fa-minus" style="color:#f472b6"></i> Bonus</span><span class="text-slate-500">Straight-line legs; not a GPS track</span></div>
+                      <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-300">
+                        <span><i class="fa-solid fa-minus" style="color:#38bdf8"></i> Walk</span><span><i class="fa-solid fa-minus" style="color:#34d399"></i> Bus</span><span><i class="fa-solid fa-minus" style="color:#a78bfa"></i> Monorail</span><span><i class="fa-solid fa-minus" style="color:#fb923c"></i> Skyliner</span><span><i class="fa-solid fa-minus" style="color:#f87171"></i> Boat</span><span><i class="fa-solid fa-minus" style="color:#f472b6"></i> Bonus</span><span><i class="fa-solid fa-minus" style="color:#94a3b8"></i> Not recorded</span>
+                        ${hasManual ? '<span><i class="fa-regular fa-circle" style="color:#34d399"></i> Manual check-in</span>' : ''}
+                        ${skipped.length ? `<span style="color:#fca5a5">✕ Rejected by host (${skipped.length}) – not on route</span>` : ''}
+                        <span class="text-slate-500">Straight-line legs; not a GPS track</span>
+                      </div>
                     </div>
                   </div>`;
                 document.body.appendChild(modal);
-                const close = () => { if (window.__raceReplayTimer) clearInterval(window.__raceReplayTimer); window.__raceReplayTimer = null; modal.remove(); };
+
+                // ---- State shared by close/play/render ----
+                let step = 0, playing = false, playToken = 0, waitTimer = null, speed = 1, map = null;
+                const SPEEDS = [1, 2, 4];
+                const stopWaiting = () => { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; };
+                const onKey = e => { if (e.key === 'Escape') close(); };
+                const close = () => {
+                    playing = false; playToken++; stopWaiting();
+                    document.removeEventListener('keydown', onKey);
+                    if (map) { try { map.remove(); } catch (e) {} map = null; }
+                    modal.remove();
+                    if (window.__raceReplayClose === close) window.__raceReplayClose = null;
+                };
+                window.__raceReplayClose = close;
+                document.addEventListener('keydown', onKey);
                 modal.querySelector('#replay-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 if (!window.L) { modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
-                const map = L.map('team-replay-map', {zoomControl:true}).setView([events[0].lat, events[0].lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-                const allLatLngs = events.map(e => [e.lat,e.lng]);
-                if (allLatLngs.length > 1) map.fitBounds(allLatLngs, {padding:[28,28]});
+
+                map = L.map('team-replay-map', { zoomControl:true, zoomSnap:1 }).setView([events[0].lat, events[0].lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+                const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
+
+                // ---- Pins ----
+                const kindColor = { start:'#38bdf8', checkpoint:'#34d399', bonus:'#f472b6' };
                 const pins = L.layerGroup().addTo(map);
-                events.forEach((ev,i) => {
-                    L.circleMarker([ev.lat,ev.lng], {radius: i===0?7:5, color:ev.color, fillColor:ev.color, fillOpacity:.95, weight:2})
-                      .bindTooltip(`${i+1}. ${ev.label}`).addTo(pins);
+                events.forEach((ev, i) => {
+                    const c = kindColor[ev.kind] || '#34d399';
+                    L.circleMarker([ev.lat, ev.lng], { radius:i === 0 ? 7 : 5, color:c, fillColor:c, fillOpacity:ev.manual ? .2 : .95, weight:2 })
+                        .bindTooltip(`${i + 1}. ${esc(ev.label)}${ev.manual ? ' (manual check-in)' : ''}`)
+                        .on('click', () => { stopPlay(); renderStep(i, true); })
+                        .addTo(pins);
                 });
-                const routeLayer = L.layerGroup().addTo(map);
-                const avatar = L.marker([events[0].lat,events[0].lng], {
-                    icon:L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#0f172a;border:3px solid #fbbf24;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 2px 12px #0009">🐭</div>',iconSize:[34,34],iconAnchor:[17,17]})
+                skipped.forEach(ev => {
+                    L.marker([ev.lat, ev.lng], {
+                        icon:L.divIcon({ className:'', iconSize:[18, 18], iconAnchor:[9, 9],
+                            html:'<div style="width:18px;height:18px;border-radius:50%;background:#7f1d1d;border:2px solid #f87171;color:#fecaca;font-size:11px;font-weight:900;line-height:14px;text-align:center;opacity:.9">✕</div>' })
+                    }).bindTooltip(`Rejected by host: ${esc(ev.label)}`).addTo(pins);
+                });
+
+                // ---- Route drawing ----
+                const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', bonus:'#f472b6', other:'#94a3b8' };
+                const lerp = (a, b, t) => [a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t];
+                const legModes = ev => {
+                    if (ev.kind === 'bonus') return ['bonus'];
+                    const m = (ev.transit && ev.transit.modes || []).map(x => String(x).toLowerCase()).filter(x => modeColors[x]);
+                    return m.length ? m : ['other'];       // no transit answer recorded: neutral grey, not a guess
+                };
+                // Multi-mode legs: successive portions of the straight line, in the order the modes were tapped.
+                const drawLeg = (layer, a, b, modes, frac) => {
+                    const n = modes.length;
+                    for (let j = 0; j < n; j++) {
+                        const t0 = j / n, t1 = Math.min((j + 1) / n, frac);
+                        if (t1 <= t0) break;
+                        L.polyline([lerp(a, b, t0), lerp(a, b, t1)], { color:modeColors[modes[j]] || modeColors.other, weight:5, opacity:.94, lineCap:'round' }).addTo(layer);
+                    }
+                };
+                const routeLayer = L.layerGroup().addTo(map);   // finished legs
+                const liveLayer = L.layerGroup().addTo(map);    // leg currently being travelled
+
+                // ---- Avatar: the team's own photo ----
+                const avatarEl = document.createElement('div');
+                avatarEl.style.cssText = 'width:44px;height:44px;border-radius:50%;border:3px solid #fbbf24;background:#0f172a;box-shadow:0 2px 12px #000a;overflow:hidden';
+                const avatarImg = new Image(); avatarImg.alt = ''; avatarImg.draggable = false;
+                avatarImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+                avatarImg.onerror = () => { avatarImg.onerror = null; avatarImg.src = DEFAULT_AVATAR; };
+                avatarImg.src = team.photoUrl || DEFAULT_AVATAR;
+                avatarEl.appendChild(avatarImg);
+                const avatar = L.marker([events[0].lat, events[0].lng], {
+                    icon:L.divIcon({ className:'', html:avatarEl, iconSize:[44, 44], iconAnchor:[22, 22] }), zIndexOffset:1000, interactive:false
                 }).addTo(map);
-                const slider = modal.querySelector('#replay-slider'), nameEl=modal.querySelector('#replay-stop-name'), metaEl=modal.querySelector('#replay-stop-meta'), prog=modal.querySelector('#replay-progress-label'), play=modal.querySelector('#replay-play');
-                let step=0, playing=false, playToken=0;
-                const timeText = ts => ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : 'Time not recorded';
-                const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', other:'#94a3b8' };
-                const modeLabels = { walk:'Walk', none:'Walk', bus:'Bus', monorail:'Monorail', skyliner:'Skyliner', boat:'Boat', other:'Other transport' };
-                const routeColor = ev => {
-                    if (ev.kind === 'bonus') return '#f472b6';
-                    const modes = (ev.transit && ev.transit.modes || []).map(m => String(m).toLowerCase());
-                    // When multiple modes were selected for a leg, use the first recorded mode consistently.
-                    const mode = modes.find(m => modeColors[m]) || 'walk';
-                    return modeColors[mode] || modeColors.other;
-                };
-                const renderStep = (n, camera=true) => {
-                    step=Math.max(0,Math.min(events.length-1,Number(n)||0)); slider.value=String(step);
-                    routeLayer.clearLayers();
-                    for(let i=1;i<=step;i++){
-                        const prev=events[i-1], cur=events[i];
-                        let modes=(cur.transit && cur.transit.modes || []).map(m => String(m).toLowerCase()).filter(m => modeColors[m]);
-                        if(cur.kind==='bonus') modes=['bonus'];
-                        if(!modes.length) modes=['walk'];
-                        // If a team recorded more than one mode for a leg, colour successive portions of
-                        // the illustrative straight line by each selected mode rather than hiding a mode.
-                        for(let j=0;j<modes.length;j++){
-                            const t0=j/modes.length, t1=(j+1)/modes.length;
-                            const a=[prev.lat+(cur.lat-prev.lat)*t0, prev.lng+(cur.lng-prev.lng)*t0];
-                            const b=[prev.lat+(cur.lat-prev.lat)*t1, prev.lng+(cur.lng-prev.lng)*t1];
-                            const color=modes[j]==='bonus'?'#f472b6':(modeColors[modes[j]]||modeColors.other);
-                            L.polyline([a,b],{color,weight:5,opacity:.94,lineCap:'round'}).addTo(routeLayer);
-                        }
+
+                // ---- Adaptive camera ----
+                // Move the camera as little as possible: stay put if the leg is already comfortably in view,
+                // pan if it fits at the current zoom, zoom out only as far as the leg needs, and zoom back in
+                // only when we're far more zoomed out than the leg requires.
+                const MAX_Z = 17, PAD = L.point(120, 120);
+                const camera = {
+                    frame(a, b, animate) {
+                        const bounds = L.latLngBounds([[a.lat, a.lng], [b.lat, b.lng]]);
+                        const cur = map.getZoom();
+                        let fit = map.getBoundsZoom(bounds, false, PAD);
+                        fit = Number.isFinite(fit) ? Math.min(MAX_Z, fit) : MAX_Z;
+                        const inView = map.getBounds().pad(-0.12).contains(bounds);
+                        if (inView && cur - fit <= 2) return;                   // already well framed
+                        const z = inView ? fit : (fit >= cur ? cur : fit);      // too far out → zoom in; off-screen → pan, or zoom out only as needed
+                        const center = bounds.getCenter();
+                        if (!animate) map.setView(center, z, { animate:false });
+                        else if (z === cur) map.panTo(center, { animate:true, duration:.8 });
+                        else map.flyTo(center, z, { duration:.9 });
                     }
-                    const ev=events[step]; avatar.setLatLng([ev.lat,ev.lng]);
-                    nameEl.textContent=ev.label; metaEl.textContent=`${ev.kind==='start'?'Race start':ev.kind==='bonus'?'Bonus check-in':'Checkpoint'} · ${timeText(ev.ts)}`;
-                    prog.textContent=`Stop ${step+1} of ${events.length}`;
-                    if(camera) map.setView([ev.lat,ev.lng], 16, {animate:true,duration:.6});
                 };
-                const stopPlay=()=>{ playing=false; playToken++; if(window.__raceReplayTimer) clearTimeout(window.__raceReplayTimer); window.__raceReplayTimer=null; play.innerHTML='<i class="fa-solid fa-play"></i> Play'; };
-                const wait = (ms, token) => new Promise(resolve => {
-                    window.__raceReplayTimer=setTimeout(()=>resolve(token===playToken && playing), ms);
+
+                // ---- UI ----
+                const slider = modal.querySelector('#replay-slider'), nameEl = modal.querySelector('#replay-stop-name'), metaEl = modal.querySelector('#replay-stop-meta'),
+                      prog = modal.querySelector('#replay-progress-label'), play = modal.querySelector('#replay-play'), speedBtn = modal.querySelector('#replay-speed');
+                const timeText = ts => ts ? new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' }) : 'Time not recorded';
+                const elapsedText = ts => {
+                    if (!ts || !startMs || ts < startMs) return '';
+                    const s = Math.floor((ts - startMs) / 1000);
+                    return `+${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')} into race`;
+                };
+                const kindLabel = ev => ev.kind === 'start' ? 'Race start' : ev.kind === 'bonus' ? 'Bonus check-in' : ev.finish ? 'Finish' : (ev.manual ? 'Checkpoint (manual check-in)' : 'Checkpoint');
+
+                const renderStep = (n, moveCamera) => {
+                    step = Math.max(0, Math.min(events.length - 1, Number(n) || 0)); slider.value = String(step);
+                    routeLayer.clearLayers(); liveLayer.clearLayers();
+                    for (let i = 1; i <= step; i++) drawLeg(routeLayer, events[i - 1], events[i], legModes(events[i]), 1);
+                    const ev = events[step]; avatar.setLatLng([ev.lat, ev.lng]);
+                    nameEl.textContent = ev.label;
+                    const leg = (step > 0 && ev.kind !== 'bonus' && window.formatTransitLeg) ? window.formatTransitLeg(ev.transit) : '';
+                    metaEl.textContent = [kindLabel(ev), timeText(ev.ts), elapsedText(ev.ts), leg].filter(Boolean).join(' · ');
+                    prog.textContent = `Stop ${step + 1} of ${events.length}`;
+                    if (moveCamera) camera.frame(events[Math.max(0, step - 1)], ev, true);
+                };
+                const stopPlay = () => {
+                    playing = false; playToken++; stopWaiting();
+                    liveLayer.clearLayers(); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
+                    play.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+                };
+                const wait = (ms, token) => new Promise(resolve => { waitTimer = setTimeout(() => resolve(token === playToken && playing), ms); });
+                const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                const animateLeg = (a, b, token) => new Promise(resolve => {
+                    const dist = map.distance([a.lat, a.lng], [b.lat, b.lng]);
+                    const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
+                    const modes = legModes(b), started = performance.now();
+                    const frame = now => {
+                        if (token !== playToken || !playing) return resolve(false);
+                        const t = ease(Math.min(1, (now - started) / duration));
+                        avatar.setLatLng(lerp(a, b, t));
+                        liveLayer.clearLayers(); drawLeg(liveLayer, a, b, modes, t);   // trail follows the avatar
+                        if (t < 1) requestAnimationFrame(frame); else resolve(true);
+                    };
+                    requestAnimationFrame(frame);
                 });
-                const animateLeg = async (from, to, token) => {
-                    const duration=1600, started=performance.now();
-                    return await new Promise(resolve => {
-                        const frame = now => {
-                            if(token!==playToken || !playing) return resolve(false);
-                            const t=Math.min(1,(now-started)/duration);
-                            const lat=from.lat+(to.lat-from.lat)*t, lng=from.lng+(to.lng-from.lng)*t;
-                            avatar.setLatLng([lat,lng]);
-                            if(t<1) requestAnimationFrame(frame); else resolve(true);
-                        };
-                        requestAnimationFrame(frame);
-                    });
-                };
                 const playSequence = async token => {
-                    while(token===playToken && playing && step<events.length-1){
-                        const next=step+1, prevEv=events[step], nextEv=events[next];
-                        // Pull back to the race overview while the avatar travels to the next recorded stop.
-                        const bounds=L.latLngBounds(allLatLngs);
-                        map.flyToBounds(bounds, {padding:[38,38], maxZoom:13, duration:1.0});
-                        const moved=await animateLeg(prevEv,nextEv,token); if(!moved) return;
-                        step=next; renderStep(step,false);
-                        // Arrival: zoom into the stop, show its marker and timestamp, then pause briefly.
-                        map.flyTo([nextEv.lat,nextEv.lng], 17, {duration:1.0});
-                        const arrived=await wait(1500,token); if(!arrived) return;
+                    while (token === playToken && playing && step < events.length - 1) {
+                        const a = events[step], b = events[step + 1];
+                        camera.frame(a, b, true);                    // one camera decision per leg, no reset to the overview
+                        if (!(await animateLeg(a, b, token))) return;
+                        renderStep(step + 1, false);
+                        if (!(await wait(900 / speed, token))) return;   // brief dwell at each stop
                     }
-                    if(token===playToken) stopPlay();
+                    if (token === playToken) stopPlay();
                 };
-                slider.addEventListener('input',()=>{stopPlay();renderStep(slider.value,true);});
-                play.onclick=()=>{
-                    if(playing){stopPlay();return;}
-                    if(step>=events.length-1) { step=0; renderStep(0,true); }
-                    playing=true; play.innerHTML='<i class="fa-solid fa-pause"></i> Pause';
-                    const token=++playToken; playSequence(token);
+                slider.addEventListener('input', () => { stopPlay(); renderStep(slider.value, true); });
+                speedBtn.onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; speedBtn.textContent = speed + '×'; };
+                play.onclick = () => {
+                    if (playing) { stopPlay(); return; }
+                    if (step >= events.length - 1) renderStep(0, false);
+                    playing = true; play.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+                    playSequence(++playToken);
                 };
-                renderStep(0,true);
-                setTimeout(()=>map.invalidateSize(),100);
+                renderStep(0, false);
+                setTimeout(() => {
+                    if (!map) return;
+                    map.invalidateSize();
+                    if (allLatLngs.length > 1) map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 });   // opening overview; Play then frames each leg
+                }, 120);
             } catch (e) {
                 console.error('Could not open race replay', e);
                 window.appToast("Could not load race replay. Please try again.");
