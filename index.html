@@ -1368,6 +1368,7 @@
                     <ol id="leaderboard-rows" class="space-y-1.5" aria-label="Team standings">
                         <li class="text-center py-6 text-slate-400 text-xs">Loading standings...</li>
                     </ol>
+                    <div id="leaderboard-overall-replay" class="hidden mt-3"></div>
                     <p id="leaderboard-footnote" class="hidden text-[10px] text-slate-500 text-center mt-3">
                         <i class="fa-solid fa-lock mr-1"></i>Report cards unlock once your team finishes.
                     </p>
@@ -4862,7 +4863,7 @@
                                   })()}
                                 </div>
                                 <div class="pt-2 border-t border-slate-800">
-                                    <span class="text-xs text-slate-300 font-bold block mb-3">Registered Teams & Verification Grid (${teamList.length})</span>
+                                    <div class="flex items-center justify-between gap-2 mb-3"><span class="text-xs text-slate-300 font-bold">Registered Teams & Verification Grid (${teamList.length})</span><button onclick="openRaceReplay('${race.code}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold rounded-lg text-[11px] hover:bg-sky-500/25 transition shrink-0"><i class="fa-solid fa-flag-checkered text-[10px]"></i>Overall Replay</button></div>
                                     <div class="grid grid-cols-2 gap-3">
                                         ${teamList.map(t => {
                                             const teamAvatar = t.photoUrl || DEFAULT_AVATAR;
@@ -5093,6 +5094,11 @@
                 // LIVE vs FINAL. Final once every approved team is done (finished, or out of Scavenger time),
                 // or when the host reveals results. Until then ranks use stops completed only.
                 const isFinal = window.raceIsFinal(raceData, teamList);
+                const overallEl = document.getElementById('leaderboard-overall-replay');
+                if (overallEl) {
+                    overallEl.innerHTML = isFinal ? `<button onclick="openRaceReplay('${targetCode}')" class="w-full flex items-center justify-center gap-2 py-2.5 bg-sky-500/15 text-sky-300 border border-sky-500/30 font-bold rounded-xl text-xs hover:bg-sky-500/25 transition"><i class="fa-solid fa-flag-checkered"></i> Watch the overall race replay</button>` : '';
+                    overallEl.classList.toggle('hidden', !isFinal);
+                }
                 const awardOffer = isFinal ? await window.fetchWildcardOffer(targetCode) : null;
                 const awards = isFinal ? window.computeRaceAwards(window.applyWildcardOffer(raceData, awardOffer), teamList) : null;
 
@@ -6085,6 +6091,297 @@
         };
 
 
+        // ---- Shared by the single-team and overall replays: turn a team doc into a timed, verified route ----
+        window.buildReplayEvents = function(race, team) {
+            const checkpoints = race.checkpoints || [];
+            const details = team.checkinDetails || {}, rejected = team.rejectedCheckins || {}, transitLegs = team.transitLegs || {};
+            const num = v => (v === null || v === undefined || v === '') ? NaN : Number(v);
+            const validPos = p => !!p && Number.isFinite(num(p.lat)) && Number.isFinite(num(p.lng));
+            const toMs = v => typeof v === 'number' ? v : (Date.parse(v) || 0);
+            const startMs = toMs(team.startTime);
+            const events = [], skipped = [];
+            if (validPos(team.startLocation)) events.push({ kind:'start', label:'Race start', ts:startMs, lat:num(team.startLocation.lat), lng:num(team.startLocation.lng) });
+            (team.completedCheckpoints || []).forEach(id => {
+                const cp = checkpoints.find(c => c.id === id); if (!cp) return;
+                const d = details[id] || {};
+                const gps = (!d.isManual && d.latitude != null && d.longitude != null) ? { lat:num(d.latitude), lng:num(d.longitude) } : null;
+                const pos = validPos(gps) ? gps : (validPos(cp) ? { lat:num(cp.lat), lng:num(cp.lng) } : null);
+                if (!pos) return;
+                const ev = { kind:'checkpoint', id, label:cp.name || 'Checkpoint', ts:toMs(d.timestamp), lat:pos.lat, lng:pos.lng, manual:!!d.isManual, transit:transitLegs[id] || null };
+                (rejected[id] ? skipped : events).push(ev);
+            });
+            (team.claimedBonus || []).forEach(id => {
+                const pos = (team.bonusLocations || {})[id]; if (!validPos(pos)) return;
+                const b = checkpoints.find(c => c.id === id);
+                const ev = { kind:'bonus', id, label:b ? b.name : 'Bonus check-in', ts:toMs((team.bonusClaimTimes || {})[id]), lat:num(pos.lat), lng:num(pos.lng) };
+                if (rejected[id]) skipped.push(ev); else if (ev.ts) events.push(ev);
+            });
+            events.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            if (team.endTime) { for (let i = events.length - 1; i >= 0; i--) if (events[i].kind === 'checkpoint') { events[i].finish = true; break; } }
+            return { events, skipped, startMs };
+        };
+
+        // ---- Overall race replay: every team on one map, one shared clock, and a progress bar ----
+        window.openRaceReplay = async function(raceCode) {
+            try {
+                if (window.__raceReplayClose) { try { window.__raceReplayClose(); } catch (e) {} }
+                const [raceSnap, teamsSnap] = await Promise.all([ safeGetDoc(doc(window.db, "races", raceCode)), getDocs(collection(window.db, "races", raceCode, "teams")) ]);
+                if (!raceSnap.exists()) return window.appToast("Race data could not be found.");
+                const race = raceSnap.data();
+                const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const PALETTE = ['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa','#fb923c','#f87171','#2dd4bf','#e879f9','#a3e635','#60a5fa','#fcd34d'];
+
+                // ---- Teams with replayable data ----
+                const teams = [];
+                teamsSnap.forEach(d => {
+                    const t = d.data();
+                    const built = window.buildReplayEvents(race, t);
+                    const evs = built.events.filter(e => e.ts > 0);          // an event with no timestamp can't be placed on the clock
+                    if (!evs.length) return;
+                    teams.push({ id:d.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, startMs:built.startMs, events:evs, finished:!!t.endTime });
+                });
+                if (!teams.length) return window.appToast("No team has recorded locations to replay yet.");
+                teams.sort((a, b) => a.name.localeCompare(b.name)).forEach((tm, i) => { tm.color = PALETTE[i % PALETTE.length]; });
+                const totalStops = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length || Math.max(1, ...teams.map(tm => tm.events.filter(e => e.kind === 'checkpoint').length));
+
+                // ---- Timeline: "From each team's start" (default) or real clock time ----
+                let mode = 'elapsed', maxT = 1;
+                const startOf = tm => tm.startMs || tm.events[0].ts;
+                const globalStart = Math.min(...teams.map(startOf));
+                const startSpread = Math.max(...teams.map(startOf)) - globalStart;
+                const layout = () => {
+                    teams.forEach(tm => {
+                        const shift = mode === 'elapsed' ? startOf(tm) : globalStart;
+                        tm.pts = tm.events.map(e => ({ t:Math.max(0, e.ts - shift), lat:e.lat, lng:e.lng, kind:e.kind }));
+                        // Progress anchors: 0 at the start, +1 for each mandatory stop reached; bonuses don't move the bar.
+                        const t0 = tm.startMs ? Math.max(0, tm.startMs - shift) : 0;
+                        tm.anchors = [{ t:t0, v:0 }]; let c = 0;
+                        tm.pts.forEach(p => { if (p.kind === 'checkpoint') { c++; tm.anchors.push({ t:Math.max(p.t, tm.anchors[tm.anchors.length - 1].t), v:c }); } });
+                        tm.endT = tm.pts[tm.pts.length - 1].t;
+                    });
+                    maxT = Math.max(1000, ...teams.map(tm => tm.endT));
+                };
+                layout();
+                const posAt = (tm, T) => {
+                    const p = tm.pts;
+                    if (T <= p[0].t) return { lat:p[0].lat, lng:p[0].lng, i:0 };
+                    for (let i = 1; i < p.length; i++) {
+                        if (T <= p[i].t) { const a = p[i - 1], b = p[i], f = (T - a.t) / Math.max(1, b.t - a.t); return { lat:a.lat + (b.lat - a.lat) * f, lng:a.lng + (b.lng - a.lng) * f, i:i - 1 }; }
+                    }
+                    const l = p[p.length - 1]; return { lat:l.lat, lng:l.lng, i:p.length - 1 };
+                };
+                const progAt = (tm, T) => {
+                    const A = tm.anchors;
+                    if (T <= A[0].t) return 0;
+                    for (let i = 1; i < A.length; i++) if (T <= A[i].t) { const a = A[i - 1], b = A[i]; return a.v + (b.v - a.v) * ((T - a.t) / Math.max(1, b.t - a.t)); }
+                    return A[A.length - 1].v;
+                };
+                const doneCount = (tm, T) => { let c = 0; tm.anchors.forEach(a => { if (a.t <= T && a.v > c) c = a.v; }); return c; };
+                const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+
+                // ---- Modal ----
+                const old = document.getElementById('team-race-replay-modal'); if (old) old.remove();
+                const modal = document.createElement('div');
+                modal.id = 'team-race-replay-modal';
+                modal.className = 'fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5';
+                const barRows = Math.min(3, teams.length), barH = 34 + 24 * barRows + 6;
+                const tickHtml = Array.from({ length:totalStops + 1 }, (_, k) => {
+                    const label = k === 0 ? 'Start' : (k === totalStops ? '🏁' : ((totalStops <= 12 || k % 5 === 0) ? k : ''));
+                    return `<div style="position:absolute;left:${k / totalStops * 100}%;top:-3px;width:2px;height:14px;margin-left:-1px;background:#64748b;border-radius:1px"></div><div style="position:absolute;left:${k / totalStops * 100}%;top:13px;transform:translateX(-50%);font-size:9px;color:#94a3b8;white-space:nowrap">${label}</div>`;
+                }).join('');
+                modal.innerHTML = `
+                  <div class="w-full max-w-4xl max-h-[94dvh] flex flex-col overflow-hidden rounded-3xl border border-sky-400/30 bg-slate-900 shadow-2xl">
+                    <div class="flex items-center gap-3 p-4 border-b border-slate-700">
+                      <div class="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><i class="fa-solid fa-flag-checkered text-lg"></i></div>
+                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Overall Race Replay</h2><p class="text-xs text-slate-400">Race ${esc(raceCode)} · ${teams.length} team${teams.length === 1 ? '' : 's'}</p></div>
+                      <button id="orr-close" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white" aria-label="Close replay"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="orr-map" class="w-full bg-slate-800" style="height:min(46dvh,430px);min-height:230px"></div>
+                    <div class="p-4 space-y-3 overflow-y-auto">
+                      <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <div><p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold" id="orr-clock-label">Race time</p><p id="orr-clock" class="font-mono font-bold text-xl text-white leading-none">0:00:00</p></div>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                          <button id="orr-mode" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200 ${startSpread < 60000 ? 'hidden' : ''}">⏱ Each team's start</button>
+                          <button id="orr-frame" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200">📍 Auto-frame</button>
+                          <button id="orr-speed" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Playback speed">1×</button>
+                          <button id="orr-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button>
+                        </div>
+                      </div>
+                      <input id="orr-slider" type="range" min="0" max="${Math.round(maxT)}" value="0" step="1000" class="w-full accent-amber-400">
+                      <div>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Race progress · stops completed</p>
+                        <div id="orr-bar" style="position:relative;height:${barH}px;user-select:none">
+                          <div id="orr-avatars" style="position:absolute;left:0;right:0;top:0;bottom:0"></div>
+                          <div id="orr-track" style="position:absolute;left:14px;right:14px;bottom:18px;height:8px;background:#334155;border-radius:4px">
+                            <div id="orr-fill" style="position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#0ea5e9,#34d399);border-radius:4px;opacity:.75"></div>
+                            ${tickHtml}
+                          </div>
+                        </div>
+                      </div>
+                      <div id="orr-chips" class="flex flex-wrap gap-1.5"></div>
+                      <p class="text-[10px] text-slate-500">Straight-line legs between check-ins; teams may look still when their check-ins are far apart in time. Tap a team to follow it.</p>
+                    </div>
+                  </div>`;
+                document.body.appendChild(modal);
+
+                // ---- Lifecycle ----
+                let T = 0, playing = false, raf = null, lastNow = 0, lastCam = 0, lastChips = 0, speed = 1, map = null, autoFrame = true;
+                const SPEEDS = [0.5, 1, 2, 4];
+                const onKey = e => { if (e.key === 'Escape') close(); };
+                const close = () => {
+                    playing = false; if (raf) cancelAnimationFrame(raf);
+                    document.removeEventListener('keydown', onKey);
+                    if (map) { try { map.remove(); } catch (e) {} map = null; }
+                    modal.remove();
+                    if (window.__raceReplayClose === close) window.__raceReplayClose = null;
+                };
+                window.__raceReplayClose = close;
+                document.addEventListener('keydown', onKey);
+                modal.querySelector('#orr-close').onclick = close;
+                modal.addEventListener('click', e => { if (e.target === modal) close(); });
+                if (!window.L) { modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
+
+                // ---- Map, pins, team layers ----
+                map = L.map('orr-map', { zoomControl:true, zoomSnap:1 });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+                const allLatLngs = [];
+                (race.checkpoints || []).forEach(cp => {
+                    if (!Number.isFinite(Number(cp.lat)) || !Number.isFinite(Number(cp.lng)) || cp.lat === null || cp.lng === null) return;
+                    const bonus = cp.type === 'BONUS_PHOTO', c = bonus ? '#f472b6' : '#e2e8f0';
+                    L.circleMarker([Number(cp.lat), Number(cp.lng)], { radius:4, color:c, fillColor:c, fillOpacity:.5, weight:1.5 }).bindTooltip(esc((bonus ? '⭐ ' : '') + cp.name)).addTo(map);
+                });
+                teams.forEach((tm, idx) => {
+                    tm.pts.forEach(p => allLatLngs.push([p.lat, p.lng]));
+                    tm.line = L.polyline([], { color:tm.color, weight:3.5, opacity:.85, lineCap:'round' }).addTo(map);
+                    const el = document.createElement('div');
+                    el.style.cssText = `position:relative;width:32px;height:32px;border-radius:50%;border:3px solid ${tm.color};background:#0f172a;box-shadow:0 2px 8px #000a`;
+                    const img = new Image(); img.alt = ''; img.draggable = false;
+                    img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;display:block';
+                    img.onerror = () => { img.onerror = null; img.src = DEFAULT_AVATAR; }; img.src = tm.photo;
+                    tm.flag = document.createElement('span'); tm.flag.textContent = '🏁';
+                    tm.flag.style.cssText = 'position:absolute;right:-8px;top:-10px;font-size:13px;display:none;filter:drop-shadow(0 1px 2px #000)';
+                    el.append(img, tm.flag);
+                    const ang = idx * 2.399963, ox = Math.cos(ang) * 9, oy = Math.sin(ang) * 9;     // fan avatars out so teams on the same spot stay visible
+                    tm.marker = L.marker([tm.pts[0].lat, tm.pts[0].lng], { icon:L.divIcon({ className:'', html:el, iconSize:[32, 32], iconAnchor:[16 - ox, 16 - oy] }) })
+                        .bindTooltip(esc(tm.name), { direction:'top', offset:[0, -16] }).addTo(map);
+                });
+                map.setView(allLatLngs[0], 14);
+
+                // ---- Progress bar avatars + ranking chips ----
+                const barAv = modal.querySelector('#orr-avatars'), track = modal.querySelector('#orr-track'), fill = modal.querySelector('#orr-fill'), chips = modal.querySelector('#orr-chips');
+                teams.forEach(tm => {
+                    const a = document.createElement('div');
+                    a.style.cssText = `position:absolute;left:0;bottom:30px;width:22px;height:22px;border-radius:50%;border:2px solid ${tm.color};background:#0f172a;overflow:hidden;box-shadow:0 1px 4px #000a;will-change:transform`;
+                    const im = new Image(); im.alt = tm.name; im.title = tm.name; im.draggable = false; im.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+                    im.onerror = () => { im.onerror = null; im.src = DEFAULT_AVATAR; }; im.src = tm.photo;
+                    a.appendChild(im); barAv.appendChild(a); tm.barEl = a;
+                });
+                const renderBar = () => {
+                    const W = Math.max(60, barAv.clientWidth - 28), rowsLast = [];
+                    let lead = 0;
+                    teams.forEach(tm => { tm.frac = Math.min(1, tm.prog / totalStops); lead = Math.max(lead, tm.frac); });
+                    fill.style.width = (lead * 100) + '%';
+                    [...teams].sort((a, b) => a.frac - b.frac).forEach(tm => {
+                        const x = 14 + tm.frac * W;
+                        let r = 0; while (r < barRows - 1 && rowsLast[r] !== undefined && x - rowsLast[r] < 24) r++;   // avoid overlapping avatars by stacking
+                        rowsLast[r] = x;
+                        tm.barEl.style.transform = `translate(${x - 11}px, ${-r * 24}px)`;
+                    });
+                };
+                const renderChips = () => {
+                    const ranked = [...teams].sort((a, b) => (b.prog - a.prog) || (a.endT - b.endT));
+                    chips.innerHTML = ranked.map((tm, i) => {
+                        const done = doneCount(tm, T), fin = tm.finished && T >= tm.endT;
+                        return `<button type="button" data-tid="${esc(tm.id)}" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px] text-slate-200"><span style="width:9px;height:9px;border-radius:50%;background:${tm.color};display:inline-block"></span><span class="font-bold">${i + 1}.</span> ${esc(tm.name)} <b class="text-slate-100">${fin ? '🏁 ' + fmt(tm.endT) : done + '/' + totalStops}</b></button>`;
+                    }).join('');
+                };
+                chips.addEventListener('click', e => {
+                    const b = e.target.closest('[data-tid]'); if (!b) return;
+                    const tm = teams.find(x => x.id === b.dataset.tid); if (!tm) return;
+                    setAutoFrame(false); map.flyTo(tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
+                });
+
+                // ---- Clock + per-frame render ----
+                const clockEl = modal.querySelector('#orr-clock'), clockLabel = modal.querySelector('#orr-clock-label'), slider = modal.querySelector('#orr-slider');
+                const render = () => {
+                    slider.value = String(Math.round(T));
+                    clockEl.textContent = mode === 'elapsed' ? fmt(T) : new Date(globalStart + T).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                    teams.forEach(tm => {
+                        const p = posAt(tm, T);
+                        tm.marker.setLatLng([p.lat, p.lng]);
+                        const trail = []; for (let k = 0; k <= p.i; k++) trail.push([tm.pts[k].lat, tm.pts[k].lng]);
+                        trail.push([p.lat, p.lng]); tm.line.setLatLngs(trail);
+                        tm.prog = progAt(tm, T);
+                        tm.flag.style.display = (tm.finished && T >= tm.endT) ? 'block' : 'none';
+                        tm.marker.setZIndexOffset(Math.round(tm.prog * 100));       // leaders draw on top
+                    });
+                    renderBar();
+                };
+
+                // ---- Camera: keep every active team in frame, but only move when needed ----
+                const frameTeams = force => {
+                    if (!autoFrame || !map) return;
+                    const active = teams.filter(tm => T > 0 && !(tm.finished && T >= tm.endT));
+                    const set = active.length ? active : teams;
+                    const b = L.latLngBounds(set.map(tm => tm.marker.getLatLng()));
+                    let fit = map.getBoundsZoom(b, false, L.point(100, 100)); fit = Number.isFinite(fit) ? Math.min(16, fit) : 16;
+                    const inView = map.getBounds().pad(-0.1).contains(b);
+                    if (!force && inView && map.getZoom() - fit <= 1) return;       // already framed well enough
+                    map.flyTo(b.getCenter(), fit, { duration:1 });
+                };
+                const frameBtn = modal.querySelector('#orr-frame');
+                const setAutoFrame = on => { autoFrame = on; frameBtn.textContent = on ? '📍 Auto-frame' : '📍 Free camera'; frameBtn.style.opacity = on ? '1' : '.7'; };
+                frameBtn.onclick = () => { setAutoFrame(!autoFrame); if (autoFrame) frameTeams(true); };
+                const userTouch = () => { if (autoFrame) setAutoFrame(false); };         // dragging/zooming yourself switches to a free camera
+                map.getContainer().addEventListener('pointerdown', userTouch);
+                map.getContainer().addEventListener('wheel', userTouch, { passive:true });
+
+                // ---- Playback: whole race plays in ~75 s at 1× ----
+                const rate = () => Math.max(1, maxT / 75000) * speed;
+                const playBtn = modal.querySelector('#orr-play');
+                const pause = () => { playing = false; if (raf) cancelAnimationFrame(raf); raf = null; playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play'; };
+                const tick = now => {
+                    if (!playing) return;
+                    const dt = Math.min(100, now - lastNow); lastNow = now;       // capped so a sleeping tab doesn't jump the clock
+                    T = Math.min(maxT, T + dt * rate());
+                    render();
+                    if (now - lastCam > 1000) { lastCam = now; frameTeams(false); }
+                    if (now - lastChips > 400) { lastChips = now; renderChips(); }
+                    if (T >= maxT) {
+                        pause(); renderChips();
+                        if (autoFrame) map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 });   // finish: show the whole race
+                        return;
+                    }
+                    raf = requestAnimationFrame(tick);
+                };
+                playBtn.onclick = () => {
+                    if (playing) { pause(); return; }
+                    if (T >= maxT) T = 0;
+                    playing = true; playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+                    lastNow = performance.now(); raf = requestAnimationFrame(tick);
+                };
+                let scrubTimer = null;
+                slider.addEventListener('input', () => {
+                    pause(); T = Number(slider.value) || 0; render(); renderChips();
+                    clearTimeout(scrubTimer); scrubTimer = setTimeout(() => frameTeams(true), 150);
+                });
+                modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = speed + '×'; };
+                modal.querySelector('#orr-mode').onclick = e => {
+                    mode = mode === 'elapsed' ? 'clock' : 'elapsed';
+                    e.currentTarget.textContent = mode === 'elapsed' ? "⏱ Each team's start" : '🕒 Real clock time';
+                    clockLabel.textContent = mode === 'elapsed' ? 'Race time' : 'Time of day';
+                    pause(); layout(); slider.max = String(Math.round(maxT)); T = Math.min(T, maxT);
+                    render(); renderChips(); frameTeams(true);
+                };
+
+                render(); renderChips();
+                setTimeout(() => { if (!map) return; map.invalidateSize(); map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 }); }, 120);   // opening overview
+            } catch (e) {
+                console.error('Could not open overall race replay', e);
+                window.appToast("Could not load the race replay. Please try again.");
+            }
+        };
+
         // ---- Finished-race replay (v2: straight-line legs, adaptive camera, team avatar, rejected check-ins) ----
         window.openTeamRaceReplay = async function(raceCode, teamId) {
             try {
@@ -6105,30 +6402,9 @@
                 const toMs = v => typeof v === 'number' ? v : (Date.parse(v) || 0);
                 const startMs = toMs(team.startTime);
 
-                // ---- Build the event list ----
-                // `events` is the route (verified only). `skipped` are host-rejected check-ins: shown as ghost
-                // markers but the team's path and avatar never travel to them.
-                const events = [], skipped = [];
-                if (validPos(team.startLocation)) events.push({ kind:'start', label:'Race start', ts:startMs, lat:num(team.startLocation.lat), lng:num(team.startLocation.lng) });
-                (team.completedCheckpoints || []).forEach(id => {
-                    const cp = checkpoints.find(c => c.id === id); if (!cp) return;
-                    const d = details[id] || {};
-                    // Manual check-ins have no trustworthy GPS, so pin them on the stop itself.
-                    const gps = (!d.isManual && d.latitude != null && d.longitude != null) ? { lat:num(d.latitude), lng:num(d.longitude) } : null;
-                    const pos = validPos(gps) ? gps : (validPos(cp) ? { lat:num(cp.lat), lng:num(cp.lng) } : null);
-                    if (!pos) return;
-                    const ev = { kind:'checkpoint', id, label:cp.name || 'Checkpoint', ts:toMs(d.timestamp), lat:pos.lat, lng:pos.lng, manual:!!d.isManual, transit:transitLegs[id] || null };
-                    (rejected[id] ? skipped : events).push(ev);
-                });
-                (team.claimedBonus || []).forEach(id => {
-                    const pos = (team.bonusLocations || {})[id]; if (!validPos(pos)) return;
-                    const b = checkpoints.find(c => c.id === id);
-                    const ev = { kind:'bonus', id, label:b ? b.name : 'Bonus check-in', ts:toMs((team.bonusClaimTimes || {})[id]), lat:num(pos.lat), lng:num(pos.lng) };
-                    if (rejected[id]) skipped.push(ev); else if (ev.ts) events.push(ev);   // an untimed bonus can't be placed in the route
-                });
-                events.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+                // ---- Build the event list (shared with the overall replay) ----
+                const { events, skipped } = window.buildReplayEvents(race, team);
                 if (!events.length) return window.appToast(skipped.length ? "No verified locations to replay (all check-ins were rejected)." : "There are no recorded locations to replay yet.");
-                if (team.endTime) { for (let i = events.length - 1; i >= 0; i--) if (events[i].kind === 'checkpoint') { events[i].finish = true; break; } }
 
                 // ---- Modal ----
                 const old = document.getElementById('team-race-replay-modal'); if (old) old.remove();
