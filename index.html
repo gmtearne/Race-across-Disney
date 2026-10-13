@@ -178,7 +178,7 @@
 
         /* ---------- Bottom sheet picker ---------- */
         #app-sheet {
-            position: fixed; inset: 0; z-index: 130;
+            position: fixed; inset: 0; z-index: 10000;
             visibility: hidden; pointer-events: none;
             transition: visibility 0s linear 0.3s;
         }
@@ -779,13 +779,14 @@
 
     <style>
         /* ===== New Race wizard ===== */
-        #race-wizard { position: fixed; inset: 0; z-index: 120; display: none; flex-direction: column;
+        #race-wizard { position: fixed; inset: 0; z-index: 9990; display: none; flex-direction: column; pointer-events: auto;
             background: #020617; opacity: 0; transition: opacity .35s ease; }
         #race-wizard.rw-show { display: flex; }
         #race-wizard.rw-open { opacity: 1; }
         #race-wizard .rw-top { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
         #race-wizard .rw-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
         #race-wizard .rw-step { animation: rwStepIn .35s ease both; }
+        #race-wizard button, #race-wizard input, #race-wizard select, #race-wizard label { pointer-events: auto; }
         @keyframes rwStepIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         #race-wizard .rw-seg { flex: 1; height: 5px; border-radius: 999px; background: #1e293b; transition: background .3s; }
         #race-wizard .rw-seg.on { background: var(--theme-accent); }
@@ -2663,8 +2664,12 @@
             }
 
             setTimeout(() => {
-                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
-                switchTab(savedTab, false);
+                // The Menu is a navigation screen, not the app's landing page.
+                // Ignore a stale saved 'menu' tab and open on the Team Portal / Race tab.
+                const savedTab = localStorage.getItem('rad_active_tab');
+                const initialTab = (!savedTab || savedTab === 'menu') ? 'race' : savedTab;
+                switchTab(initialTab, false, true);
+                if (savedTab === 'menu') localStorage.setItem('rad_active_tab', 'race');
                 if (!window.activeRaceCode) {
                     hideSplashScreen();
                 }
