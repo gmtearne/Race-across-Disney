@@ -2663,12 +2663,25 @@
             }
 
             setTimeout(() => {
-                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
-                switchTab(savedTab, false);
-                if (!window.activeRaceCode) {
-                    hideSplashScreen();
-                }
-            }, 50);
+    const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+    // <main> is display:none until hideSplashScreen(). Make it visible first,
+    // otherwise portalViewport.clientWidth is 0 and the scroll target collapses to page 0.
+    const mainEl = document.querySelector('main');
+    if (mainEl) mainEl.style.display = 'flex';
+    requestAnimationFrame(() => {
+        switchTab(savedTab, false, true);
+        if (!window.activeRaceCode) hideSplashScreen();
+        // Re-align once the splash fade and safe-area insets have settled.
+        setTimeout(() => {
+            const pv = document.getElementById('portal-viewport');
+            if (pv && !pv.classList.contains('hidden')) {
+                const PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
+                const i = Math.max(0, PAGES.indexOf(window.currentTab));
+                pv.scrollTo({ left: i * pv.clientWidth, behavior: 'auto' });
+            }
+        }, 400);
+    });
+}, 50);
         });
 
         window.copyRaceCode = async function(code) {
