@@ -8546,8 +8546,8 @@
       </button>`;
     }
     outer.className = 'space-y-0';
-    collapsible.classList.remove('hidden','pt-4','border-t','border-slate-700/80');
-    collapsible.innerHTML = '';
+    // Keep the existing creation form in the DOM until its controls are moved into wizard steps.
+    collapsible.classList.remove('pt-4','border-t','border-slate-700/80');
     const overlay = document.createElement('div');
     overlay.id = 'race-wizard-overlay';
     overlay.className = 'fixed inset-0 z-[180] hidden opacity-0 transition-opacity duration-300';
@@ -8592,6 +8592,8 @@
     }
     const content=document.getElementById('race-wizard-content');
     [namePanel,modePanel,difficultyPanel,checkpointsPanel,extrasPanel].forEach(p=>content.appendChild(p));
+    // The original expandable container is now empty; keep it hidden outside the wizard.
+    collapsible.classList.add('hidden');
     // Re-label original final submit as internal submit action.
     window.__raceWizardStep=0;
     window.openRaceWizard=function(){
