@@ -178,7 +178,7 @@
 
         /* ---------- Bottom sheet picker ---------- */
         #app-sheet {
-            position: fixed; inset: 0; z-index: 10000;
+            position: fixed; inset: 0; z-index: 20010;
             visibility: hidden; pointer-events: none;
             transition: visibility 0s linear 0.3s;
         }
@@ -779,7 +779,7 @@
 
     <style>
         /* ===== New Race wizard ===== */
-        #race-wizard { position: fixed; inset: 0; z-index: 9990; display: none; flex-direction: column; pointer-events: auto;
+        #race-wizard { position: fixed; inset: 0; z-index: 20000; display: none; flex-direction: column; pointer-events: auto;
             background: #020617; opacity: 0; transition: opacity .35s ease; }
         #race-wizard.rw-show { display: flex; }
         #race-wizard.rw-open { opacity: 1; }
@@ -2085,6 +2085,8 @@
             }
 
         }
+        // Expose navigation to the inline onclick handlers used by the app shell.
+        window.switchTab = switchTab;
 
         // Highlights the nav control for the current page (pills get the gilded style, circles glow)
         window.setActiveNavTab = function(tabName) {
@@ -2321,6 +2323,9 @@
         const POP_TAB_INACTIVE = "py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5";
 
         window.switchPopMethod = function(method) {
+            // Prevent a stale app-sheet backdrop from swallowing checkpoint-tab taps.
+            const staleSheet = document.getElementById('app-sheet');
+            if (staleSheet && staleSheet.classList.contains('open')) window.closeAppSheet?.();
             creationPopMethod = method;
             ['random', 'area', 'manual', 'preset'].forEach(m => {
                 const btn = document.getElementById(`pop-tab-${m}`);
@@ -2666,10 +2671,16 @@
             setTimeout(() => {
                 // The Menu is a navigation screen, not the app's landing page.
                 // Ignore a stale saved 'menu' tab and open on the Team Portal / Race tab.
-                const savedTab = localStorage.getItem('rad_active_tab');
-                const initialTab = (!savedTab || savedTab === 'menu') ? 'race' : savedTab;
-                switchTab(initialTab, false, true);
-                if (savedTab === 'menu') localStorage.setItem('rad_active_tab', 'race');
+                // Always land on the Team Portal on a fresh app load, regardless of stale saved navigation.
+                localStorage.setItem('rad_active_tab', 'race');
+                switchTab('race', false, true);
+                // Re-assert after scroll-snap / viewport initialization has settled.
+                setTimeout(() => {
+                    if (window.currentTab !== 'race') switchTab('race', false, true);
+                    const viewport = document.getElementById('portal-viewport');
+                    if (viewport && viewport.clientWidth) viewport.scrollTo({ left: viewport.clientWidth, behavior: 'auto' });
+                    window.setActiveNavTab('race');
+                }, 350);
                 if (!window.activeRaceCode) {
                     hideSplashScreen();
                 }
@@ -4152,6 +4163,11 @@
                 return;
             }
             rwStep = 1; rwDone = false; rwInfo = null; rwBusy = false;
+
+            // A full-screen picker from the underlying page must not intercept wizard taps.
+            if (typeof window.closeAppSheet === 'function') window.closeAppSheet();
+            const appSheet = document.getElementById('app-sheet');
+            if (appSheet) { appSheet.classList.remove('open'); appSheet.setAttribute('aria-hidden', 'true'); }
 
             // Reveal the wizard before resetting any fields. If a reset helper fails,
             // the user can still see the wizard instead of getting a dead button.
