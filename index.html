@@ -1875,7 +1875,7 @@
                                             <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
                                             <input type="search" id="manual-search-input" onkeyup="renderManualCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
                                         </div>
-                                        <div id="manual-checkbox-container" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 pr-1"></div>
+                                        <div id="manual-checkbox-container" class="space-y-2"></div>
                                     </div>
 
                                     <div id="pop-box-preset" class="hidden space-y-3 pt-2">
@@ -2742,81 +2742,87 @@
 
         window.renderManualCheckboxList = function() {
             const container = document.getElementById('manual-checkbox-container');
+            if (!container) return;
             const query = (document.getElementById('manual-search-input')?.value || "").toLowerCase();
             const presets = window.DISNEY_PRESETS || [];
 
-            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
-            const parkThemes = {
-                "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
-                "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
-                "Hollywood Studios": { bg: "bg-purple-950/20", border: "border-purple-500/30", text: "text-purple-300", icon: "🎬" },
-                "Animal Kingdom": { bg: "bg-emerald-950/20", border: "border-emerald-500/30", text: "text-emerald-300", icon: "🦁" }
+            // Subtle tint per area. Known parks keep their colour; any other area (Coventry etc.) gets a stable one from the palette.
+            const palette = [
+                { bg: "bg-rose-950/25",    border: "border-rose-500/25",    text: "text-rose-300" },
+                { bg: "bg-blue-950/25",    border: "border-blue-500/25",    text: "text-blue-300" },
+                { bg: "bg-purple-950/25",  border: "border-purple-500/25",  text: "text-purple-300" },
+                { bg: "bg-emerald-950/25", border: "border-emerald-500/25", text: "text-emerald-300" },
+                { bg: "bg-sky-950/25",     border: "border-sky-500/25",     text: "text-sky-300" },
+                { bg: "bg-orange-950/25",  border: "border-orange-500/25",  text: "text-orange-300" },
+                { bg: "bg-teal-950/25",    border: "border-teal-500/25",    text: "text-teal-300" },
+                { bg: "bg-pink-950/25",    border: "border-pink-500/25",    text: "text-pink-300" }
+            ];
+            const fixed = { "Magic Kingdom": 0, "Epcot": 1, "Hollywood Studios": 2, "Animal Kingdom": 3 };
+            const themeFor = (name) => {
+                if (name in fixed) return palette[fixed[name]];
+                let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+                return palette[4 + (h % (palette.length - 4))];
             };
+            const toggle = (track) => `<span class="relative inline-flex items-center shrink-0"><input type="checkbox" name="manual_cp_checkbox" %ATTRS% onchange="updateCreationFinalStopDropdown()" class="sr-only peer"><span class="w-11 h-6 bg-slate-700 rounded-full ${track} after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span></span>`;
+            const matches = (p) => p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query);
+            const indexed = presets.map((p, idx) => ({ ...p, originalIndex: idx }));
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
 
             let html = '';
-            html += `<div class="p-3 bg-slate-950 rounded-2xl border border-slate-700 font-bold text-xs text-disneyGold uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> GPS Locations</div>`;
-
             parks.forEach(parkName => {
-                const theme = parkThemes[parkName] || { bg: "bg-sky-950/20", border: "border-sky-500/30", text: "text-sky-300", icon: (window.areaIcon ? window.areaIcon(parkName) : "📍") };
-                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
-                
-                if (parkItems.length > 0) {
+                const theme = themeFor(parkName);
+                const icon = window.areaIcon ? window.areaIcon(parkName) : '📍';
+                const items = indexed.filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && matches(p));
+                if (!items.length) return;
+                const safePark = String(parkName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                html += `
+                    <div class="flex items-center justify-between gap-2 pt-4 pb-1 px-1">
+                        <h3 class="font-bold text-sm ${theme.text} flex items-center gap-2 min-w-0"><span>${icon}</span><span class="truncate">${escHtml(parkName)}</span><span class="text-[10px] font-semibold text-slate-500">${items.length}</span></h3>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button type="button" onclick="selectParkCheckboxes('${safePark}', true)" class="px-2.5 py-1 rounded-full border ${theme.border} ${theme.text} text-[10px] font-bold active:scale-95 transition">All</button>
+                            <button type="button" onclick="selectParkCheckboxes('${safePark}', false)" class="px-2.5 py-1 rounded-full border border-slate-700 text-slate-400 text-[10px] font-bold active:scale-95 transition">None</button>
+                        </div>
+                    </div>`;
+                items.forEach(p => {
+                    const cb = toggle('peer-checked:bg-emerald-600').replace('%ATTRS%', `value="${p.originalIndex}" data-park="${escHtml(parkName)}" data-type="GPS"`);
                     html += `
-                        <div class="ml-2 mt-2 p-3 rounded-xl border ${theme.border} ${theme.bg} space-y-2.5">
-                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                                <span class="font-bold text-xs ${theme.text}">${theme.icon} ${parkName}</span>
-                                <button type="button" onclick="selectParkCheckboxes('${parkName}', true)" class="px-2.5 py-1 rounded-full border ${theme.border} ${theme.text} text-[10px] font-bold active:scale-95 transition">Select all</button>
-                            </div>
-                            <div class="space-y-2">
-                    `;
-                    parkItems.forEach(p => {
-                        html += `
-                            <label class="flex items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-emerald-500/60 has-[:checked]:bg-emerald-950/20">
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <span class="text-disneyGold">📍</span>
-                                    <div class="min-w-0">
-                                        <p class="font-bold text-white text-sm leading-tight">${p.name}</p>
-                                        <span class="text-[11px] text-slate-400">${p.land}</span>
-                                    </div>
+                        <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border ${theme.border} ${theme.bg} cursor-pointer active:scale-[0.98] transition has-[:checked]:border-emerald-500/60 has-[:checked]:bg-emerald-950/30">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="text-disneyGold">📍</span>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-white text-sm leading-tight">${escHtml(p.name)}</p>
+                                    <span class="text-[11px] text-slate-400">${escHtml(p.land || '')}</span>
                                 </div>
-                                <span class="relative inline-flex items-center shrink-0">
-                                    <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-park="${parkName}" data-type="GPS" onchange="updateCreationFinalStopDropdown()" class="sr-only peer">
-                                    <span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span>
-                                </span>
-                            </label>
-                        `;
-                    });
-                    html += `</div></div>`;
-                }
+                            </div>
+                            ${cb}
+                        </label>`;
+                });
             });
 
-            const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+            const bonusItems = indexed.filter(p => p.type === 'BONUS_PHOTO' && matches(p));
             if (bonusItems.length > 0) {
                 html += `
-                    <div class="mt-4 p-2.5 bg-slate-950 rounded-xl border border-slate-700 font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
-                        <button type="button" onclick="selectBonusCheckboxes(true)" class="px-2.5 py-1 rounded-full border border-amber-500/40 text-amber-300 text-[10px] font-bold normal-case active:scale-95 transition">Select all</button>
-                    </div>
-                    <div class="ml-2 mt-2 p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
-                `;
+                    <div class="flex items-center justify-between gap-2 pt-5 pb-1 px-1">
+                        <h3 class="font-bold text-sm text-amber-300 flex items-center gap-2"><span>⭐</span> Bonus Photo Locations <span class="text-[10px] font-semibold text-slate-500">${bonusItems.length}</span></h3>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button type="button" onclick="selectBonusCheckboxes(true)" class="px-2.5 py-1 rounded-full border border-amber-500/30 text-amber-300 text-[10px] font-bold active:scale-95 transition">All</button>
+                            <button type="button" onclick="selectBonusCheckboxes(false)" class="px-2.5 py-1 rounded-full border border-slate-700 text-slate-400 text-[10px] font-bold active:scale-95 transition">None</button>
+                        </div>
+                    </div>`;
                 bonusItems.forEach(p => {
+                    const cb = toggle('peer-checked:bg-amber-600').replace('%ATTRS%', `value="${p.originalIndex}" data-type="BONUS_PHOTO"`);
                     html += `
-                        <label class="flex items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/20">
+                        <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/25 bg-amber-950/20 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/40">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <span class="text-amber-400">⭐</span>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-white text-sm leading-tight">${p.name}</p>
-                                    <span class="text-[11px] text-slate-400">${p.land} (${p.park})</span>
+                                    <p class="font-bold text-white text-sm leading-tight">${escHtml(p.name)}</p>
+                                    <span class="text-[11px] text-slate-400">${escHtml(p.land || '')} (${escHtml(p.park)})</span>
                                 </div>
                             </div>
-                            <span class="relative inline-flex items-center shrink-0">
-                                <input type="checkbox" name="manual_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" onchange="updateCreationFinalStopDropdown()" class="sr-only peer">
-                                <span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span>
-                            </span>
-                        </label>
-                    `;
+                            ${cb}
+                        </label>`;
                 });
-                html += `</div>`;
             }
 
             const tickedBefore = new Set(Array.from(document.querySelectorAll('input[name="manual_cp_checkbox"]:checked')).map(cb => cb.value));
@@ -4181,9 +4187,12 @@
             setTimeout(() => { if (!wz.classList.contains('rw-open')) wz.classList.remove('rw-show'); }, 360);
         }
 
-        window.closeRaceWizard = function() {
+        window.closeRaceWizard = async function() {
             if (rwBusy) return;
-            if (!rwDone && rwEl('new-race-title').value.trim() && !confirm('Discard this new race?')) return;
+            if (!rwDone && rwEl('new-race-title').value.trim()) {
+                const discard = await appConfirm('Your new race has not been created yet. If you close now, everything you have entered will be lost.', { title: 'Discard this new race?', confirmText: 'Discard', danger: true });
+                if (!discard) return;
+            }
             const created = rwDone && rwInfo ? rwInfo.code : null;
             rwHide();
             if (created) {
@@ -8472,7 +8481,7 @@
                 root.id = 'app-dialog';
                 root.setAttribute('role', 'alertdialog');
                 root.setAttribute('aria-modal', 'true');
-                root.className = 'fixed inset-0 z-[120] flex items-center justify-center p-6 pointer-events-none';
+                root.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 pointer-events-none';
                 root.innerHTML = `
                     <div data-backdrop class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
                     <div data-panel class="relative w-full max-w-xs bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl p-5 text-center opacity-0 scale-95 transition duration-200 ease-out">
