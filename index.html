@@ -8445,6 +8445,63 @@
     })();
     </script>
     <script>
+    /* Collapsing header: scrolling slides the tab row up under "Mouse Race" while the subtitle fades out.
+       The title block never moves. --nav-h follows the nav's height (ResizeObserver above), so content stays attached. */
+    (function () {
+        const nav = document.querySelector('nav.app-header');
+        const sub = document.getElementById('nav-subtitle');
+        const tabs = nav && nav.querySelector('.app-tabrow');
+        if (!nav || !sub || !tabs) return;
+        const RANGE = 48;          // px of scrolling over which the header collapses
+        const EXTRA = 6;           // extra px pulled up so the tabs sit snugly under the title
+        let cur = 0, ticking = false, lastScroller = null;
+
+        function apply(scroller) {
+            const top = scroller === window ? window.scrollY : scroller.scrollTop;
+            const maxScroll = scroller === window
+                ? document.documentElement.scrollHeight - window.innerHeight
+                : scroller.scrollHeight - scroller.clientHeight;
+            const shift = Math.round((sub.offsetHeight || 14) + 3 + EXTRA);
+            let target = Math.max(0, Math.min(1, top / RANGE));
+            // Collapsing makes the scroll area taller, so only collapse when there is enough content to keep it stable.
+            const need = cur > 0 ? RANGE + 4 : RANGE + shift + 8;
+            if (maxScroll < need) target = 0;
+            if (Math.abs(target - cur) < 0.005) return;
+            cur = target;
+            tabs.style.marginTop = (-shift * cur).toFixed(1) + 'px';
+            sub.style.opacity = String(Math.max(0, 1 - cur * 1.6));
+            sub.style.visibility = cur >= 0.99 ? 'hidden' : 'visible';
+        }
+        function schedule(scroller) {
+            lastScroller = scroller;
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => { ticking = false; apply(lastScroller); });
+        }
+        function isActiveSection(el) {
+            const r = el.getBoundingClientRect();
+            return Math.abs(r.left) < window.innerWidth / 2;
+        }
+        // scroll events don't bubble, so listen in the capture phase
+        document.addEventListener('scroll', (e) => {
+            const t = e.target;
+            if (t === document || t === document.documentElement || t === document.body) schedule(window);
+            else if (t.matches && t.matches('#portal-track > section') && isActiveSection(t)) schedule(t);
+        }, { capture: true, passive: true });
+
+        // After swiping/switching tabs, adopt the new page's scroll position
+        const vp = document.getElementById('portal-viewport');
+        let settle;
+        if (vp) vp.addEventListener('scroll', () => {
+            clearTimeout(settle);
+            settle = setTimeout(() => {
+                const sec = Array.from(document.querySelectorAll('#portal-track > section')).find(isActiveSection);
+                if (sec) schedule(sec);
+            }, 150);
+        }, { passive: true });
+    })();
+    </script>
+    <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
