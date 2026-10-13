@@ -2283,7 +2283,19 @@
         };
 
         window.toggleGameModeSelection = function() {
-            const isScavenger = document.getElementById('create-mode-scavenger').checked;
+    // The wizard markup is parsed after this script, so these may be null at load.
+    // Bail out quietly and let the wizard re-run this once it's in the DOM.
+    const scavengerEl = document.getElementById('create-mode-scavenger');
+    const raceEl = document.getElementById('create-mode-race');
+    if (!scavengerEl || !raceEl) return;
+    const isScavenger = scavengerEl.checked;
+    const finalStopContainer = document.getElementById('speed-final-stop-container');
+    if (finalStopContainer) finalStopContainer.classList.toggle('hidden', isScavenger);
+    const scavengerLimit = document.getElementById('create-scavenger-limit-box');
+    const speedStart = document.getElementById('create-speed-start-box');
+    if (scavengerLimit) scavengerLimit.classList.toggle('hidden', !isScavenger);
+    if (speedStart) speedStart.classList.toggle('hidden', isScavenger);
+};
             const finalStopContainer = document.getElementById('speed-final-stop-container');
             if (finalStopContainer) finalStopContainer.classList.toggle('hidden', isScavenger);
             const scavengerLimit = document.getElementById('create-scavenger-limit-box');
