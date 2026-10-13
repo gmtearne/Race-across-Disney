@@ -8595,17 +8595,36 @@
     // Re-label original final submit as internal submit action.
     window.__raceWizardStep=0;
     window.openRaceWizard=function(){
-      generateRandomRaceCode();
+      // Reveal the wizard first so a code-generation issue can never leave the button inert.
       overlay.classList.remove('hidden');
-      requestAnimationFrame(()=>overlay.classList.remove('opacity-0'));
+      overlay.classList.remove('opacity-0');
+      overlay.style.display='block';
+      overlay.style.visibility='visible';
       document.documentElement.style.overflow='hidden';
-      window.__raceWizardStep=0; showRaceWizardStep();
+      window.__raceWizardStep=0;
+      showRaceWizardStep();
+      try {
+        const codeInput=document.getElementById('new-race-code');
+        if(codeInput && !codeInput.value.trim()) {
+          const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          let result='';
+          for(let i=0;i<6;i++) result+=chars.charAt(Math.floor(Math.random()*chars.length));
+          codeInput.value=result;
+        } else if(typeof generateRandomRaceCode==='function') {
+          generateRandomRaceCode();
+        }
+      } catch(err) { console.warn('Race code generation skipped:', err); }
       setTimeout(()=>document.getElementById('new-race-title')?.focus(),250);
     };
     window.closeRaceWizard=function(){
       overlay.classList.add('opacity-0'); document.documentElement.style.overflow='';
       setTimeout(()=>overlay.classList.add('hidden'),300);
     };
+    const wizardLaunchButton=outer.querySelector('button[onclick="openRaceWizard()"]');
+    if(wizardLaunchButton) wizardLaunchButton.addEventListener('click', function(event){
+      event.preventDefault();
+      window.openRaceWizard();
+    });
     window.showRaceWizardStep=function(){
       const n=window.__raceWizardStep;
       content.querySelectorAll('.race-wizard-step').forEach(p=>p.classList.toggle('hidden',Number(p.dataset.step)!==n));
