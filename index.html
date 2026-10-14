@@ -9673,6 +9673,13 @@
             sync();
         };
 
+        // Use the app's bottom-sheet picker for Checkpoint Frenzy duration (not the browser-native select).
+        function initFrenzyDurationPicker() {
+            if (window.enhanceSelect) window.enhanceSelect('create-frenzy-duration', { title: 'Frenzy duration' });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initFrenzyDurationPicker);
+        else initFrenzyDurationPicker();
+
         // Park/area choices for the Preset method come straight from the location list
         window.populatePresetParkSelect = function () {
             const sel = document.getElementById('preset-park-select');
