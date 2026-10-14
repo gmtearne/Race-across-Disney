@@ -5593,8 +5593,11 @@
                 return `<div class="flex items-center justify-between gap-2 text-[11px] text-slate-300"><span>⚡ ${f.durationMin} min · ${label}</span>${r.state === 'active' ? `<button onclick="hostCancelFrenzy('${race.code}','${f.id}')" class="px-2 py-1 bg-rose-600/20 text-rose-300 border border-rose-500/40 rounded-lg text-[10px] font-bold">Cancel</button>` : ''}</div>`;
             }).join('');
             const running = res.list.some(r => r.state === 'active');
-            const starter = !hasStarted ? '<p class="text-[10px] text-slate-500">Available once the race has started.</p>' : (running ? '' : `<div class="flex gap-2"><select id="frenzy-dur-${race.code}" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">${[10, 15, 20, 30, 45, 60].map(m => `<option value="${m}" ${m === 20 ? 'selected' : ''}>${m} minutes</option>`).join('')}</select><button onclick="hostStartFrenzy('${race.code}')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-bolt mr-1"></i> Start Frenzy</button></div>`);
-            return `<div class="p-3 bg-slate-950 rounded-xl border border-orange-500/30 space-y-2"><div><span class="text-[11px] text-orange-300 font-bold block">⚡ Checkpoint Frenzy</span><span class="text-[10px] text-slate-400">The team with the most GPS check-ins in the window wins ${race.gameMode === 'scavenger' ? '+' : '-'}${window.FRENZY_BONUS} ${unit}. Manual overrides and rejected check-ins don't count.</span></div>${starter}${rows ? `<div class="space-y-1.5 pt-1">${rows}</div>` : ''}</div>`;
+            const cfg = race.frenzyAuto || {};
+            // Frenzy is configured only at race creation. The host button fires that exact duration.
+            const starter = !cfg.enabled ? '' : (!hasStarted ? '<p class="text-[10px] text-slate-500">Available once the race has started.</p>' : (running ? '' : `<button onclick="hostStartFrenzy('${race.code}')" class="w-full px-3 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-bolt mr-1"></i> Start Checkpoint Frenzy</button>`));
+            if (!cfg.enabled && !rows) return '';
+            return `<div class="p-3 bg-slate-950 rounded-xl border border-orange-500/30 space-y-2"><div><span class="text-[11px] text-orange-300 font-bold block">⚡ Checkpoint Frenzy</span><span class="text-[10px] text-slate-400">${cfg.enabled ? `Configured for ${Number(cfg.durationMin) || 15} minutes. ` : ''}The team with the most GPS check-ins in the window wins ${race.gameMode === 'scavenger' ? '+' : '-'}${window.FRENZY_BONUS} ${unit}. Manual overrides and rejected check-ins don't count.</span></div>${starter}${rows ? `<div class="space-y-1.5 pt-1">${rows}</div>` : ''}</div>`;
         }
 
         function hostPanelControlsHtml(race, teamList) {
@@ -6166,17 +6169,17 @@
                     // Race Replay is only revealed once the race is final, while each team's
                     // Report Card keeps its existing visibility rules.
                     const replayBtnHtml = isFinal
-                        ? `<button onclick="openTeamRaceReplay('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold rounded-lg text-[11px] hover:bg-sky-500/25 transition"><i class="fa-solid fa-play text-[9px]"></i>Race Replay</button>`
+                        ? `<button onclick="openTeamRaceReplay('${targetCode}', '${t.id}')" class="flex shrink-0 items-center gap-1.5 px-2.5 py-1 whitespace-nowrap bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold rounded-lg text-[11px] hover:bg-sky-500/25 transition"><i class="fa-solid fa-play text-[9px]"></i>Race Replay</button>`
                         : '';
                     const reportBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
-                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
+                        ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="flex shrink-0 items-center gap-1.5 px-2.5 py-1 whitespace-nowrap bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
                         : '';
                     const scorecardBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
-                        ? `<button onclick="openTeamScorecard('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold rounded-lg text-[11px] hover:bg-emerald-500/25 transition"><i class="fa-solid fa-calculator text-[10px]"></i>Scorecard</button>`
+                        ? `<button onclick="openTeamScorecard('${targetCode}', '${t.id}')" class="flex shrink-0 items-center gap-1.5 px-2.5 py-1 whitespace-nowrap bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold rounded-lg text-[11px] hover:bg-emerald-500/25 transition"><i class="fa-solid fa-calculator text-[10px]"></i>Scorecard</button>`
                         : '';
 
                     const extraRow = (photosHtml || replayBtnHtml || reportBtnHtml || scorecardBtnHtml)
-                        ? `<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}<div class="ml-auto flex items-center gap-2">${replayBtnHtml}${scorecardBtnHtml}${reportBtnHtml}</div></div>`
+                        ? `<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-700/50">${photosHtml}<div class="flex flex-1 min-w-0 items-center justify-end gap-2">${replayBtnHtml}${scorecardBtnHtml}${reportBtnHtml}</div></div>`
                         : '';
 
                     const isMine = t.id === window.activeTeamId;
@@ -8996,13 +8999,14 @@
         };
         window.hostStartFrenzy = async function(code) {
             const owned = await getOwnedRaceForHost(code); if (!owned) return;
-            const mins = Number(document.getElementById(`frenzy-dur-${code}`)?.value);
-            if (!Number.isFinite(mins) || mins < 1 || mins > 240) return alert("Choose how long the Checkpoint Frenzy should run.");
+            const cfg = owned.data.frenzyAuto || {};
+            if (!cfg.enabled) return window.appToast("Checkpoint Frenzy was not enabled for this race.");
+            const mins = Math.max(1, Math.min(240, Number(cfg.durationMin) || 15));
             const list = owned.data.frenzies || [], now = Date.now();
-            if (list.some(f => window.frenzyState(f, now) === 'active')) return alert("A Checkpoint Frenzy is already running.");
+            if (list.some(f => window.frenzyState(f, now) === 'active')) return window.appToast("A Checkpoint Frenzy is already running.");
             const prize = owned.data.gameMode === 'scavenger' ? `${window.FRENZY_BONUS} points` : `a ${window.FRENZY_BONUS} minute deduction`;
-            if (!await appConfirm(`Start a ${mins} minute Checkpoint Frenzy now? The team with the most check-ins wins ${prize}. Every team is notified immediately.`, { title: "Checkpoint Frenzy", confirmText: "Start frenzy" })) return;
-            await fastUpdate(owned.ref, { frenzies: [...list, { id: 'fz_' + now, startedAt: now, endsAt: now + mins * 60000, durationMin: mins, bonus: window.FRENZY_BONUS, cancelled: false }] });
+            if (!await appConfirm(`Start the configured ${mins} minute Checkpoint Frenzy now? The team with the most check-ins wins ${prize}. This uses the same event as the automatic trigger.`, { title: "Checkpoint Frenzy", confirmText: "Start frenzy" })) return;
+            await fastUpdate(owned.ref, { frenzies: [...list, { id: 'fz_manual_' + now, startedAt: now, endsAt: now + mins * 60000, durationMin: mins, bonus: window.FRENZY_BONUS, cancelled: false, manual: true }], frenzyAutoResolved: true });
             window.appToast("Checkpoint Frenzy started!"); loadAdminRaces();
         };
         window.hostCancelFrenzy = async function(code, id) {
