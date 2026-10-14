@@ -3885,6 +3885,8 @@
             const cfg = race && race.wildcardAuto;
             if (!cfg || !cfg.enabled || !code || !window.activeTeamId) return;
             if (race.wildcard || race.wildcardSkipped || race.paused || wildcardEvalBusy) return;
+            // Keep events mutually exclusive: an active Frenzy gets the current window.
+            if ((race.frenzies || []).some(f => !f.cancelled && Number(f.startedAt) <= Date.now() && Number(f.endsAt) > Date.now())) return;
             if (!navigator.onLine) return;
             const now = Date.now();
             if (now - wildcardEvalLast < 15000) return;
@@ -3996,16 +3998,12 @@
                     });
                     return;
                 }
-                // Wait until wildcard has been resolved; never overlap the active wildcard.
+                // The two events compete independently for their random eligible moment.
+                // Never overlap a live wildcard, but don't force wildcard to happen first.
                 const offer = await window.fetchWildcardOffer(code);
-                if (race.wildcardAuto?.enabled && !offer) return;
-                if (offer?.status === 'live' && now < Number(offer.expiresAt || 0)) return;
-                if (offer?.status === 'live' && now >= Number(offer.expiresAt || 0)) {
-                    // Offer remains marked live in storage after expiry; it no longer overlaps.
-                }
-                // Choose a race-specific random progress threshold across the eligible window.
-                // For 5+ stops, keep it later than the minimum 2-checkpoint eligibility point,
-                // so the event doesn't routinely appear immediately after the second check-in.
+                if (offer?.status === 'live' && now < Number(offer.expiresAt || 0) && !offer.cancelled) return;
+                // Race-specific random progress threshold. Its independent seed means Frenzy
+                // can be eligible before Wildcard in some races and after it in others.
                 const seed = wildcardSeed({ code: String(code) + '|frenzy', createdAt: race.createdAt });
                 const triggerAt = n >= 5 ? 3 + Math.floor(seed * Math.max(1, n - 4)) : 2;
                 if (Math.min(...done) < triggerAt) return;
@@ -5818,6 +5816,24 @@
             loadAdminRaces();
         };
 
+        window.copyHostRaceCode = async function(code) {
+            const value = String(code || '').trim().toUpperCase();
+            if (!value) return;
+            try {
+                if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+                else {
+                    const temp = document.createElement('textarea'); temp.value = value;
+                    temp.style.position = 'fixed'; temp.style.opacity = '0'; document.body.appendChild(temp);
+                    temp.focus(); temp.select();
+                    const ok = document.execCommand('copy'); temp.remove();
+                    if (!ok) throw new Error('Clipboard copy failed');
+                }
+                window.appToast(`Race code ${value} copied!`);
+            } catch (e) {
+                window.appToast(`Race code: ${value}`);
+            }
+        };
+
         async function loadAdminRaces() {
             const currentUser = window.auth.currentUser;
             if (!currentUser) return;
@@ -5888,7 +5904,7 @@
                                 <span class="block text-[11px] text-slate-400 mt-1">${modeLabel}</span>
                             </span>
                             <span class="flex items-end justify-between gap-2">
-                                <span class="font-mono text-xs font-bold text-disneyGold tracking-wider">${escHtml(race.code)}</span>
+                                <span role="button" tabindex="0" title="Tap to copy race code" onclick="event.stopPropagation(); window.copyHostRaceCode('${escHtml(race.code)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();window.copyHostRaceCode('${escHtml(race.code)}')}" class="font-mono text-xs font-bold text-disneyGold tracking-wider underline decoration-dotted underline-offset-2 cursor-copy">${escHtml(race.code)} <i class="fa-regular fa-copy text-[10px] ml-1 opacity-70"></i></span>
                                 <span class="text-[11px] text-slate-300 font-semibold whitespace-nowrap"><i class="fa-solid fa-users text-slate-500 mr-1"></i>${teamList.length}</span>
                             </span>
                         </button>
@@ -7721,7 +7737,8 @@
                 };
                 const row = (label, value, tone='text-white') => `<div class="flex items-center justify-between gap-4 py-2 border-b border-white/10 last:border-0"><span class="text-slate-300">${label}</span><span class="font-mono font-bold ${tone} text-right">${value}</span></div>`;
                 const bingo = window.bingoProgress(race, team);
-                const bingoText = race.bingo && race.bingo.enabled ? (bingo && bingo.complete ? `Complete · ${race.gameMode === 'scavenger' ? '+' : '−'}${race.bingo.reward || 20} ${race.gameMode === 'scavenger' ? 'pts' : 'min'}` : `${bingo ? bingo.filled : 0} filled · incomplete`) : 'Not enabled';
+                const bingoFilled = Number(bingo && bingo.filled || 0);
+                const bingoText = race.bingo && race.bingo.enabled ? (bingo && bingo.complete ? `Complete · ${race.gameMode === 'scavenger' ? '+' : '−'}${race.bingo.reward || 20} ${race.gameMode === 'scavenger' ? 'pts' : 'min'}` : `${bingoFilled} filled · incomplete`) : 'Not enabled';
                 const isScavenger = race.gameMode === 'scavenger';
                 const stopPoints = completed.size ? mandatory.filter(c => completed.has(c.id)).reduce((sum, cp) => sum + Number(window.stopPoints(cp, race) || 0), 0) : 0;
                 const bonusPoints = claimed.reduce((sum, id) => { const cp = bonuses.find(c => c.id === id); return sum + (cp ? Number(cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10)) : 0); }, 0);
