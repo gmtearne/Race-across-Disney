@@ -1880,7 +1880,7 @@
                                             <input type="number" id="bonus-rand-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
                                             <button type="button" onclick="stepNumber('bonus-rand-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
                                         </div>
-                                        <p id="bonus-area-hint" class="hidden text-[10px] text-slate-500">With By Area, bonuses are only drawn from the areas that are switched on.</p>
+                                        <p id="bonus-area-hint" class="text-[10px] text-slate-500">Random bonuses are only picked from ones that can be done in the areas your stops cover.</p>
                                     </div>
 
                                     <div id="bonus-box-manual" class="hidden space-y-3 pt-1">
@@ -2632,8 +2632,6 @@
                 }
             });
 
-            const hint = document.getElementById('bonus-area-hint');
-            if (hint) hint.classList.toggle('hidden', method !== 'area');
             if (method === 'manual') renderManualCheckboxList();
             if (method === 'area') renderAreaRandomList();
             if (method === 'preset' && window.populatePresetParkSelect) window.populatePresetParkSelect();
@@ -3694,15 +3692,40 @@
             const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
             const taken = new Set();
             teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
-            const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
-            if (!pool.length) return alert("No unused bonus challenges in this race apply to the parks and areas it visits.");
+            let pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
+            // The race may not include any bonus photos (or they have all been claimed). Fall back to the full bonus library
+            // for anything that can be done in the areas this race visits, and add the chosen one to the race.
+            let fromLibrary = false;
+            if (!pool.length) {
+                const inRace = new Set(cps.map(c => c.name));
+                pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !inRace.has(p.name) && window.bonusAppliesToAreas(p, parks));
+                fromLibrary = pool.length > 0;
+            }
+            if (!pool.length) {
+                const areaList = [...parks].join(', ') || 'its areas';
+                return window.appAlert(`There are no bonus photo challenges left that can be done in the areas this race visits (${areaList}).`, { title: 'No wildcard available', tone: 'info' });
+            }
             const dur = Number(cfg.durationMin) || 15;
             const replacing = existing.exists();
             const msg = replacing
                 ? `A wildcard was already ${existing.data().status === 'live' ? 'offered' : 'resolved (' + (existing.data().reason || 'skipped') + ')'} for this race. Fire a new one now for ${dur} minutes? (Testing only.)`
                 : `Fire the wildcard to every team now for ${dur} minutes?`;
             if (!(await appConfirm(msg, { title: "Fire wildcard now", confirmText: "Fire it" }))) return;
-            const bonus = pool[Math.floor(Math.random() * pool.length)];
+            let bonus = pool[Math.floor(Math.random() * pool.length)];
+            if (fromLibrary) {
+                bonus = {
+                    id: 'cp_wc_' + Date.now(),
+                    name: bonus.name,
+                    type: 'BONUS_PHOTO',
+                    lat: bonus.lat || 28.4177,
+                    lng: bonus.lng || -81.5812,
+                    points: bonus.bonusMinDeduction || 10,
+                    bonusMinDeduction: bonus.bonusMinDeduction !== undefined ? bonus.bonusMinDeduction : 10,
+                    park: bonus.park || 'Bonus Challenge',
+                    land: bonus.land || ''
+                };
+                await updateDoc(owned.ref, { checkpoints: [...cps, bonus] });
+            }
             const t0 = Date.now();
             await setDoc(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: false, manual: true });
             window.appToast("Wildcard fired to all teams!");
@@ -4013,8 +4036,15 @@
                 } else {
                     const raw = parseInt(document.getElementById('bonus-rand-count').value);
                     const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
-                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && (!areaSwitchedOn || !areaSwitchedOn.all.includes(p.park) || areaSwitchedOn.on.includes(p.park)));
+                    const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(p, stopAreas));
                     bonusPicked = pickRandom(pool, bonusReq);
+                }
+                // A wildcard needs a bonus to offer, so keep one in reserve if none were chosen
+                if (!bonusPicked.length && document.getElementById('create-wildcard-switch')?.checked) {
+                    const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
+                    bonusPicked = pickRandom(presets.filter(p => p.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(p, stopAreas)), 1);
+                    if (bonusPicked.length) window.appToast('Added 1 bonus photo so the wildcard has something to offer', 4500);
                 }
                 initialCps.push(...bonusPicked.map((p, idx) => toCheckpoint(p, idx, 'cp_bonus_')));
 
