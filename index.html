@@ -1085,7 +1085,7 @@
                 </div>
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                    <input type="search" id="add-cp-search-input" onkeyup="renderAddCheckboxList()" placeholder="Search attractions or bonuses..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                    <input type="search" id="add-cp-search-input" onkeyup="renderAddCheckboxList()" placeholder="Search attractions..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
                 </div>
                 <div id="add-cp-checkbox-container" class="space-y-3"></div>
             </div>
@@ -1808,9 +1808,9 @@
 
                 <!-- Step 4: checkpoints -->
                 <section data-rw-step="4" class="rw-step hidden space-y-5">
-                    <p class="text-sm text-slate-400">Choose which stops and bonus challenges are in this race.</p>
+                    <p class="text-sm text-slate-400">Choose the stops for this race, then add any bonus photo challenges.</p>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
-                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Initial Checkpoints</label>
+                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Checkpoints</label>
 
                                     <div class="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
                                         <button type="button" onclick="switchPopMethod('random')" id="pop-tab-random" class="py-2 px-1 bg-indigo-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
@@ -1821,22 +1821,12 @@
 
                                     <div id="pop-box-random" class="space-y-3 pt-1">
                                         <p class="text-[11px] text-slate-400">How many random stops should this race include?</p>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">GPS Stops</label>
-                                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                                    <button type="button" onclick="stepNumber('rand-gps-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                                    <input type="number" id="rand-gps-count" value="10" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                                    <button type="button" onclick="stepNumber('rand-gps-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
-                                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                                    <button type="button" onclick="stepNumber('rand-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                                    <input type="number" id="rand-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                                    <button type="button" onclick="stepNumber('rand-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                                </div>
+                                        <div>
+                                            <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Stops</label>
+                                            <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                                <button type="button" onclick="stepNumber('rand-gps-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                                <input type="number" id="rand-gps-count" value="10" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                                <button type="button" onclick="stepNumber('rand-gps-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1847,15 +1837,6 @@
                                         <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
                                             <span class="text-xs text-slate-300 font-semibold">GPS stops in total</span>
                                             <span id="area-random-total" class="font-mono font-bold text-disneyGold text-base">0</span>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Bonus Challenges</label>
-                                            <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
-                                                <button type="button" onclick="stepNumber('area-bonus-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
-                                                <input type="number" id="area-bonus-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
-                                                <button type="button" onclick="stepNumber('area-bonus-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
-                                            </div>
-                                            <p class="text-[10px] text-slate-500 mt-1.5">Bonuses are only drawn from areas that are switched on.</p>
                                         </div>
                                     </div>
 
@@ -1877,13 +1858,44 @@
                                     <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                         <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
                                         <select id="preset-park-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                            <option value="all">🌟 All 50+ Disney Locations & Bonuses</option>
+                                            <option value="all">🌟 All Disney Locations</option>
                                             <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
                                             <option value="Epcot">🌐 Epcot Park (All Stops)</option>
                                             <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
                                             <option value="Animal Kingdom">🦁 Disney's Animal Kingdom (All Stops)</option>
-                                            <option value="Bonus Challenge">⭐ Bonus Photo Challenges Only</option>
                                         </select>
+                                    </div>
+                                </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-amber-500/30 space-y-3">
+                                    <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider">⭐ Bonus Photo Checkpoints</label>
+                                    <div class="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                        <button type="button" onclick="switchBonusMethod('random')" id="bonus-tab-random" class="py-2 px-1 bg-amber-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
+                                        <button type="button" onclick="switchBonusMethod('manual')" id="bonus-tab-manual" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">☑️</span><span>Manual</span></button>
+                                    </div>
+
+                                    <div id="bonus-box-random" class="space-y-3 pt-1">
+                                        <p class="text-[11px] text-slate-400">How many random bonus photo challenges? Use 0 for none.</p>
+                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                            <button type="button" onclick="stepNumber('bonus-rand-count', -1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                            <input type="number" id="bonus-rand-count" value="3" min="0" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                            <button type="button" onclick="stepNumber('bonus-rand-count', 1)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                        </div>
+                                        <p id="bonus-area-hint" class="hidden text-[10px] text-slate-500">With By Area, bonuses are only drawn from the areas that are switched on.</p>
+                                    </div>
+
+                                    <div id="bonus-box-manual" class="hidden space-y-3 pt-1">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-400">Pick the bonus photos to include</span>
+                                            <div class="flex gap-1.5">
+                                                <button type="button" onclick="selectAllBonusCheckboxes(true)" class="px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-bold active:scale-95 transition">Select all</button>
+                                                <button type="button" onclick="selectAllBonusCheckboxes(false)" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-[11px] font-bold active:scale-95 transition">Clear</button>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                            <input type="search" id="bonus-search-input" onkeyup="renderBonusCheckboxList()" placeholder="Search bonus photos..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400">
+                                        </div>
+                                        <div id="bonus-checkbox-container" class="space-y-2"></div>
                                     </div>
                                 </div>
                     <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
@@ -2620,6 +2632,8 @@
                 }
             });
 
+            const hint = document.getElementById('bonus-area-hint');
+            if (hint) hint.classList.toggle('hidden', method !== 'area');
             if (method === 'manual') renderManualCheckboxList();
             if (method === 'area') renderAreaRandomList();
             if (method === 'preset' && window.populatePresetParkSelect) window.populatePresetParkSelect();
@@ -2795,32 +2809,6 @@
                 });
             });
 
-            const bonusItems = indexed.filter(p => p.type === 'BONUS_PHOTO' && matches(p));
-            if (bonusItems.length > 0) {
-                html += `
-                    <div class="flex items-center justify-between gap-2 pt-5 pb-1 px-1">
-                        <h3 class="font-bold text-sm text-amber-300 flex items-center gap-2"><span>⭐</span> Bonus Photo Locations <span class="text-[10px] font-semibold text-slate-500">${bonusItems.length}</span></h3>
-                        <div class="flex gap-1.5 shrink-0">
-                            <button type="button" onclick="selectBonusCheckboxes(true)" class="px-2.5 py-1 rounded-full border border-amber-500/30 text-amber-300 text-[10px] font-bold active:scale-95 transition">All</button>
-                            <button type="button" onclick="selectBonusCheckboxes(false)" class="px-2.5 py-1 rounded-full border border-slate-700 text-slate-400 text-[10px] font-bold active:scale-95 transition">None</button>
-                        </div>
-                    </div>`;
-                bonusItems.forEach(p => {
-                    const cb = toggle('peer-checked:bg-amber-600').replace('%ATTRS%', `value="${p.originalIndex}" data-type="BONUS_PHOTO"`);
-                    html += `
-                        <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/25 bg-amber-950/20 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/40">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <span class="text-amber-400">⭐</span>
-                                <div class="min-w-0">
-                                    <p class="font-bold text-white text-sm leading-tight">${escHtml(p.name)}</p>
-                                    <span class="text-[11px] text-slate-400">${escHtml(p.land || '')} (${escHtml(p.park)})</span>
-                                </div>
-                            </div>
-                            ${cb}
-                        </label>`;
-                });
-            }
-
             const tickedBefore = new Set(Array.from(document.querySelectorAll('input[name="manual_cp_checkbox"]:checked')).map(cb => cb.value));
             container.innerHTML = html || '<p class="text-center text-slate-500 py-3">No matching locations found.</p>';
             container.querySelectorAll('input[name="manual_cp_checkbox"]').forEach(cb => { if (tickedBefore.has(cb.value)) cb.checked = true; });
@@ -2838,10 +2826,44 @@
             updateCreationFinalStopDropdown();
         };
 
-        window.selectBonusCheckboxes = function(selectState) {
-            const checkboxes = document.querySelectorAll(`input[name="manual_cp_checkbox"][data-type="BONUS_PHOTO"]`);
-            checkboxes.forEach(cb => cb.checked = selectState);
-            updateCreationFinalStopDropdown();
+        window.selectAllBonusCheckboxes = function(selectState) {
+            document.querySelectorAll('input[name="manual_bonus_checkbox"]').forEach(cb => cb.checked = selectState);
+        };
+
+        // ---------- Bonus photo checkpoints (their own card) ----------
+        let creationBonusMethod = 'random';
+        window.switchBonusMethod = function(method) {
+            creationBonusMethod = method;
+            const ACTIVE = "py-2 px-1 bg-amber-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5";
+            ['random', 'manual'].forEach(m => {
+                const btn = document.getElementById(`bonus-tab-${m}`);
+                const box = document.getElementById(`bonus-box-${m}`);
+                if (!btn || !box) return;
+                btn.className = m === method ? ACTIVE : POP_TAB_INACTIVE;
+                box.classList.toggle('hidden', m !== method);
+            });
+            if (method === 'manual') renderBonusCheckboxList();
+        };
+
+        window.renderBonusCheckboxList = function() {
+            const container = document.getElementById('bonus-checkbox-container');
+            if (!container) return;
+            const query = (document.getElementById('bonus-search-input')?.value || "").toLowerCase();
+            const items = (window.DISNEY_PRESETS || []).map((p, idx) => ({ ...p, originalIndex: idx }))
+                .filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query)));
+            const ticked = new Set(Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => cb.value));
+            container.innerHTML = items.map(p => `
+                <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/25 bg-amber-950/20 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/40">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-amber-400">⭐</span>
+                        <div class="min-w-0">
+                            <p class="font-bold text-white text-sm leading-tight">${escHtml(p.name)}</p>
+                            <span class="text-[11px] text-slate-400">${escHtml(p.land || '')} (${escHtml(p.park || '')})</span>
+                        </div>
+                    </div>
+                    <span class="relative inline-flex items-center shrink-0"><input type="checkbox" name="manual_bonus_checkbox" value="${p.originalIndex}" class="sr-only peer"><span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span></span>
+                </label>`).join('') || '<p class="text-center text-slate-500 py-3">No matching bonus photos found.</p>';
+            container.querySelectorAll('input[name="manual_bonus_checkbox"]').forEach(cb => { if (ticked.has(cb.value)) cb.checked = true; });
         };
 
         window.updateCreationFinalStopDropdown = function() {
@@ -3913,18 +3935,14 @@
                     land: p.land || "Attraction Area"
                 });
 
+                let areaSwitchedOn = null;
                 if (creationPopMethod === 'random') {
                     const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
-                    const bonusReq = parseInt(document.getElementById('rand-bonus-count').value) || 3;
-
                     const gpsOnly = presets.filter(p => p.type === 'GPS');
                     const shuffledGps = pickRandom(gpsOnly, gpsReq);
                     ensureIncluded(shuffledGps, finalPreset);
 
-                    const bonusOnly = presets.filter(p => p.type === 'BONUS_PHOTO');
-                    const shuffledBonus = pickRandom(bonusOnly, bonusReq);
-
-                    initialCps = [...shuffledGps, ...shuffledBonus].map((p, idx) => ({
+                    initialCps = shuffledGps.map((p, idx) => ({
                         id: 'cp_rand_' + Date.now() + '_' + idx,
                         name: p.name,
                         type: p.type || "GPS",
@@ -3951,12 +3969,8 @@
                     }
                     ensureIncluded(picked, finalPreset);
 
-                    const bonusReq = parseInt(document.getElementById('area-bonus-count').value) || 0;
-                    const knownAreas = areas.map(a => a.name);
-                    const bonusPool = presets.filter(p => p.type === 'BONUS_PHOTO' && (!knownAreas.includes(p.park) || switchedOn.includes(p.park)));
-                    const bonusPicked = pickRandom(bonusPool, bonusReq);
-
-                    initialCps = [...picked, ...bonusPicked].map((p, idx) => toCheckpoint(p, idx, 'cp_area_'));
+                    areaSwitchedOn = { all: areas.map(a => a.name), on: switchedOn };
+                    initialCps = picked.map((p, idx) => toCheckpoint(p, idx, 'cp_area_'));
                 } else if (creationPopMethod === 'manual') {
                     const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
                     if (checkedBoxes.length === 0) {
@@ -3978,10 +3992,7 @@
                     });
                 } else if (creationPopMethod === 'preset') {
                     const parkVal = document.getElementById('preset-park-select').value;
-                    let filtered = presets;
-                    if (parkVal !== 'all') {
-                        filtered = presets.filter(p => p.park === parkVal);
-                    }
+                    const filtered = presets.filter(p => p.type !== 'BONUS_PHOTO' && (parkVal === 'all' || p.park === parkVal));
                     initialCps = filtered.map((p, idx) => ({
                         id: 'cp_pre_' + Date.now() + '_' + idx,
                         name: p.name,
@@ -3994,6 +4005,18 @@
                         land: p.land || "Attraction Area"
                     }));
                 }
+
+                // Bonus photo checkpoints are chosen separately from the GPS stops
+                let bonusPicked = [];
+                if (creationBonusMethod === 'manual') {
+                    bonusPicked = Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => presets[parseInt(cb.value)]).filter(Boolean);
+                } else {
+                    const raw = parseInt(document.getElementById('bonus-rand-count').value);
+                    const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && (!areaSwitchedOn || !areaSwitchedOn.all.includes(p.park) || areaSwitchedOn.on.includes(p.park)));
+                    bonusPicked = pickRandom(pool, bonusReq);
+                }
+                initialCps.push(...bonusPicked.map((p, idx) => toCheckpoint(p, idx, 'cp_bonus_')));
 
                 let finalCheckpointId = null;
                 if (gameMode === 'race') {
@@ -4085,15 +4108,17 @@
             setVal('trivia-random-count', 3);
             setVal('create-wildcard-duration', '15');
             setVal('rand-gps-count', 10);
-            setVal('rand-bonus-count', 3);
-            setVal('area-bonus-count', 3);
+            setVal('bonus-rand-count', 3);
             if (window.selectAllManualCheckboxes) window.selectAllManualCheckboxes(false);
+            if (window.selectAllBonusCheckboxes) window.selectAllBonusCheckboxes(false);
+            { const bs = document.getElementById('bonus-search-input'); if (bs) bs.value = ''; }
             window.toggleGameModeSelection();
             window.toggleHostStartCreationOptions();
             window.toggleTriviaSettings();
             window.toggleTriviaFreq();
             window.toggleWildcardCreateSettings();
             window.switchPopMethod('random');
+            window.switchBonusMethod('random');
         }
 
         function rwRender() {
@@ -9092,11 +9117,11 @@
             const counts = new Map();
             presets.forEach(p => { if (p.type !== 'BONUS_PHOTO') counts.set(p.park, (counts.get(p.park) || 0) + 1); });
             const previous = sel.value;
-            let html = `<option value="all" data-icon="🌟" data-sub="${presets.length} locations and bonuses">All locations &amp; bonuses</option>`;
+            const gpsTotal = Array.from(counts.values()).reduce((a, n) => a + n, 0);
+            let html = `<option value="all" data-icon="🌟" data-sub="${gpsTotal} locations">All locations</option>`;
             counts.forEach((n, park) => {
                 html += `<option value="${esc(park)}" data-icon="${esc(window.areaIcon(park))}" data-sub="${n} stop${n === 1 ? '' : 's'}">${esc(park)}</option>`;
             });
-            html += '<option value="Bonus Challenge" data-icon="⭐" data-sub="Photo challenges only">Bonus photo challenges</option>';
             sel.innerHTML = html;
             if (previous && Array.from(sel.options).some(o => o.value === previous)) sel.value = previous;
             if (!sel.dataset.listening) {
