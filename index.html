@@ -1500,30 +1500,28 @@
                             <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                         </div>
 
-                        <!-- 4. Fair Play Dashboard Lock -->
-                        <div class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                        <!-- 4. Fair Play Dashboard Lock (a nominated team holds the PIN) -->
+                        <div id="hostlock-card" class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
+                            <div class="flex items-start justify-between gap-3 border-b border-slate-700 pb-3">
                                 <div>
                                     <h4 class="text-xs font-bold text-disneyGold uppercase tracking-wider flex items-center gap-2">
-                                        <i class="fa-solid fa-shield-halved"></i> Fair Play Dashboard Lock
+                                        <i class="fa-solid fa-shield-halved"></i> Fair Play Host Lock
                                     </h4>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Lock the active race view to hide checkpoint edits and bonus toggles from your view, aligning your access with the participants while keeping chat moderation open.</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Nominate a team to hold the PIN. They get a notification on their phone, set the PIN and lock your host panel. Only they can unlock it again.</p>
                                 </div>
+                                <span id="global-lock-status-badge" class="shrink-0 font-bold text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
                             </div>
-                            <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
-                                <div class="flex items-center gap-2 w-full sm:w-auto">
-                                    <span class="text-xs text-slate-300 font-semibold shrink-0">Status:</span>
-                                    <span id="global-lock-status-badge" class="font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">UNLOCKED</span>
-                                </div>
-                                <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
-                                    <div class="flex flex-col gap-1">
-                                        <input type="password" id="global-lock-pin-input" placeholder="Set 4-digit PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
-                                        <input type="password" id="global-lock-pin-confirm" placeholder="Confirm PIN" maxlength="4" inputmode="numeric" autocomplete="new-password" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center w-36">
-                                    </div>
-                                    <button id="global-lock-action-btn" onclick="toggleGlobalOrganizerLock()" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                                        <i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel
-                                    </button>
-                                </div>
+                            <div id="hostlock-setup" class="space-y-2.5">
+                                <label for="hostlock-team-select" class="block text-[11px] text-slate-400 font-semibold">Team to hold the PIN</label>
+                                <select id="hostlock-team-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"><option value="">No approved teams yet</option></select>
+                                <button id="global-lock-action-btn" onclick="requestHostLock()" class="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                                    <i class="fa-solid fa-paper-plane mr-1"></i> Send lock request
+                                </button>
+                                <p id="hostlock-setup-note" class="hidden text-[11px] text-amber-300"></p>
+                            </div>
+                            <div id="hostlock-pending" class="hidden space-y-2.5">
+                                <p class="text-xs text-slate-300"><i class="fa-solid fa-spinner fa-spin text-indigo-300 mr-1.5"></i>Waiting for <b id="hostlock-pending-team" class="text-white"></b> to set a PIN and lock your panel.</p>
+                                <button onclick="cancelHostLockRequest()" class="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs uppercase transition">Cancel request</button>
                             </div>
                         </div>
 
@@ -1531,15 +1529,12 @@
                             <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-500/30">
                                 <i class="fa-solid fa-lock"></i>
                             </div>
-                            <h3 class="text-xl font-disney font-bold text-white">Host Active Race Panel Locked</h3>
-                            <p class="text-slate-300 text-xs max-w-md mx-auto">You have locked your active race panel to ensure fairness. Checkpoints, modifications, and bonus privacy settings are hidden. Enter your 4-digit code to unlock.</p>
-                            
-                            <div class="max-w-xs mx-auto flex gap-2 pt-2">
-                                <input type="password" id="org-unlock-code-input" placeholder="Enter 4-digit PIN" maxlength="4" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-center">
-                                <button onclick="unlockOrganizerActiveRace()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
-                                    Unlock
-                                </button>
-                            </div>
+                            <h3 class="text-xl font-disney font-bold text-white">Host Panel Locked</h3>
+                            <p id="hostlock-overlay-msg" class="text-slate-300 text-xs max-w-md mx-auto"></p>
+                            <button id="hostlock-unlock-btn" onclick="requestHostUnlock()" class="w-full max-w-xs mx-auto block py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow">
+                                <i class="fa-solid fa-unlock mr-1"></i> Request unlock
+                            </button>
+                            <p id="hostlock-overlay-note" class="hidden text-[11px] text-amber-300"></p>
                         </div>
 
                     </div>
@@ -2934,29 +2929,6 @@
                 });
             }
 
-            const savedLockState = sessionStorage.getItem('rad_org_locked');
-            if (savedLockState === 'true') {
-                window.globalDashboardLockState = true;
-                window.globalDashboardLockPin = sessionStorage.getItem('rad_org_lock_pin') || "";
-
-                const statusBadge = document.getElementById('global-lock-status-badge');
-                const actionBtn = document.getElementById('global-lock-action-btn');
-                const orgLockedOverlay = document.getElementById('org-locked-overlay-card');
-                const adminContainer = document.getElementById('admin-active-races-container');
-                const createRaceBox = document.getElementById('create-race-card');
-
-                if (statusBadge) {
-                    statusBadge.innerText = "LOCKED";
-                    statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
-                }
-                if (actionBtn) {
-                    actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
-                    actionBtn.className = "flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
-                }
-                if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
-                if (adminContainer) adminContainer.classList.add('hidden');
-                if (createRaceBox) createRaceBox.classList.add('hidden');
-            }
 
             setTimeout(() => {
                 const savedTab = localStorage.getItem('rad_active_tab') || 'race';
@@ -3743,6 +3715,7 @@
                 if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
             }, (err) => console.warn('Wildcard offer listener error', err));
             startWildcardWatcher();
+            if (window.watchTeamHostLock) window.watchTeamHostLock(code, teamId);
             const raceRef = doc(window.db, "races", code);
             const teamRef = doc(window.db, "races", code, "teams", teamId);
 
@@ -4922,89 +4895,247 @@
             }
         };
 
-        window.toggleGlobalOrganizerLock = function() {
-            const pinInput = document.getElementById('global-lock-pin-input');
-            const pin = pinInput ? pinInput.value.trim() : "";
-            const confirmPinInput = document.getElementById('global-lock-pin-confirm');
-            const confirmPin = confirmPinInput ? confirmPinInput.value.trim() : "";
-            const statusBadge = document.getElementById('global-lock-status-badge');
-            const actionBtn = document.getElementById('global-lock-action-btn');
-            const orgLockedOverlay = document.getElementById('org-locked-overlay-card');
-            const adminContainer = document.getElementById('admin-active-races-container');
-            const createRaceBox = document.getElementById('create-race-card');
+        // =====================================================================
+        // HOST LOCK: a nominated team holds the PIN. State lives in Firestore at races/{code}/hostLock/current
+        //   status: lock_requested -> locked -> unlock_requested -> (doc deleted)   |  lock_declined
+        // Only a salted hash of the PIN is stored, so the host can never read it.
+        // =====================================================================
+        const hlRef = (code) => doc(window.db, "races", code, "hostLock", "current");
+        const hlEl = (id) => document.getElementById(id);
+        const HL_ACTIVE = ['lock_requested', 'locked', 'unlock_requested'];
+        const HL = { unsubs: {}, docs: {}, loaded: {}, active: null, lastDeclined: 0, lastLockDeclined: 0 };
+        window.__hostTeamIndex = window.__hostTeamIndex || [];
 
-            if (!window.globalDashboardLockState) {
-                if (!/^\d{4}$/.test(pin)) {
-                    return alert("Please enter a valid 4-digit PIN to lock your dashboard.");
+        window.hlHashPin = async function(pin, salt) {
+            const text = salt + ':' + pin;
+            try {
+                if (window.crypto && crypto.subtle) {
+                    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+                    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
                 }
-                if (pin !== confirmPin) return alert("The PINs do not match. Please confirm your PIN.");
-                window.globalDashboardLockState = true;
-                window.globalDashboardLockPin = pin;
+            } catch (e) {}
+            let h = 5381; for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) >>> 0;
+            return 'x' + h.toString(16);
+        };
 
-                sessionStorage.setItem('rad_org_locked', 'true');
-                sessionStorage.setItem('rad_org_lock_pin', pin);
+        function hlPopulateTeams() {
+            const sel = hlEl('hostlock-team-select');
+            if (!sel) return;
+            const keep = sel.value;
+            const groups = (window.__hostTeamIndex || []).filter(r => r.teams.length);
+            if (!groups.length) { sel.innerHTML = '<option value="">No approved teams yet</option>'; return; }
+            sel.innerHTML = '<option value="">Choose a team…</option>' + groups.map(r =>
+                `<optgroup label="${escHtml(r.title)}">${r.teams.map(t => `<option value="${escHtml(r.code)}|${escHtml(t.id)}" data-name="${escHtml(t.teamName || 'Team')}">${escHtml(t.teamName || 'Team')}</option>`).join('')}</optgroup>`
+            ).join('');
+            if (keep) sel.value = keep;
+        }
+        window.hlPopulateTeams = hlPopulateTeams;
 
-                statusBadge.innerText = "LOCKED";
-                statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
-                actionBtn.innerHTML = '<i class="fa-solid fa-unlock mr-1"></i> Unlock Dashboard';
-                actionBtn.className = "flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+        function hlRender() {
+            const a = HL.active;
+            const badge = hlEl('global-lock-status-badge');
+            const setup = hlEl('hostlock-setup');
+            const pending = hlEl('hostlock-pending');
+            const overlay = hlEl('org-locked-overlay-card');
+            const adminContainer = hlEl('admin-active-races-container');
+            const createRaceBox = hlEl('create-race-card');
+            const locked = !!a && (a.status === 'locked' || a.status === 'unlock_requested');
+            const waiting = !!a && a.status === 'lock_requested';
+            window.globalDashboardLockState = locked;
 
-                if (orgLockedOverlay) orgLockedOverlay.classList.remove('hidden');
-                if (adminContainer) adminContainer.classList.add('hidden');
-                if (createRaceBox) createRaceBox.classList.add('hidden');
-                
-                if (pinInput) pinInput.value = "";
-                if (confirmPinInput) confirmPinInput.value = "";
-                alert("Global host active race panel locked successfully.");
-            } else {
-                if (pin !== window.globalDashboardLockPin) return alert("Incorrect 4-digit PIN. The dashboard remains locked.");
-                window.globalDashboardLockState = false;
-                window.globalDashboardLockPin = "";
+            if (badge) {
+                badge.textContent = locked ? 'LOCKED' : (waiting ? 'WAITING' : 'UNLOCKED');
+                badge.className = 'shrink-0 font-bold text-[10px] px-2.5 py-1 rounded-full border ' + (locked
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                    : (waiting ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'));
+            }
+            if (setup) setup.classList.toggle('hidden', !!a);
+            if (pending) pending.classList.toggle('hidden', !waiting);
+            if (waiting && hlEl('hostlock-pending-team')) hlEl('hostlock-pending-team').textContent = a.teamName || 'the team';
+            if (overlay) overlay.classList.toggle('hidden', !locked);
+            if (adminContainer) adminContainer.classList.toggle('hidden', locked);
+            if (createRaceBox) createRaceBox.classList.toggle('hidden', locked);
 
-                sessionStorage.removeItem('rad_org_locked');
-                sessionStorage.removeItem('rad_org_lock_pin');
-                if (pinInput) pinInput.value = "";
+            if (locked) {
+                const team = a.teamName || 'your nominated team';
+                const asked = a.status === 'unlock_requested';
+                hlEl('hostlock-overlay-msg').textContent = `Your host panel was locked by ${team}. Only they can unlock it with their PIN.`;
+                const btn = hlEl('hostlock-unlock-btn');
+                btn.innerHTML = asked ? '<i class="fa-solid fa-bell mr-1"></i> Send reminder' : '<i class="fa-solid fa-unlock mr-1"></i> Request unlock';
+                const note = hlEl('hostlock-overlay-note');
+                note.classList.toggle('hidden', !asked);
+                note.textContent = asked ? `Unlock request sent. Waiting for ${team} to enter their PIN.` : '';
+            }
+        }
 
-                statusBadge.innerText = "UNLOCKED";
-                statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                actionBtn.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel';
-                actionBtn.className = "flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
+        function hlRecompute() {
+            const codes = Object.keys(HL.docs);
+            const code = codes.find(c => HL.docs[c] && HL_ACTIVE.includes(HL.docs[c].status));
+            const prev = HL.active;
+            HL.active = code ? { code, ...HL.docs[code] } : null;
 
-                if (orgLockedOverlay) orgLockedOverlay.classList.add('hidden');
-                if (adminContainer) adminContainer.classList.remove('hidden');
-                if (createRaceBox) createRaceBox.classList.remove('hidden');
-                alert("Global host active race panel unlocked.");
+            // Tell the host when a team says no
+            const unlockNo = HL.active && HL.active.declinedAt;
+            if (unlockNo && unlockNo !== HL.lastDeclined) {
+                if (HL.lastDeclined !== 0 || (prev && prev.status === 'unlock_requested')) window.appToast(`🔒 ${HL.active.teamName || 'The team'} kept the host locked.`, 5000);
+                HL.lastDeclined = unlockNo;
+            }
+            const declinedDoc = codes.map(c => HL.docs[c]).find(d => d && d.status === 'lock_declined');
+            if (declinedDoc && declinedDoc.declinedAt !== HL.lastLockDeclined) {
+                if (HL.lastLockDeclined !== 0 || (prev && prev.status === 'lock_requested')) window.appToast(`${declinedDoc.teamName || 'The team'} declined to hold the PIN. Pick another team.`, 6000);
+                HL.lastLockDeclined = declinedDoc.declinedAt;
+            }
+            try {
+                if (HL.active && HL.active.status !== 'lock_requested') localStorage.setItem('rad_host_lock', JSON.stringify({ raceCode: HL.active.code }));
+                else if (Object.keys(HL.docs).length && codes.every(c => HL.loaded[c])) localStorage.removeItem('rad_host_lock');
+            } catch (e) {}
+            hlPopulateTeams();
+            hlRender();
+        }
+
+        // Watch the lock document of every race this host runs (plus the one remembered on this device)
+        window.watchHostLocks = function(codes) {
+            const all = new Set(codes || []);
+            try { const p = JSON.parse(localStorage.getItem('rad_host_lock') || 'null'); if (p && p.raceCode) all.add(p.raceCode); } catch (e) {}
+            Object.keys(HL.unsubs).forEach(c => { if (!all.has(c)) { HL.unsubs[c](); delete HL.unsubs[c]; delete HL.docs[c]; delete HL.loaded[c]; } });
+            all.forEach(code => {
+                if (HL.unsubs[code]) return;
+                HL.unsubs[code] = onSnapshot(hlRef(code), (snap) => {
+                    HL.docs[code] = snap.exists() ? snap.data() : null;
+                    HL.loaded[code] = true;
+                    hlRecompute();
+                }, (err) => console.warn('Host lock listener error', err));
+            });
+            hlRecompute();
+        };
+        window.stopHostLocks = function() {
+            Object.values(HL.unsubs).forEach(u => u());
+            HL.unsubs = {}; HL.docs = {}; HL.loaded = {}; HL.active = null;
+            hlRender();
+        };
+
+        window.requestHostLock = async function() {
+            const sel = hlEl('hostlock-team-select');
+            if (!sel || !sel.value) { window.appAlert('Choose the team that will hold the PIN first.', { title: 'Pick a team', tone: 'info' }); return; }
+            const [raceCode, teamId] = sel.value.split('|');
+            const teamName = sel.options[sel.selectedIndex].dataset.name || 'Team';
+            try {
+                await setDoc(hlRef(raceCode), { status: 'lock_requested', teamId, teamName, raceCode, requestedAt: Date.now() });
+                window.appToast(`Lock request sent to ${teamName}`, 3000);
+            } catch (e) {
+                window.appAlert('Could not send the request: ' + e.message, { title: 'Request failed', tone: 'error' });
+            }
+        };
+        window.cancelHostLockRequest = async function() {
+            if (!HL.active) return;
+            try { await deleteDoc(hlRef(HL.active.code)); } catch (e) { window.appAlert('Could not cancel: ' + e.message); }
+        };
+        window.requestHostUnlock = async function() {
+            if (!HL.active || !['locked', 'unlock_requested'].includes(HL.active.status)) return;
+            try {
+                await updateDoc(hlRef(HL.active.code), { status: 'unlock_requested', unlockRequestedAt: Date.now() });
+                window.appToast(`Unlock request sent to ${HL.active.teamName || 'the team'}`, 3000);
+            } catch (e) {
+                window.appAlert('Could not send the request: ' + e.message, { title: 'Request failed', tone: 'error' });
             }
         };
 
-        window.unlockOrganizerActiveRace = function() {
-            const enteredPin = document.getElementById('org-unlock-code-input').value.trim();
-            if (window.globalDashboardLockState && enteredPin === window.globalDashboardLockPin) {
-                window.globalDashboardLockState = false;
-                window.globalDashboardLockPin = "";
-                document.getElementById('org-unlock-code-input').value = "";
+        // ---------- Team side: notification with PIN entry ----------
+        const TL = { unsub: null, data: null, code: null, teamId: null, dismissed: '' };
+        function tlModal() {
+            let el = hlEl('hostlock-team-modal');
+            if (el) return el;
+            el = document.createElement('div');
+            el.id = 'hostlock-team-modal';
+            el.setAttribute('role', 'alertdialog');
+            el.setAttribute('aria-modal', 'true');
+            el.className = 'fixed inset-0 z-[190] hidden items-center justify-center p-6';
+            el.innerHTML = `
+                <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"></div>
+                <div class="relative w-full max-w-xs bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl p-5 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-xl mb-3 bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"><i id="tl-icon" class="fa-solid fa-shield-halved"></i></div>
+                    <h2 id="tl-title" class="text-base font-bold text-white"></h2>
+                    <p id="tl-msg" class="text-sm text-slate-300 mt-1.5 leading-relaxed"></p>
+                    <div class="mt-4 space-y-2">
+                        <input id="tl-pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="4" placeholder="4-digit PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-center text-white font-mono tracking-widest text-sm">
+                        <input id="tl-pin2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="4" placeholder="Confirm PIN" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-center text-white font-mono tracking-widest text-sm">
+                        <p id="tl-err" class="hidden text-xs text-rose-400 font-semibold"></p>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button id="tl-secondary" type="button" class="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-[0.97]"></button>
+                        <button id="tl-primary" type="button" class="flex-1 py-3 rounded-2xl bg-disneyGold hover:brightness-110 text-slate-900 text-sm font-bold transition active:scale-[0.97]"></button>
+                    </div>
+                </div>`;
+            document.body.appendChild(el);
+            el.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { i.value = i.value.replace(/\D/g, '').slice(0, 4); hlEl('tl-err').classList.add('hidden'); }));
+            return el;
+        }
+        function tlError(msg) { const e = hlEl('tl-err'); e.textContent = msg; e.classList.remove('hidden'); }
+        function tlClose() { const el = hlEl('hostlock-team-modal'); if (el) { el.classList.add('hidden'); el.classList.remove('flex'); } }
 
-                sessionStorage.removeItem('rad_org_locked');
-                sessionStorage.removeItem('rad_org_lock_pin');
+        function tlShow(d) {
+            const key = d.status + ':' + (d.unlockRequestedAt || d.requestedAt || 0);
+            if (TL.dismissed === key) return;
+            const el = tlModal();
+            const isLock = d.status === 'lock_requested';
+            hlEl('tl-icon').className = 'fa-solid ' + (isLock ? 'fa-shield-halved' : 'fa-unlock');
+            hlEl('tl-title').textContent = isLock ? 'Host lock request' : 'Host unlock request';
+            hlEl('tl-msg').textContent = isLock
+                ? 'The host has nominated your team to hold their PIN. Choose a 4-digit PIN and tap Lock Host. Keep it safe, you will need it to unlock them.'
+                : 'The host is asking to be unlocked. Enter the PIN you set to unlock them, or keep them locked.';
+            hlEl('tl-pin').value = ''; hlEl('tl-pin2').value = '';
+            hlEl('tl-pin2').classList.toggle('hidden', !isLock);
+            hlEl('tl-err').classList.add('hidden');
+            const sec = hlEl('tl-secondary'), pri = hlEl('tl-primary');
+            sec.textContent = isLock ? 'Not now' : 'Keep locked';
+            pri.textContent = isLock ? 'Lock Host' : 'Unlock Host';
+            pri.className = 'flex-1 py-3 rounded-2xl text-sm font-bold transition active:scale-[0.97] ' + (isLock ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white');
+            pri.disabled = false;
+            sec.onclick = async () => {
+                TL.dismissed = key;
+                if (!isLock) { try { await updateDoc(hlRef(TL.code), { declinedAt: Date.now() }); } catch (e) {} }
+                else { try { await setDoc(hlRef(TL.code), { status: 'lock_declined', teamId: TL.teamId, teamName: d.teamName || '', raceCode: TL.code, declinedAt: Date.now() }); } catch (e) {} }
+                tlClose();
+            };
+            pri.onclick = async () => {
+                const pin = hlEl('tl-pin').value.trim();
+                if (!/^\d{4}$/.test(pin)) return tlError('Enter a 4-digit PIN.');
+                pri.disabled = true;
+                try {
+                    if (isLock) {
+                        if (pin !== hlEl('tl-pin2').value.trim()) { pri.disabled = false; return tlError('The PINs do not match.'); }
+                        const cur = await getDoc(hlRef(TL.code));
+                        if (!cur.exists() || cur.data().status !== 'lock_requested' || cur.data().teamId !== TL.teamId) { tlClose(); window.appToast('That request is no longer active.'); return; }
+                        const salt = Math.random().toString(36).slice(2, 10);
+                        const pinHash = await window.hlHashPin(pin, salt);
+                        await setDoc(hlRef(TL.code), { status: 'locked', teamId: TL.teamId, teamName: d.teamName || '', raceCode: TL.code, salt, pinHash, lockedAt: Date.now() });
+                        tlClose();
+                        window.appToast('🔒 Host locked. Keep that PIN safe!', 4000);
+                    } else {
+                        const cur = await getDoc(hlRef(TL.code));
+                        const c = cur.exists() ? cur.data() : null;
+                        if (!c || c.status !== 'unlock_requested') { tlClose(); return; }
+                        if ((await window.hlHashPin(pin, c.salt)) !== c.pinHash) { pri.disabled = false; hlEl('tl-pin').value = ''; return tlError('Incorrect PIN. The host stays locked.'); }
+                        await deleteDoc(hlRef(TL.code));
+                        tlClose();
+                        window.appToast('🔓 Host unlocked.', 4000);
+                    }
+                } catch (e) { pri.disabled = false; tlError('Something went wrong: ' + e.message); }
+            };
+            el.classList.remove('hidden'); el.classList.add('flex');
+            setTimeout(() => hlEl('tl-pin').focus({ preventScroll: true }), 50);
+        }
 
-                const statusBadge = document.getElementById('global-lock-status-badge');
-                const actionBtn = document.getElementById('global-lock-action-btn');
-                const orgLockedOverlay = document.getElementById('org-locked-overlay-card');
-                const adminContainer = document.getElementById('admin-active-races-container');
-                const createRaceBox = document.getElementById('create-race-card');
-
-                statusBadge.innerText = "UNLOCKED";
-                statusBadge.className = "font-bold text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                actionBtn.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Lock Active Race Panel';
-                actionBtn.className = "flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase transition shadow";
-
-                if (orgLockedOverlay) orgLockedOverlay.classList.add('hidden');
-                if (adminContainer) adminContainer.classList.remove('hidden');
-                if (createRaceBox) createRaceBox.classList.remove('hidden');
-                alert("Correct 4-digit code! Dashboard unlocked.");
-            } else {
-                alert("Incorrect 4-digit code.");
-            }
+        window.watchTeamHostLock = function(code, teamId) {
+            if (TL.unsub) { TL.unsub(); TL.unsub = null; }
+            tlClose();
+            TL.code = code; TL.teamId = teamId; TL.dismissed = '';
+            TL.unsub = onSnapshot(hlRef(code), (snap) => {
+                const d = snap.exists() ? snap.data() : null;
+                TL.data = d;
+                if (d && d.teamId === teamId && (d.status === 'lock_requested' || d.status === 'unlock_requested')) tlShow(d);
+                else tlClose();
+            }, (err) => console.warn('Team host-lock listener error', err));
         };
 
         window.toggleRaceCardCollapse = function(raceCode) {
@@ -5035,6 +5166,7 @@
 
                 let totalPendingTeams = 0;
                 let html = '';
+                window.__hostTeamIndex = [];
                 
                 for (const race of races) {
                     const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
@@ -5054,6 +5186,8 @@
                         if (!tData.isApproved) totalPendingTeams++;
                         totalPendingTeams += Object.values(tData.checkinChallenges || {}).filter(c => c && c.status === 'pending').length;   // open challenges need the host too
                     });
+
+                    window.__hostTeamIndex.push({ code: race.code, title: race.title || race.raceName || race.name || race.code, teams: teamList.filter(t => t.isApproved).map(t => ({ id: t.id, teamName: t.teamName })) });
 
                     if (window.raceCollapseStates[race.code] === undefined) {
                         window.raceCollapseStates[race.code] = true;
@@ -5204,6 +5338,7 @@
                     pendingBadge.classList.add('hidden');
                 }
                 watchHostPendingTeams(races.map(r => r.code));
+                window.watchHostLocks(races.map(r => r.code));
             } catch (e) {
                 console.error(e);
             }
@@ -8452,25 +8587,35 @@
         const sub = document.getElementById('nav-subtitle');
         const tabs = nav && nav.querySelector('.app-tabrow');
         if (!nav || !sub || !tabs) return;
-        const RANGE = 48;          // px of scrolling over which the header collapses
+        const RANGE = 48;          // px of downward scrolling over which the header collapses
         const EXTRA = 6;           // extra px pulled up so the tabs sit snugly under the title
         let cur = 0, ticking = false, lastScroller = null;
+        const lastTop = new WeakMap();
 
+        function setProgress(p) {
+            const shift = Math.round((sub.offsetHeight || 14) + 3 + EXTRA);
+            cur = Math.max(0, Math.min(1, p));
+            tabs.style.marginTop = (-shift * cur).toFixed(1) + 'px';
+            sub.style.opacity = String(Math.max(0, 1 - cur * 1.6));
+            sub.style.visibility = cur >= 0.99 ? 'hidden' : 'visible';
+        }
+        // The collapsed state is global: it persists across tabs and pages. Scrolling DOWN collapses it,
+        // and only scrolling back UP to the top of the page you are on opens it again.
         function apply(scroller) {
             const top = scroller === window ? window.scrollY : scroller.scrollTop;
             const maxScroll = scroller === window
                 ? document.documentElement.scrollHeight - window.innerHeight
                 : scroller.scrollHeight - scroller.clientHeight;
-            const shift = Math.round((sub.offsetHeight || 14) + 3 + EXTRA);
-            let target = Math.max(0, Math.min(1, top / RANGE));
-            // Collapsing makes the scroll area taller, so only collapse when there is enough content to keep it stable.
-            const need = cur > 0 ? RANGE + 4 : RANGE + shift + 8;
-            if (maxScroll < need) target = 0;
-            if (Math.abs(target - cur) < 0.005) return;
-            cur = target;
-            tabs.style.marginTop = (-shift * cur).toFixed(1) + 'px';
-            sub.style.opacity = String(Math.max(0, 1 - cur * 1.6));
-            sub.style.visibility = cur >= 0.99 ? 'hidden' : 'visible';
+            const prev = lastTop.has(scroller) ? lastTop.get(scroller) : top;
+            lastTop.set(scroller, top);
+            const dy = top - prev;
+            if (dy > 0) {
+                // Collapsing makes the scroll area taller, so only start collapsing when the page has enough content to stay stable.
+                if (cur === 0 && maxScroll < RANGE + Math.round((sub.offsetHeight || 14) + 3 + EXTRA) + 8) return;
+                if (cur < 1) setProgress(cur + dy / RANGE);
+            } else if (dy < 0 && top < RANGE && cur > 0) {
+                setProgress(Math.min(cur, top / RANGE));
+            }
         }
         function schedule(scroller) {
             lastScroller = scroller;
@@ -8488,17 +8633,6 @@
             if (t === document || t === document.documentElement || t === document.body) schedule(window);
             else if (t.matches && t.matches('#portal-track > section') && isActiveSection(t)) schedule(t);
         }, { capture: true, passive: true });
-
-        // After swiping/switching tabs, adopt the new page's scroll position
-        const vp = document.getElementById('portal-viewport');
-        let settle;
-        if (vp) vp.addEventListener('scroll', () => {
-            clearTimeout(settle);
-            settle = setTimeout(() => {
-                const sec = Array.from(document.querySelectorAll('#portal-track > section')).find(isActiveSection);
-                if (sec) schedule(sec);
-            }, 150);
-        }, { passive: true });
     })();
     </script>
     <script>
