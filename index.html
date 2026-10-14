@@ -6979,7 +6979,7 @@
 
                 // ---- Map, pins, team layers ----
                 map = L.map('orr-map', { zoomControl:true, zoomSnap:1 });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+                window.replayTileLayer().addTo(map);
                 const allLatLngs = [];
                 (race.checkpoints || []).forEach(cp => {
                     if (!Number.isFinite(Number(cp.lat)) || !Number.isFinite(Number(cp.lng)) || cp.lat === null || cp.lng === null) return;
@@ -7034,7 +7034,7 @@
                 chips.addEventListener('click', e => {
                     const b = e.target.closest('[data-tid]'); if (!b) return;
                     const tm = teams.find(x => x.id === b.dataset.tid); if (!tm) return;
-                    setAutoFrame(false); map.flyTo(tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
+                    setAutoFrame(false); window.smoothFly(map, tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
                 });
 
                 // ---- Clock + per-frame render ----
@@ -7063,7 +7063,7 @@
                     let fit = map.getBoundsZoom(b, false, L.point(100, 100)); fit = Number.isFinite(fit) ? Math.min(16, fit) : 16;
                     const inView = map.getBounds().pad(-0.1).contains(b);
                     if (!force && inView && map.getZoom() - fit <= 1) return;       // already framed well enough
-                    map.flyTo(b.getCenter(), fit, { duration:1 });
+                    window.smoothFly(map, b.getCenter(), fit, { duration:1 });
                 };
                 const frameBtn = modal.querySelector('#orr-frame');
                 const setAutoFrame = on => { autoFrame = on; frameBtn.textContent = on ? '📍 Auto-frame' : '📍 Free camera'; frameBtn.style.opacity = on ? '1' : '.7'; };
@@ -7085,7 +7085,7 @@
                     if (now - lastChips > 400) { lastChips = now; renderChips(); }
                     if (T >= maxT) {
                         pause(); renderChips();
-                        if (autoFrame) map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 });   // finish: show the whole race
+                        if (autoFrame) window.smoothFit(map, allLatLngs, { padding:[28, 28], maxZoom:16 });   // finish: show the whole race
                         return;
                     }
                     raf = requestAnimationFrame(tick);
@@ -7197,7 +7197,7 @@
                 if (!window.L) { modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
 
                 map = L.map('team-replay-map', { zoomControl:true, zoomSnap:1 }).setView([events[0].lat, events[0].lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+                window.replayTileLayer().addTo(map);
                 const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
 
                 // ---- Pins ----
@@ -7318,8 +7318,8 @@
                         const z = Number.isFinite(fit) ? Math.min(MAX_Z, fit) : MAX_Z;
                         const center = bounds.getCenter();
                         if (!animate) map.setView(center, z, { animate:false });
-                        else if (z === map.getZoom()) map.panTo(center, { animate:true, duration:.8 });
-                        else map.flyTo(center, z, { duration:1 });
+                        else if (z === map.getZoom()) { window.preloadView(map, center, z); map.panTo(center, { animate:true, duration:.8 }); }
+                        else window.smoothFly(map, center, z, { duration:1 });
                         return true;
                     },
                     cluster(ev, animate) { return this.fitTo(clusterBounds[ev.cluster], 'c' + ev.cluster, animate); },
@@ -7327,7 +7327,7 @@
                         if (a.cluster === b.cluster) return this.cluster(b, animate);          // short hop inside a park: frame the park
                         return this.fitTo(L.latLngBounds([[a.lat, a.lng], [b.lat, b.lng]]), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg
                     },
-                    overview(animate) { framed = 'all'; map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16, animate:animate !== false }); },
+                    overview(animate) { framed = 'all'; window.smoothFit(map, allLatLngs, { padding:[28, 28], maxZoom:16, animate:animate !== false }); },
                     reset() { framed = null; }
                 };
 
@@ -9439,6 +9439,63 @@
         });
     })();
     </script>
+    <script>
+    /* Replay map smoothness.
+       The jumpy "reload" feel came from Leaflet fetching tiles for every zoom level a camera flight passes
+       through. So: (1) the tile layer only loads once the flight has landed (the old tiles simply scale
+       meanwhile) and keeps a wider ring of tiles, and (2) the tiles for the view being flown TO are fetched
+       into the browser cache the moment the flight starts, so they are already there on arrival.
+       Only the destination view is fetched (about a screenful of tiles), never whole areas. */
+    (function () {
+        const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const warmed = new Set();
+        window.replayTileLayer = function () {
+            return L.tileLayer(TILE_URL, {
+                maxZoom: 19, attribution: '&copy; OpenStreetMap',
+                updateWhenZooming: false,   // no tile loading at the zoom levels passed on the way
+                updateInterval: 120,
+                keepBuffer: 4,              // keep more tiles around the view so panning back is instant
+                className: 'replay-tiles'
+            });
+        };
+        // Fetch the tiles that will be on screen when the camera lands (URLs match the layer's, so the browser cache serves them)
+        window.preloadView = function (map, center, zoom) {
+            try {
+                const z = Math.max(0, Math.min(19, Math.round(zoom)));
+                const size = map.getSize(), c = map.project(L.latLng(center), z);
+                const min = c.subtract(size.divideBy(2)), max = c.add(size.divideBy(2));
+                const n = Math.pow(2, z), subs = ['a', 'b', 'c'];
+                let budget = 30;
+                for (let x = Math.floor(min.x / 256); x <= Math.floor(max.x / 256); x++) {
+                    for (let y = Math.floor(min.y / 256); y <= Math.floor(max.y / 256); y++) {
+                        if (y < 0 || y >= n || budget <= 0) continue;
+                        const url = TILE_URL.replace('{s}', subs[Math.abs(x + y) % 3]).replace('{z}', z).replace('{x}', ((x % n) + n) % n).replace('{y}', y);
+                        if (warmed.has(url)) continue;
+                        warmed.add(url); budget--;
+                        const im = new Image(); im.decoding = 'async'; im.src = url;
+                    }
+                }
+                if (warmed.size > 600) warmed.clear();
+            } catch (e) { /* preloading is only an optimisation */ }
+        };
+        window.smoothFly = function (map, center, zoom, opts) {
+            window.preloadView(map, center, zoom);
+            return map.flyTo(center, zoom, opts);
+        };
+        window.smoothFit = function (map, latlngs, opts) {
+            try {
+                const t = map._getBoundsCenterZoom(L.latLngBounds(latlngs), opts || {});
+                window.preloadView(map, t.center, t.zoom);
+            } catch (e) { /* optimisation only */ }
+            return map.fitBounds(latlngs, opts);
+        };
+    })();
+    </script>
+    <style>
+        /* no white flash while tiles arrive; tiles fade in softly */
+        .leaflet-container { background: #0b1220; }
+        .replay-tiles.leaflet-tile-loaded { transition: opacity .3s linear; }
+    </style>
     <script>
     /* =====================================================================
        BACK BUTTON / SWIPE-BACK
