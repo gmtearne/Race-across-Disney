@@ -4922,12 +4922,14 @@
             const sel = hlEl('hostlock-team-select');
             if (!sel) return;
             const keep = sel.value;
-            const groups = (window.__hostTeamIndex || []).filter(r => r.teams.length);
-            if (!groups.length) { sel.innerHTML = '<option value="">No approved teams yet</option>'; return; }
-            sel.innerHTML = '<option value="">Choose a team…</option>' + groups.map(r =>
-                `<optgroup label="${escHtml(r.title)}">${r.teams.map(t => `<option value="${escHtml(r.code)}|${escHtml(t.id)}" data-name="${escHtml(t.teamName || 'Team')}">${escHtml(t.teamName || 'Team')}</option>`).join('')}</optgroup>`
+            const teams = [];
+            (window.__hostTeamIndex || []).forEach(r => r.teams.forEach(t => teams.push({ code: r.code, title: r.title, id: t.id, name: t.teamName || 'Team' })));
+            if (!teams.length) { sel.innerHTML = '<option value="" disabled selected>No approved teams yet</option>'; return; }
+            const multiRace = new Set(teams.map(t => t.code)).size > 1;
+            sel.innerHTML = '<option value="" disabled selected>Choose a team…</option>' + teams.map(t =>
+                `<option value="${escHtml(t.code)}|${escHtml(t.id)}" data-icon="👥" data-name="${escHtml(t.name)}" ${multiRace ? `data-sub="${escHtml(t.title)}"` : ''}>${escHtml(t.name)}</option>`
             ).join('');
-            if (keep) sel.value = keep;
+            if (keep && Array.from(sel.options).some(o => o.value === keep)) sel.value = keep;
         }
         window.hlPopulateTeams = hlPopulateTeams;
 
@@ -8988,6 +8990,7 @@
         window.populatePresetParkSelect();
         window.enhanceSelect('preset-park-select', { title: 'Choose a park group', searchable: false });
         window.enhanceSelect('create-final-stop-select', { title: 'Final location', searchable: true });
+        window.enhanceSelect('hostlock-team-select', { title: 'Nominate a team', placeholder: 'Choose a team…', searchable: false });
         window.enhanceSelect('edit-final-stop-select', { title: 'Final location', searchable: true });
         window.enhanceSelect('create-wildcard-duration', { title: 'Wildcard offered for', searchable: false });
         window.enhanceSegmented('trivia-frequency');
