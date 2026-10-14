@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="portal-locked on-portal">
 <head>
     <!-- Self-Contained Web App Manifest Data URI (Base64-encoded to prevent quote leakage) -->
     <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"The Amazing Mouse Race","short_name":"Mouse Race","start_url":"./index.html","display":"standalone","background_color":"%230f172a","theme_color":"%230055B8","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwNTVCOCIvPjxjaXJjbGUgY3g9IjI1NiIgY3kyPSIyNTYiIHI9IjEyMCIgZmlsbD0iI0ZGQjgwMCIvPjwvc3ZnPg==","sizes":"any","type":"image/svg+xml"}]}'>
@@ -117,7 +117,7 @@
 
         #portal-track {
             display: flex;
-            width: 400%;
+            width: 500%;
             height: 100%;
             min-height: 0;
             align-items: stretch;
@@ -125,9 +125,10 @@
 
         #portal-track > section {
             padding-top: 1rem;
-            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-            width: 25%;
-            flex: 0 0 25%;
+            /* the floating dock sits in front of the page, so every page ends with enough room to clear it */
+            padding-bottom: calc(var(--dock-clear) + 1.25rem);
+            width: 20%;
+            flex: 0 0 20%;
             height: 100%;
             min-height: 0;
             overflow-y: auto;
@@ -150,12 +151,12 @@
 
         /* Portal tabs: trim bottom padding so the scroll area runs to the bottom of the screen */
         html.portal-locked main {
-            padding-top: var(--nav-h, 144px) !important;
+            padding-top: calc(env(safe-area-inset-top, 0px) + .5rem) !important;
             padding-bottom: 0 !important;
             min-height: 0 !important;
         }
         html.portal-locked #team-status-banner {
-            margin-top: 0.5rem;
+            margin-top: 0;
             margin-bottom: 0.5rem !important;
         }
         /* With the team card showing, the gap below it matches the card-to-card gap */
@@ -170,11 +171,6 @@
            display:none cards as neighbours, which pushed the first visible card further down. */
         #portal-track > section.space-y-6 > * { margin-top: 0 !important; }
         #portal-track > section.space-y-6 > :not(.hidden) ~ :not(.hidden) { margin-top: 1.5rem !important; }
-
-        /* Maps / Rules (and any non-portal page): clear the taller header with the same 1rem breathing room */
-        html:not(.portal-locked) body > main {
-            padding-top: calc(var(--nav-h, 146px) + 1rem) !important;
-        }
 
         /* ---------- Bottom sheet picker ---------- */
         #app-sheet {
@@ -228,6 +224,9 @@
         :root {
             --app-motion: cubic-bezier(0.22, 1, 0.36, 1);
             --app-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --dock-h: 62px;
+            --dock-gap: 12px;
+            --dock-clear: calc(var(--dock-h) + var(--dock-gap) + env(safe-area-inset-bottom, 0px));
         }
 
         #app-fullscreen-menu {
@@ -258,55 +257,6 @@
             position: relative;
             z-index: 1;
         }
-
-        /* The close control mirrors the hamburger position in the lower nav row.
-           It is anchored to the viewport so the logo can never pull it inward. */
-        #app-menu-close {
-            position: fixed !important;
-            top: calc(4.25rem + env(safe-area-inset-top));
-            left: .5rem;
-            z-index: 20;
-            transform: scale(.92);
-            opacity: 0;
-            transition: transform 420ms var(--app-spring), opacity 220ms ease, background-color 180ms ease;
-        }
-        #app-fullscreen-menu.app-menu-open #app-menu-close {
-            transform: scale(1);
-            opacity: 1;
-        }
-        #app-menu-close:active { transform: scale(.88); }
-
-        /* Springy hamburger: tiny physical response rather than a website-like hover. */
-        #hamburger-btn {
-            transition: transform 360ms var(--app-spring), background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease !important;
-        }
-        #hamburger-btn:active { transform: scale(.88); }
-        #hamburger-btn:hover { transform: translateY(-1px) scale(1.04); }
-
-        /* Native-style active tab pill with a moving highlight. */
-        [data-tab] {
-            position: relative;
-            overflow: hidden;
-            transition: color 220ms ease, background-color 220ms ease, transform 300ms var(--app-spring) !important;
-        }
-        [data-tab]::after {
-            content: '';
-            position: absolute;
-            left: 18%;
-            right: 18%;
-            bottom: 3px;
-            height: 2px;
-            border-radius: 999px;
-            background: currentColor;
-            transform: scaleX(0);
-            opacity: 0;
-            transition: transform 360ms var(--app-spring), opacity 220ms ease;
-        }
-        [data-tab].text-disneyGold::after {
-            transform: scaleX(1);
-            opacity: .9;
-        }
-        [data-tab]:active { transform: scale(.97); }
 
         #app-fullscreen-menu .app-menu-content {
             opacity: 0;
@@ -402,7 +352,7 @@
         /* One shared stack for every bottom notification, so they sit above each other instead of overlapping */
         #toast-stack {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 300;
-            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(var(--dock-clear) + 10px);
             display: flex; flex-direction: column-reverse; align-items: center; gap: 8px;
             max-width: calc(100vw - 24px); pointer-events: none;
         }
@@ -432,7 +382,7 @@
                 transition: none !important;
             }
             .app-page-enter, .app-page-enter-from-left, .app-page-enter-from-right { animation: none !important; }
-            #app-menu-close, #hamburger-btn, [data-tab] { transition: none !important; }
+            .dock-btn, .dock-btn i { transition: none !important; }
         }
 
 
@@ -511,6 +461,9 @@
             --theme-card-gradient: linear-gradient(135deg, rgba(245,158,11,.10) 0%, transparent 45%, rgba(16,185,129,.10) 100%);
 
             /* ---- Header ---- */
+            --theme-dock-bg: linear-gradient(180deg, rgba(30,27,75,.55) 0%, rgba(12,10,42,.62) 100%);
+            --theme-dock-border: rgba(255,229,143,.28);
+            --theme-dock-active: rgba(255,184,0,.14);
             --theme-header-bg: linear-gradient(180deg, rgba(12,10,42,.96) 0%, rgba(36,16,64,.92) 100%);
             --theme-metal-light: #ffe58f;   /* brass / gold trim gradient */
             --theme-metal-mid: #f0b429;
@@ -652,129 +605,40 @@
         #portal-track .bg-slate-900 { background-color: var(--theme-card-tile-bg); }
 
         /* =====================================================================
-           HEADER: brass-and-night-sky
+           DOCK: floating glass navigation (replaces the old header)
            ===================================================================== */
-        .app-header {
-            background: var(--theme-header-bg);
-            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-            border-bottom: 3px solid transparent;
-            border-image: linear-gradient(90deg, var(--theme-metal-dark), var(--theme-metal-light) 25%, var(--theme-metal-mid) 50%, var(--theme-metal-light) 75%, var(--theme-metal-dark)) 1;
-            box-shadow: 0 8px 22px rgba(0,0,0,.45), 0 0 18px rgba(255,184,0,.12);
-            overflow: hidden;
-        }
-        /* stars + fireworks (kept clear of the settings button on the right) */
-        .app-header::before {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background-image:
-                var(--theme-header-firework-1),
-                var(--theme-header-firework-2),
-                var(--theme-header-firework-3),
-                var(--theme-header-firework-4),
-                radial-gradient(1.4px 1.4px at 14% 30%, #fff 50%, transparent 52%),
-                radial-gradient(1px 1px at 27% 72%, #fff 50%, transparent 52%),
-                radial-gradient(1.6px 1.6px at 46% 20%, #ffe9a8 50%, transparent 52%),
-                radial-gradient(1px 1px at 58% 78%, #fff 50%, transparent 52%),
-                radial-gradient(1.3px 1.3px at 66% 34%, #fff 50%, transparent 52%),
-                radial-gradient(1.4px 1.4px at 80% 22%, #fff 50%, transparent 52%),
-                radial-gradient(1px 1px at 93% 40%, #ffe9a8 50%, transparent 52%);
-            background-repeat: no-repeat;
-            background-position: calc(60% - 36px) -20px, calc(40% - 20px) -14px, calc(100% - 64px) -14px, calc(80% - 20px) 36px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
-            background-size: 72px 72px, 44px 44px, 66px 66px, 42px 42px, auto, auto, auto, auto, auto, auto, auto;
-            opacity: .8;
-            animation: headerTwinkle 4.5s ease-in-out infinite;
-        }
-        @keyframes headerTwinkle { 0%,100% { opacity: .6; } 50% { opacity: .95; } }
-        .app-header > * { position: relative; }
-
-        /* compass medallion */
-        .brand-medallion {
-            width: 46px; height: 46px; border-radius: 9999px;
-            display: flex; align-items: center; justify-content: center;
-            border: 3px solid transparent;
-            background: radial-gradient(circle at 35% 30%, #2f3478 0%, #11133a 72%) padding-box,
-                        linear-gradient(145deg, var(--theme-metal-light), var(--theme-metal-mid) 45%, var(--theme-metal-dark)) border-box;
-            color: var(--theme-metal-light); font-size: 22px;
-            box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 14px rgba(255,184,0,.35), inset 0 0 8px rgba(0,0,0,.6);
-        }
-        .brand-medallion i { filter: drop-shadow(0 0 5px rgba(255,200,60,.7)); animation: compassSway 6s ease-in-out infinite; }
-        @keyframes compassSway { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
-
-        /* title lettering */
-        .brand-title { line-height: 1; margin: 0; }
-        .brand-title-small {
-            display: block; font-family: 'Fredoka', sans-serif; font-weight: 600;
-            font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
-            color: var(--theme-cream); text-shadow: 0 2px 0 rgba(0,0,0,.55);
-            margin-bottom: 1px;
-        }
-        .brand-title-main {
-            display: block; font-family: 'Fredoka', sans-serif; font-weight: 700;
-            font-size: clamp(27px, 8.6vw, 36px); letter-spacing: .01em; white-space: nowrap;
-            background: linear-gradient(180deg, var(--theme-title-top) 0%, var(--theme-title-mid) 48%, var(--theme-title-bottom) 100%);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent; color: transparent;
-            filter: drop-shadow(1px 0 0 var(--theme-title-outline)) drop-shadow(-1px 0 0 var(--theme-title-outline))
-                    drop-shadow(0 1px 0 var(--theme-title-outline)) drop-shadow(0 -1px 0 var(--theme-title-outline))
-                    drop-shadow(0 3px 2px rgba(0,0,0,.55));
-        }
-        .brand-subtitle {
-            font-family: 'Fredoka', sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .05em;
-            color: var(--theme-cream); opacity: .9; margin-top: 3px; text-shadow: 0 1px 0 rgba(0,0,0,.6);
-        }
-
-        /* round brass buttons (avatar / settings / menu) */
-        .app-header .brass-btn {
-            border: 3px solid transparent !important;
-            border-radius: 9999px !important;
-            background: radial-gradient(circle at 35% 30%, #2f3478 0%, #11133a 75%) padding-box,
-                        linear-gradient(145deg, var(--theme-metal-light), var(--theme-metal-mid) 45%, var(--theme-metal-dark)) border-box !important;
-            color: var(--theme-metal-light) !important;
-            box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 10px rgba(255,184,0,.22), inset 0 0 6px rgba(0,0,0,.6) !important;
-        }
-        .app-header .brass-btn:hover { filter: brightness(1.18); }
-        .app-header .brass-btn i { filter: drop-shadow(0 0 4px rgba(255,200,60,.55)); }
-
-        /* gilded tab pills */
-        .app-header .app-tabrow { background: transparent; border-top: 0; padding-bottom: 6px; }
-        .app-header [data-tab] {
-            font-family: 'Fredoka', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: .02em;
+        #app-dock {
+            position: fixed; left: 50%; z-index: 40;
+            bottom: calc(var(--dock-gap) + env(safe-area-inset-bottom, 0px));
+            width: min(calc(100% - 24px), 400px); height: var(--dock-h);
+            transform: translateX(-50%);
+            display: flex; align-items: center; gap: 2px; padding: 6px;
             border-radius: 9999px;
-            border: 2px solid rgba(240,180,41,.30);
-            background: rgba(8,8,32,.55);
-            color: rgba(214,204,240,.78);
-            box-shadow: inset 0 2px 5px rgba(0,0,0,.45);
+            background: var(--theme-dock-bg);
+            -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+            border: 1px solid var(--theme-dock-border);
+            box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 2px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.14);
+            transition: transform .35s var(--app-motion), opacity .25s ease;
         }
-        .app-header [data-tab]::after { display: none; }
-        .app-header .brass-btn[data-tab] { overflow: visible; }
-        .app-header .brass-btn.tab-active {
-            box-shadow: 0 3px 0 rgba(0,0,0,.45), inset 0 0 6px rgba(0,0,0,.6) !important;
+        /* slides away while a text field is focused, so it never floats above the keyboard */
+        html.kb-open #app-dock { transform: translate(-50%, calc(100% + var(--dock-gap) + 40px)); opacity: 0; pointer-events: none; }
+        .dock-btn {
+            position: relative; flex: 1 1 0; height: 100%; min-width: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 9999px; border: 0; background: transparent;
+            color: rgba(226,220,246,.62); font-size: 19px;
+            -webkit-tap-highlight-color: transparent;
+            transition: color .22s ease, background-color .22s ease, transform .3s var(--app-spring);
         }
-        /* Menu + settings circles: quieter ring until they are the current page, so they don't read as "selected" */
-        .app-header #nav-org-cog:not(.tab-active),
-        .app-header #hamburger-btn:not(.tab-active) {
-            opacity: .7;
-            border-width: 2px !important;
-            box-shadow: 0 2px 0 rgba(0,0,0,.4), inset 0 0 6px rgba(0,0,0,.6) !important;
-        }
-        .app-header #nav-org-cog:not(.tab-active):hover,
-        .app-header #hamburger-btn:not(.tab-active):hover { opacity: .95; }
-        /* Menu page */
-        #tab-menu .menu-page-title { font-family: 'Fredoka', sans-serif; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--theme-accent); text-align: center; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
-        #tab-menu .app-glass-button { background: var(--theme-card-bg) !important; border-color: var(--theme-card-border) !important; -webkit-backdrop-filter: blur(var(--theme-card-blur)); backdrop-filter: blur(var(--theme-card-blur)); font-family: 'Fredoka', sans-serif; }
-        /* Active = brighter, bolder brass outline (same gradient as the round buttons) + gold label.
-           The fill stays dark: no yellow tint over the button. */
-        .app-header [data-tab].text-disneyGold {
+        .dock-btn i { transition: transform .35s var(--app-spring), filter .22s ease; }
+        .dock-btn:active { transform: scale(.9); }
+        .dock-btn.tab-active {
             color: var(--theme-accent);
-            border: 3px solid transparent;
-            background: linear-gradient(rgb(13,11,42), rgb(13,11,42)) padding-box,
-                        linear-gradient(180deg, var(--theme-metal-light) 0%, var(--theme-metal-mid) 50%, var(--theme-metal-dark) 100%) border-box;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,.45);
-            text-shadow: none;
+            background: var(--theme-dock-active);
+            box-shadow: inset 0 0 0 1.5px rgba(255,200,60,.45), 0 0 16px rgba(255,184,0,.18);
         }
-        .app-header [data-tab] i { filter: drop-shadow(0 0 4px rgba(255,200,60,.4)); }
-        @media (prefers-reduced-motion: reduce) {
-            .app-header::before, .brand-medallion i { animation: none; }
-        }
+        .dock-btn.tab-active i { transform: translateY(-1px) scale(1.12); filter: drop-shadow(0 0 6px rgba(255,200,60,.6)); }
+        .dock-btn .dock-badge { position: absolute; top: 6px; right: calc(50% - 22px); }
     </style>
 
     <style>
@@ -1100,49 +964,20 @@
         </div>
     </div>
 
-    <!-- Fixed Navbar -->
-    <nav class="app-header fixed top-0 left-0 right-0 z-40">
-        <!-- Top brand header row (flush compass logo & title) -->
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchTab('race')">
-                <div class="min-w-0">
-                    <h1 class="brand-title" aria-label="The Amazing Mouse Race">
-                        <span class="brand-title-small">The Amazing</span>
-                        <span class="brand-title-main">Mouse Race</span>
-                    </h1>
-                    <p id="nav-subtitle" class="brand-subtitle truncate">Magic Kingdom & Beyond</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2.5 shrink-0">
-                <div id="nav-team-badge" class="hidden items-center">
-                    <img id="nav-team-avatar" src="" onclick="switchTab('race')" class="brass-btn w-10 h-10 object-cover shrink-0 cursor-pointer hover:scale-105 transition" title="Go to Team Portal">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Nav row: menu (circle) | Team Portal | Race Portal | Host (circle) — all four are also swipeable pages -->
-        <div class="app-tabrow relative text-xs font-semibold flex items-center justify-between px-1">
-            <button onclick="toggleMobileMenu()" id="hamburger-btn" data-tab="menu" class="brass-btn mx-2 my-1.5 w-10 h-10 flex items-center justify-center transition shrink-0" title="Open Navigation Menu">
-                <i class="fa-solid fa-bars text-sm"></i>
-            </button>
-            <div class="flex flex-1 overflow-x-auto py-1 gap-1">
-                <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="flex-1 py-2 px-3 text-center text-disneyGold transition flex justify-center items-center gap-2 bg-slate-900/60 whitespace-nowrap rounded-xl">
-                    <i class="fa-solid fa-flag-checkered"></i> <span>Team Portal</span>
-                </button>
-                <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="flex-1 py-2 px-3 text-center text-slate-400 hover:text-slate-200 transition flex justify-center items-center gap-2 whitespace-nowrap rounded-xl">
-                    <i class="fa-solid fa-trophy"></i> <span>Race Portal</span>
-                </button>
-            </div>
-                <button id="nav-org-cog" onclick="switchTab('organizer')" data-tab="organizer" class="brass-btn relative mx-2 my-1.5 w-10 h-10 transition flex items-center justify-center shrink-0" title="Host Dashboard">
-                    <i class="fa-solid fa-gear text-sm"></i>
-                    <span id="nav-pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
-                </button>
-        </div>
+    <!-- Floating glass dock: the five pages (all swipeable, in this order) -->
+    <nav id="app-dock" aria-label="Main navigation">
+        <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="dock-btn tab-active" aria-label="Team" title="Team"><i class="fa-solid fa-flag-checkered"></i></button>
+        <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" data-tab="leaderboard" class="dock-btn" aria-label="Race" title="Race"><i class="fa-solid fa-trophy"></i></button>
+        <button onclick="switchTab('maps')" id="tab-btn-maps" data-tab="maps" class="dock-btn" aria-label="Maps" title="Maps"><i class="fa-solid fa-map"></i></button>
+        <button onclick="switchTab('rules')" id="tab-btn-rules" data-tab="rules" class="dock-btn" aria-label="Rules" title="Rules"><i class="fa-solid fa-book-open"></i></button>
+        <button id="nav-org-cog" onclick="switchTab('organizer')" data-tab="organizer" class="dock-btn" aria-label="Host" title="Host">
+            <i class="fa-solid fa-gear"></i>
+            <span id="nav-pending-badge" class="dock-badge hidden bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
+        </button>
     </nav>
 
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
-    <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-36 pb-12 min-h-screen flex flex-col w-full">
+    <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-4 pb-0 min-h-screen flex flex-col w-full">
 
         <div id="team-status-banner" class="hidden mb-2 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
             <div class="relative group cursor-pointer shrink-0" title="Click to update team avatar">
@@ -1166,26 +1001,6 @@
 
         <div id="portal-viewport">
             <div id="portal-track">
-                <!-- ================= TAB 0: MENU (swipe right from Team Portal) ================= -->
-                <section id="tab-menu" class="px-3 space-y-3">
-                    <h3 class="menu-page-title text-lg mb-1 pt-2">Menu</h3>
-                    <button onclick="switchTab('race')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
-                        <i class="fa-solid fa-flag-checkered text-disneyGold"></i> <span>Team Portal</span>
-                    </button>
-                    <button onclick="switchTab('leaderboard')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
-                        <i class="fa-solid fa-trophy text-disneyGold"></i> <span>Race Portal</span>
-                    </button>
-                    <button onclick="switchTab('maps')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
-                        <i class="fa-solid fa-map text-disneyGold"></i> <span>Park Maps</span>
-                    </button>
-                    <button onclick="switchTab('rules')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
-                        <i class="fa-solid fa-book-open text-disneyGold"></i> <span>Rules</span>
-                    </button>
-                    <button onclick="switchTab('organizer')" class="app-glass-button w-full py-4 px-6 text-white font-bold rounded-2xl text-sm transition flex items-center justify-center gap-3 shadow-lg border">
-                        <i class="fa-solid fa-user-gear text-disneyGold"></i> <span>Host Dashboard</span>
-                    </button>
-                </section>
-
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
                 <section id="tab-race" class="px-3 space-y-6">
                 <!-- Wildcard challenge notification (filled by renderWildcardBanner) -->
@@ -1457,6 +1272,146 @@
                 </div>
             </section>
 
+        <!-- ================= TAB 3: PARK MAPS ================= -->
+        <section id="tab-maps" class="px-3 space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
+                            <i class="fa-solid fa-map text-disneyGold"></i> Digital Park & Resort Maps
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
+                    </div>
+                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3.5 py-1.5 rounded-xl border border-disneyBlue/40 self-start sm:self-auto font-medium">
+                        <i class="fa-solid fa-compass-drafting mr-1"></i> Paper Map Tools
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
+                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
+                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
+                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
+                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
+                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
+                            <i class="fa-solid fa-location-pin text-disneyPink"></i> Magic Kingdom Park Map View
+                        </h3>
+                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3.5 py-2 rounded-xl border border-slate-600 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
+                        </a>
+                    </div>
+                    
+                    <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                        <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
+                    </div>
+                    <p id="map-desc-text" class="text-xs text-slate-400 italic">
+                        Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-compass"></i> Strategic Planning Tip
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: RULES ================= -->
+        <section id="tab-rules" class="px-3 space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4">
+                    <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
+                        <i class="fa-solid fa-book-open text-disneyGold"></i> Race Rules & Guidelines
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Read carefully before starting your journey across Disney property!</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                            <i class="fa-solid fa-stopwatch"></i> Objective
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
+                            <i class="fa-solid fa-bus"></i> Transportation
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                            <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your host has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Penalties
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                            <i class="fa-solid fa-star"></i> Bonus Challenges
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                            <i class="fa-solid fa-ban"></i> Route Planning Restriction
+                        </div>
+                        <p class="text-slate-300 leading-relaxed">
+                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
+                    <div class="font-bold text-amber-300 flex items-center gap-2">
+                        <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for host review. 
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <!-- ================= TAB 5: HOST DASHBOARD ================= -->
                 <section id="tab-organizer" class="px-3 space-y-6">
                     <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
@@ -1553,145 +1508,6 @@
             </div>
         </div>
 
-        <!-- ================= TAB 3: PARK MAPS ================= -->
-        <section id="tab-maps" class="hidden space-y-6">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
-                <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
-                            <i class="fa-solid fa-map text-disneyGold"></i> Digital Park & Resort Maps
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
-                    </div>
-                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3.5 py-1.5 rounded-xl border border-disneyBlue/40 self-start sm:self-auto font-medium">
-                        <i class="fa-solid fa-compass-drafting mr-1"></i> Paper Map Tools
-                    </span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
-                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
-                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
-                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
-                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
-                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
-                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
-                            <i class="fa-solid fa-location-pin text-disneyPink"></i> Magic Kingdom Park Map View
-                        </h3>
-                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3.5 py-2 rounded-xl border border-slate-600 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
-                        </a>
-                    </div>
-                    
-                    <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                        <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
-                    </div>
-                    <p id="map-desc-text" class="text-xs text-slate-400 italic">
-                        Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
-                        </p>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-compass"></i> Strategic Planning Tip
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 4: RULES ================= -->
-        <section id="tab-rules" class="hidden space-y-6">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
-                <div class="border-b border-slate-700 pb-4">
-                    <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
-                        <i class="fa-solid fa-book-open text-disneyGold"></i> Race Rules & Guidelines
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">Read carefully before starting your journey across Disney property!</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
-                            <i class="fa-solid fa-stopwatch"></i> Objective
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
-                            <i class="fa-solid fa-bus"></i> Transportation
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                            <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your host has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Penalties
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
-                            <i class="fa-solid fa-star"></i> Bonus Challenges
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                            <i class="fa-solid fa-ban"></i> Route Planning Restriction
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
-                        </p>
-                    </div>
-                </div>
-
-                <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
-                    <div class="font-bold text-amber-300 flex items-center gap-2">
-                        <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
-                    </div>
-                    <p class="text-slate-300 leading-relaxed">
-                        When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for host review. 
-                    </p>
-                </div>
-            </div>
-        </section>
 
 
     </main>
@@ -2259,42 +2075,6 @@
             el._t = setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
         };
 
-        // Swipe right on Rules / Park Maps to go back to the menu.
-        // Guards: ignored for pinch/zoom (2+ fingers, or the page is zoomed in), vertical scrolls,
-        // slow drags, the very left screen edge (Android's system back gesture), and form fields.
-        (function () {
-            const SWIPE_MIN_X = 80, SWIPE_MAX_Y = 60, SWIPE_MAX_MS = 700, EDGE_PX = 24;
-            const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
-            const blocked = (t) => !!(t && t.closest && t.closest('input, textarea, select, iframe, [data-no-swipe], .overflow-x-auto'));
-            function attach() {
-                ['tab-maps', 'tab-rules'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (!el || el._swipeBack) return;
-                    el._swipeBack = true;
-                    let sx = 0, sy = 0, st = 0, tracking = false;
-                    el.addEventListener('touchstart', (e) => {
-                        if (e.touches.length !== 1 || zoomed() || blocked(e.target)) { tracking = false; return; }
-                        sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
-                        tracking = sx > EDGE_PX;
-                    }, { passive: true });
-                    el.addEventListener('touchmove', (e) => {
-                        if (e.touches.length > 1 || zoomed()) tracking = false;
-                    }, { passive: true });
-                    el.addEventListener('touchend', (e) => {
-                        if (!tracking) return;
-                        tracking = false;
-                        const t = e.changedTouches[0];
-                        const dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
-                        if (Date.now() - st > SWIPE_MAX_MS) return;
-                        if (dx >= SWIPE_MIN_X && dy <= SWIPE_MAX_Y && dy < dx * 0.5) switchTab('menu');
-                    }, { passive: true });
-                    el.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
-                });
-            }
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
-            else attach();
-        })();
-
         // ---- Team timing (single source of truth for ticker, leaderboard and report card) ----
         // Pause time that happened BEFORE this team started is never deducted from it, and
         // pauses that happen AFTER it finished are ignored (endPauseAccumulatedMs).
@@ -2477,39 +2257,17 @@
             window.addEventListener('scroll', guard, { passive: true });
         })();
 
+        // The five pages, in dock order. They live side by side in #portal-track and are swipeable.
+        window.PORTAL_PAGES = ['race', 'leaderboard', 'maps', 'rules', 'organizer'];
+
         function switchTab(tabName, saveState = true, instant = false) {
+            const PORTAL_PAGES = window.PORTAL_PAGES;
+            if (!PORTAL_PAGES.includes(tabName)) tabName = 'race';
             window.resetPageScroll();
-            const PORTAL_PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
-            const prevTab = window.currentTab;
-            ['maps', 'rules'].forEach(t => {
-                const section = document.getElementById(`tab-${t}`);
-                if (section) {
-                    section.classList.toggle('hidden', t !== tabName);
-                }
-            });
-
             const portalViewport = document.getElementById('portal-viewport');
-            const isPortalTab = PORTAL_PAGES.includes(tabName);
-            const viewportWasHidden = !!(portalViewport && portalViewport.classList.contains('hidden'));
-            if (tabName !== 'menu') window.lastNonMenuTab = tabName;
             window.currentTab = tabName;
+
             if (portalViewport) {
-                portalViewport.classList.toggle('hidden', !isPortalTab);
-                document.documentElement.classList.toggle('portal-locked', isPortalTab);
-                document.documentElement.classList.toggle('on-portal', isPortalTab);
-            }
-
-            // Give standard pages a soft arrival animation when they become visible.
-            if (!isPortalTab) {
-                const page = document.getElementById(`tab-${tabName}`);
-                if (page) {
-                    page.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right');
-                    void page.offsetWidth;
-                    page.classList.add('app-page-enter');
-                }
-            }
-
-            if (isPortalTab && portalViewport) {
                 const pageIndex = PORTAL_PAGES.indexOf(tabName);
                 const targetScrollLeft = pageIndex * portalViewport.clientWidth;
                 const targetPage = document.querySelector(`#portal-track > section:nth-child(${pageIndex + 1})`);
@@ -2517,43 +2275,31 @@
                     // fade only: a sliding (transform) animation would shift the scroll-snap target mid-swipe
                     targetPage.classList.remove('app-page-enter', 'app-page-enter-from-left', 'app-page-enter-from-right', 'app-page-fade', 'app-page-pop');
                     void targetPage.offsetWidth;
-                    // the menu appears in place (no glide past the pages in between)
-                    targetPage.classList.add((tabName === 'menu' || instant) ? 'app-page-pop' : 'app-page-fade');
+                    targetPage.classList.add(instant ? 'app-page-pop' : 'app-page-fade');
                 }
-                // Coming back from Maps/Rules (viewport was display:none) or first load: jump, don't glide
-                portalViewport.scrollTo({ left: targetScrollLeft, behavior: (viewportWasHidden || !saveState || instant || tabName === 'menu') ? 'auto' : 'smooth' });
+                // While gliding across pages (e.g. Team -> Host) the swipe listener must not flash the pages in between
+                window.__navTarget = targetScrollLeft;
+                window.__navLockUntil = Date.now() + 1100;
+                portalViewport.scrollTo({ left: targetScrollLeft, behavior: (!saveState || instant) ? 'auto' : 'smooth' });
             }
 
             setActiveNavTab(tabName);
 
-            if (saveState && tabName !== 'menu') {
-                localStorage.setItem('rad_active_tab', tabName);
-            }
+            if (saveState) localStorage.setItem('rad_active_tab', tabName);
 
             if (tabName === 'leaderboard') {
                 if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
                 initChatListener();
             }
-
         }
 
-        // Highlights the nav control for the current page (pills get the gilded style, circles glow)
+        // Highlights the dock button for the current page
         window.setActiveNavTab = function(tabName) {
-            document.querySelectorAll('[data-tab]').forEach(btn => {
+            document.querySelectorAll('#app-dock [data-tab]').forEach(btn => {
                 const isMatch = btn.getAttribute('data-tab') === tabName;
                 btn.classList.toggle('tab-active', isMatch);
-                if (btn.classList.contains('brass-btn')) return;
-                btn.classList.toggle('text-disneyGold', isMatch);
-                btn.classList.toggle('text-slate-400', !isMatch);
-                btn.classList.toggle('bg-slate-900/60', isMatch);
-                btn.classList.toggle('hover:text-slate-200', !isMatch);
+                if (isMatch) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
             });
-        };
-
-        // Hamburger: jump to the menu page, or back to wherever you were
-        window.toggleMobileMenu = function() {
-            if (window.currentTab === 'menu') switchTab(window.lastNonMenuTab || 'race', true, true);
-            else switchTab('menu');
         };
 
         // Give every app modal the same native-feeling open/close treatment.
@@ -3088,13 +2834,18 @@
             }
             updateCreationFinalStopDropdown();
 
-            // Track scroll position of portal viewport to sync active tab buttons if swiped manually
+            // Track scroll position of portal viewport to sync the dock highlight when swiped manually
             const portalViewport = document.getElementById('portal-viewport');
             if (portalViewport) {
-                const PAGES = ['menu', 'race', 'leaderboard', 'organizer'];
+                const PAGES = window.PORTAL_PAGES;
                 let settleTimer = null;
                 portalViewport.addEventListener('scroll', () => {
                     if (portalViewport.classList.contains('hidden')) return;
+                    // A dock tap is gliding to its page: ignore the pages passed on the way, release once it lands
+                    if (Date.now() < (window.__navLockUntil || 0)) {
+                        if (Math.abs(portalViewport.scrollLeft - (window.__navTarget || 0)) > 2) return;
+                        window.__navLockUntil = 0;
+                    }
                     const width = portalViewport.clientWidth || 1;
                     const idx = Math.max(0, Math.min(PAGES.length - 1, Math.round(portalViewport.scrollLeft / width)));
                     const activeTab = PAGES[idx];
@@ -3106,10 +2857,7 @@
                     clearTimeout(settleTimer);
                     settleTimer = setTimeout(() => {
                         const tab = window.currentTab;
-                        if (tab !== 'menu') {
-                            window.lastNonMenuTab = tab;
-                            localStorage.setItem('rad_active_tab', tab);
-                        }
+                        localStorage.setItem('rad_active_tab', tab);
                         if (tab === 'leaderboard') {
                             if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
                             initChatListener();
@@ -3117,21 +2865,21 @@
                     }, 160);
                 }, { passive: true });
 
-                // Keep the current page aligned if the screen size/orientation changes
+                // Keep the current page aligned if the screen size/orientation changes, or the app
+                // becomes visible after the splash screen (the viewport has no width before that)
                 let lastW = portalViewport.clientWidth;
-                window.addEventListener('resize', () => {
-                    if (portalViewport.classList.contains('hidden')) return;
+                new ResizeObserver(() => {
                     const w = portalViewport.clientWidth;
-                    if (w === lastW) return;
+                    if (!w || w === lastW) return;
                     lastW = w;
                     const i = Math.max(0, PAGES.indexOf(window.currentTab));
                     portalViewport.scrollTo({ left: i * w, behavior: 'auto' });
-                });
+                }).observe(portalViewport);
             }
 
 
             setTimeout(() => {
-                const savedTab = localStorage.getItem('rad_active_tab') || 'race';
+                const savedTab = localStorage.getItem('rad_active_tab') || 'race';   // switchTab falls back to 'race' for anything unknown
                 switchTab(savedTab, false);
                 if (!window.activeRaceCode) {
                     hideSplashScreen();
@@ -4166,9 +3914,9 @@
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
                 document.getElementById('elapsed-time-display').innerText = '00:00:00';
 
-                document.getElementById('nav-team-badge').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = avatarUrl;
+                document.getElementById('nav-team-badge')?.classList.remove('hidden');
+                document.getElementById('nav-team-avatar')?.classList.remove('hidden');
+                { const _na = document.getElementById('nav-team-avatar'); if (_na) _na.src = avatarUrl; }
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
@@ -6342,8 +6090,8 @@
                 await updateDoc(teamRef, { photoUrl: compressedUrl });
 
                 document.getElementById('active-team-avatar').src = compressedUrl;
-                document.getElementById('nav-team-avatar').src = compressedUrl;
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
+                { const _na = document.getElementById('nav-team-avatar'); if (_na) _na.src = compressedUrl; }
+                document.getElementById('nav-team-avatar')?.classList.remove('hidden');
                 alert("Team avatar updated successfully!");
             } catch (err) {
                 alert("Error updating avatar: " + err.message);
@@ -6488,9 +6236,9 @@
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
                 document.getElementById('elapsed-time-display').innerText = '00:00:00';
 
-                document.getElementById('nav-team-badge').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').classList.remove('hidden');
-                document.getElementById('nav-team-avatar').src = activeAvatarUrl;
+                document.getElementById('nav-team-badge')?.classList.remove('hidden');
+                document.getElementById('nav-team-avatar')?.classList.remove('hidden');
+                { const _na = document.getElementById('nav-team-avatar'); if (_na) _na.src = activeAvatarUrl; }
 
                 loadTeamDashboardData(raceSnap.data());
                 startTimerTicker();
@@ -6523,7 +6271,7 @@
             document.getElementById('team-dashboard-active').classList.add('hidden');
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('login-prompt-card').classList.remove('hidden');
-            document.getElementById('nav-team-badge').classList.add('hidden');
+            document.getElementById('nav-team-badge')?.classList.add('hidden');
         };
 
         function getDetailedTransitAdvice(parkName) {
@@ -9284,21 +9032,19 @@
     <script>
     (function () {
         const banner = document.getElementById('team-status-banner');
-        const nav = document.querySelector('nav');
-        if (!banner || !nav) return;
+        const main = document.querySelector('body > main');
+        if (!banner || !main) return;
+        // Height left for the swipe pages = screen - (top padding + team card). The dock floats over the pages.
         function updatePortalOffset() {
-            const navH = Math.ceil(nav.getBoundingClientRect().bottom) || nav.offsetHeight || 144;
+            const top = parseFloat(getComputedStyle(main).paddingTop) || 0;
             const visible = !(banner.classList.contains('hidden') || banner.offsetHeight === 0);
-            // banner height plus its real top + bottom margins
             const cs = getComputedStyle(banner);
             const bh = visible ? banner.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0) : 0;
             const root = document.documentElement;
-            root.style.setProperty('--nav-h', navH + 'px');
-            root.style.setProperty('--portal-offset', (navH + bh) + 'px');
+            root.style.setProperty('--portal-offset', Math.ceil(top + bh) + 'px');
             root.classList.toggle('has-team-banner', visible);
         }
         new ResizeObserver(updatePortalOffset).observe(banner);
-        new ResizeObserver(updatePortalOffset).observe(nav);
         new MutationObserver(updatePortalOffset).observe(banner, { attributes: true, attributeFilter: ['class'] });
         window.addEventListener('resize', updatePortalOffset);
         window.addEventListener('load', updatePortalOffset);
@@ -9306,59 +9052,16 @@
     })();
     </script>
     <script>
-    /* Collapsing header: scrolling slides the tab row up under "Mouse Race" while the subtitle fades out.
-       The title block never moves. --nav-h follows the nav's height (ResizeObserver above), so content stays attached. */
+    /* The dock slides away while a text field is focused so it never floats above the on-screen keyboard. */
     (function () {
-        const nav = document.querySelector('nav.app-header');
-        const sub = document.getElementById('nav-subtitle');
-        const tabs = nav && nav.querySelector('.app-tabrow');
-        if (!nav || !sub || !tabs) return;
-        const RANGE = 48;          // px of downward scrolling over which the header collapses
-        const EXTRA = 6;           // extra px pulled up so the tabs sit snugly under the title
-        let cur = 0, ticking = false, lastScroller = null;
-        const lastTop = new WeakMap();
-
-        function setProgress(p) {
-            const shift = Math.round((sub.offsetHeight || 14) + 3 + EXTRA);
-            cur = Math.max(0, Math.min(1, p));
-            tabs.style.marginTop = (-shift * cur).toFixed(1) + 'px';
-            sub.style.opacity = String(Math.max(0, 1 - cur * 1.6));
-            sub.style.visibility = cur >= 0.99 ? 'hidden' : 'visible';
-        }
-        // The collapsed state is global: it persists across tabs and pages. Scrolling DOWN collapses it,
-        // and only scrolling back UP to the top of the page you are on opens it again.
-        function apply(scroller) {
-            const top = scroller === window ? window.scrollY : scroller.scrollTop;
-            const maxScroll = scroller === window
-                ? document.documentElement.scrollHeight - window.innerHeight
-                : scroller.scrollHeight - scroller.clientHeight;
-            const prev = lastTop.has(scroller) ? lastTop.get(scroller) : top;
-            lastTop.set(scroller, top);
-            const dy = top - prev;
-            if (dy > 0) {
-                // Collapsing makes the scroll area taller, so only start collapsing when the page has enough content to stay stable.
-                if (cur === 0 && maxScroll < RANGE + Math.round((sub.offsetHeight || 14) + 3 + EXTRA) + 8) return;
-                if (cur < 1) setProgress(cur + dy / RANGE);
-            } else if (dy < 0 && top < RANGE && cur > 0) {
-                setProgress(Math.min(cur, top / RANGE));
-            }
-        }
-        function schedule(scroller) {
-            lastScroller = scroller;
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(() => { ticking = false; apply(lastScroller); });
-        }
-        function isActiveSection(el) {
-            const r = el.getBoundingClientRect();
-            return Math.abs(r.left) < window.innerWidth / 2;
-        }
-        // scroll events don't bubble, so listen in the capture phase
-        document.addEventListener('scroll', (e) => {
-            const t = e.target;
-            if (t === document || t === document.documentElement || t === document.body) schedule(window);
-            else if (t.matches && t.matches('#portal-track > section') && isActiveSection(t)) schedule(t);
-        }, { capture: true, passive: true });
+        const root = document.documentElement;
+        const isField = el => !!(el && el.matches && el.matches('textarea, input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=range]):not([type=color])'));
+        let t = null;
+        document.addEventListener('focusin', e => { clearTimeout(t); if (isField(e.target)) root.classList.add('kb-open'); });
+        document.addEventListener('focusout', () => {
+            clearTimeout(t);
+            t = setTimeout(() => { if (!isField(document.activeElement)) root.classList.remove('kb-open'); }, 120);
+        });
     })();
     </script>
     <script>
@@ -9739,7 +9442,7 @@
        The whole app is one page, so the browser's Back would normally leave it.
        This gives every full-screen view, modal, sheet and dialog its own history
        step: Back closes the top-most one (wizard: goes back a step), then returns
-       from a tab to the Menu, then asks to swipe back again before exiting.
+       from any other page to Team, then asks to swipe back again before exiting.
        Set EXIT_CONFIRM to false to let Back leave the app straight from the Menu.
        ===================================================================== */
     (function () {
@@ -9754,8 +9457,8 @@
 
         // Listed from the bottom of the stack up; when several appear at once they are stacked in this order.
         const LAYERS = [
-            { key: 'tab', isOpen: () => !!window.currentTab && window.currentTab !== 'menu',
-              close: () => { if (typeof window.switchTab === 'function') window.switchTab('menu'); } },
+            { key: 'tab', isOpen: () => !!window.currentTab && window.currentTab !== 'race',
+              close: () => { if (typeof window.switchTab === 'function') window.switchTab('race'); } },
             { key: 'wizard', isOpen: () => { const w = el('race-wizard'); return !!w && w.classList.contains('rw-open'); },
               close: () => {
                   const back = el('rw-back');
