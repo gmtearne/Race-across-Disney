@@ -2002,6 +2002,32 @@
                                         <p class="text-[10px] text-slate-500 leading-relaxed">Adds a brand-new bonus challenge (on top of any bonuses you chose) from a park where the race already has stops. The first team to submit a photo wins it. It appears automatically (the host can't trigger or cancel it). Speed Race and untimed hunts: after every team has done 2 stops and before anyone has fewer than 2 left. Timed hunts: never in the first or last 15 minutes. If the window passes, it is cancelled.</p>
                                     </div>
                                 </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-orange-500/30 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-orange-300"></i> Checkpoint Frenzy</span>
+                                <p class="text-[11px] text-slate-400 mt-0.5">A surprise race event. Most valid checkpoint check-ins during the frenzy wins.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="create-frenzy-switch" onchange="toggleFrenzyCreateSettings()" class="sr-only peer">
+                                <div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-orange-600"></div>
+                            </label>
+                        </div>
+                        <div id="create-frenzy-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800">
+                            <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Frenzy duration</label>
+                            <select id="create-frenzy-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                                <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
+                            </select>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will never overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-orange-500/30 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0"><span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-orange-300"></i> Checkpoint Frenzy</span><p class="text-[11px] text-slate-400 mt-0.5">A surprise event: most valid checkpoint check-ins during the frenzy wins.</p></div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-frenzy-switch" onchange="toggleFrenzyCreateSettings()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-orange-600"></div></label>
+                        </div>
+                        <div id="create-frenzy-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Frenzy duration</label><select id="create-frenzy-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select><p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will not overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p></div>
+                    </div>
                     <input type="number" id="create-default-points" value="0" class="hidden">
                 </section>
 
@@ -2179,12 +2205,14 @@
         window.frenzyCount = function(race, t, f) {
             const mand = new Set((race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').map(c => c.id));
             const d = t.checkinDetails || {}, rj = t.rejectedCheckins || {};
+            const finish = t.endTime ? new Date(t.endTime).getTime() : Infinity;
+            const effectiveEnd = Math.min(Number(f.endsAt) || Infinity, finish);
             let n = 0, last = 0;
             (t.completedCheckpoints || []).forEach(id => {
                 const e = d[id];
-                if (!mand.has(id) || rj[id] || !e || !e.timestamp || e.isManual) return;   // manual overrides can be done back-to-back, so they don't count
+                if (!mand.has(id) || rj[id] || !e || !e.timestamp || e.isManual) return;
                 const ts = new Date(e.timestamp).getTime();
-                if (ts >= f.startedAt && ts <= f.endsAt) { n++; if (ts > last) last = ts; }
+                if (ts >= f.startedAt && ts <= effectiveEnd) { n++; if (ts > last) last = ts; }
             });
             return { n, last };
         };
@@ -2193,13 +2221,16 @@
             const out = { list: [], bonusByTeam: {} };
             const eligible = (teams || []).filter(t => t.isApproved !== false);
             (race.frenzies || []).forEach(f => {
-                const state = window.frenzyState(f, now);
-                const counts = eligible.map(t => ({ id: t.id, name: t.teamName || 'Team', ...window.frenzyCount(race, t, f) }))
-                    .sort((a, b) => b.n - a.n || a.last - b.last);   // tie: whoever reached the count first
-                const top = counts[0];
-                const winnerId = state === 'ended' && top && top.n > 0 ? top.id : null;
-                if (winnerId) out.bonusByTeam[winnerId] = (out.bonusByTeam[winnerId] || 0) + (Number(f.bonus) || window.FRENZY_BONUS);
-                out.list.push({ f, state, counts, winnerId, winnerName: winnerId ? top.name : null });
+                const allFinished = eligible.length > 0 && eligible.every(t => !!t.endTime);
+                const finalFinish = allFinished ? Math.max(...eligible.map(t => new Date(t.endTime).getTime() || 0)) : Infinity;
+                const effectiveEnd = Math.min(Number(f.endsAt) || Infinity, finalFinish);
+                const state = f.cancelled ? 'cancelled' : (now < effectiveEnd ? 'active' : 'ended');
+                const counts = eligible.map(t => ({ id: t.id, name: t.teamName || 'Team', ...window.frenzyCount(race, t, { ...f, endsAt: effectiveEnd }) }));
+                const topCount = counts.length ? Math.max(...counts.map(c => c.n)) : 0;
+                const winners = state === 'ended' && topCount > 0 ? counts.filter(c => c.n === topCount) : [];
+                winners.forEach(w => { out.bonusByTeam[w.id] = (out.bonusByTeam[w.id] || 0) + (Number(f.bonus) || window.FRENZY_BONUS); });
+                counts.sort((a, b) => b.n - a.n || a.last - b.last);
+                out.list.push({ f, state, counts, winnerId: winners.length === 1 ? winners[0].id : null, winnerName: winners.length === 1 ? winners[0].name : null, winnerIds: winners.map(w => w.id), winnerNames: winners.map(w => w.name), effectiveEnd });
             });
             return out;
         };
@@ -2748,6 +2779,10 @@
             const box = document.getElementById('create-bonus-options');
             if (box) box.classList.toggle('hidden', !on);
             if (on && creationBonusMethod === 'manual' && window.renderBonusCheckboxList) window.renderBonusCheckboxList();
+        };
+        window.toggleFrenzyCreateSettings = function() {
+            const on = !!document.getElementById('create-frenzy-switch')?.checked;
+            document.getElementById('create-frenzy-sub-settings')?.classList.toggle('hidden', !on);
         };
         window.toggleWildcardCreateSettings = function() {
             const on = document.getElementById('create-wildcard-switch')?.checked;
@@ -3920,6 +3955,54 @@
             }
         };
 
+        // AUTOMATIC CHECKPOINT FRENZY. Any connected team client may evaluate it; a
+        // transaction on the race document guarantees only one event is created.
+        let frenzyAutoBusy = false, frenzyAutoLast = 0;
+        window.frenzyAutoCheck = async function() {
+            const race = window.liveTeamRaceData, code = window.activeRaceCode, cfg = race && race.frenzyAuto;
+            if (!cfg || !cfg.enabled || !code || !window.activeTeamId || race.paused || frenzyAutoBusy || !navigator.onLine) return;
+            const now = Date.now();
+            if (now - frenzyAutoLast < 15000) return;
+            frenzyAutoLast = now; frenzyAutoBusy = true;
+            try {
+                const raceRef = doc(window.db, "races", code);
+                const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
+                const teams = []; teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
+                const approved = teams.filter(t => t.isApproved !== false && !t.withdrawn);
+                if (!approved.length || approved.every(t => !!t.endTime)) return;
+                const cps = race.checkpoints || [], mandatory = cps.filter(c => c.type !== 'BONUS_PHOTO');
+                const n = mandatory.length, ids = new Set(mandatory.map(c => c.id));
+                if (n < 4 || !race.raceStartedAt) return;
+                const done = approved.map(t => (t.completedCheckpoints || []).filter(id => ids.has(id)).length);
+                if (Math.min(...done) < 2 || Math.max(...done) > n - 2) {
+                    if (Math.max(...done) > n - 2) await runTransaction(window.db, async tx => {
+                        const snap = await tx.get(raceRef), r = snap.data() || {};
+                        if (!r.frenzyAutoResolved) tx.update(raceRef, { frenzyAutoResolved: true, frenzyAutoSkipReason: 'window_passed' });
+                    });
+                    return;
+                }
+                // Wait until wildcard has been resolved; never overlap the active wildcard.
+                const offer = await window.fetchWildcardOffer(code);
+                if (race.wildcardAuto?.enabled && !offer) return;
+                if (offer?.status === 'live' && now < Number(offer.expiresAt || 0)) return;
+                if (offer?.status === 'live' && now >= Number(offer.expiresAt || 0)) {
+                    // Offer remains marked live in storage after expiry; it no longer overlaps.
+                }
+                const seed = wildcardSeed({ code: String(code) + '|frenzy', createdAt: race.createdAt });
+                const triggerAt = 2 + Math.floor(seed * Math.max(1, n - 3));
+                if (Math.min(...done) < triggerAt) return;
+                const duration = Math.max(1, Number(cfg.durationMin) || 15);
+                await runTransaction(window.db, async tx => {
+                    const snap = await tx.get(raceRef); if (!snap.exists()) return;
+                    const latest = snap.data() || {};
+                    if (latest.frenzyAutoResolved || (latest.frenzies || []).some(f => !f.cancelled)) return;
+                    const fNow = Date.now();
+                    tx.update(raceRef, { frenzies: [...(latest.frenzies || []), { id: 'fz_auto_' + fNow, startedAt: fNow, endsAt: fNow + duration * 60000, durationMin: duration, bonus: window.FRENZY_BONUS, cancelled: false, auto: true }], frenzyAutoResolved: true });
+                });
+            } catch (e) { console.warn('Checkpoint Frenzy auto-check failed', e); }
+            finally { frenzyAutoBusy = false; }
+        };
+
         // TESTING: host fires the wildcard immediately (only offered when the race was created with wildcard on).
         window.hostFireWildcardNow = async function(raceCode) {
             const owned = await getOwnedRaceForHost(raceCode);
@@ -3953,8 +4036,9 @@
 
         function startWildcardWatcher() {
             clearInterval(wildcardEvalTimer);
-            wildcardEvalTimer = setInterval(() => { window.wildcardAutoCheck(); }, 20000);
+            wildcardEvalTimer = setInterval(() => { window.wildcardAutoCheck(); window.frenzyAutoCheck(); }, 20000);
             window.wildcardAutoCheck();
+            window.frenzyAutoCheck();
         }
         function stopWildcardWatcher() {
             clearInterval(wildcardEvalTimer);
@@ -4146,6 +4230,10 @@
                 enabled: !!document.getElementById('create-wildcard-switch')?.checked,
                 durationMin: Number(document.getElementById('create-wildcard-duration')?.value) || 15
             };
+            const frenzyAuto = {
+                enabled: !!document.getElementById('create-frenzy-switch')?.checked,
+                durationMin: Number(document.getElementById('create-frenzy-duration')?.value) || 15
+            };
 
             if (!title) return alert("Please give your race a name.");
             if (!code) { generateRandomRaceCode(); code = document.getElementById('new-race-code').value.trim().toUpperCase(); }
@@ -4318,6 +4406,7 @@
                     hideLiveTimers: true,
                     resultsRevealed: false,
                     wildcardAuto: wildcardAuto,
+                    frenzyAuto: frenzyAuto,
                     bingo: bingoInfo || { enabled: false },
                     frenzies: [],
                     trivia: {
@@ -4372,6 +4461,8 @@
             setChk('create-enforce-host-start', false);
             setChk('create-trivia-switch', true);
             setChk('create-wildcard-switch', false);
+            setChk('create-frenzy-switch', false);
+            window.toggleFrenzyCreateSettings();
             setChk('create-bonus-switch', false);
             setChk('create-bingo-switch', false);
             setVal('create-bingo-reward', 20);
