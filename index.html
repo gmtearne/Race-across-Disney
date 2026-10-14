@@ -9209,5 +9209,121 @@
         });
     })();
     </script>
+    <script>
+    /* =====================================================================
+       BACK BUTTON / SWIPE-BACK
+       The whole app is one page, so the browser's Back would normally leave it.
+       This gives every full-screen view, modal, sheet and dialog its own history
+       step: Back closes the top-most one (wizard: goes back a step), then returns
+       from a tab to the Menu, then asks to swipe back again before exiting.
+       Set EXIT_CONFIRM to false to let Back leave the app straight from the Menu.
+       ===================================================================== */
+    (function () {
+        'use strict';
+        const EXIT_CONFIRM = true;
+        const BASE = EXIT_CONFIRM ? 1 : 0;   // history entries beneath the first layer
+        const el = id => document.getElementById(id);
+        const shown = e => !!e && !e.classList.contains('hidden') && e.style.display !== 'none';
+        const modal = (id, close) => ({ key: id, isOpen: () => shown(el(id)), close: close || (() => window.closeAppModal && window.closeAppModal(id)) });
+        const dynamic = (id, close) => ({ key: id, isOpen: () => !!el(id), close: close || (() => { const m = el(id); if (m) m.remove(); }) });
+        const blocking = (id) => ({ key: id, isOpen: () => shown(el(id)), close: () => {} });   // must be answered, so Back does nothing
+
+        // Listed from the bottom of the stack up; when several appear at once they are stacked in this order.
+        const LAYERS = [
+            { key: 'tab', isOpen: () => !!window.currentTab && window.currentTab !== 'menu',
+              close: () => { if (typeof window.switchTab === 'function') window.switchTab('menu'); } },
+            { key: 'wizard', isOpen: () => { const w = el('race-wizard'); return !!w && w.classList.contains('rw-open'); },
+              close: () => {
+                  const back = el('rw-back');
+                  if (back && !back.classList.contains('hidden')) back.click();   // previous wizard step
+                  else if (window.closeRaceWizard) window.closeRaceWizard();
+              } },
+            { key: 'hostpanel', isOpen: () => shown(el('host-race-panel')), close: () => window.closeHostRacePanel && window.closeHostRacePanel() },
+            modal('checkpoint-info-modal', () => window.closeCheckpointInfoModal && window.closeCheckpointInfoModal()),
+            modal('team-verify-modal', () => window.closeTeamVerifyModal && window.closeTeamVerifyModal()),
+            modal('organizer-edit-modal', () => window.closeOrganizerEditModal && window.closeOrganizerEditModal()),
+            modal('organizer-add-cp-modal', () => window.closeAddCheckpointsModal && window.closeAddCheckpointsModal()),
+            modal('image-modal', () => window.closeImageModal && window.closeImageModal()),
+            modal('bonus-preview-modal', () => window.cancelBonusPreview ? window.cancelBonusPreview() : window.closeAppModal('bonus-preview-modal')),
+            modal('app-map-modal', () => { const m = el('app-map-modal'); if (m) m.classList.add('hidden'); }),
+            blocking('trivia-modal'),
+            blocking('hostlock-team-modal'),
+            dynamic('host-gallery-modal'),
+            dynamic('team-report-card-modal'),
+            dynamic('team-race-replay-modal', () => { if (window.__raceReplayClose) window.__raceReplayClose(); else { const m = el('team-race-replay-modal'); if (m) m.remove(); } }),
+            dynamic('challenge-modal'),
+            { key: 'sheet', isOpen: () => { const s = el('app-sheet'); return !!s && s.classList.contains('open'); }, close: () => window.closeAppSheet && window.closeAppSheet() },
+            { key: 'dialog',
+              isOpen: () => { const bd = document.querySelector('[data-backdrop]'); const r = bd && bd.closest('.fixed'); return !!r && r.style.visibility === 'visible' && !r.classList.contains('pointer-events-none'); },
+              close: () => { const bd = document.querySelector('[data-backdrop]'); if (bd) bd.click(); } }   // same as tapping outside: Cancel on a confirm, OK on an alert
+        ];
+
+        let idx = 0;            // the history entry we are on (0 = the page we started on)
+        let stack = [];         // keys of the layers currently open, bottom to top
+        let timer = null, goTimer = null;
+        let pendingGo = false, needSync = false, holdUntil = 0, exitArmed = false;
+
+        function schedule(delay) {
+            clearTimeout(timer);
+            timer = setTimeout(() => { timer = null; sync(); }, delay);
+        }
+
+        // Make the number of history entries match the number of open layers.
+        function sync() {
+            if (pendingGo) { needSync = true; return; }
+            const wait = holdUntil - Date.now();
+            if (wait > 0) { schedule(wait + 10); return; }   // a layer was just asked to close: give it time before judging
+            const open = [];
+            LAYERS.forEach(L => { try { if (L.isOpen()) open.push(L.key); } catch (e) { /* ignore */ } });
+            stack = stack.filter(k => open.includes(k));
+            open.forEach(k => { if (!stack.includes(k)) stack.push(k); });
+            const want = BASE + stack.length;
+            if (want > idx) {
+                while (idx < want) { idx++; history.pushState({ bn: idx }, ''); }
+            } else if (want < idx) {
+                const delta = want - idx;
+                pendingGo = true; idx = want;
+                history.go(delta);   // a layer closed by itself (a button, a save): drop its history entry quietly
+                clearTimeout(goTimer);
+                goTimer = setTimeout(() => { pendingGo = false; if (needSync) { needSync = false; sync(); } }, 500);
+            }
+        }
+
+        function rootBack() {
+            if (!EXIT_CONFIRM || exitArmed) { exitArmed = false; idx = 0; history.back(); return; }
+            exitArmed = true;
+            if (window.appToast) window.appToast('Swipe back again to exit', 2200);
+            idx = 1; history.pushState({ bn: 1 }, '');
+            setTimeout(() => { exitArmed = false; }, 2500);
+        }
+
+        window.addEventListener('popstate', (e) => {
+            const target = e.state && typeof e.state.bn === 'number' ? e.state.bn : 0;
+            if (pendingGo) {                       // the echo of our own history.go()
+                pendingGo = false; clearTimeout(goTimer); idx = target;
+                if (needSync) { needSync = false; schedule(0); }
+                return;
+            }
+            if (target >= idx) { idx = target; schedule(0); return; }   // forward button or similar
+            idx = target;                          // the person pressed Back / swiped back
+            if (!stack.length) { rootBack(); return; }
+            const L = LAYERS.find(l => l.key === stack[stack.length - 1]);
+            holdUntil = Date.now() + 450;
+            try { if (L) L.close(); } catch (err) { console.warn('Back could not close', err); }
+            // If it closed, the entry is already gone. If it refused (blocking, "Discard?" cancelled, a wizard step back), sync puts it back.
+            schedule(470);
+        });
+
+        function init() {
+            history.replaceState({ bn: 0 }, '');
+            idx = 0;
+            if (EXIT_CONFIRM) { history.pushState({ bn: 1 }, ''); idx = 1; }
+            new MutationObserver(() => { if (!timer) schedule(60); })
+                .observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'aria-hidden'] });
+            schedule(0);
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+    })();
+    </script>
 </body>
 </html>
