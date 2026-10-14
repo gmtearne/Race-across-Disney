@@ -604,6 +604,12 @@
         /* Tiles nested inside cards (checkpoint rows, race rows, etc.) */
         #portal-track .bg-slate-900 { background-color: var(--theme-card-tile-bg); }
 
+        /* Page titles: sit at the top of each page and scroll away with it (not a fixed header) */
+        .page-title {
+            font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.1;
+            letter-spacing: .01em; color: #fff; padding: 0 .25rem; margin-bottom: -.5rem;
+            text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 4px 18px rgba(0,0,0,.55);
+        }
         /* =====================================================================
            DOCK: floating glass navigation (replaces the old header)
            ===================================================================== */
@@ -1003,6 +1009,7 @@
             <div id="portal-track">
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
                 <section id="tab-race" class="px-3 space-y-6">
+                <h1 class="page-title">Team Portal</h1>
                 <!-- Wildcard challenge notification (filled by renderWildcardBanner) -->
                 <div id="wildcard-banner" class="hidden"></div>
                 <!-- Checkpoint Frenzy notification (filled by renderFrenzyBanner) -->
@@ -1184,6 +1191,7 @@
 
                 <!-- ================= TAB 2: RACE PORTAL ================= -->
                 <section id="tab-leaderboard" class="px-3 space-y-6">
+                <h1 class="page-title">Race Portal</h1>
                 <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
@@ -1274,6 +1282,7 @@
 
         <!-- ================= TAB 3: PARK MAPS ================= -->
         <section id="tab-maps" class="px-3 space-y-6">
+                <h1 class="page-title">Park Maps</h1>
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
                 <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -1337,6 +1346,7 @@
 
         <!-- ================= TAB 4: RULES ================= -->
         <section id="tab-rules" class="px-3 space-y-6">
+                <h1 class="page-title">Rules</h1>
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
                 <div class="border-b border-slate-700 pb-4">
                     <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
@@ -1414,6 +1424,7 @@
 
         <!-- ================= TAB 5: HOST DASHBOARD ================= -->
                 <section id="tab-organizer" class="px-3 space-y-6">
+                <h1 class="page-title">Host Dashboard</h1>
                     <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                             <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Host Login</h2>
@@ -5375,11 +5386,11 @@
             el.innerHTML = `
                 <div class="shrink-0 bg-slate-900 border-b border-slate-800 px-4 pb-3" style="padding-top: calc(env(safe-area-inset-top, 0px) + 12px)">
                     <div class="flex items-center gap-3">
-                        <button type="button" id="hrp-back" class="shrink-0 w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-200 flex items-center justify-center active:scale-95 transition" aria-label="Close race panel"><i class="fa-solid fa-chevron-left"></i></button>
                         <div class="min-w-0 flex-1">
                             <h2 id="hrp-title" class="font-disney font-bold text-white text-lg leading-tight truncate"></h2>
                             <p id="hrp-sub" class="text-[11px] text-slate-400 truncate"></p>
                         </div>
+                        <button type="button" id="hrp-back" class="shrink-0 w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95 transition" aria-label="Close race panel"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div class="flex items-center gap-2 mt-3">
                         <span id="hrp-code" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 font-mono font-bold text-disneyGold text-sm tracking-widest"></span>
@@ -9052,16 +9063,31 @@
     })();
     </script>
     <script>
-    /* The dock slides away while a text field is focused so it never floats above the on-screen keyboard. */
+    /* The dock slides away while the on-screen keyboard is up. A focused field alone is not enough:
+       Android can hide the keyboard (back gesture) and leave the field focused, so the real keyboard
+       state comes from the visual viewport shrinking, and any tap outside a field resets it. */
     (function () {
         const root = document.documentElement;
+        const vv = window.visualViewport;
         const isField = el => !!(el && el.matches && el.matches('textarea, input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=range]):not([type=color])'));
+        let base = Math.max(window.innerHeight, vv ? vv.height : 0);   // viewport height with no keyboard
         let t = null;
-        document.addEventListener('focusin', e => { clearTimeout(t); if (isField(e.target)) root.classList.add('kb-open'); });
-        document.addEventListener('focusout', () => {
-            clearTimeout(t);
-            t = setTimeout(() => { if (!isField(document.activeElement)) root.classList.remove('kb-open'); }, 120);
-        });
+        function update() {
+            const focused = isField(document.activeElement);
+            const h = vv ? vv.height : window.innerHeight;
+            if (!focused && h > base - 80) base = Math.max(base, h, window.innerHeight);
+            const shrunk = vv ? h < base - 120 : true;
+            root.classList.toggle('kb-open', focused && shrunk);
+        }
+        const later = () => { clearTimeout(t); t = setTimeout(update, 120); };
+        document.addEventListener('focusin', later);
+        document.addEventListener('focusout', later);
+        if (vv) vv.addEventListener('resize', later);
+        window.addEventListener('orientationchange', () => { setTimeout(() => { base = Math.max(window.innerHeight, vv ? vv.height : 0); update(); }, 300); });
+        // tapping anywhere that is not a text field: the keyboard is not what the person is using
+        document.addEventListener('pointerdown', e => { if (!isField(e.target)) root.classList.remove('kb-open'); }, true);
+        // safety net: never stay hidden for long once the field is no longer focused
+        setInterval(() => { if (root.classList.contains('kb-open')) update(); }, 1500);
     })();
     </script>
     <script>
