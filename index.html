@@ -1190,6 +1190,8 @@
                 <section id="tab-race" class="px-3 space-y-6">
                 <!-- Wildcard challenge notification (filled by renderWildcardBanner) -->
                 <div id="wildcard-banner" class="hidden"></div>
+                <!-- Checkpoint Frenzy notification (filled by renderFrenzyBanner) -->
+                <div id="frenzy-banner" class="hidden"></div>
                 <div id="login-prompt-card" class="space-y-4">
                     <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
                     <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
@@ -1353,6 +1355,14 @@
                             <p class="text-xs text-slate-400">Upload photo proof to claim bonuses or time deductions from your final score!</p>
                         </div>
                         <div id="team-bonus-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+                    </div>
+
+                    <div id="team-bingo-wrap" class="hidden bg-slate-800 border border-disneyGold/40 rounded-2xl p-5 shadow-xl">
+                        <div class="border-b border-slate-700 pb-3 mb-4">
+                            <h3 id="team-bingo-title" class="text-lg font-bold text-white flex items-center gap-2"></h3>
+                            <p id="team-bingo-sub" class="text-xs text-slate-400 mt-1"></p>
+                        </div>
+                        <div id="team-bingo-grid" class="grid grid-cols-2 gap-3"></div>
                     </div>
                 </div>
             </section>
@@ -1909,6 +1919,29 @@
                                     </div>
                                     </div>
                                 </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-disneyGold/40 space-y-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <span class="block text-xs font-bold text-disneyGold uppercase tracking-wider">🎯 Photo Bingo</span>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">A 2x2 card of themed photo challenges. Finish the whole card for a big reward</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                            <input type="checkbox" id="create-bingo-switch" onchange="toggleBingoCreateSettings()" class="sr-only peer">
+                                            <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600 shadow-inner"></div>
+                                        </label>
+                                    </div>
+                                    <div id="create-bingo-options" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Bingo card</label>
+                                        <select id="create-bingo-card" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold"></select>
+                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Reward for a completed card</label>
+                                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                                            <button type="button" onclick="stepNumber('create-bingo-reward', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                                            <input type="number" id="create-bingo-reward" value="20" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                                            <button type="button" onclick="stepNumber('create-bingo-reward', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 leading-relaxed">Speed Race: minutes taken off the final time. Scavenger Hunt: bonus points. An incomplete card earns nothing. The card's challenges are added to the race and are never also offered as standalone bonuses or wildcards. Challenges come from bonus photos tagged with a bingo name in your locations data.</p>
+                                    </div>
+                                </div>
                     <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
                                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
                                     <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
@@ -2085,6 +2118,92 @@
         // <main> is overflow:hidden on portal pages but can still be scrolled programmatically
         // (focusing a field, or a leftover scroll position from Rules/Maps), which pushed the
         // team status bar up under the header. Keep it pinned to the top.
+
+        // ===================== BINGO + CHECKPOINT FRENZY HELPERS =====================
+        // Bingo: a bonus preset in locations-data.js is tagged with  bingo: 'foodbingo'  (any lowercase tag).
+        // A race with bingo on stores  race.bingo = { enabled, cardId, name, emoji, reward }  and the 4 chosen challenges
+        // as normal BONUS_PHOTO checkpoints carrying  bingoId: cardId  (worth 0 on their own). Completing all of them earns race.bingo.reward.
+        window.BINGO_META = {
+            foodbingo: { name: 'Foodie Bingo', emoji: '🍔' },
+            snackbingo: { name: 'Snack Bingo', emoji: '🍿' },
+            photobingo: { name: 'Photo Bingo', emoji: '📸' },
+            characterbingo: { name: 'Character Bingo', emoji: '🐭' },
+            shopbingo: { name: 'Shopping Bingo', emoji: '🛍️' },
+            ridebingo: { name: 'Ride Bingo', emoji: '🎢' }
+        };
+        window.bingoTag = (v) => String(v || '').trim().toLowerCase();
+        window.bingoMeta = function(tag) {
+            const id = window.bingoTag(tag);
+            const m = window.BINGO_META[id];
+            if (m) return { id, name: m.name, emoji: m.emoji };
+            const label = id.replace(/bingo$/, '').replace(/[_-]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+            return { id, name: (label ? label + ' ' : '') + 'Bingo', emoji: '🎯' };
+        };
+        window.bingoCardsFromPresets = function(presets) {
+            const map = {};
+            (presets || []).forEach(p => {
+                if (!p || p.type !== 'BONUS_PHOTO' || !p.bingo) return;
+                [].concat(p.bingo).map(window.bingoTag).filter(Boolean).forEach(tag => { (map[tag] = map[tag] || []).push(p); });
+            });
+            return Object.keys(map).map(id => ({ ...window.bingoMeta(id), items: map[id] })).sort((a, b) => a.name.localeCompare(b.name));
+        };
+        window.bingoRewardText = function(race) {
+            const r = Number(race && race.bingo && race.bingo.reward) || 20;
+            return race && race.gameMode === 'scavenger' ? `+${r} pts` : `-${r} min`;
+        };
+        window.bingoProgress = function(race, team) {
+            const b = race && race.bingo;
+            if (!b || !b.enabled) return null;
+            const cps = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO' && c.bingoId === b.cardId);
+            if (!cps.length) return null;
+            const claimed = (team && team.claimedBonus) || [];
+            const rj = (team && team.rejectedCheckins) || {};
+            const items = cps.map(cp => ({ cp, state: claimed.includes(cp.id) ? (rj[cp.id] ? 'rejected' : 'done') : 'open' }));
+            const done = items.filter(i => i.state === 'done').length;
+            return { card: b, items, done, total: items.length, complete: done === items.length };
+        };
+        // minutes (speed race) or points (hunt) a team earns from a finished bingo card
+        window.bingoBonusFor = function(race, team) {
+            const p = window.bingoProgress(race, team);
+            return p && p.complete ? (Number(race.bingo.reward) || 20) : 0;
+        };
+
+        // Checkpoint Frenzy: race.frenzies = [{ id, startedAt, endsAt, durationMin, bonus, cancelled }]
+        // Most GPS check-ins inside the window wins. Worked out from team data, so a later host rejection updates the winner.
+        window.FRENZY_BONUS = 5;
+        window.frenzyState = function(f, now) {
+            now = now || Date.now();
+            if (!f || f.cancelled) return 'cancelled';
+            return now < f.endsAt ? 'active' : 'ended';
+        };
+        window.frenzyCount = function(race, t, f) {
+            const mand = new Set((race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').map(c => c.id));
+            const d = t.checkinDetails || {}, rj = t.rejectedCheckins || {};
+            let n = 0, last = 0;
+            (t.completedCheckpoints || []).forEach(id => {
+                const e = d[id];
+                if (!mand.has(id) || rj[id] || !e || !e.timestamp || e.isManual) return;   // manual overrides can be done back-to-back, so they don't count
+                const ts = new Date(e.timestamp).getTime();
+                if (ts >= f.startedAt && ts <= f.endsAt) { n++; if (ts > last) last = ts; }
+            });
+            return { n, last };
+        };
+        window.frenzyResults = function(race, teams, now) {
+            now = now || Date.now();
+            const out = { list: [], bonusByTeam: {} };
+            const eligible = (teams || []).filter(t => t.isApproved !== false);
+            (race.frenzies || []).forEach(f => {
+                const state = window.frenzyState(f, now);
+                const counts = eligible.map(t => ({ id: t.id, name: t.teamName || 'Team', ...window.frenzyCount(race, t, f) }))
+                    .sort((a, b) => b.n - a.n || a.last - b.last);   // tie: whoever reached the count first
+                const top = counts[0];
+                const winnerId = state === 'ended' && top && top.n > 0 ? top.id : null;
+                if (winnerId) out.bonusByTeam[winnerId] = (out.bonusByTeam[winnerId] || 0) + (Number(f.bonus) || window.FRENZY_BONUS);
+                out.list.push({ f, state, counts, winnerId, winnerName: winnerId ? top.name : null });
+            });
+            return out;
+        };
+
         // Points a completed stop is worth. Scavenger stops are worth 10 (or the race's own default);
         // older/edited races stored 0 on some stops, which is what caused the "0 instead of 10" bug.
         window.stopPoints = function(cp, raceData) {
@@ -2608,6 +2727,21 @@
         };
         window.toggleGameModeSelection();
         window.toggleHostStartCreationOptions();
+
+        // ---------- Photo bingo (race creation) ----------
+        window.toggleBingoCreateSettings = function() {
+            const on = document.getElementById('create-bingo-switch')?.checked;
+            document.getElementById('create-bingo-options')?.classList.toggle('hidden', !on);
+            const sel = document.getElementById('create-bingo-card');
+            if (!on || !sel) return;
+            const cards = window.bingoCardsFromPresets(window.DISNEY_PRESETS || []);
+            const prev = sel.value;
+            sel.innerHTML = `<option value="random" data-icon="🎲" data-sub="A surprise card">Random card</option>` + cards.map(c =>
+                `<option value="${c.id}" data-icon="${c.emoji}" data-sub="${c.items.length} challenge${c.items.length === 1 ? '' : 's'}${c.items.length < 4 ? ' (needs 4)' : ''}" ${c.items.length < 4 ? 'disabled' : ''}>${c.name}</option>`).join('');
+            if (prev && [...sel.options].some(o => o.value === prev && !o.disabled)) sel.value = prev;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            if (!cards.some(c => c.items.length >= 4)) window.appToast && window.appToast("No bingo cards found yet. Tag at least 4 bonus photos with the same bingo name (e.g. bingo: 'foodbingo').", 4200);
+        };
 
         window.toggleBonusCreateSettings = function() {
             const on = document.getElementById('create-bonus-switch')?.checked;
@@ -3428,6 +3562,77 @@
             if (el) { el.classList.add('hidden'); el.innerHTML = ''; }
         };
 
+        // ===================== CHECKPOINT FRENZY (team side) =====================
+        window.__frenzyCache = { code: '', at: 0, teams: null, loading: false };
+        window.frenzyTeamsCached = function(race) {
+            const code = window.activeRaceCode, c = window.__frenzyCache;
+            if (!code) return null;
+            if (c.code !== code) { c.code = code; c.at = 0; c.teams = null; c.loading = false; }
+            if (!c.loading && (!c.teams || Date.now() - c.at > 45000)) {
+                c.loading = true;
+                getDocs(collection(window.db, "races", code, "teams")).then(snap => {
+                    c.teams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    c.at = Date.now(); c.loading = false;
+                    if (window.liveTeamRaceData) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+                    window.renderFrenzyBanner();
+                }).catch(() => { c.loading = false; c.at = Date.now(); });
+            }
+            return c.teams;
+        };
+        function frenzyResultsForMe(race) {
+            const teams = window.frenzyTeamsCached(race);
+            if (!teams) return null;
+            const me = window.activeTeamId, own = window.liveTeamData;
+            return window.frenzyResults(race, teams.map(t => (t.id === me && own) ? { ...t, ...own, id: t.id } : t));
+        }
+        window.portalFrenzyBonus = function(race, tData) {
+            if (!race || !(race.frenzies || []).some(f => window.frenzyState(f) === 'ended')) return 0;
+            const res = frenzyResultsForMe(race);
+            return res ? (res.bonusByTeam[window.activeTeamId] || 0) : 0;
+        };
+        let frenzyBannerTimer = null;
+        window.renderFrenzyBanner = function() {
+            const el = document.getElementById('frenzy-banner');
+            if (!el) return;
+            clearTimeout(frenzyBannerTimer);
+            const race = window.liveTeamRaceData, me = window.activeTeamId;
+            const list = ((race && race.frenzies) || []).filter(f => !f.cancelled);
+            if (!race || !me || !list.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+            const now = Date.now();
+            const reward = (f) => race.gameMode === 'scavenger' ? `+${f.bonus || window.FRENZY_BONUS} pts` : `-${f.bonus || window.FRENZY_BONUS} min`;
+            const active = list.find(f => now >= f.startedAt && now < f.endsAt);
+            const lastEnded = list.filter(f => now >= f.endsAt).sort((a, b) => b.endsAt - a.endsAt)[0];
+            if (active) {
+                const left = active.endsAt - now, mm = Math.floor(left / 60000), ss = String(Math.floor(left % 60000 / 1000)).padStart(2, '0');
+                const mine = window.frenzyCount(race, { ...(window.liveTeamData || {}), id: me }, active).n;
+                const finished = !!(window.liveTeamData && window.liveTeamData.endTime);
+                try {
+                    const k = `rad_fz_seen_${window.activeRaceCode}`;
+                    if (localStorage.getItem(k) !== active.id && !finished) {
+                        localStorage.setItem(k, active.id);
+                        if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200, 100, 400]); } catch (e) {} }
+                        window.appAlert(`Check in at as many stops as you can in the next ${active.durationMin} minutes. The team with the most check-ins wins ${reward(active)}!`, { title: '⚡ Checkpoint Frenzy!', tone: 'info' });
+                    }
+                } catch (e) {}
+                el.innerHTML = `<div class="rounded-2xl border border-orange-400/70 bg-orange-950/40 p-3 flex items-center gap-3">
+                    <div class="text-2xl">⚡</div>
+                    <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-orange-300">Checkpoint Frenzy</p>
+                    <p class="text-[12px] text-white leading-snug">Most check-ins wins <b>${reward(active)}</b>. Your check-ins: <b>${mine}</b></p></div>
+                    <div class="font-mono font-black text-lg text-orange-200 tabular-nums">${mm}:${ss}</div></div>`;
+                el.classList.remove('hidden');
+                frenzyBannerTimer = setTimeout(window.renderFrenzyBanner, 1000);
+            } else if (lastEnded && now - lastEnded.endsAt < 10 * 60000) {
+                const res = frenzyResultsForMe(race);
+                const row = res && res.list.find(r => r.f.id === lastEnded.id);
+                let msg = 'Tallying the results…';
+                if (row) msg = !row.winnerId ? 'The Checkpoint Frenzy is over. Nobody checked in, so no bonus was awarded.'
+                    : (row.winnerId === me ? `🏆 You won the Checkpoint Frenzy! ${reward(lastEnded)}` : `The Checkpoint Frenzy is over. ${String(row.winnerName).replace(/</g, '&lt;')} won it.`);
+                el.innerHTML = `<div class="rounded-2xl border border-orange-500/40 bg-slate-900 p-3 flex items-center gap-3"><div class="text-2xl">⚡</div><p class="text-[12px] text-white leading-snug">${msg}</p></div>`;
+                el.classList.remove('hidden');
+                frenzyBannerTimer = setTimeout(window.renderFrenzyBanner, Math.min(lastEnded.endsAt + 10 * 60000 - now + 500, 30000));
+            } else { el.classList.add('hidden'); el.innerHTML = ''; }
+        };
+
         function notifyWildcardOnce(kind, code, wcId, title, message) {
             const key = `rad_wc_seen_${kind}_${code}`;
             try { if (localStorage.getItem(key) === wcId) return; localStorage.setItem(key, wcId); } catch (e) {}
@@ -3595,7 +3800,8 @@
             const cps = race.checkpoints || [];
             const parks = new Set(cps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
             const have = new Set(cps.map(c => c.name));
-            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && window.bonusAppliesToAreas(p, parks));
+            const bingoTagOn = race.bingo && race.bingo.enabled ? race.bingo.cardId : null;
+            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && !(bingoTagOn && [].concat(p.bingo || []).map(window.bingoTag).includes(bingoTagOn)) && window.bonusAppliesToAreas(p, parks));
             if (!pool.length) return null;
             const p = pool[Math.floor(Math.random() * pool.length)];
             const ded = p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10;
@@ -4043,21 +4249,41 @@
                     }));
                 }
 
+                // Photo bingo: 4 challenges from one tagged card. They are never also standalone bonuses.
+                let bingoInfo = null, bingoCps = [];
+                if (document.getElementById('create-bingo-switch')?.checked) {
+                    const stopAreasForBingo = new Set(initialCps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
+                    const usable = window.bingoCardsFromPresets(presets)
+                        .map(c => ({ ...c, items: c.items.filter(p => window.bonusAppliesToAreas(p, stopAreasForBingo)) }))
+                        .filter(c => c.items.length >= 4);
+                    const wanted = document.getElementById('create-bingo-card')?.value || 'random';
+                    const card = wanted === 'random' ? pickRandom(usable, 1)[0] : usable.find(c => c.id === wanted);
+                    if (!card) return alert(wanted === 'random'
+                        ? "No bingo card has 4 challenges that can be done in the parks your stops cover. Turn bingo off or add more stops/tags."
+                        : "That bingo card doesn't have 4 challenges that can be done in the parks your stops cover. Pick another card or add stops from more parks.");
+                    const reward = Math.max(1, parseInt(document.getElementById('create-bingo-reward')?.value) || 20);
+                    bingoInfo = { enabled: true, cardId: card.id, name: card.name, emoji: card.emoji, reward };
+                    bingoCps = pickRandom(card.items, 4).map((p, idx) => ({ ...toCheckpoint(p, idx, 'cp_bingo_'), points: 0, bonusMinDeduction: 0, bingoId: card.id }));
+                }
+                const bingoNames = new Set(bingoCps.map(c => c.name));
+                const inBingoFamily = (p) => !!bingoInfo && [].concat(p.bingo || []).map(window.bingoTag).includes(bingoInfo.cardId);
+
                 // Bonus photo checkpoints are chosen separately from the GPS stops
                 let bonusPicked = [];
                 if (!document.getElementById('create-bonus-switch')?.checked) {
                     bonusPicked = [];   // bonus photos switched off
                 } else if (creationBonusMethod === 'manual') {
-                    bonusPicked = Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => presets[parseInt(cb.value)]).filter(Boolean);
+                    bonusPicked = Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => presets[parseInt(cb.value)]).filter(p => p && !bingoNames.has(p.name));
                 } else {
                     const raw = parseInt(document.getElementById('bonus-rand-count').value);
                     const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
                     const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
-                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(p, stopAreas));
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && !inBingoFamily(p) && window.bonusAppliesToAreas(p, stopAreas));
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
                 // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
                 initialCps.push(...bonusPicked.map((p, idx) => toCheckpoint(p, idx, 'cp_bonus_')));
+                initialCps.push(...bingoCps);
 
                 let finalCheckpointId = null;
                 if (gameMode === 'race') {
@@ -4092,6 +4318,8 @@
                     hideLiveTimers: true,
                     resultsRevealed: false,
                     wildcardAuto: wildcardAuto,
+                    bingo: bingoInfo || { enabled: false },
+                    frenzies: [],
                     trivia: {
                         enabled: triviaToggle === 'on',
                         frequency: triviaFreq,
@@ -4106,7 +4334,8 @@
                     window.raceWizardOnCreated({
                         code, title, gameMode, difficulty,
                         gpsCount: initialCps.filter(c => c.type !== 'BONUS_PHOTO').length,
-                        bonusCount: initialCps.filter(c => c.type === 'BONUS_PHOTO').length,
+                        bonusCount: initialCps.filter(c => c.type === 'BONUS_PHOTO' && !c.bingoId).length,
+                        bingoName: bingoInfo ? bingoInfo.name : '',
                         timeLimitMinutes, enforceHostStart, startMode, staggerMinutes,
                         trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
                         wildcardAuto
@@ -4144,6 +4373,8 @@
             setChk('create-trivia-switch', true);
             setChk('create-wildcard-switch', false);
             setChk('create-bonus-switch', false);
+            setChk('create-bingo-switch', false);
+            setVal('create-bingo-reward', 20);
             setVal('create-scavenger-time-limit', 60);
             setVal('create-stagger-interval', 10);
             setVal('trivia-frequency', 'every');
@@ -4160,6 +4391,7 @@
             window.toggleTriviaFreq();
             window.toggleWildcardCreateSettings();
             window.toggleBonusCreateSettings();
+            window.toggleBingoCreateSettings();
             window.switchPopMethod('random');
             window.switchBonusMethod('random');
         }
@@ -4308,7 +4540,7 @@
             if (isHunt) start = 'Host starts everyone together';
             else if (!info.enforceHostStart) start = 'Teams start when ready';
             else start = info.startMode === 'staggered' ? `Staggered by host (${info.staggerMinutes} min gaps)` : 'Host starts everyone together';
-            const stops = `${info.gpsCount} stop${info.gpsCount === 1 ? '' : 's'}` + (info.bonusCount ? ` + ${info.bonusCount} bonus` : '');
+            const stops = `${info.gpsCount} stop${info.gpsCount === 1 ? '' : 's'}` + (info.bonusCount ? ` + ${info.bonusCount} bonus` : '') + (info.bingoName ? ` + ${info.bingoName}` : '');
             let trivia = 'Off';
             if (info.trivia.enabled) trivia = info.trivia.frequency === 'random' ? `${info.trivia.randomCount} random check-ins` : 'Every check-in';
             const rows = [
@@ -4425,7 +4657,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        ${cp.type === 'BONUS_PHOTO' ? `
+                        ${cp.type === 'BONUS_PHOTO' && cp.bingoId ? `<span class="text-[10px] text-disneyGold font-bold">🎯 Bingo</span>` : cp.type === 'BONUS_PHOTO' ? `
                             <span class="flex items-center gap-1 text-[10px] text-amber-400">
                                 Pts: <input type="number" id="edit-cp-pts-${cp.id}" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" class="w-14 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center text-white font-mono text-xs">
                             </span>
@@ -5241,6 +5473,21 @@
             }, (err) => console.warn('Team host-lock listener error', err));
         };
 
+        function frenzyHostHtml(race, teamList, hasStarted) {
+            const res = window.frenzyResults(race, teamList);
+            const unit = race.gameMode === 'scavenger' ? 'pts' : 'min';
+            const rows = res.list.slice().reverse().map(r => {
+                const f = r.f, lead = r.counts[0];
+                const label = r.state === 'active' ? `<span class="text-orange-300 font-bold">Running until ${new Date(f.endsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>${lead && lead.n ? ` · leader: ${String(lead.name).replace(/</g, '&lt;')} (${lead.n})` : ''}`
+                    : r.state === 'cancelled' ? '<span class="text-slate-500">Cancelled</span>'
+                    : (r.winnerId ? `<span class="text-emerald-300 font-bold">Won by ${String(r.winnerName).replace(/</g, '&lt;')}</span> (${lead.n} check-ins, ${race.gameMode === 'scavenger' ? '+' : '-'}${f.bonus || window.FRENZY_BONUS} ${unit})` : '<span class="text-slate-400">No check-ins, no winner</span>');
+                return `<div class="flex items-center justify-between gap-2 text-[11px] text-slate-300"><span>⚡ ${f.durationMin} min · ${label}</span>${r.state === 'active' ? `<button onclick="hostCancelFrenzy('${race.code}','${f.id}')" class="px-2 py-1 bg-rose-600/20 text-rose-300 border border-rose-500/40 rounded-lg text-[10px] font-bold">Cancel</button>` : ''}</div>`;
+            }).join('');
+            const running = res.list.some(r => r.state === 'active');
+            const starter = !hasStarted ? '<p class="text-[10px] text-slate-500">Available once the race has started.</p>' : (running ? '' : `<div class="flex gap-2"><select id="frenzy-dur-${race.code}" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">${[10, 15, 20, 30, 45, 60].map(m => `<option value="${m}" ${m === 20 ? 'selected' : ''}>${m} minutes</option>`).join('')}</select><button onclick="hostStartFrenzy('${race.code}')" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-bolt mr-1"></i> Start Frenzy</button></div>`);
+            return `<div class="p-3 bg-slate-950 rounded-xl border border-orange-500/30 space-y-2"><div><span class="text-[11px] text-orange-300 font-bold block">⚡ Checkpoint Frenzy</span><span class="text-[10px] text-slate-400">The team with the most GPS check-ins in the window wins ${race.gameMode === 'scavenger' ? '+' : '-'}${window.FRENZY_BONUS} ${unit}. Manual overrides and rejected check-ins don't count.</span></div>${starter}${rows ? `<div class="space-y-1.5 pt-1">${rows}</div>` : ''}</div>`;
+        }
+
         function hostPanelControlsHtml(race, teamList) {
             const raceBaseDiff = (race.difficulty || 'easy').toLowerCase();
             return (() => {
@@ -5251,7 +5498,7 @@
                                     const globalStart = !hasStarted && canHostStart && configuredMode === 'global' ? `<button onclick="hostGlobalStart('${race.code}')" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-flag mr-1"></i> Start All Teams</button>` : '';
                                     const staggerSetup = !hasStarted && canHostStart && configuredMode === 'staggered' && race.gameMode !== 'scavenger' ? `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] text-slate-200 font-bold">Staggered Start Order</span><span class="text-[10px] text-slate-500">Speed race</span></div><label class="flex items-center gap-2 text-[11px] text-slate-300">Interval between scheduled teams (minutes)<input id="p4-interval-${race.code}" type="number" min="1" max="120" step="1" value="${Math.max(1, Number(race.staggerMinutes || 10))}" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label><div class="space-y-2">${teamList.filter(t => t.isApproved && !t.endTime && !t.startTime).map((t, idx, arr) => `<div class="flex items-center gap-2"><span class="text-[10px] text-slate-400 flex-1 min-w-0 truncate">${t.teamName}</span><label class="text-[10px] text-slate-500">Start # <select id="p4-order-${race.code}-${t.id}" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white">${arr.map((_, i) => `<option value="${i+1}" ${(Number(t.staggerOrder) === i+1 || (!t.staggerOrder && idx === i)) ? 'selected' : ''}>${i+1}</option>`).join('')}</select></label></div>`).join('') || '<p class="text-[10px] text-slate-500">Approve teams to configure a staggered start.</p>'}</div><button onclick="hostStartStaggeredRace('${race.code}')" class="w-full px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-list-ol mr-1"></i> Start Staggered Race</button><p class="text-[10px] text-slate-500">Scheduled teams cannot start manually. Later approved teams can start manually, with the configured minimum interval between late starts.</p></div>` : '';
                                     const limitEditor = race.gameMode === 'scavenger' ? `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2"><label class="block text-[11px] text-slate-300 font-bold">Scavenger Hunt countdown limit (minutes)</label><div class="flex gap-2"><input id="p4-limit-${race.code}" type="number" min="0" max="1440" value="${Number(race.timeLimitMinutes ?? 60)}" class="w-28 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"><button onclick="hostSaveScavengerLimit('${race.code}')" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold">Save Limit</button></div><p class="text-[10px] text-slate-500">Use 0 for no limit.</p></div>` : '';
-                                    return `<div class="space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><div><span class="text-xs text-disneyGold font-bold block">Host Race Controls</span><span class="text-[10px] text-slate-400">${hasStarted ? 'Race is live. Start controls are replaced by pause/resume.' : (canHostStart ? `Configured start: ${configuredMode === 'staggered' ? 'Staggered' : 'Global'}` : 'Teams start individually; host can pause/resume once a team starts.')}</span></div><span class="text-[10px] font-bold rounded-full px-2 py-1 ${race.paused ? 'bg-amber-500/20 text-amber-300' : hasStarted ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'}">${race.paused ? 'PAUSED' : hasStarted ? 'IN PROGRESS' : 'READY'}</span></div>${(globalStart || pauseControl) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${globalStart}${pauseControl}</div>` : ''}${staggerSetup}${limitEditor}</div>`;
+                                    return `<div class="space-y-3"><div class="flex items-center justify-between gap-2 flex-wrap"><div><span class="text-xs text-disneyGold font-bold block">Host Race Controls</span><span class="text-[10px] text-slate-400">${hasStarted ? 'Race is live. Start controls are replaced by pause/resume.' : (canHostStart ? `Configured start: ${configuredMode === 'staggered' ? 'Staggered' : 'Global'}` : 'Teams start individually; host can pause/resume once a team starts.')}</span></div><span class="text-[10px] font-bold rounded-full px-2 py-1 ${race.paused ? 'bg-amber-500/20 text-amber-300' : hasStarted ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'}">${race.paused ? 'PAUSED' : hasStarted ? 'IN PROGRESS' : 'READY'}</span></div>${(globalStart || pauseControl) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${globalStart}${pauseControl}</div>` : ''}${staggerSetup}${limitEditor}${frenzyHostHtml(race, teamList, hasStarted)}</div>`;
                                   })();
         }
 
@@ -5661,15 +5908,17 @@
                     }
                 }
 
+                const frenzyRes = window.frenzyResults(raceData, teamList);
                 teamList.forEach(t => {
                     const completed = t.completedCheckpoints || [];
                     const claimed = t.claimedBonus || [];
+                    const extraAdj = window.bingoBonusFor(raceData, t) + (frenzyRes.bonusByTeam[t.id] || 0);   // bingo card + checkpoint frenzy wins
                     const triviaBonusPts = isScavenger ? (t.triviaBonus || 0) : 0;
                     const triviaTimeDed = !isScavenger ? (t.triviaBonus || 0) : 0;
                     
                     const rejectedMap = t.rejectedCheckins || {};
                     const rejectedCount = completed.filter(id => rejectedMap[id] && mandatory.some(m => m.id === id)).length;
-                    let totalPoints = triviaBonusPts;
+                    let totalPoints = triviaBonusPts + (isScavenger ? extraAdj : 0);
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
                         if (match && !rejectedMap[cpId]) {      // host-rejected check-ins lose their points
@@ -5687,7 +5936,7 @@
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = (missedCount + rejectedCount) * 60;   // a rejected check-in counts as a missed stop; a rejected bonus only loses its reward (bonuses are optional, so no penalty)
 
-                    let bonusMinDeduction = triviaTimeDed;
+                    let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj : 0);
                     claimed.forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match && !rejectedMap[bId]) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
@@ -7691,11 +7940,12 @@
             journeyTimerState = { stops: orderedMandatory, completed: completedIds, details: checkinDetails, started: !!tData.startTime, finished: !!tData.endTime };
             renderRaceJourney(orderedMandatory, completedIds, checkinDetails, !!tData.startTime, !!tData.endTime);
 
+            const portalExtra = window.bingoBonusFor(raceData, tData) + (window.portalFrenzyBonus ? window.portalFrenzyBonus(raceData, tData) : 0);
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
                 
-                let currentPoints = triviaBonusPts;
+                let currentPoints = triviaBonusPts + portalExtra;
                 const rejectedForPts = tData.rejectedCheckins || {};
                 completedIds.forEach(cpId => {
                     const match = mandatory.find(m => m.id === cpId);
@@ -7710,7 +7960,7 @@
                 document.getElementById('score-progress-label').innerText = "Stops Progress";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
                 
-                let totalDeductionMin = triviaTimeDed;
+                let totalDeductionMin = triviaTimeDed + portalExtra;
                 bonus.forEach(b => {
                     if (claimedBonus.includes(b.id) && !(tData.rejectedCheckins || {})[b.id]) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
                 });
@@ -8005,7 +8255,7 @@
             }
 
             const wcState = wildcardStatus(raceData, window.liveWildcardClaim);
-            document.getElementById('team-bonus-list').innerHTML = bonus.map(cp => {
+            document.getElementById('team-bonus-list').innerHTML = bonus.filter(cp => !cp.bingoId).map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
                 const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
                 const isWildcardBonus = (raceData.wildcardBonusIds || []).includes(cp.id);
@@ -8045,6 +8295,49 @@
                 `;
             }).join('');
             
+            // ---- Bingo card (2x2) under the bonus challenges ----
+            {
+                const wrap = document.getElementById('team-bingo-wrap');
+                const bp = window.bingoProgress(raceData, tData);
+                if (wrap) {
+                    if (!bp) { wrap.classList.add('hidden'); }
+                    else {
+                        wrap.classList.remove('hidden');
+                        const rewardTxt = window.bingoRewardText(raceData);
+                        document.getElementById('team-bingo-title').textContent = `${bp.card.emoji || '🎯'} ${bp.card.name}`;
+                        document.getElementById('team-bingo-sub').innerHTML = bp.complete
+                            ? `<span class="text-emerald-300 font-bold">BINGO! ${rewardTxt} earned 🎉</span>`
+                            : `Complete all ${bp.total} to earn <span class="text-disneyGold font-bold">${rewardTxt}</span>. No credit for a partial card. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`;
+                        const photos = tData.bonusPhotos || {};
+                        document.getElementById('team-bingo-grid').innerHTML = bp.items.map(({ cp, state }) => {
+                            const name = String(cp.name).replace(/</g, '&lt;');
+                            if (state === 'done') {
+                                const ph = photos[cp.id];
+                                return `<div class="relative min-h-[7.5rem] rounded-2xl overflow-hidden border-2 border-emerald-400/70 bg-emerald-950/40 flex items-end">
+                                    ${ph ? `<img src="${ph}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-50">` : ''}
+                                    <span class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></span>
+                                    <p class="relative p-2 text-[11px] font-bold leading-tight text-white drop-shadow">${name}</p></div>`;
+                            }
+                            if (state === 'rejected') {
+                                return `<div class="min-h-[7.5rem] rounded-2xl border-2 border-rose-500/60 bg-rose-950/30 p-2 flex flex-col justify-between gap-1.5">
+                                    <p class="text-[11px] font-bold leading-tight text-rose-200">${name}</p>
+                                    <p class="text-[10px] text-rose-300/80">Photo rejected by host</p>${window.challengeBonusAction(cp.id, tData)}</div>`;
+                            }
+                            if (isRaceFinished || isRacePaused) {
+                                return `<div class="min-h-[7.5rem] rounded-2xl border-2 border-dashed border-slate-600 bg-slate-900 p-2 flex flex-col justify-between">
+                                    <p class="text-[11px] font-bold leading-tight text-slate-300">${name}</p>
+                                    <span class="text-[10px] font-bold text-slate-500">${isRaceFinished ? 'Race finished' : 'Race paused'}</span></div>`;
+                            }
+                            return `<label class="min-h-[7.5rem] rounded-2xl border-2 border-dashed border-amber-500/50 bg-slate-900 hover:bg-slate-800 active:scale-95 p-2 flex flex-col justify-between cursor-pointer transition">
+                                <p class="text-[11px] font-bold leading-tight text-amber-200">${name}</p>
+                                <span class="flex items-center gap-1 text-[10px] font-bold text-amber-300"><i class="fa-solid fa-camera"></i> Upload proof</span>
+                                <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}', this)"></label>`;
+                        }).join('');
+                    }
+                }
+            }
+            if (window.renderFrenzyBanner) window.renderFrenzyBanner();
+
             hideSplashScreen();
         }
 
@@ -8476,7 +8769,9 @@
                 window.cancelBonusPreview();
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
-                window.appToast("Photo submitted! Bonus claimed.", 2600);
+                const bpAfter = window.bingoProgress(freshRace, { ...teamData, claimedBonus: claimed });
+                if (bpAfter && bpAfter.complete && bpAfter.items.some(i => i.cp.id === pending.cpId)) window.appToast(`🎉 BINGO! ${window.bingoRewardText(freshRace)} earned!`, 4200);
+                else window.appToast("Photo submitted! Bonus claimed.", 2600);
             } catch (e) {
                 alert("Could not upload the photo: " + e.message);
             } finally {
@@ -8514,6 +8809,23 @@
             await Promise.all(writes);
             await fastUpdate(owned.ref, { scheduledStartAt:null, staggerSchedule:null, paused:false, pausedAt:null, pauseAccumulatedMs:0, raceStartedAt:Date.now(), startMode: raceConfig.gameMode === 'scavenger' ? 'global' : (raceConfig.startMode || 'global') });
             window.appToast("All eligible team timers started."); loadAdminRaces();
+        };
+        window.hostStartFrenzy = async function(code) {
+            const owned = await getOwnedRaceForHost(code); if (!owned) return;
+            const mins = Number(document.getElementById(`frenzy-dur-${code}`)?.value);
+            if (!Number.isFinite(mins) || mins < 1 || mins > 240) return alert("Choose how long the Checkpoint Frenzy should run.");
+            const list = owned.data.frenzies || [], now = Date.now();
+            if (list.some(f => window.frenzyState(f, now) === 'active')) return alert("A Checkpoint Frenzy is already running.");
+            const prize = owned.data.gameMode === 'scavenger' ? `${window.FRENZY_BONUS} points` : `a ${window.FRENZY_BONUS} minute deduction`;
+            if (!await appConfirm(`Start a ${mins} minute Checkpoint Frenzy now? The team with the most check-ins wins ${prize}. Every team is notified immediately.`, { title: "Checkpoint Frenzy", confirmText: "Start frenzy" })) return;
+            await fastUpdate(owned.ref, { frenzies: [...list, { id: 'fz_' + now, startedAt: now, endsAt: now + mins * 60000, durationMin: mins, bonus: window.FRENZY_BONUS, cancelled: false }] });
+            window.appToast("Checkpoint Frenzy started!"); loadAdminRaces();
+        };
+        window.hostCancelFrenzy = async function(code, id) {
+            const owned = await getOwnedRaceForHost(code); if (!owned) return;
+            if (!await appConfirm("Cancel this Checkpoint Frenzy? No bonus will be awarded.", { title: "Cancel frenzy", confirmText: "Cancel frenzy" })) return;
+            await fastUpdate(owned.ref, { frenzies: (owned.data.frenzies || []).map(f => f.id === id ? { ...f, cancelled: true } : f) });
+            window.appToast("Frenzy cancelled."); loadAdminRaces();
         };
         window.hostToggleGlobalPause = async function(code) {
             const owned=await getOwnedRaceForHost(code); if (!owned) return;
