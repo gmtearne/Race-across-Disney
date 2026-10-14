@@ -2021,14 +2021,7 @@
                             <p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will never overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p>
                         </div>
                     </div>
-                    <div class="bg-slate-900 p-4 rounded-3xl border border-orange-500/30 space-y-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="min-w-0"><span class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-orange-300"></i> Checkpoint Frenzy</span><p class="text-[11px] text-slate-400 mt-0.5">A surprise event: most valid checkpoint check-ins during the frenzy wins.</p></div>
-                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-frenzy-switch" onchange="toggleFrenzyCreateSettings()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-orange-600"></div></label>
-                        </div>
-                        <div id="create-frenzy-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Frenzy duration</label><select id="create-frenzy-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select><p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will not overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p></div>
-                    </div>
-                    <input type="number" id="create-default-points" value="0" class="hidden">
+                                        <input type="number" id="create-default-points" value="0" class="hidden">
                 </section>
 
                 <!-- Finish: details + share -->
@@ -3960,7 +3953,11 @@
         let frenzyAutoBusy = false, frenzyAutoLast = 0;
         window.frenzyAutoCheck = async function() {
             const race = window.liveTeamRaceData, code = window.activeRaceCode, cfg = race && race.frenzyAuto;
-            if (!cfg || !cfg.enabled || !code || !window.activeTeamId || race.paused || frenzyAutoBusy || !navigator.onLine) return;
+            const hasActiveFrenzy = !!(race && (race.frenzies || []).some(f => !f.cancelled && Number(f.endsAt) > Date.now()));
+            // Keep checking while a frenzy is active even if it was started manually or auto mode is off,
+            // so every team's finish can shorten the timer without cancelling the event.
+            if ((!cfg || !cfg.enabled) && !hasActiveFrenzy) return;
+            if (!race || !code || !window.activeTeamId || race.paused || frenzyAutoBusy || !navigator.onLine) return;
             const now = Date.now();
             if (now - frenzyAutoLast < 15000) return;
             frenzyAutoLast = now; frenzyAutoBusy = true;
@@ -3969,7 +3966,25 @@
                 const teamsSnap = await getDocs(collection(window.db, "races", code, "teams"));
                 const teams = []; teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
                 const approved = teams.filter(t => t.isApproved !== false && !t.withdrawn);
-                if (!approved.length || approved.every(t => !!t.endTime)) return;
+                if (!approved.length) return;
+                if (approved.every(t => !!t.endTime)) {
+                    // End any running frenzy at the final team's actual finish time. This is an
+                    // early end, not a cancellation: valid check-ins through that finish still count.
+                    const finalFinish = Math.max(...approved.map(t => new Date(t.endTime).getTime() || 0));
+                    await runTransaction(window.db, async tx => {
+                        const snap = await tx.get(raceRef); if (!snap.exists()) return;
+                        const latest = snap.data() || {};
+                        let changed = false;
+                        const frenzies = (latest.frenzies || []).map(f => {
+                            if (!f.cancelled && Number(f.startedAt) <= finalFinish && Number(f.endsAt) > finalFinish) {
+                                changed = true; return { ...f, endsAt: finalFinish, endedEarlyAt: finalFinish, endedBecause: 'all_teams_finished' };
+                            }
+                            return f;
+                        });
+                        if (changed) tx.update(raceRef, { frenzies });
+                    });
+                    return;
+                }
                 const cps = race.checkpoints || [], mandatory = cps.filter(c => c.type !== 'BONUS_PHOTO');
                 const n = mandatory.length, ids = new Set(mandatory.map(c => c.id));
                 if (n < 4 || !race.raceStartedAt) return;
@@ -3988,8 +4003,11 @@
                 if (offer?.status === 'live' && now >= Number(offer.expiresAt || 0)) {
                     // Offer remains marked live in storage after expiry; it no longer overlaps.
                 }
+                // Choose a race-specific random progress threshold across the eligible window.
+                // For 5+ stops, keep it later than the minimum 2-checkpoint eligibility point,
+                // so the event doesn't routinely appear immediately after the second check-in.
                 const seed = wildcardSeed({ code: String(code) + '|frenzy', createdAt: race.createdAt });
-                const triggerAt = 2 + Math.floor(seed * Math.max(1, n - 3));
+                const triggerAt = n >= 5 ? 3 + Math.floor(seed * Math.max(1, n - 4)) : 2;
                 if (Math.min(...done) < triggerAt) return;
                 const duration = Math.max(1, Number(cfg.durationMin) || 15);
                 await runTransaction(window.db, async tx => {
@@ -6153,9 +6171,12 @@
                     const reportBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
                         ? `<button onclick="openTeamReportCard('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-disneyGold/15 text-disneyGold border border-disneyGold/30 font-semibold rounded-lg text-[11px] hover:bg-disneyGold/25 transition"><i class="fa-solid fa-file-lines text-[10px]"></i>Report Card</button>`
                         : '';
+                    const scorecardBtnHtml = (t.endTime && (t.id === window.activeTeamId || isFinal))
+                        ? `<button onclick="openTeamScorecard('${targetCode}', '${t.id}')" class="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold rounded-lg text-[11px] hover:bg-emerald-500/25 transition"><i class="fa-solid fa-calculator text-[10px]"></i>Scorecard</button>`
+                        : '';
 
-                    const extraRow = (photosHtml || replayBtnHtml || reportBtnHtml)
-                        ? `<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}<div class="ml-auto flex items-center gap-2">${replayBtnHtml}${reportBtnHtml}</div></div>`
+                    const extraRow = (photosHtml || replayBtnHtml || reportBtnHtml || scorecardBtnHtml)
+                        ? `<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-700/50 pl-[4.25rem]">${photosHtml}<div class="ml-auto flex items-center gap-2">${replayBtnHtml}${scorecardBtnHtml}${reportBtnHtml}</div></div>`
                         : '';
 
                     const isMine = t.id === window.activeTeamId;
@@ -7653,6 +7674,78 @@
             } catch (e) {
                 console.error('Could not open race replay', e);
                 window.appToast("Could not load race replay. Please try again.");
+            }
+        };
+
+        window.openTeamScorecard = async function(raceCode, teamId) {
+            try {
+                const [raceSnap, teamSnap, teamsSnap, offer] = await Promise.all([
+                    getDoc(doc(window.db, "races", raceCode)),
+                    getDoc(doc(window.db, "races", raceCode, "teams", teamId)),
+                    getDocs(collection(window.db, "races", raceCode, "teams")),
+                    window.fetchWildcardOffer(raceCode)
+                ]);
+                if (!raceSnap.exists() || !teamSnap.exists()) return;
+                const race = window.applyWildcardOffer(raceSnap.data(), offer);
+                const team = { id: teamId, ...teamSnap.data() };
+                const allTeams = []; teamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
+                const mandatory = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
+                const bonuses = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
+                const rejected = team.rejectedCheckins || {};
+                const completed = new Set((team.completedCheckpoints || []).filter(id => mandatory.some(c => c.id === id) && !rejected[id]));
+                const missed = Math.max(0, mandatory.length - completed.size);
+                const claimed = (team.claimedBonus || []).filter(id => bonuses.some(c => c.id === id) && !rejected[id]);
+                const wildcardIds = new Set([...(race.wildcardBonusIds || []), ...(offer && offer.bonusId ? [offer.bonusId] : [])]);
+                const wildcardClaimed = claimed.filter(id => wildcardIds.has(id));
+                const normalBonusClaimed = claimed.filter(id => !wildcardIds.has(id));
+                const deductionFor = id => { const cp = bonuses.find(c => c.id === id); return cp ? Number(cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10) : 0; };
+                const normalBonusDed = normalBonusClaimed.reduce((a, id) => a + deductionFor(id), 0);
+                const wildcardDed = wildcardClaimed.reduce((a, id) => a + deductionFor(id), 0);
+                const bingoDed = race.gameMode === 'scavenger' ? 0 : Number(window.bingoBonusFor(race, team) || 0);
+                const frenzyRes = window.frenzyResults(race, allTeams);
+                const frenzyDed = race.gameMode === 'scavenger' ? 0 : Number(frenzyRes.bonusByTeam[teamId] || 0);
+                const triviaDed = race.gameMode === 'scavenger' ? 0 : Number(team.triviaBonus || 0);
+                const penaltyDed = race.gameMode === 'scavenger' ? 0 : missed * 60;
+                const elapsedMin = window.teamElapsedMs(team, race) / 60000;
+                const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed);
+                const fmt = mins => {
+                    const secs = Math.max(0, Math.round(Number(mins || 0) * 60));
+                    return [Math.floor(secs / 3600), Math.floor((secs % 3600) / 60), secs % 60].map(n => String(n).padStart(2, '0')).join(':');
+                };
+                const fmtOverall = mins => {
+                    const total = Math.max(0, Math.round(Number(mins || 0)));
+                    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+                };
+                const row = (label, value, tone='text-white') => `<div class="flex items-center justify-between gap-4 py-2 border-b border-white/10 last:border-0"><span class="text-slate-300">${label}</span><span class="font-mono font-bold ${tone} text-right">${value}</span></div>`;
+                const bingo = window.bingoProgress(race, team);
+                const bingoText = race.bingo && race.bingo.enabled ? (bingo && bingo.complete ? `Complete · ${race.gameMode === 'scavenger' ? '+' : '−'}${race.bingo.reward || 20} ${race.gameMode === 'scavenger' ? 'pts' : 'min'}` : `${bingo ? bingo.filled : 0} filled · incomplete`) : 'Not enabled';
+                const isScavenger = race.gameMode === 'scavenger';
+                const stopPoints = completed.size ? mandatory.filter(c => completed.has(c.id)).reduce((sum, cp) => sum + Number(window.stopPoints(cp, race) || 0), 0) : 0;
+                const bonusPoints = claimed.reduce((sum, id) => { const cp = bonuses.find(c => c.id === id); return sum + (cp ? Number(cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10)) : 0); }, 0);
+                const totalPoints = stopPoints + bonusPoints + Number(team.triviaBonus || 0) + Number(window.bingoBonusFor(race, team) || 0) + Number(frenzyRes.bonusByTeam[teamId] || 0);
+                const content = `
+                    <div class="fixed inset-0 z-[85] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="team-scorecard-modal">
+                      <div class="w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl border border-emerald-400/30 bg-slate-900 shadow-2xl p-5 space-y-4">
+                        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] uppercase tracking-[.2em] text-emerald-300 font-black">🏁 Final breakdown</p><h3 class="text-xl font-black text-white">${String(team.teamName || 'Team').replace(/</g, '&lt;')} · Scorecard</h3><p class="text-xs text-slate-400 mt-1">Every adjustment, clearly shown.</p></div><button onclick="document.getElementById('team-scorecard-modal')?.remove()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white">✕</button></div>
+                        <div class="rounded-2xl bg-slate-950/70 border border-slate-700/70 px-4 py-1 text-sm">
+                          ${row('Checkpoints made', `${completed.size}/${mandatory.length}`, 'text-white')}
+                          ${row('Time taken', fmt(elapsedMin), 'text-sky-300')}
+                          ${row('Penalties', isScavenger ? `${missed} missed` : `+${fmt(penaltyDed)} (${missed} missed)`, 'text-rose-300')}
+                          ${row('Bonus Challenges', `${normalBonusClaimed.length}/${Math.max(0, bonuses.length - wildcardIds.size)}${isScavenger ? ` · +${normalBonusClaimed.reduce((a,id)=>a+(Number((bonuses.find(c=>c.id===id)||{}).points)||10),0)} pts` : ` · −${fmt(normalBonusDed)}`}`, 'text-emerald-300')}
+                          ${row('Bingo', bingoText, bingo && bingo.complete ? 'text-emerald-300' : 'text-slate-400')}
+                          ${row('Trivia', isScavenger ? `+${Number(team.triviaBonus || 0)} pts` : `−${fmt(triviaDed)}`, 'text-indigo-300')}
+                          ${row('Wildcard', wildcardClaimed.length ? (isScavenger ? `+${wildcardClaimed.length} bonus` : `−${fmt(wildcardDed)}`) : 'No deduction', 'text-fuchsia-300')}
+                          ${row('Checkpoint Frenzy', isScavenger ? `+${Number(frenzyRes.bonusByTeam[teamId] || 0)} pts` : `−${fmt(frenzyDed)}`, 'text-orange-300')}
+                        </div>
+                        <div class="rounded-2xl bg-gradient-to-r from-emerald-500/15 to-sky-500/10 border border-emerald-400/30 p-4 flex items-center justify-between gap-4"><div><p class="text-[10px] uppercase tracking-widest text-emerald-200 font-black">Overall ${isScavenger ? 'points' : 'time'}</p><p class="text-[10px] text-slate-400 mt-1">${isScavenger ? 'Based on the race points total' : 'Time + penalties − bonuses'}</p></div><strong class="text-2xl font-black text-white font-mono">${isScavenger ? `${totalPoints} pts` : fmtOverall(overallMin)}</strong></div>
+                        <button onclick="document.getElementById('team-scorecard-modal')?.remove()" class="w-full rounded-xl py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">Done</button>
+                      </div>
+                    </div>`;
+                document.getElementById('team-scorecard-modal')?.remove();
+                document.body.insertAdjacentHTML('beforeend', content);
+            } catch (e) {
+                console.error('Could not open scorecard', e);
+                window.appToast('Could not load the scorecard. Please try again.');
             }
         };
 
