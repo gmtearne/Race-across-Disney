@@ -3341,7 +3341,7 @@
             const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
             const teams = [];
             teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
-            const photos = collectGalleryPhotos(owned.data, teams, true);
+            const photos = collectGalleryPhotos(window.applyWildcardOffer(owned.data, await window.fetchWildcardOffer(raceCode)), teams, true);
             if (!photos.length) { window.appToast('No bonus photos have been submitted yet.'); return; }
             const reactions = await loadPhotoReactions(raceCode);
             window.galleryState = { raceCode, photos, reactions, moderate: true, gridId: 'host-gallery-grid', teams, race: owned.data };
@@ -3571,12 +3571,38 @@
             if (bonus.park && bonus.park !== 'Bonus Challenge') return parks.has(bonus.park);
             return parks.size > 0;
         };
+        // The wildcard is always a brand-new bonus: one from the bonus library that the race does not already have.
+        // It is added on top of whatever bonuses the race was created with (none, 3, ...) and carried inside the offer,
+        // so team phones (which cannot edit the race document) can still see it.
+        window.pickWildcardBonus = function(race) {
+            const cps = race.checkpoints || [];
+            const parks = new Set(cps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
+            const have = new Set(cps.map(c => c.name));
+            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && window.bonusAppliesToAreas(p, parks));
+            if (!pool.length) return null;
+            const p = pool[Math.floor(Math.random() * pool.length)];
+            const ded = p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10;
+            return {
+                id: 'cp_wc_' + Date.now(),
+                name: p.name,
+                type: 'BONUS_PHOTO',
+                lat: p.lat || 28.4177,
+                lng: p.lng || -81.5812,
+                points: p.bonusMinDeduction || 10,
+                bonusMinDeduction: ded,
+                park: p.park || 'Bonus Challenge',
+                land: p.land || ''
+            };
+        };
         window.applyWildcardOffer = function(race, offer) {
             if (!race) return race;
             const out = { ...race };
             if (offer && offer.status === 'live') {
                 out.wildcard = offer;
                 out.wildcardBonusIds = Array.from(new Set([...(race.wildcardBonusIds || []), offer.bonusId]));
+                if (offer.bonus && !(race.checkpoints || []).some(c => c.id === offer.bonus.id)) {
+                    out.checkpoints = [...(race.checkpoints || []), offer.bonus];
+                }
             } else if (offer && offer.status === 'skipped') {
                 out.wildcardSkipped = offer.reason || true;
             }
@@ -3654,19 +3680,15 @@
                 }
                 if (!due) return;
 
-                // Only unused bonuses, and only from parks where the race already has stops.
-                const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
-                const taken = new Set(race.wildcardBonusIds || []);
-                teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
-                const pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
-                if (!pool.length) return;   // nothing eligible yet; the window-closed check above will cancel it if that never changes
-                const bonus = pool[Math.floor(Math.random() * pool.length)];
+                // A NEW bonus from the library (not one the race already has), from parks where the race has stops.
+                const bonus = window.pickWildcardBonus(race);
+                if (!bonus) return;   // nothing eligible; the window-closed check above will cancel it if that never changes
                 const dur = Number(cfg.durationMin) || 15;
                 await runTransaction(window.db, async (tx) => {
                     const s = await tx.get(offerRef);
                     if (s.exists()) return;
                     const t0 = Date.now();
-                    tx.set(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: true });
+                    tx.set(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, bonus: bonus, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: true });
                 });
             } catch (e) {
                 console.warn('Wildcard auto-check failed', e);
@@ -3688,22 +3710,11 @@
             const teams = [];
             teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
             const cps = race.checkpoints || [];
-            const mandatory = cps.filter(c => c.type !== 'BONUS_PHOTO');
-            const parks = new Set(mandatory.map(c => c.park).filter(Boolean));
-            const taken = new Set();
-            teams.forEach(t => (t.claimedBonus || []).forEach(id => taken.add(id)));
-            let pool = cps.filter(c => c.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(c, parks) && !taken.has(c.id));
-            // The race may not include any bonus photos (or they have all been claimed). Fall back to the full bonus library
-            // for anything that can be done in the areas this race visits, and add the chosen one to the race.
-            let fromLibrary = false;
-            if (!pool.length) {
-                const inRace = new Set(cps.map(c => c.name));
-                pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !inRace.has(p.name) && window.bonusAppliesToAreas(p, parks));
-                fromLibrary = pool.length > 0;
-            }
-            if (!pool.length) {
+            const parks = new Set(cps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
+            const bonus = window.pickWildcardBonus(race);
+            if (!bonus) {
                 const areaList = [...parks].join(', ') || 'its areas';
-                return window.appAlert(`There are no bonus photo challenges left that can be done in the areas this race visits (${areaList}).`, { title: 'No wildcard available', tone: 'info' });
+                return window.appAlert(`There are no new bonus photo challenges left that can be done in the areas this race visits (${areaList}).`, { title: 'No wildcard available', tone: 'info' });
             }
             const dur = Number(cfg.durationMin) || 15;
             const replacing = existing.exists();
@@ -3711,23 +3722,9 @@
                 ? `A wildcard was already ${existing.data().status === 'live' ? 'offered' : 'resolved (' + (existing.data().reason || 'skipped') + ')'} for this race. Fire a new one now for ${dur} minutes? (Testing only.)`
                 : `Fire the wildcard to every team now for ${dur} minutes?`;
             if (!(await appConfirm(msg, { title: "Fire wildcard now", confirmText: "Fire it" }))) return;
-            let bonus = pool[Math.floor(Math.random() * pool.length)];
-            if (fromLibrary) {
-                bonus = {
-                    id: 'cp_wc_' + Date.now(),
-                    name: bonus.name,
-                    type: 'BONUS_PHOTO',
-                    lat: bonus.lat || 28.4177,
-                    lng: bonus.lng || -81.5812,
-                    points: bonus.bonusMinDeduction || 10,
-                    bonusMinDeduction: bonus.bonusMinDeduction !== undefined ? bonus.bonusMinDeduction : 10,
-                    park: bonus.park || 'Bonus Challenge',
-                    land: bonus.land || ''
-                };
-                await updateDoc(owned.ref, { checkpoints: [...cps, bonus] });
-            }
+            await updateDoc(owned.ref, { checkpoints: [...cps, bonus] });
             const t0 = Date.now();
-            await setDoc(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: false, manual: true });
+            await setDoc(offerRef, { status: 'live', id: 'wc_' + t0, bonusId: bonus.id, bonusName: bonus.name, bonus: bonus, startedAt: t0, expiresAt: t0 + dur * 60000, durationMin: dur, cancelled: false, auto: false, manual: true });
             window.appToast("Wildcard fired to all teams!");
         };
 
@@ -4040,12 +4037,7 @@
                     const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(p, stopAreas));
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
-                // A wildcard needs a bonus to offer, so keep one in reserve if none were chosen
-                if (!bonusPicked.length && document.getElementById('create-wildcard-switch')?.checked) {
-                    const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
-                    bonusPicked = pickRandom(presets.filter(p => p.type === 'BONUS_PHOTO' && window.bonusAppliesToAreas(p, stopAreas)), 1);
-                    if (bonusPicked.length) window.appToast('Added 1 bonus photo so the wildcard has something to offer', 4500);
-                }
+                // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
                 initialCps.push(...bonusPicked.map((p, idx) => toCheckpoint(p, idx, 'cp_bonus_')));
 
                 let finalCheckpointId = null;
@@ -4752,10 +4744,11 @@
         window.hostRejectCheckin = async function(raceCode, teamId, cpId, reject) {
             const owned = await getOwnedRaceForHost(raceCode);
             if (!owned) return;
-            const isHunt = owned.data.gameMode === 'scavenger';
-            const cp = (owned.data.checkpoints || []).find(c => c.id === cpId);
+            const rejRace = window.applyWildcardOffer(owned.data, await window.fetchWildcardOffer(raceCode));
+            const isHunt = rejRace.gameMode === 'scavenger';
+            const cp = (rejRace.checkpoints || []).find(c => c.id === cpId);
             const isBonus = !!cp && cp.type === 'BONUS_PHOTO';
-            const isWild = !!cp && (owned.data.wildcardBonusIds || []).includes(cpId);
+            const isWild = !!cp && (rejRace.wildcardBonusIds || []).includes(cpId);
             if (reject) {
                 const what = isBonus ? (isWild ? 'wildcard photo' : 'bonus photo') : 'check-in';
                 const effect = isHunt
@@ -4831,7 +4824,7 @@
                     return;
                 }
 
-                const race = raceSnap.data();
+                const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
                 const team = teamSnap.data();
                 if (window.renderVerifyModalActions) window.renderVerifyModalActions(raceCode, teamId, race, team);
                 const checkpoints = race.checkpoints || [];
@@ -5596,7 +5589,7 @@
                     return;
                 }
 
-                const raceData = raceSnap.data();
+                const raceData = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(targetCode));
                 const raceBaseDiff = (raceData.difficulty || 'easy').toLowerCase();
                 const isScavenger = raceData.gameMode === 'scavenger';
                 const isHideBonuses = raceData.hideBonuses === true;
@@ -6713,7 +6706,7 @@
                 if (window.__raceReplayClose) { try { window.__raceReplayClose(); } catch (e) {} }
                 const [raceSnap, teamsSnap] = await Promise.all([ safeGetDoc(doc(window.db, "races", raceCode)), getDocs(collection(window.db, "races", raceCode, "teams")) ]);
                 if (!raceSnap.exists()) return window.appToast("Race data could not be found.");
-                const race = raceSnap.data();
+                const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
                 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 const PALETTE = ['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa','#fb923c','#f87171','#2dd4bf','#e879f9','#a3e635','#60a5fa','#fcd34d'];
 
@@ -7287,7 +7280,7 @@
             const teamSnap = await getDoc(doc(window.db, "races", raceCode, "teams", teamId));
             if (!raceSnap.exists() || !teamSnap.exists()) return;
 
-            const race = raceSnap.data();
+            const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
             const team = teamSnap.data();
             const isScavenger = race.gameMode === 'scavenger';
             const checkpoints = race.checkpoints || [];
