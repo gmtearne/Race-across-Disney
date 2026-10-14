@@ -609,7 +609,10 @@
             font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.1;
             letter-spacing: .01em; color: #fff; padding: 0 .25rem; margin-bottom: -.5rem;
             text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 4px 18px rgba(0,0,0,.55);
+            display: flex; align-items: center; gap: .6rem;
         }
+        .page-title i { font-size: .78em; color: var(--theme-accent); filter: drop-shadow(0 0 8px rgba(255,184,0,.45)); }
+        .page-sub { margin: .6rem .25rem 0; font-size: .8rem; color: #e2e8f0; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
         /* =====================================================================
            DOCK: floating glass navigation (replaces the old header)
            ===================================================================== */
@@ -1009,7 +1012,7 @@
             <div id="portal-track">
                 <!-- ================= TAB 1: TEAM PORTAL ================= -->
                 <section id="tab-race" class="px-3 space-y-6">
-                <h1 class="page-title">Team Portal</h1>
+                <h1 class="page-title"><i class="fa-solid fa-flag-checkered"></i>Team Portal</h1>
                 <!-- Wildcard challenge notification (filled by renderWildcardBanner) -->
                 <div id="wildcard-banner" class="hidden"></div>
                 <!-- Checkpoint Frenzy notification (filled by renderFrenzyBanner) -->
@@ -1191,7 +1194,7 @@
 
                 <!-- ================= TAB 2: RACE PORTAL ================= -->
                 <section id="tab-leaderboard" class="px-3 space-y-6">
-                <h1 class="page-title">Race Portal</h1>
+                <h1 class="page-title"><i class="fa-solid fa-trophy"></i>Race Portal</h1>
                 <div id="leaderboard-login-notice" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
@@ -1282,136 +1285,102 @@
 
         <!-- ================= TAB 3: PARK MAPS ================= -->
         <section id="tab-maps" class="px-3 space-y-6">
-                <h1 class="page-title">Park Maps</h1>
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
-                <div class="border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
-                            <i class="fa-solid fa-map text-disneyGold"></i> Digital Park & Resort Maps
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
-                    </div>
-                    <span class="text-xs bg-disneyBlue/30 text-blue-300 px-3.5 py-1.5 rounded-xl border border-disneyBlue/40 self-start sm:self-auto font-medium">
-                        <i class="fa-solid fa-compass-drafting mr-1"></i> Paper Map Tools
-                    </span>
+                <div>
+                    <h1 class="page-title" style="margin-bottom:0"><i class="fa-solid fa-map"></i>Park Maps</h1>
+                    <p class="page-sub">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
-                    <button onclick="switchMapArea('mk')" id="map-btn-mk" class="py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow">Magic Kingdom</button>
-                    <button onclick="switchMapArea('epcot')" id="map-btn-epcot" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Epcot</button>
-                    <button onclick="switchMapArea('hs')" id="map-btn-hs" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Hollywood Studios</button>
-                    <button onclick="switchMapArea('ak')" id="map-btn-ak" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Animal Kingdom</button>
-                    <button onclick="switchMapArea('ds')" id="map-btn-ds" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Disney Springs</button>
-                    <button onclick="switchMapArea('resorts')" id="map-btn-resorts" class="py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow">Resorts & Transit</button>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h3 id="map-title-display" class="font-bold text-sm text-white flex items-center gap-2">
-                            <i class="fa-solid fa-location-pin text-disneyPink"></i> Magic Kingdom Park Map View
-                        </h3>
-                        <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-disneyGold px-3.5 py-2 rounded-xl border border-slate-600 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
-                        </a>
-                    </div>
-                    
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl space-y-3">
+                    <button type="button" id="map-picker-btn" onclick="openMapPicker()" aria-haspopup="dialog" class="w-full flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-left text-white transition active:scale-[0.99] focus:outline-none focus:border-disneyGold">
+                        <span id="map-picker-icon" class="text-lg shrink-0">🏰</span>
+                        <span id="map-picker-label" class="min-w-0 flex-1 text-sm font-semibold truncate">Magic Kingdom</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs shrink-0"></i>
+                    </button>
                     <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
                         <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
                     </div>
                     <p id="map-desc-text" class="text-xs text-slate-400 italic">
                         Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
                     </p>
+                    <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" rel="noopener" class="w-full text-xs bg-slate-900 hover:bg-slate-700 text-disneyGold px-3.5 py-3 rounded-xl border border-slate-600 transition flex items-center justify-center gap-1.5 font-semibold">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
+                    </a>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
-                        </p>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
                     </div>
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
-                            <i class="fa-solid fa-compass"></i> Strategic Planning Tip
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
-                        </p>
-                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
+                    </p>
                 </div>
-            </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-compass"></i> Strategic Planning Tip
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
+                    </p>
+                </div>
         </section>
 
         <!-- ================= TAB 4: RULES ================= -->
         <section id="tab-rules" class="px-3 space-y-6">
-                <h1 class="page-title">Rules</h1>
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
-                <div class="border-b border-slate-700 pb-4">
-                    <h2 class="text-2xl font-disney font-bold text-white flex items-center gap-3">
-                        <i class="fa-solid fa-book-open text-disneyGold"></i> Race Rules & Guidelines
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">Read carefully before starting your journey across Disney property!</p>
+                <div>
+                    <h1 class="page-title" style="margin-bottom:0"><i class="fa-solid fa-book-open"></i>Rules</h1>
+                    <p class="page-sub">Read carefully before starting your journey across Disney property!</p>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
-                            <i class="fa-solid fa-stopwatch"></i> Objective
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
-                        </p>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                        <i class="fa-solid fa-stopwatch"></i> Objective
                     </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
-                            <i class="fa-solid fa-bus"></i> Transportation
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                            <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your host has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Penalties
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
-                            <i class="fa-solid fa-star"></i> Bonus Challenges
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/60 space-y-2">
-                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                            <i class="fa-solid fa-ban"></i> Route Planning Restriction
-                        </div>
-                        <p class="text-slate-300 leading-relaxed">
-                            Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
-                        </p>
-                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Complete checkpoints according to your race mode (Speed Race vs Scavenger Hunt). Your final adjusted score or time determines your ranking.
+                    </p>
                 </div>
-
-                <div class="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl text-xs space-y-2">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
+                        <i class="fa-solid fa-bus"></i> Transportation
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
+                    </p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                        <i class="fa-solid fa-route"></i> Checkpoint Order & Final Location
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Checkpoints can be completed in <strong>any order</strong> you choose, <em>unless</em> your host has designated a specific ending location for a Speed Race. If a final ending location is chosen, it <strong>must be completed last</strong> so everyone finishes together.
+                    </p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Penalties
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
+                    </p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                        <i class="fa-solid fa-star"></i> Bonus Challenges
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
+                    </p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                        <i class="fa-solid fa-ban"></i> Route Planning Restriction
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
+                    </p>
+                </div>
+                <div class="bg-amber-950/60 border border-amber-500/40 rounded-2xl p-5 shadow-xl backdrop-blur-md text-xs space-y-2">
                     <div class="font-bold text-amber-300 flex items-center gap-2">
                         <i class="fa-solid fa-location-crosshairs"></i> GPS Verification & Discrepancies
                     </div>
@@ -1419,12 +1388,11 @@
                         When checking in, your device GPS will verify your proximity to the location. If you attempt a check-in but your GPS registers you out of the zone, your entry will be flagged as an override and logged for host review. 
                     </p>
                 </div>
-            </div>
         </section>
 
         <!-- ================= TAB 5: HOST DASHBOARD ================= -->
                 <section id="tab-organizer" class="px-3 space-y-6">
-                <h1 class="page-title">Host Dashboard</h1>
+                <h1 class="page-title"><i class="fa-solid fa-gear"></i>Host Dashboard</h1>
                     <div id="admin-auth-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-md mx-auto space-y-4">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                             <h2 id="auth-title" class="text-base font-bold text-indigo-300"><i class="fa-solid fa-lock mr-2"></i>Host Login</h2>
@@ -2444,23 +2412,32 @@
             resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
         };
 
+        const MAP_NAMES = { mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
+        let currentMapKey = 'mk';
+
         window.switchMapArea = function(areaKey) {
             const mapData = MAP_LOCATIONS[areaKey];
             if (!mapData) return;
-
-            ['mk', 'epcot', 'hs', 'ak', 'ds', 'resorts'].forEach(k => {
-                const btn = document.getElementById(`map-btn-${k}`);
-                if (k === areaKey) {
-                    btn.className = "py-3 px-2 bg-slate-900 border border-disneyGold text-disneyGold rounded-xl text-xs font-bold transition text-center shadow";
-                } else {
-                    btn.className = "py-3 px-2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition text-center shadow";
-                }
-            });
-
-            document.getElementById('map-title-display').innerHTML = `<i class="fa-solid fa-location-pin text-disneyPink"></i> ${mapData.title}`;
+            currentMapKey = areaKey;
+            const name = MAP_NAMES[areaKey] || mapData.title;
+            const icon = document.getElementById('map-picker-icon');
+            const label = document.getElementById('map-picker-label');
+            if (icon) icon.textContent = (window.areaIcon ? window.areaIcon(name) : '📍');
+            if (label) label.textContent = name;
             document.getElementById('map-iframe').src = mapData.url;
             document.getElementById('map-external-link').href = mapData.link;
             document.getElementById('map-desc-text').innerText = mapData.desc;
+        };
+
+        // Bottom-sheet picker for the map area (same sheet as every other dropdown in the app)
+        window.openMapPicker = function() {
+            window.openAppSheet({
+                title: 'Choose a map',
+                options: Object.keys(MAP_NAMES).map(k => ({ value: k, label: MAP_NAMES[k], icon: window.areaIcon ? window.areaIcon(MAP_NAMES[k]) : '' })),
+                selected: currentMapKey,
+                searchable: false,
+                onSelect: k => window.switchMapArea(k)
+            });
         };
 
         function generateRandomRaceCode() {
