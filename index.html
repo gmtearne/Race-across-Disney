@@ -1547,13 +1547,13 @@
         <div class="rw-top px-5 pb-3 border-b border-slate-800 shrink-0">
             <div class="flex items-center justify-between gap-3 max-w-lg mx-auto w-full">
                 <div class="min-w-0">
-                    <p id="rw-step-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step 1 of 5</p>
+                    <p id="rw-step-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step 1 of 6</p>
                     <h2 id="rw-step-title" class="font-disney font-bold text-lg text-white leading-tight">Name your race</h2>
                 </div>
                 <button type="button" onclick="closeRaceWizard()" aria-label="Close" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="rw-progress" class="flex gap-1.5 mt-3 max-w-lg mx-auto w-full">
-                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
+                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
             </div>
         </div>
 
@@ -1569,6 +1569,13 @@
                     </div>
                     <input type="text" id="new-race-title" maxlength="60" autocomplete="off" placeholder="e.g. Magic Kingdom Chase" onkeydown="if(event.key==='Enter'){event.preventDefault();rwNext();}" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-4 text-base text-white text-center placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
                     <input type="hidden" id="new-race-code">
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-indigo-500/30 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <span class="block text-sm font-bold text-white"><i class="fa-solid fa-sliders text-indigo-300 mr-1.5"></i> Advanced settings</span>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Set default point values, bingo reward and the default views teams see. Off keeps the standard setup.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-advanced-switch" onchange="rwApplyAdvanced()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div></label>
+                    </div>
                 </section>
 
                 <!-- Step 2: mode -->
@@ -1623,6 +1630,11 @@
                                         <p id="create-manual-start-note" class="hidden text-[10px] text-slate-500">Teams can start individually. The host can pause/resume all active timers.</p>
                                     </div>
                                 </div>
+                    <div id="rw-adv-stop-points" class="rw-adv-only hidden bg-slate-900 p-4 rounded-3xl border border-indigo-500/30 space-y-2">
+                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider"><i class="fa-solid fa-sliders mr-1"></i> Default points per stop</label>
+                        <p class="text-[11px] text-slate-400">Scavenger Hunt only. Every checkpoint is worth this many points (standard is 10).</p>
+                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden"><button type="button" onclick="stepNumber('create-adv-stop-points', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button><input type="number" id="create-adv-stop-points" value="10" min="1" placeholder="" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none"><button type="button" onclick="stepNumber('create-adv-stop-points', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button></div>
+                    </div>
                 </section>
 
                 <!-- Step 3: difficulty -->
@@ -1665,7 +1677,7 @@
 
                 <!-- Step 4: checkpoints -->
                 <section data-rw-step="4" class="rw-step hidden space-y-5">
-                    <p class="text-sm text-slate-400">Choose the stops for this race, then add any bonus photo challenges.</p>
+                    <p class="text-sm text-slate-400">Choose the stops for this race. Bonuses and extras come next.</p>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Checkpoints</label>
 
@@ -1723,6 +1735,18 @@
                                         </select>
                                     </div>
                                 </div>
+                    <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
+                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
+                                    <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
+                                    <select id="create-final-stop-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                                        <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
+                                    </select>
+                                </div>
+                </section>
+
+                <!-- Step 5: bonuses -->
+                <section data-rw-step="5" class="rw-step hidden space-y-5">
+                    <p class="text-sm text-slate-400">Optional extras to keep teams on their toes. Everything here is off unless you switch it on (trivia starts on).</p>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-amber-500/30 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -1766,6 +1790,12 @@
                                     </div>
                                     </div>
                                 </div>
+                    <div id="rw-adv-bonus-points" class="rw-adv-only hidden bg-slate-900 p-4 rounded-3xl border border-indigo-500/30 space-y-2">
+                        <label id="rw-adv-bonus-label" class="block text-xs font-bold text-indigo-300 uppercase tracking-wider"><i class="fa-solid fa-sliders mr-1"></i> Default bonus value</label>
+                        <p id="rw-adv-bonus-hint" class="text-[11px] text-slate-400">Applies to every bonus photo challenge. Leave blank to keep each challenge's own value.</p>
+                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden"><button type="button" onclick="stepNumber('create-adv-bonus-points', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button><input type="number" id="create-adv-bonus-points" value="" min="1" placeholder="Each challenge’s own value" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none"><button type="button" onclick="stepNumber('create-adv-bonus-points', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button></div>
+                        <p class="text-[10px] text-slate-500">Once the race is created you can give each bonus challenge its own score from Edit Race.</p>
+                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-disneyGold/40 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -1780,27 +1810,29 @@
                                     <div id="create-bingo-options" class="hidden space-y-3 pt-3 border-t border-slate-800">
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Bingo card</label>
                                         <select id="create-bingo-card" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold"></select>
+                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Who can win?</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <label class="rw-choice relative block cursor-pointer select-none">
+                                                <input type="radio" name="create_bingo_win" value="all" checked class="rw-r sr-only">
+                                                <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950 h-full"><span class="block text-xs font-bold text-white">Every team</span><span class="block text-[10px] text-slate-400 leading-snug mt-1">Any team that fills the card gets the reward.</span></div>
+                                            </label>
+                                            <label class="rw-choice relative block cursor-pointer select-none">
+                                                <input type="radio" name="create_bingo_win" value="first" class="rw-r sr-only">
+                                                <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950 h-full"><span class="block text-xs font-bold text-white">Only 1 winner</span><span class="block text-[10px] text-slate-400 leading-snug mt-1">First team to call bingo wins. Then the game is over.</span></div>
+                                            </label>
+                                        </div>
+                                        <div id="rw-adv-bingo-reward" class="rw-adv-only hidden space-y-3">
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Reward for a completed card</label>
                                         <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
                                             <button type="button" onclick="stepNumber('create-bingo-reward', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
                                             <input type="number" id="create-bingo-reward" value="20" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
                                             <button type="button" onclick="stepNumber('create-bingo-reward', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
                                         </div>
-                                        <p class="text-[10px] text-slate-500 leading-relaxed">Speed Race: minutes taken off the final time. Scavenger Hunt: bonus points. An incomplete card earns nothing. The card's challenges are added to the race and are never also offered as standalone bonuses or wildcards. Challenges come from bonus photos tagged with a bingo name in your locations data.</p>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 leading-relaxed">Reward is 20 minutes off (Speed Race) or 20 points (Scavenger Hunt) unless you change it in Advanced settings. An incomplete card earns nothing. The card's challenges are added to the race and are never also offered as standalone bonuses or wildcards. Challenges come from bonus photos tagged with a bingo name in your locations data.</p>
                                     </div>
                                 </div>
-                    <div id="speed-final-stop-container" class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
-                                    <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Final Location (Optional)</label>
-                                    <p class="text-[11px] text-slate-400">If selected, teams must complete this checkpoint last</p>
-                                    <select id="create-final-stop-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                        <option value="" data-sub="Teams can finish in any order">No mandatory final stop</option>
-                                    </select>
-                                </div>
-                </section>
 
-                <!-- Step 5: trivia + wildcard -->
-                <section data-rw-step="5" class="rw-step hidden space-y-5">
-                    <p class="text-sm text-slate-400">Optional extras to keep teams on their toes.</p>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -1869,6 +1901,56 @@
                         </div>
                     </div>
                                         <input type="number" id="create-default-points" value="0" class="hidden">
+                </section>
+
+                <!-- Step 6: host team -->
+                <section data-rw-step="6" class="rw-step hidden space-y-5">
+                    <p class="text-sm text-slate-400">Are you racing too? Register your own team now and skip the approval queue.</p>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-emerald-500/30 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="block text-sm font-bold text-white"><i class="fa-solid fa-person-running text-emerald-300 mr-1.5"></i> I'm racing too</span>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Your team is created and auto approved with the race.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-host-team-switch" onchange="rwToggleHostTeam()" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div></label>
+                        </div>
+                        <div id="rw-host-team-fields" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                            <div>
+                                <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Team name</label>
+                                <input type="text" id="create-host-team-name" maxlength="30" autocomplete="off" placeholder="e.g. The Host Hustlers" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">4-digit PIN</label>
+                                    <input type="password" id="create-host-team-pin" maxlength="4" inputmode="numeric" autocomplete="new-password" placeholder="1234" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-emerald-400">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1.5 uppercase tracking-wide font-semibold">Confirm PIN</label>
+                                    <input type="password" id="create-host-team-pin2" maxlength="4" inputmode="numeric" autocomplete="new-password" placeholder="Re-enter" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-center font-mono text-sm text-white focus:outline-none focus:border-emerald-400">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">To play, open the Team tab, enter the race code, your team name and this PIN. You can still run the race from the host dashboard.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 7: default views (advanced only) -->
+                <section data-rw-step="7" class="rw-step hidden space-y-5">
+                    <p class="text-sm text-slate-400">Choose what teams see by default. You can change any of these later from the race dashboard.</p>
+                    <div class="bg-slate-900 rounded-3xl border border-slate-700/80 divide-y divide-slate-800">
+                        <div class="flex items-center justify-between gap-3 p-4">
+                            <div class="min-w-0"><span class="block text-sm font-bold text-white"><i class="fa-solid fa-comments text-disneyGold mr-1.5"></i> Live chat</span><p class="text-[11px] text-slate-400 mt-0.5">Teams can message each other during the race.</p></div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-view-chat" checked class="sr-only peer"><div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div></label>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 p-4">
+                            <div class="min-w-0"><span class="block text-sm font-bold text-white"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i> Hide bonuses</span><p class="text-[11px] text-slate-400 mt-0.5">Keep bonus counts and the bonus list off the leaderboard.</p></div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-view-hide-bonuses" checked class="sr-only peer"><div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div></label>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 p-4">
+                            <div class="min-w-0"><span class="block text-sm font-bold text-white"><i class="fa-regular fa-clock text-disneyGold mr-1.5"></i> Hide live timers</span><p class="text-[11px] text-slate-400 mt-0.5">Leaderboard shows stops completed only until the finish.</p></div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" id="create-view-hide-timers" checked class="sr-only peer"><div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div></label>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Finish: details + share -->
@@ -3136,8 +3218,8 @@
                 arrow.style.opacity = inRange ? '1' : '0.12';
 
                 if (!inRange) {
-                    msgEl.textContent = 'Still a way off. Head for the stop using your map.';
-                    noteEl.textContent = `The arrow switches on within ${window.COMPASS_RANGE_METERS} m.`;
+                    msgEl.textContent = 'Sorry, you’re not close enough for guidance.';
+                    noteEl.textContent = `Guidance switches on within ${window.COMPASS_RANGE_METERS} m. Use your map to head for the stop.`;
                 } else if (inZone) {
                     msgEl.textContent = 'You’re in the check-in zone!';
                     noteEl.textContent = 'Tap Check in below.';
@@ -7138,6 +7220,16 @@
         };
 
         // ---- Overall race replay: every team on one map, one shared clock, and a progress bar ----
+        // Overall replay shows every team's route, so it stays closed until the whole race is final (same rule as the leaderboard).
+        window.openRaceReplayWhenFinal = async function(raceCode) {
+            try {
+                const [raceSnap, teamsSnap] = await Promise.all([getDoc(doc(window.db, "races", raceCode)), getDocs(collection(window.db, "races", raceCode, "teams"))]);
+                if (!raceSnap.exists()) return;
+                const teams = []; teamsSnap.forEach(d => teams.push({ id: d.id, ...d.data() }));
+                if (!window.raceIsFinal(raceSnap.data(), teams)) return window.appToast("The all-teams replay unlocks once every team has finished.");
+                window.openRaceReplay(raceCode);
+            } catch (e) { window.appToast("Could not check the race status. Please try again."); }
+        };
         window.openRaceReplay = async function(raceCode) {
             try {
                 if (window.__raceReplayClose) { try { window.__raceReplayClose(); } catch (e) {} }
@@ -8213,7 +8305,13 @@
                     reportCardContainer.innerHTML = `
                         <div class="grid grid-cols-2 gap-2 mt-2">
                             <button onclick="openTeamRaceReplay('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action bg-sky-600 hover:bg-sky-500 uppercase tracking-wide text-[11px]">
-                                <i class="fa-solid fa-route"></i> Race Replay
+                                <i class="fa-solid fa-route"></i> Team Replay
+                            </button>
+                            <button onclick="openRaceReplayWhenFinal('${window.activeRaceCode}')" class="race-action bg-indigo-600 hover:bg-indigo-500 uppercase tracking-wide text-[11px]">
+                                <i class="fa-solid fa-users-viewfinder"></i> Race Replay <span class="normal-case opacity-80">(all teams)</span>
+                            </button>
+                            <button onclick="openTeamScorecard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action bg-emerald-600 hover:bg-emerald-500 uppercase tracking-wide text-[11px]">
+                                <i class="fa-solid fa-calculator"></i> Scorecard
                             </button>
                             <button onclick="openTeamReportCard('${window.activeRaceCode}', '${window.activeTeamId}')" class="race-action bg-gradient-to-r from-disneyGold to-yellow-500 !text-slate-950 uppercase tracking-wide text-[11px]">
                                 <i class="fa-solid fa-award"></i> Report Card
