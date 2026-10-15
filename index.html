@@ -1830,7 +1830,7 @@
                                         </label>
                                     </div>
                                     <div id="trivia-sub-settings" class="space-y-3 pt-3 border-t border-slate-800">
-                                        <div id="create-trivia-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Correct-answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
+                                        <div id="create-trivia-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Correct-answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
                                         <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                             <option value="every">Every Check-in</option>
@@ -3222,13 +3222,14 @@
 
             function addHandler(type, fn) { window.addEventListener(type, fn, true); S.handlers.push([type, fn]); }
 
-            async function startSensors() {
+            async function startSensors(permissionResult = null) {
                 const DOE = window.DeviceOrientationEvent;
                 if (!DOE) return;
                 try {
-                    // iPhones ask permission, and only from a tap (this runs straight from the Guide button)
+                    // If permission was requested directly from the Guide tap before the GPS check,
+                    // reuse that result rather than asking again after an asynchronous location lookup.
                     if (typeof DOE.requestPermission === 'function') {
-                        const r = await DOE.requestPermission();
+                        const r = permissionResult === null ? await DOE.requestPermission() : permissionResult;
                         if (r !== 'granted') { S.sensorDenied = true; schedule(); return; }
                     }
                 } catch (e) { S.sensorDenied = true; schedule(); return; }
@@ -3268,26 +3269,58 @@
                 try { if (navigator.wakeLock) S.wake = await navigator.wakeLock.request('screen'); } catch (e) { /* not essential */ }
             }
 
-            window.openCompass = function (cpId, name, lat, lng) {
+            window.openCompass = async function (cpId, name, lat, lng) {
                 const modal = $('compass-modal');
                 if (!modal) return;
                 lat = Number(lat); lng = Number(lng);
                 if (!isFinite(lat) || !isFinite(lng)) return;
                 if (S.open) window.closeCompass(true);
+
+                // Request iOS orientation permission immediately from the button tap, before GPS awaits.
+                let sensorPermissionResult = null;
+                const DOE = window.DeviceOrientationEvent;
+                if (DOE && typeof DOE.requestPermission === 'function') {
+                    try { sensorPermissionResult = await DOE.requestPermission(); }
+                    catch (e) { sensorPermissionResult = 'denied'; }
+                }
+
+                // Do not display the compass at all until GPS confirms the player is within range.
+                if (!navigator.geolocation) {
+                    alert("You're too far away to use guidance. Try again when you're in the correct area");
+                    return;
+                }
+                let initialPosition;
+                try {
+                    initialPosition = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true, maximumAge: 0, timeout: 15000
+                    }));
+                } catch (e) {
+                    alert('Unable to check your location. Please enable location access and try again.');
+                    return;
+                }
+                const initialDistance = distanceM(initialPosition.coords.latitude, initialPosition.coords.longitude, lat, lng);
+                if (initialDistance > window.COMPASS_RANGE_METERS) {
+                    alert("You're too far away to use guidance. Try again when you're in the correct area");
+                    return;
+                }
+
                 Object.assign(S, {
-                    open: true, cpId, lat, lng, pos: null, geoErr: null, sensorHeading: null, gpsHeading: null,
-                    headingU: null, bearingU: null, trendRef: null, trend: '', sensorDenied: false, openedAt: Date.now()
+                    open: true, cpId, lat, lng,
+                    pos: { lat: initialPosition.coords.latitude, lng: initialPosition.coords.longitude, acc: initialPosition.coords.accuracy },
+                    geoErr: null, sensorHeading: null, gpsHeading: null,
+                    headingU: null, bearingU: null, trendRef: null, trend: '',
+                    sensorDenied: sensorPermissionResult !== null && sensorPermissionResult !== 'granted', openedAt: Date.now()
                 });
                 $('compass-title').textContent = name || 'Checkpoint';
                 $('compass-acc').classList.add('hidden');
                 buildRing();
                 modal.classList.remove('hidden');
-                startSensors();     // first, so the iPhone permission prompt is still tied to the tap
+                startSensors(sensorPermissionResult); // reuse permission requested directly from the original tap
                 startWatch();
                 keepAwake();
                 render();
                 clearTimeout(S.noteTimer);
-                S.noteTimer = setTimeout(schedule, 2600);   // reveals the "no compass reading" hint if nothing arrives
+                S.noteTimer = setTimeout(schedule, 2600);
             };
 
             window.closeCompass = function (silent) {
@@ -4316,7 +4349,7 @@
             const defaultBonusPoints = advanced ? Math.max(0, Number(document.getElementById('create-bonus-default-points')?.value ?? 10)) : 10;
             const defaultWildcardReward = advanced ? Math.max(0, Number(document.getElementById('create-wildcard-default-reward')?.value ?? defaultBonusPoints)) : defaultBonusPoints;
             const defaultFrenzyReward = advanced ? Math.max(0, Number(document.getElementById('create-frenzy-default-reward')?.value ?? 5)) : 5;
-            const defaultTriviaReward = advanced ? Math.max(0, Number(document.getElementById('create-trivia-default-reward')?.value ?? (gameMode === 'scavenger' ? 1 : 5))) : (gameMode === 'scavenger' ? 1 : 5);
+            const defaultTriviaReward = advanced ? Math.max(0, Number(document.getElementById('create-trivia-default-reward')?.value ?? 10)) : 10;
             const isScavengerMode = gameMode === 'scavenger';
             const timeLimitMinutes = isScavengerMode ? Number(document.getElementById('create-scavenger-time-limit')?.value ?? 60) : 0;
             const enforceHostStart = isScavengerMode || !!document.getElementById('create-enforce-host-start')?.checked;
@@ -4613,7 +4646,7 @@
             if (rwEl('create-host-team-pin-confirm')) rwEl('create-host-team-pin-confirm').value = '';
             if (rwEl('create-wildcard-default-reward')) rwEl('create-wildcard-default-reward').value = 10;
             if (rwEl('create-frenzy-default-reward')) rwEl('create-frenzy-default-reward').value = 5;
-            if (rwEl('create-trivia-default-reward')) rwEl('create-trivia-default-reward').value = 1;
+            if (rwEl('create-trivia-default-reward')) rwEl('create-trivia-default-reward').value = 10;
             rwEl('create-host-team-fields')?.classList.add('hidden');
             setChk('create-wildcard-switch', false);
             setChk('create-frenzy-switch', false);
@@ -7052,7 +7085,7 @@
             const isScav = (window.liveTeamRaceData || {}).gameMode === 'scavenger';
             const isCorrect = idx === q.answer;
             const triviaRace = window.liveTeamRaceData || {};
-            const bonus = isCorrect ? Math.max(0, Number(triviaRace.defaultTriviaReward ?? (isScav ? 1 : 5))) : 0;
+            const bonus = isCorrect ? Math.max(0, Number(triviaRace.defaultTriviaReward ?? 10)) : 0;
             ui.answeredAt = Date.now();
             ui.result = { isCorrect, bonus, correctAnswer: q.options[q.answer] };
             window.refreshTriviaPanel(cpId);
