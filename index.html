@@ -1746,14 +1746,6 @@
                 <!-- Step 5: bonuses and game extras -->
                 <section data-rw-step="5" class="rw-step hidden space-y-5">
                     <p class="text-sm text-slate-400">Choose optional bonuses and surprise events. They will appear in this order: photo challenges, bingo, trivia, wildcard, then checkpoint frenzy.</p>
-                    <div id="create-bonus-defaults-panel" class="hidden bg-violet-950/40 p-4 rounded-3xl border border-violet-500/30 space-y-3">
-                        <h4 class="font-bold text-violet-200">⚙️ Default bonus & event rewards</h4>
-                        <p class="text-[11px] text-slate-400">Scavenger Hunt rewards are points; Speed Race rewards are minutes deducted from the final time.</p>
-                        <div><label class="block text-xs text-slate-300 mb-1">Bonus photo challenge reward</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Trivia correct-answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Wildcard challenge reward</label><input id="create-wildcard-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Checkpoint Frenzy winner reward</label><input id="create-frenzy-default-reward" type="number" min="0" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-amber-500/30 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -1766,6 +1758,7 @@
                                         </label>
                                     </div>
                                     <div id="create-bonus-options" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                    <div id="create-bonus-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Default photo challenge reward</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
                                     <div class="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
                                         <button type="button" onclick="switchBonusMethod('random')" id="bonus-tab-random" class="py-2 px-1 bg-amber-600 text-white font-bold rounded-xl text-[10px] transition shadow flex flex-col items-center gap-0.5"><span class="text-base leading-none">🎲</span><span>Random</span></button>
                                         <button type="button" onclick="switchBonusMethod('manual')" id="bonus-tab-manual" class="py-2 px-1 text-slate-400 font-bold rounded-xl text-[10px] transition flex flex-col items-center gap-0.5"><span class="text-base leading-none">☑️</span><span>Manual</span></button>
@@ -1832,11 +1825,12 @@
                                             <p class="text-[11px] text-slate-400 mt-0.5">Ask a question at check-in for bonus rewards</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                            <input type="checkbox" id="create-trivia-switch" checked onchange="toggleTriviaSettings()" class="sr-only peer">
+                                            <input type="checkbox" id="create-trivia-switch" onchange="toggleTriviaSettings()" class="sr-only peer">
                                             <div class="w-12 h-7 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
                                         </label>
                                     </div>
                                     <div id="trivia-sub-settings" class="space-y-3 pt-3 border-t border-slate-800">
+                                        <div id="create-trivia-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Correct-answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Trivia Frequency</label>
                                         <select id="trivia-frequency" onchange="toggleTriviaFreq()" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                             <option value="every">Every Check-in</option>
@@ -1866,6 +1860,7 @@
                                         </label>
                                     </div>
                                     <div id="create-wildcard-sub-settings" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                                        <div id="create-wildcard-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Wildcard challenge reward</label><input id="create-wildcard-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
                                         <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Offered for</label>
                                         <select id="create-wildcard-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
                                             <option value="5" data-icon="⚡" data-sub="Quick scramble">5 minutes</option><option value="10" data-icon="⏱️" data-sub="">10 minutes</option><option value="15" data-icon="⏱️" data-sub="Default" selected>15 minutes</option><option value="20" data-icon="⏱️" data-sub="">20 minutes</option><option value="30" data-icon="⏱️" data-sub="">30 minutes</option><option value="45" data-icon="⏱️" data-sub="">45 minutes</option><option value="60" data-icon="🕐" data-sub="Plenty of time">60 minutes</option>
@@ -1885,6 +1880,7 @@
                             </label>
                         </div>
                         <div id="create-frenzy-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800">
+                            <div id="create-frenzy-reward-advanced" class="hidden space-y-1"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Frenzy winner reward</label><input id="create-frenzy-default-reward" type="number" min="0" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"><p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p></div>
                             <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Frenzy duration</label>
                             <select id="create-frenzy-duration" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
                                 <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
@@ -2595,8 +2591,7 @@
         // ---------- Photo bingo (race creation) ----------
         document.getElementById('create-advanced-switch')?.addEventListener('change', () => {
             const enabled = !!document.getElementById('create-advanced-switch').checked;
-            document.getElementById('create-bingo-reward-advanced')?.classList.toggle('hidden', !enabled);
-            document.getElementById('create-bonus-defaults-panel')?.classList.toggle('hidden', !enabled);
+            ['create-bingo-reward-advanced','create-bonus-reward-advanced','create-trivia-reward-advanced','create-wildcard-reward-advanced','create-frenzy-reward-advanced'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !enabled));
             if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
             if (!enabled && typeof rwStep !== 'undefined' && rwStep === 7) rwStep = 6;
             if (typeof rwRender === 'function') rwRender();
@@ -4590,10 +4585,11 @@
             const setVal = (id, v) => { const el = rwEl(id); if (el) { el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); } };
             const setChk = (id, v) => { const el = rwEl(id); if (el) el.checked = v; };
             setChk('create-enforce-host-start', false);
-            setChk('create-trivia-switch', true);
+            setChk('create-trivia-switch', false);
+            window.toggleTriviaSettings();
             setChk('create-host-team-switch', false);
             setChk('create-advanced-switch', false);
-            rwEl('create-bonus-defaults-panel')?.classList.add('hidden');
+            ['create-bingo-reward-advanced','create-bonus-reward-advanced','create-trivia-reward-advanced','create-wildcard-reward-advanced','create-frenzy-reward-advanced'].forEach(id => rwEl(id)?.classList.add('hidden'));
             if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
             if (rwEl('create-hunt-default-points')) rwEl('create-hunt-default-points').value = 10;
             if (rwEl('create-bonus-default-points')) rwEl('create-bonus-default-points').value = 10;
