@@ -5394,22 +5394,27 @@
             }
         };
 
-        window.toggleChatSetting = async function(raceCode, checkbox) {
-            const currentUser = window.auth.currentUser;
+        // Writes a race setting, then updates the host panel's cached copy so the switch is still right when the panel redraws.
+        window.hostApplyRaceSetting = async function(raceCode, patch, checkbox, failMsg) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) { if (checkbox) checkbox.checked = !checkbox.checked; return false; }
             try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(raceRef, { chatEnabled: checkbox.checked });
+                await fastUpdate(owned.ref, patch);
             } catch (e) {
-                alert("Error updating chat setting: " + e.message);
+                if (checkbox) checkbox.checked = !checkbox.checked;
+                alert((failMsg || 'Could not save that setting') + ': ' + e.message);
+                return false;
             }
+            const d = window.__hostRaceData && window.__hostRaceData[raceCode];
+            if (d) d.race = { ...d.race, ...patch };
+            return true;
+        };
+        window.toggleChatSetting = async function(raceCode, checkbox) {
+            await window.hostApplyRaceSetting(raceCode, { chatEnabled: checkbox.checked }, checkbox, 'Error updating chat setting');
         };
 
         window.toggleHideLiveTimersSetting = async function(raceCode, checkbox) {
-            const owned = await getOwnedRaceForHost(raceCode); if (!owned) { checkbox.checked = !checkbox.checked; return; }
-            await fastUpdate(owned.ref, { hideLiveTimers: checkbox.checked });
+            await window.hostApplyRaceSetting(raceCode, { hideLiveTimers: checkbox.checked }, checkbox, 'Error updating live timers');
         };
         window.hostToggleResultsReveal = async function(raceCode) {
             const owned = await getOwnedRaceForHost(raceCode); if (!owned) return;
@@ -5425,16 +5430,7 @@
         };
 
         window.toggleHideBonusesSetting = async function(raceCode, checkbox) {
-            const currentUser = window.auth.currentUser;
-            try {
-                const raceRef = doc(window.db, "races", raceCode);
-                const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
-
-                await updateDoc(raceRef, { hideBonuses: checkbox.checked });
-            } catch (e) {
-                alert("Error updating bonus privacy: " + e.message);
-            }
+            await window.hostApplyRaceSetting(raceCode, { hideBonuses: checkbox.checked }, checkbox, 'Error updating bonus privacy');
         };
 
         window.toggleTriviaAnswersView = function(btnEl) {
@@ -6328,6 +6324,7 @@
             if (!owned) { checkbox.checked = !checkbox.checked; document.getElementById('hrp-trivia-options')?.classList.toggle('hidden', !checkbox.checked); return; }
             const t = owned.data.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
             await fastUpdate(owned.ref, { trivia: { ...t, enabled: checkbox.checked } });
+            { const d = window.__hostRaceData && window.__hostRaceData[raceCode]; if (d) d.race = { ...d.race, trivia: { ...t, enabled: checkbox.checked } }; }
             window.appToast(checkbox.checked ? 'Trivia turned on' : 'Trivia turned off');
         };
         window.saveTriviaDefaultReward = async function(raceCode, value) {
@@ -6455,6 +6452,7 @@
                     pendingBadge.classList.add('hidden');
                 }
                 watchHostPendingTeams(races.map(r => r.code));
+                watchHostRaceDocs(races.map(r => r.code));
                 window.watchHostLocks(races.map(r => r.code));
             } catch (e) {
                 console.error(e);
@@ -6483,6 +6481,28 @@
             renderHostPendingBadge();
         }
         window.stopHostPendingWatch = stopHostPendingWatch;
+
+        // Live listener on each host race document. Team phones write some race fields themselves (an automatic
+        // Checkpoint Frenzy, for example), so the host's full-screen panel must follow them without a page refresh.
+        const hostRaceDocWatch = { key: '', unsubs: [] };
+        function watchHostRaceDocs(codes) {
+            const key = [...codes].sort().join(',');
+            if (key === hostRaceDocWatch.key) return;
+            hostRaceDocWatch.unsubs.forEach(u => { try { u(); } catch (e) {} });
+            hostRaceDocWatch.unsubs = [];
+            hostRaceDocWatch.key = key;
+            codes.forEach(code => {
+                let first = true;
+                const unsub = onSnapshot(doc(window.db, "races", code), snap => {
+                    if (first) { first = false; return; }   // loadAdminRaces just rendered this state
+                    const d = window.__hostRaceData && window.__hostRaceData[code];
+                    if (!d || !snap.exists()) return;
+                    d.race = { id: snap.id, ...snap.data() };
+                    if (window.refreshHostRacePanel) window.refreshHostRacePanel();
+                }, err => console.error('Host race watch failed:', err));
+                hostRaceDocWatch.unsubs.push(unsub);
+            });
+        }
 
         function watchHostPendingTeams(codes) {
             const key = [...codes].sort().join(',');
@@ -6699,7 +6719,7 @@
                     const liveTimeHtml = (!isFinal && !hideLiveTimers && t.startTime)
                         ? `<span class="flex items-center gap-1" title="Time so far"><i class="fa-regular fa-clock text-slate-500 text-[9px]"></i>${Math.floor(liveMin / 60)}h ${String(liveMin % 60).padStart(2, '0')}m</span>`
                         : '';
-                    const bonusCountHtml = (isHideBonuses || !isFinal)
+                    const bonusCountHtml = isHideBonuses
                         ? `<span class="flex items-center gap-1" title="Bonuses are hidden by host"><i class="fa-solid fa-star text-amber-400/70 text-[9px]"></i>?</span>`
                         : `<span class="flex items-center gap-1" title="Bonuses claimed"><i class="fa-solid fa-star text-amber-400 text-[9px]"></i>${t.bonusCount}</span>`;
 
@@ -8269,6 +8289,19 @@
                     const total = Math.max(0, Math.round(Number(mins || 0)));
                     return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
                 };
+                const escT = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const triviaLogsSc = team.triviaLogs || [];
+                const triviaAnswersHtml = triviaLogsSc.length
+                    ? `<details class="rounded-2xl bg-slate-950/70 border border-indigo-500/30 overflow-hidden">
+                          <summary class="cursor-pointer select-none px-4 py-3 text-xs font-bold text-indigo-200 flex items-center justify-between gap-2"><span><i class="fa-solid fa-eye mr-1.5"></i> View trivia answers</span><span class="font-mono text-slate-400">${triviaLogsSc.filter(l => l.isCorrect).length}/${triviaLogsSc.length} correct</span></summary>
+                          <div class="px-3 pb-3 space-y-2">${triviaLogsSc.map((log, i) => `
+                            <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1 text-[11px]">
+                              <p class="font-bold text-white">Q${i + 1}: ${escT(log.question)}</p>
+                              <p class="text-slate-300">Their answer: <span class="${log.isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold">${escT(log.teamAnswer)} (${log.isCorrect ? 'Correct' : 'Incorrect'})</span></p>
+                              <p class="text-slate-400">Correct answer: <span class="text-disneyGold">${escT(log.correctAnswer)}</span></p>
+                            </div>`).join('')}</div>
+                       </details>`
+                    : '';
                 const row = (label, value, tone='text-white') => `<div class="flex items-center justify-between gap-4 py-2 border-b border-white/10 last:border-0"><span class="text-slate-300">${label}</span><span class="font-mono font-bold ${tone} text-right">${value}</span></div>`;
                 const bingo = window.bingoProgress(race, team);
                 const bingoFilled = Number(bingo && bingo.filled || 0);
@@ -8291,6 +8324,7 @@
                           ${row('Wildcard', wildcardClaimed.length ? (isScavenger ? `+${wildcardClaimed.length} bonus` : `−${fmt(wildcardDed)}`) : 'No deduction', 'text-fuchsia-300')}
                           ${row('Checkpoint Frenzy', isScavenger ? `+${Number(frenzyRes.bonusByTeam[teamId] || 0)} pts` : `−${fmt(frenzyDed)}`, 'text-orange-300')}
                         </div>
+                        ${triviaAnswersHtml}
                         <div class="rounded-2xl bg-gradient-to-r from-emerald-500/15 to-sky-500/10 border border-emerald-400/30 p-4 flex items-center justify-between gap-4"><div><p class="text-[10px] uppercase tracking-widest text-emerald-200 font-black">Overall ${isScavenger ? 'points' : 'time'}</p><p class="text-[10px] text-slate-400 mt-1">${isScavenger ? 'Based on the race points total' : 'Time + penalties − bonuses'}</p></div><strong class="text-2xl font-black text-white font-mono">${isScavenger ? `${totalPoints} pts` : fmtOverall(overallMin)}</strong></div>
                         <button onclick="document.getElementById('team-scorecard-modal')?.remove()" class="w-full rounded-xl py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">Done</button>
                       </div>
