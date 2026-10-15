@@ -2118,7 +2118,12 @@
         // minutes (speed race) or points (hunt) a team earns from a finished bingo card
         window.bingoBonusFor = function(race, team) {
             const p = window.bingoProgress(race, team);
-            return p && p.complete ? (Number(race.bingo.reward) || 20) : 0;
+            if (!(p && p.complete)) return 0;
+            if (window.bingoIsOneWinner && window.bingoIsOneWinner(race)) {
+                const w = window.bingoWinner(race), me = (team && team.id) || window.activeTeamId;
+                if (!w || w.teamId !== me) return 0;   // only the team that called bingo first is paid
+            }
+            return Number(race.bingo.reward) || 20;
         };
 
         // Checkpoint Frenzy: race.frenzies = [{ id, startedAt, endsAt, durationMin, bonus, cancelled }]
@@ -3126,7 +3131,14 @@
         // GPS can put the pin at the front door while a team is round the back. This points an arrow at the
         // exact check-in coordinates and counts down the distance until the team is inside the zone.
         window.CHECKIN_RADIUS_METERS = 150;   // "in the zone" distance. checkInGps uses this same value.
-        window.COMPASS_RANGE_METERS = 500;    // the arrow only switches on this close, so it can't replace the map / blind navigation
+        window.COMPASS_RANGE_METERS = 500;    // fallback only. The real range depends on difficulty (see below).
+        // Guide only works this close to the stop. Easier difficulties get more help; blind (hard) gets the least.
+        window.COMPASS_RANGE_BY_DIFFICULTY = { easy: 800, medium: 650, hard: 500 };
+        window.compassRangeMeters = function () {
+            const team = window.liveTeamData || {}, race = window.liveTeamRaceData || {};
+            const diff = String(team.difficultyOverride || race.difficulty || 'easy').toLowerCase();
+            return window.COMPASS_RANGE_BY_DIFFICULTY[diff] || window.COMPASS_RANGE_METERS;
+        };
         (function () {
             const S = {
                 open: false, cpId: null, lat: 0, lng: 0, watchId: null, pos: null, geoErr: null,
@@ -3207,7 +3219,8 @@
 
                 const dist = distanceM(p.lat, p.lng, S.lat, S.lng);
                 const bearing = bearingDeg(p.lat, p.lng, S.lat, S.lng);
-                const inRange = dist <= window.COMPASS_RANGE_METERS;
+                const rangeM = window.compassRangeMeters();
+                const inRange = dist <= rangeM;
                 const inZone = dist <= window.CHECKIN_RADIUS_METERS;
 
                 distEl.textContent = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
@@ -3237,8 +3250,8 @@
                 arrow.style.opacity = inRange ? '1' : '0.12';
 
                 if (!inRange) {
-                    msgEl.textContent = `You're more than ${window.COMPASS_RANGE_METERS} m away.`;
-                    noteEl.textContent = 'Use the map to get closer. Compass guidance unlocks when you are within 500 m.';
+                    msgEl.textContent = `You're more than ${rangeM} m away.`;
+                    noteEl.textContent = 'Use the map to get closer. Compass guidance unlocks when you are within ' + rangeM + ' m.';
                 } else if (inZone) {
                     msgEl.textContent = 'You’re in the check-in zone!';
                     noteEl.textContent = 'Tap Check in below.';
@@ -3336,8 +3349,9 @@
                     return;
                 }
                 const initialDistance = distanceM(initialPosition.coords.latitude, initialPosition.coords.longitude, lat, lng);
-                if (initialDistance > window.COMPASS_RANGE_METERS) {
-                    alert("You're too far away to use guidance. Try again when you're in the correct area");
+                const openRange = window.compassRangeMeters();
+                if (initialDistance > openRange) {
+                    alert(`You're too far away to use guidance (it works within ${openRange} m on this difficulty). Try again when you're closer.`);
                     return;
                 }
 
@@ -4015,6 +4029,52 @@
                 return snap.exists() ? snap.data() : null;
             } catch (e) { return null; }
         };
+        // ---------------------------------------------------------------------------------
+        // BINGO "ONLY ONE WINNER". race.bingo.onlyOneWinner === true.
+        // The first team to finish the card writes races/{code}/wildcardClaims/bingo_winner inside a transaction,
+        // so it can only ever be written once. After that the game is over: nobody else can submit bingo photos,
+        // and only the winner is paid the reward. (Same subcollection the wildcard claim uses.)
+        // ---------------------------------------------------------------------------------
+        window.bingoWinnerCache = window.bingoWinnerCache || {};
+        window.bingoIsOneWinner = (race) => !!(race && race.bingo && race.bingo.enabled && race.bingo.onlyOneWinner === true);
+        window.bingoWinner = (race) => (race && race.code && window.bingoWinnerCache[race.code]) || null;
+        window.fetchBingoWinner = async function(code) {
+            try {
+                const snap = await getDoc(doc(window.db, "races", code, "wildcardClaims", "bingo_winner"));
+                window.bingoWinnerCache[code] = snap.exists() ? snap.data() : null;
+            } catch (e) { /* keep the last known value */ }
+            return window.bingoWinnerCache[code] || null;
+        };
+        // Every place that loads the wildcard offer (leaderboard, scorecard, report card...) also refreshes the winner first.
+        (function () {
+            const orig = window.fetchWildcardOffer;
+            window.fetchWildcardOffer = async function(code) {
+                const [offer] = await Promise.all([orig(code), window.fetchBingoWinner(code)]);
+                return offer;
+            };
+        })();
+        // Try to be the one winner. Returns { ok, winner } where ok is true only if this team holds the win.
+        window.claimBingoWin = async function(race, teamData, teamId) {
+            const code = race && race.code;
+            const me = teamId || window.activeTeamId;
+            if (!code || !me) return { ok: false, winner: null };
+            const ref = doc(window.db, "races", code, "wildcardClaims", "bingo_winner");
+            try {
+                const result = await runTransaction(window.db, async (tx) => {
+                    const snap = await tx.get(ref);
+                    if (snap.exists()) return { ok: snap.data().teamId === me, winner: snap.data() };
+                    const win = { teamId: me, teamName: (teamData && teamData.teamName) || 'A team', claimedAt: Date.now(), cardId: race.bingo.cardId };
+                    tx.set(ref, win);
+                    return { ok: true, winner: win };
+                });
+                window.bingoWinnerCache[code] = result.winner;
+                return result;
+            } catch (e) {
+                console.warn('Bingo claim failed', e);
+                return { ok: false, winner: window.bingoWinnerCache[code] || null, error: e };
+            }
+        };
+
         function wildcardSeed(race) {
             let h = 2166136261;
             const str = String(race.code || '') + '|' + String(race.createdAt || '');
@@ -4230,6 +4290,13 @@
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
             }, (err) => console.warn('Wildcard offer listener error', err));
+            if (window.bingoWinnerUnsub) { window.bingoWinnerUnsub(); window.bingoWinnerUnsub = null; }
+            window.bingoWinnerUnsub = onSnapshot(doc(window.db, "races", code, "wildcardClaims", "bingo_winner"), (snap) => {
+                window.bingoWinnerCache[code] = snap.exists() ? snap.data() : null;
+                if (!window.liveTeamRaceData || window.activeRaceCode !== code) return;
+                const active = document.getElementById('team-dashboard-active');
+                if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+            }, (err) => console.warn('Bingo winner listener error', err));
             startWildcardWatcher();
             if (window.watchTeamHostLock) window.watchTeamHostLock(code, teamId);
             const raceRef = doc(window.db, "races", code);
@@ -8205,7 +8272,7 @@
                 const row = (label, value, tone='text-white') => `<div class="flex items-center justify-between gap-4 py-2 border-b border-white/10 last:border-0"><span class="text-slate-300">${label}</span><span class="font-mono font-bold ${tone} text-right">${value}</span></div>`;
                 const bingo = window.bingoProgress(race, team);
                 const bingoFilled = Number(bingo && bingo.filled || 0);
-                const bingoText = race.bingo && race.bingo.enabled ? (bingo && bingo.complete ? `Complete · ${race.gameMode === 'scavenger' ? '+' : '−'}${race.bingo.reward || 20} ${race.gameMode === 'scavenger' ? 'pts' : 'min'}` : `${bingoFilled} filled · incomplete`) : 'Not enabled';
+                const bingoText = race.bingo && race.bingo.enabled ? (bingo && bingo.complete && window.bingoIsOneWinner(race) && !Number(window.bingoBonusFor(race, team) || 0) ? 'Complete · not first, no reward' : bingo && bingo.complete ? `Complete · ${race.gameMode === 'scavenger' ? '+' : '−'}${race.bingo.reward || 20} ${race.gameMode === 'scavenger' ? 'pts' : 'min'}` : `${bingoFilled} filled · incomplete`) : 'Not enabled';
                 const isScavenger = race.gameMode === 'scavenger';
                 const stopPoints = completed.size ? mandatory.filter(c => completed.has(c.id)).reduce((sum, cp) => sum + Number(window.stopPoints(cp, race) || 0), 0) : 0;
                 const bonusPoints = claimed.reduce((sum, id) => { const cp = bonuses.find(c => c.id === id); return sum + (cp ? Number(cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10)) : 0); }, 0);
@@ -8990,8 +9057,21 @@
                         wrap.classList.remove('hidden');
                         const rewardTxt = window.bingoRewardText(raceData);
                         document.getElementById('team-bingo-title').textContent = `${bp.card.emoji || '🎯'} ${bp.card.name}`;
-                        document.getElementById('team-bingo-sub').innerHTML = bp.complete
+                        const oneWinner = window.bingoIsOneWinner(raceData);
+                        const bingoWin = oneWinner ? window.bingoWinner(raceData) : null;
+                        const iWon = !!bingoWin && bingoWin.teamId === window.activeTeamId;
+                        const bingoClosed = !!bingoWin && !iWon;   // someone else already called bingo: game over
+                        if (oneWinner && bp.complete && !bingoWin && !window.__bingoSelfClaim) {
+                            // Finished the card before a winner was recorded (e.g. the host switched rules mid-race): claim it now.
+                            window.__bingoSelfClaim = true;
+                            window.claimBingoWin(raceData, tData).finally(() => { window.__bingoSelfClaim = false; });
+                        }
+                        document.getElementById('team-bingo-sub').innerHTML = (bp.complete && (!oneWinner || iWon))
                             ? `<span class="text-emerald-300 font-bold">BINGO! ${rewardTxt} earned 🎉</span>`
+                            : bingoClosed
+                            ? `<span class="text-rose-300 font-bold">🏁 Bingo has been called by ${String(bingoWin.teamName || 'another team').replace(/</g, '&lt;')}. The bingo game is over.</span>`
+                            : oneWinner
+                            ? `Only <span class="text-disneyGold font-bold">1 winner</span>. The first team to complete all ${bp.total} wins <span class="text-disneyGold font-bold">${rewardTxt}</span>, then the game ends. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`
                             : `Complete all ${bp.total} to earn <span class="text-disneyGold font-bold">${rewardTxt}</span>. No credit for a partial card. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`;
                         const photos = tData.bonusPhotos || {};
                         document.getElementById('team-bingo-grid').innerHTML = bp.items.map(({ cp, state }) => {
@@ -9008,10 +9088,10 @@
                                     <p class="text-[11px] font-bold leading-tight text-rose-200">${name}</p>
                                     <p class="text-[10px] text-rose-300/80">Photo rejected by host</p>${window.challengeBonusAction(cp.id, tData)}</div>`;
                             }
-                            if (isRaceFinished || isRacePaused) {
+                            if (isRaceFinished || isRacePaused || bingoClosed) {
                                 return `<div class="min-h-[7.5rem] rounded-2xl border-2 border-dashed border-slate-600 bg-slate-900 p-2 flex flex-col justify-between">
                                     <p class="text-[11px] font-bold leading-tight text-slate-300">${name}</p>
-                                    <span class="text-[10px] font-bold text-slate-500">${isRaceFinished ? 'Race finished' : 'Race paused'}</span></div>`;
+                                    <span class="text-[10px] font-bold text-slate-500">${bingoClosed ? 'Bingo called. Game over' : (isRaceFinished ? 'Race finished' : 'Race paused')}</span></div>`;
                             }
                             return `<label class="min-h-[7.5rem] rounded-2xl border-2 border-dashed border-amber-500/50 bg-slate-900 hover:bg-slate-800 active:scale-95 p-2 flex flex-col justify-between cursor-pointer transition">
                                 <p class="text-[11px] font-bold leading-tight text-amber-200">${name}</p>
@@ -9442,6 +9522,18 @@
                     const claimResult = await claimWildcardForTeam(freshRace, pending.cpId, teamData);
                     if (!claimResult.ok) { alert(claimResult.message); window.cancelBonusPreview(); return; }
                 }
+                // Bingo with only one winner: once someone has called it, the bingo challenges are closed.
+                const bingoCpMeta = (freshRace.checkpoints || []).find(c => c.id === pending.cpId);
+                const isBingoCp = !!(bingoCpMeta && bingoCpMeta.bingoId);
+                if (isBingoCp && window.bingoIsOneWinner(freshRace)) {
+                    const w = await window.fetchBingoWinner(window.activeRaceCode);
+                    if (w && w.teamId !== window.activeTeamId) {
+                        alert(`Bingo has already been called by ${w.teamName || 'another team'}. The bingo game is over.`);
+                        window.cancelBonusPreview();
+                        loadTeamDashboardData(freshRace);
+                        return;
+                    }
+                }
                 const claimed = teamData.claimedBonus || [];
                 const bonusPhotos = teamData.bonusPhotos || {};
                 const bonusClaimTimes = teamData.bonusClaimTimes || {};   // when each bonus was claimed (for the race replay)
@@ -9455,7 +9547,14 @@
                 const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
                 loadTeamDashboardData(raceSnap.data());
                 const bpAfter = window.bingoProgress(freshRace, { ...teamData, claimedBonus: claimed });
-                if (bpAfter && bpAfter.complete && bpAfter.items.some(i => i.cp.id === pending.cpId)) window.appToast(`🎉 BINGO! ${window.bingoRewardText(freshRace)} earned!`, 4200);
+                if (bpAfter && bpAfter.complete && bpAfter.items.some(i => i.cp.id === pending.cpId)) {
+                    if (window.bingoIsOneWinner(freshRace)) {
+                        const res = await window.claimBingoWin(freshRace, teamData);
+                        if (res.ok) window.appToast(`🎉 BINGO! You called it first and win ${window.bingoRewardText(freshRace)}!`, 4800);
+                        else window.appToast(`So close! ${(res.winner && res.winner.teamName) || 'Another team'} called bingo first.`, 4800);
+                        loadTeamDashboardData(freshRace);
+                    } else window.appToast(`🎉 BINGO! ${window.bingoRewardText(freshRace)} earned!`, 4200);
+                }
                 else window.appToast("Photo submitted! Bonus claimed.", 2600);
             } catch (e) {
                 alert("Could not upload the photo: " + e.message);
