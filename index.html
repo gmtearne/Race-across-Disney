@@ -5841,10 +5841,19 @@
             return el;
         }
 
-        function hrpSection(icon, title, inner) {
+        window.__hrpSectionOpen = window.__hrpSectionOpen || { teams: true };
+        window.toggleHrpSection = function(key) {
+            window.__hrpSectionOpen[key] = !window.__hrpSectionOpen[key];
+            if (window.refreshHostRacePanel) window.refreshHostRacePanel();
+        };
+        function hrpSection(icon, title, inner, key, defaultOpen = false) {
+            const isOpen = Object.prototype.hasOwnProperty.call(window.__hrpSectionOpen, key) ? !!window.__hrpSectionOpen[key] : defaultOpen;
             return `<section class="space-y-2.5">
-                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1"><i class="${icon} text-disneyGold"></i> ${title}</h3>
-                <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-4 space-y-3">${inner}</div>
+                <button type="button" onclick="toggleHrpSection('${key}')" aria-expanded="${isOpen}" class="w-full flex items-center justify-between gap-3 px-1 py-1 text-left">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><i class="${icon} text-disneyGold"></i> ${title}</span>
+                    <i class="fa-solid fa-chevron-${isOpen ? 'up' : 'down'} text-slate-500 text-xs"></i>
+                </button>
+                <div class="${isOpen ? '' : 'hidden'} bg-slate-900/70 border border-slate-800 rounded-3xl p-4 space-y-3">${inner}</div>
             </section>`;
         }
         function hrpToggle(icon, iconColor, label, sub, checked, handler, trackColor) {
@@ -5863,7 +5872,7 @@
             const { race, teamList, raceBaseDiff } = d;
 
             const controls = hrpSection('fa-solid fa-sliders', 'Race Controls', `
-                ${hostPanelControlsHtml(race, teamList)}`);
+                ${hostPanelControlsHtml(race, teamList)}`, 'controls', false);
 
             const portal = hrpSection('fa-solid fa-display', 'Race Portal Controls', `
                 ${hrpToggle('fa-solid fa-star', 'text-amber-400', 'Hide bonuses', 'Teams cannot see the bonus list', race.hideBonuses === true, `toggleHideBonusesSetting('${code}', this)`, 'peer-checked:bg-amber-600')}
@@ -5875,7 +5884,7 @@
                     <p class="text-[10px] text-slate-500">Final results (times and bonuses) show automatically once every approved team has finished${race.gameMode === 'scavenger' ? ' or run out of time' : ''}, or when you reveal them.</p>
                     <button onclick="hostToggleResultsReveal('${code}')" class="w-full px-3 py-2.5 ${race.resultsRevealed === true ? 'bg-slate-700 hover:bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'} text-white rounded-xl text-xs font-bold"><i class="fa-solid ${race.resultsRevealed === true ? 'fa-eye-slash' : 'fa-ranking-star'} mr-1"></i> ${race.resultsRevealed === true ? 'Results revealed - tap to hide again' : 'Reveal Final Results Now'}</button>
                     <button onclick="openHostGallery('${code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold"><i class="fa-solid fa-images mr-1"></i> View / moderate photo gallery</button>
-                </div>`);
+                </div>`, 'portal', false);
 
             const triviaOn = !!(race.trivia && race.trivia.enabled);
             const wc = race.wildcardAuto || {};
@@ -5884,32 +5893,6 @@
             const bingoCards = window.bingoCardsFromPresets ? window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) : [];
             const selectOpts = (id, values, selected) => `<select id="${id}" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">${values.map(v => `<option value="${v[0]}" ${String(v[0])===String(selected)?'selected':''}>${v[1]}</option>`).join('')}</select>`;
             const durations = [[5,'5 minutes'],[10,'10 minutes'],[15,'15 minutes'],[20,'20 minutes'],[30,'30 minutes'],[45,'45 minutes'],[60,'60 minutes']];
-            const bonusSettings = hrpSection('fa-solid fa-wand-magic-sparkles', 'Bonus & Surprise Events', `
-                <p class="text-[11px] text-slate-500">Change these while the race is running. Disabling an event prevents future triggers; an event already in progress will finish normally.</p>
-                <div class="rounded-2xl border border-fuchsia-500/25 bg-slate-950/60 p-3 space-y-3">
-                    ${hrpToggle('fa-solid fa-dice', 'text-fuchsia-300', 'Wildcard Challenge', 'Random bonus challenge', !!wc.enabled, `toggleHostBonusOptions('${code}','wildcard',this)`, 'peer-checked:bg-fuchsia-600')}
-                    <div id="hrp-wildcard-options" class="${wc.enabled?'':'hidden'} border-t border-slate-800 pt-3 space-y-3">
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Offer duration</label>${selectOpts('hrp-wildcard-duration',durations,Number(wc.durationMin)||15)}</div>
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Reward</label><input id="hrp-wildcard-reward" type="number" min="0" value="${Number(wc.reward ?? race.defaultWildcardReward ?? 10)}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
-                    </div>
-                </div>
-                <div class="rounded-2xl border border-orange-500/25 bg-slate-950/60 p-3 space-y-3">
-                    ${hrpToggle('fa-solid fa-bolt', 'text-orange-300', 'Checkpoint Frenzy', 'Most valid check-ins during the event wins', !!fr.enabled, `toggleHostBonusOptions('${code}','frenzy',this)`, 'peer-checked:bg-orange-600')}
-                    <div id="hrp-frenzy-options" class="${fr.enabled?'':'hidden'} border-t border-slate-800 pt-3 space-y-3">
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Event duration</label>${selectOpts('hrp-frenzy-duration',durations,Number(fr.durationMin)||15)}</div>
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Winner reward</label><input id="hrp-frenzy-reward" type="number" min="0" value="${Number(fr.reward ?? race.defaultFrenzyReward ?? 5)}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
-                    </div>
-                </div>
-                <div class="rounded-2xl border border-yellow-500/25 bg-slate-950/60 p-3 space-y-3">
-                    ${hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Photo Bingo', 'Complete a themed 2×2 photo card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600')}
-                    <div id="hrp-bingo-options" class="${bi.enabled?'':'hidden'} border-t border-slate-800 pt-3 space-y-3">
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Bingo card</label>${selectOpts('hrp-bingo-card',[['','Choose a bingo card'],...bingoCards.map(c=>[c.id,`${c.emoji||'🎯'} ${c.name}`])],bi.cardId||'')}</div>
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="hrp-bingo-reward" type="number" min="1" value="${Number(bi.reward)||20}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Rules</label>${selectOpts('hrp-bingo-rule',[['casual','Every team can win'],['one','Only one winner']],bi.onlyOneWinner?'one':'casual')}</div>
-                        <p class="text-[10px] text-slate-500">Turning Bingo off stops it being active but keeps existing checkpoint history intact.</p>
-                    </div>
-                </div>
-                <button type="button" onclick="saveHostBonusSettings('${code}')" class="w-full px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shadow active:scale-[0.99]"><i class="fa-solid fa-floppy-disk mr-2"></i>Save Bonus Settings</button>`);
             const diffBtn = (v, label, sub) => `<button type="button" onclick="setRaceBaseDifficulty('${code}', '${v}')" class="px-2 py-3 rounded-2xl border text-center transition active:scale-95 ${raceBaseDiff === v ? 'border-disneyGold bg-disneyGold/10' : 'border-slate-700 bg-slate-950'}"><span class="block font-bold text-sm ${raceBaseDiff === v ? 'text-disneyGold' : 'text-white'}">${label}</span><span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">${sub}</span></button>`;
             const wildcard = race.wildcardAuto && race.wildcardAuto.enabled ? `
                 <div class="border-t border-slate-800 pt-3 space-y-2">
@@ -5918,16 +5901,43 @@
                     <button onclick="hostFireWildcardNow('${code}')" class="w-full px-3 py-2.5 bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase">Fire wildcard now</button>
                 </div>` : '';
             const options = hrpSection('fa-solid fa-gear', 'Race Options', `
-                ${hrpToggle('fa-solid fa-circle-question', 'text-disneyGold', 'Trivia', 'Ask a question at check-in for bonus rewards', triviaOn, `toggleRaceTrivia('${code}', this)`, 'peer-checked:bg-emerald-600')}
-                <div class="border-t border-slate-800 pt-3 space-y-2">
+                <div class="space-y-2">
                     <span class="font-semibold text-sm text-white">Base difficulty</span>
                     <div class="grid grid-cols-3 gap-2">${diffBtn('easy', 'Easy', 'Pins + Transit')}${diffBtn('medium', 'Medium', 'Park Lands')}${diffBtn('hard', 'Hard', 'Blind')}</div>
                 </div>
-                ${wildcard}
-                ${bonusSettings}
-                <div class="border-t border-slate-800 pt-3">
-                    <button onclick="openOrganizerEditModal('${code}')" class="w-full px-3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-pen-to-square"></i> Edit checkpoints (${(d.cps || []).length})</button>
-                </div>`);
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-circle-question', 'text-disneyGold', 'Trivia', 'Ask a question at check-in for bonus rewards', triviaOn, `toggleRaceTrivia('${code}', this)`, 'peer-checked:bg-emerald-600')}
+                    <div id="hrp-trivia-options" class="${triviaOn ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-2">
+                        <label class="block text-[10px] text-slate-400">Default correct-answer reward</label>
+                        <input id="hrp-trivia-reward" type="number" min="0" value="${Number(race.defaultTriviaReward ?? 10)}" onchange="saveTriviaDefaultReward('${code}', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white">
+                        <p class="text-[10px] text-slate-500">Scavenger Hunt: points. Speed Race: minutes deducted.</p>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-dice', 'text-fuchsia-300', 'Wildcard', 'Random bonus challenge', !!wc.enabled, `toggleHostBonusOptions('${code}','wildcard',this)`, 'peer-checked:bg-fuchsia-600')}
+                    <div id="hrp-wildcard-options" class="${wc.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Offer duration</label>${selectOpts('hrp-wildcard-duration',durations,Number(wc.durationMin)||15)}</div>
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Reward</label><input id="hrp-wildcard-reward" type="number" min="0" value="${Number(wc.reward ?? race.defaultWildcardReward ?? 10)}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
+                        ${wildcard}
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-bolt', 'text-orange-300', 'Checkpoint Frenzy', 'Most valid check-ins during the event wins', !!fr.enabled, `toggleHostBonusOptions('${code}','frenzy',this)`, 'peer-checked:bg-orange-600')}
+                    <div id="hrp-frenzy-options" class="${fr.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Event duration</label>${selectOpts('hrp-frenzy-duration',durations,Number(fr.durationMin)||15)}</div>
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Winner reward</label><input id="hrp-frenzy-reward" type="number" min="0" value="${Number(fr.reward ?? race.defaultFrenzyReward ?? 5)}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Photo Bingo', 'Complete a themed 2×2 photo card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600')}
+                    <div id="hrp-bingo-options" class="${bi.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Bingo card</label>${selectOpts('hrp-bingo-card',[['','Choose a bingo card'],...bingoCards.map(c=>[c.id,`${c.emoji||'🎯'} ${c.name}`])],bi.cardId||'')}</div>
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="hrp-bingo-reward" type="number" min="1" value="${Number(bi.reward)||20}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Rules</label>${selectOpts('hrp-bingo-rule',[['casual','Every team can win'],['one','Only one winner']],bi.onlyOneWinner?'one':'casual')}</div>
+                        <p class="text-[10px] text-slate-500">Turning Bingo off stops it being active but keeps existing checkpoint history intact.</p>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3"><button onclick="openOrganizerEditModal('${code}')" class="w-full px-3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-pen-to-square"></i> Edit checkpoints (${(d.cps || []).length})</button></div>`, 'options', false);
 
             const tiles = teamList.map(t => {
                 const avatar = t.photoUrl || DEFAULT_AVATAR;
@@ -5951,14 +5961,14 @@
                         ${!t.isApproved ? `<button onclick="event.stopPropagation(); approveTeam('${code}', '${t.id}')" class="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]">Approve</button>` : ''}
                     </div>`;
             }).join('');
+            const teamsOpen = Object.prototype.hasOwnProperty.call(window.__hrpSectionOpen, 'teams') ? !!window.__hrpSectionOpen.teams : true;
             const teams = `
                 <section class="space-y-2.5">
                     <div class="flex items-center justify-between gap-2 px-1">
-                        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-users text-disneyGold"></i> Teams (${teamList.length})</h3>
+                        <button type="button" onclick="toggleHrpSection('teams')" aria-expanded="${teamsOpen}" class="flex min-w-0 flex-1 items-center justify-between gap-2 text-left py-1"><h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-users text-disneyGold"></i> Teams (${teamList.length})</h3><i class="fa-solid fa-chevron-${teamsOpen ? 'up' : 'down'} text-slate-500 text-xs"></i></button>
                         <button onclick="openRaceReplay('${code}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-[11px] font-bold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Replay</button>
                     </div>
-                    ${teamList.length ? `<div class="grid grid-cols-2 gap-3">${tiles}</div>` : '<p class="text-xs text-slate-500 px-1">No teams have joined yet. Share the race code to get started.</p>'}
-                    <p class="text-[10px] text-slate-500 px-1">Tap a team to verify their logs, change their difficulty or remove them.</p>
+                    <div class="${teamsOpen ? '' : 'hidden'} space-y-2.5">${teamList.length ? `<div class="grid grid-cols-2 gap-3">${tiles}</div>` : '<p class="text-xs text-slate-500 px-1">No teams have joined yet. Share the race code to get started.</p>'}<p class="text-[10px] text-slate-500 px-1">Tap a team to verify their logs, change their difficulty or remove them.</p></div>
                 </section>`;
             // Pending-approval banner: only exists while at least one team is waiting
             const pendingTeams = teamList.filter(t => !t.isApproved);
@@ -5993,6 +6003,19 @@
                 const sel = document.getElementById(id);
                 if (sel && window.enhanceSelect) window.enhanceSelect(id, { title: ({'hrp-wildcard-duration':'Wildcard offer duration','hrp-frenzy-duration':'Frenzy duration','hrp-bingo-card':'Choose a bingo card','hrp-bingo-rule':'Bingo rules'})[id], searchable: false });
             });
+            // Bonus settings save automatically after a field is changed; keep one debounce per panel.
+            if (body.dataset.autoSaveBound !== '1') {
+                body.dataset.autoSaveBound = '1';
+                body.addEventListener('change', e => {
+                    if (e.target && /^hrp-(wildcard|frenzy|bingo)-/.test(e.target.id)) window.saveHostBonusSettings(hostPanelCode);
+                });
+                body.addEventListener('input', e => {
+                    if (!e.target || !/^hrp-(wildcard|frenzy|bingo)-/.test(e.target.id) || e.target.tagName !== 'INPUT') return;
+                    clearTimeout(window.__hrpBonusSaveTimer);
+                    const codeToSave = hostPanelCode;
+                    window.__hrpBonusSaveTimer = setTimeout(() => { if (codeToSave) window.saveHostBonusSettings(codeToSave); }, 700);
+                });
+            }
             body.scrollTop = top;
         }
 
@@ -6007,6 +6030,7 @@
         window.toggleHostBonusOptions = function(code, kind, checkbox) {
             const id = kind === 'wildcard' ? 'hrp-wildcard-options' : kind === 'frenzy' ? 'hrp-frenzy-options' : 'hrp-bingo-options';
             document.getElementById(id)?.classList.toggle('hidden', !checkbox.checked);
+            window.saveHostBonusSettings(code);
         };
 
         window.saveHostBonusSettings = async function(code) {
@@ -6047,7 +6071,7 @@
                     defaultWildcardReward:wildcardReward, defaultFrenzyReward:frenzyReward,
                     bingo, checkpoints
                 });
-                window.appToast('Bonus settings saved');
+                // Saved automatically in the background; no interrupting confirmation popup.
             } catch (e) { window.appToast('Could not save bonus settings'); console.error(e); }
         };
 
@@ -6076,11 +6100,18 @@
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && hostPanelCode && !document.querySelector('.fixed.z-50:not(.hidden), #app-sheet.open')) window.closeHostRacePanel(); });
 
         window.toggleRaceTrivia = async function(raceCode, checkbox) {
+            document.getElementById('hrp-trivia-options')?.classList.toggle('hidden', !checkbox.checked);
             const owned = await getOwnedRaceForHost(raceCode);
-            if (!owned) { checkbox.checked = !checkbox.checked; return; }
+            if (!owned) { checkbox.checked = !checkbox.checked; document.getElementById('hrp-trivia-options')?.classList.toggle('hidden', !checkbox.checked); return; }
             const t = owned.data.trivia || { enabled: false, frequency: 'every', randomCount: 3 };
             await fastUpdate(owned.ref, { trivia: { ...t, enabled: checkbox.checked } });
             window.appToast(checkbox.checked ? 'Trivia turned on' : 'Trivia turned off');
+        };
+        window.saveTriviaDefaultReward = async function(raceCode, value) {
+            const owned = await getOwnedRaceForHost(raceCode);
+            if (!owned) return;
+            await fastUpdate(owned.ref, { defaultTriviaReward: Math.max(0, Number(value) || 0) });
+            window.appToast('Trivia reward saved');
         };
         window.setRaceBaseDifficulty = async function(raceCode, value) {
             const owned = await getOwnedRaceForHost(raceCode);
