@@ -1676,7 +1676,6 @@
                     <div id="create-checkpoint-scoring-inline" class="hidden bg-violet-950/40 p-4 rounded-3xl border border-violet-500/30 space-y-3">
                         <h4 class="font-bold text-violet-200">⚙️ Default checkpoint scoring</h4>
                         <div id="create-hunt-points-inline"><label class="block text-xs text-slate-300 mb-1">Scavenger Hunt checkpoint points</label><input id="create-hunt-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div id="create-speed-points-inline"><label class="block text-xs text-slate-300 mb-1">Speed Race checkpoint points (normally 0)</label><input id="create-speed-default-points" type="number" min="0" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
                     </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Checkpoints</label>
@@ -1747,6 +1746,14 @@
                 <!-- Step 5: bonuses and game extras -->
                 <section data-rw-step="5" class="rw-step hidden space-y-5">
                     <p class="text-sm text-slate-400">Choose optional bonuses and surprise events. They will appear in this order: photo challenges, bingo, trivia, wildcard, then checkpoint frenzy.</p>
+                    <div id="create-bonus-defaults-panel" class="hidden bg-violet-950/40 p-4 rounded-3xl border border-violet-500/30 space-y-3">
+                        <h4 class="font-bold text-violet-200">⚙️ Default bonus & event rewards</h4>
+                        <p class="text-[11px] text-slate-400">Scavenger Hunt rewards are points; Speed Race rewards are minutes deducted from the final time.</p>
+                        <div><label class="block text-xs text-slate-300 mb-1">Bonus photo challenge reward</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Trivia correct-answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Wildcard challenge reward</label><input id="create-wildcard-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Checkpoint Frenzy winner reward</label><input id="create-frenzy-default-reward" type="number" min="0" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-amber-500/30 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -1910,14 +1917,6 @@
                 <!-- Advanced settings step (shown only when Advanced settings is enabled) -->
                 <section data-rw-step="7" class="rw-step hidden space-y-5">
                     <div class="text-center space-y-2 pt-3"><div class="text-5xl">⚙️</div><h3 class="font-disney font-bold text-2xl text-white">Fine-tune your race</h3><p class="text-sm text-slate-400">These are defaults. Hosts can still adjust the score on individual bonus challenges after creation.</p></div>
-                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-4">
-                        <h4 class="font-bold text-white">Default bonus and event rewards</h4>
-                        <p class="text-[11px] text-slate-400">For Scavenger Hunts these are points. For Speed Races these are minutes deducted from a team's final time.</p>
-                        <div><label class="block text-xs text-slate-300 mb-1">Bonus photo challenge reward</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Wildcard challenge reward</label><input id="create-wildcard-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Checkpoint Frenzy winner reward</label><input id="create-frenzy-default-reward" type="number" min="0" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-300 mb-1">Correct trivia answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                    </div>
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-3">
                         <h4 class="font-bold text-white">Default team portal views</h4>
                         <label class="flex items-center justify-between text-sm text-slate-200"><span>Chat enabled</span><input id="create-view-chat" type="checkbox" checked class="w-5 h-5 accent-emerald-500"></label>
@@ -2597,15 +2596,15 @@
         document.getElementById('create-advanced-switch')?.addEventListener('change', () => {
             const enabled = !!document.getElementById('create-advanced-switch').checked;
             document.getElementById('create-bingo-reward-advanced')?.classList.toggle('hidden', !enabled);
-            document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !enabled);
+            document.getElementById('create-bonus-defaults-panel')?.classList.toggle('hidden', !enabled);
+            if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
             if (!enabled && typeof rwStep !== 'undefined' && rwStep === 7) rwStep = 6;
             if (typeof rwRender === 'function') rwRender();
         });
         window.updateWizardCheckpointScoring = function() {
             const hunt = !!document.getElementById('create-mode-scavenger')?.checked;
             document.getElementById('create-hunt-points-inline')?.classList.toggle('hidden', !hunt);
-            document.getElementById('create-speed-points-inline')?.classList.toggle('hidden', hunt);
-            document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !document.getElementById('create-advanced-switch')?.checked);
+            document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !hunt || !document.getElementById('create-advanced-switch')?.checked);
         };
         document.getElementById('create-mode-scavenger')?.addEventListener('change', () => window.updateWizardCheckpointScoring());
         document.getElementById('create-mode-race')?.addEventListener('change', () => window.updateWizardCheckpointScoring());
@@ -4315,9 +4314,10 @@
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
             const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
             const advanced = !!document.getElementById('create-advanced-switch')?.checked;
-            const defaultPoints = advanced
-                ? Math.max(0, Number(document.getElementById(gameMode === 'scavenger' ? 'create-hunt-default-points' : 'create-speed-default-points')?.value ?? (gameMode === 'scavenger' ? 10 : 0)))
-                : (gameMode === 'scavenger' ? 10 : 0);
+            // Default checkpoint scoring is configurable only for Scavenger Hunts.
+            const defaultPoints = gameMode === 'scavenger'
+                ? (advanced ? Math.max(0, Number(document.getElementById('create-hunt-default-points')?.value ?? 10)) : 10)
+                : 0;
             const defaultBonusPoints = advanced ? Math.max(0, Number(document.getElementById('create-bonus-default-points')?.value ?? 10)) : 10;
             const defaultWildcardReward = advanced ? Math.max(0, Number(document.getElementById('create-wildcard-default-reward')?.value ?? defaultBonusPoints)) : defaultBonusPoints;
             const defaultFrenzyReward = advanced ? Math.max(0, Number(document.getElementById('create-frenzy-default-reward')?.value ?? 5)) : 5;
@@ -4593,8 +4593,9 @@
             setChk('create-trivia-switch', true);
             setChk('create-host-team-switch', false);
             setChk('create-advanced-switch', false);
+            rwEl('create-bonus-defaults-panel')?.classList.add('hidden');
+            if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
             if (rwEl('create-hunt-default-points')) rwEl('create-hunt-default-points').value = 10;
-            if (rwEl('create-speed-default-points')) rwEl('create-speed-default-points').value = 0;
             if (rwEl('create-bonus-default-points')) rwEl('create-bonus-default-points').value = 10;
             if (rwEl('create-view-chat')) rwEl('create-view-chat').checked = true;
             if (rwEl('create-view-hide-bonuses')) rwEl('create-view-hide-bonuses').checked = true;
@@ -4802,6 +4803,7 @@
             rows.push(rwRow('Start', start));
             rows.push(rwRow('Trivia', trivia));
             rows.push(rwRow('Wildcard', info.wildcardAuto.enabled ? `On (${info.wildcardAuto.durationMin} min window)` : 'Off'),
+                rwRow('Checkpoint Frenzy', document.getElementById('create-frenzy-switch')?.checked ? `On (${document.getElementById('create-frenzy-duration')?.value || 15} min)` : 'Off'),
                 rwRow('Photo bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-rule-one-winner')?.checked ? 'On · one winner' : 'On · every team can win') : 'Off'),
                 rwRow('Advanced settings', document.getElementById('create-advanced-switch')?.checked ? 'Configured' : 'Standard defaults'),
                 rwRow('Host team', document.getElementById('create-host-team-switch')?.checked ? document.getElementById('create-host-team-name')?.value || 'Registered' : 'Not registered'));
