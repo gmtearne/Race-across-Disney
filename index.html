@@ -1552,8 +1552,15 @@
                 </div>
                 <button type="button" onclick="closeRaceWizard()" aria-label="Close" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            <div class="max-w-lg mx-auto w-full flex items-center justify-between gap-3 mt-3 px-3 py-2 rounded-xl bg-violet-950/50 border border-violet-500/30">
+                <div class="min-w-0"><span class="block text-xs font-bold text-violet-200">⚙️ Advanced settings</span><span class="block text-[10px] text-slate-400">Extra scoring and team-portal options · available on every step</span></div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0" aria-label="Toggle advanced settings">
+                    <input type="checkbox" id="create-advanced-switch" class="sr-only peer">
+                    <div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-violet-600"></div>
+                </label>
+            </div>
             <div id="rw-progress" class="flex gap-1.5 mt-3 max-w-lg mx-auto w-full">
-                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
+                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
             </div>
         </div>
 
@@ -1666,6 +1673,11 @@
                 <!-- Step 4: checkpoints -->
                 <section data-rw-step="4" class="rw-step hidden space-y-5">
                     <p class="text-sm text-slate-400">Choose the stops for this race, then add any bonus photo challenges.</p>
+                    <div id="create-checkpoint-scoring-inline" class="hidden bg-violet-950/40 p-4 rounded-3xl border border-violet-500/30 space-y-3">
+                        <h4 class="font-bold text-violet-200">⚙️ Default checkpoint scoring</h4>
+                        <div id="create-hunt-points-inline"><label class="block text-xs text-slate-300 mb-1">Scavenger Hunt checkpoint points</label><input id="create-hunt-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div id="create-speed-points-inline"><label class="block text-xs text-slate-300 mb-1">Speed Race checkpoint points (normally 0)</label><input id="create-speed-default-points" type="number" min="0" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Checkpoints</label>
 
@@ -1799,7 +1811,10 @@
                                             <button type="button" onclick="stepNumber('create-bingo-reward', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
                                         </div>
                                         <p class="text-[10px] text-slate-500 leading-relaxed">Speed Race: minutes taken off the final time. Scavenger Hunt: bonus points. An incomplete card earns nothing. The card's challenges are added to the race and are never also offered as standalone bonuses or wildcards. Challenges come from bonus photos tagged with a bingo name in your locations data.</p></div>
-                                        <label class="flex items-center justify-between gap-3 text-sm text-slate-200"><span>Only 1 winner <span class="block text-[10px] text-slate-500">Once bingo is called, the game ends for everyone.</span></span><input type="checkbox" id="create-bingo-one-winner" class="w-5 h-5 accent-yellow-500"></label>
+                                        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Bingo rules">
+                                            <label class="cursor-pointer"><input type="radio" name="create-bingo-rule" id="create-bingo-rule-one-winner" value="one" class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-yellow-400 peer-checked:bg-yellow-500/10 transition"><span class="block text-sm font-bold text-yellow-200">🏆 Bingo Rules</span><span class="block text-xs font-semibold text-white mt-1">Only one winner</span><span class="block text-[10px] leading-relaxed text-slate-400 mt-2">The first team to complete bingo wins.</span></div></label>
+                                            <label class="cursor-pointer"><input type="radio" name="create-bingo-rule" id="create-bingo-rule-casual" value="casual" checked class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-emerald-400 peer-checked:bg-emerald-500/10 transition"><span class="block text-sm font-bold text-emerald-200">🎉 Casual</span><span class="block text-xs font-semibold text-white mt-1">Every team can win</span><span class="block text-[10px] leading-relaxed text-slate-400 mt-2">Each team that completes the card earns the reward.</span></div></label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1870,15 +1885,6 @@
                             <p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will never overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p>
                         </div>
                     </div>
-                    <div class="bg-slate-900 p-4 rounded-3xl border border-violet-500/30 space-y-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <div><span class="block text-sm font-bold text-white">⚙️ Advanced settings</span><p class="text-[11px] text-slate-400 mt-1">Configure default scoring and what teams see.</p></div>
-                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                <input type="checkbox" id="create-advanced-switch" class="sr-only peer">
-                                <div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-violet-600"></div>
-                            </label>
-                        </div>
-                    </div>
                     <input type="number" id="create-default-points" value="0" class="hidden">
                 </section>
 
@@ -1895,8 +1901,9 @@
                     </label>
                     <div id="create-host-team-fields" class="hidden space-y-3">
                         <input id="create-host-team-name" type="text" maxlength="40" placeholder="Team name" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
-                        <input id="create-host-team-pin" type="password" inputmode="numeric" maxlength="4" placeholder="Choose a 4-digit team PIN" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
-                        <p class="text-[11px] text-slate-500">Keep the PIN handy; you'll use it to sign in to your team portal.</p>
+                        <input id="create-host-team-pin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="Choose a 4-digit team PIN" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                        <input id="create-host-team-pin-confirm" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="Confirm your 4-digit PIN" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                        <p class="text-[11px] text-slate-500">Use four digits and confirm them carefully; you'll use this PIN to sign in to your team portal.</p>
                     </div>
                 </section>
 
@@ -1904,10 +1911,12 @@
                 <section data-rw-step="7" class="rw-step hidden space-y-5">
                     <div class="text-center space-y-2 pt-3"><div class="text-5xl">⚙️</div><h3 class="font-disney font-bold text-2xl text-white">Fine-tune your race</h3><p class="text-sm text-slate-400">These are defaults. Hosts can still adjust the score on individual bonus challenges after creation.</p></div>
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-4">
-                        <h4 class="font-bold text-white">Default scoring</h4>
-                        <div><label class="block text-xs text-slate-400 mb-1">Scavenger Hunt checkpoint points</label><input id="create-hunt-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-400 mb-1">Speed Race checkpoint points</label><input id="create-speed-default-points" type="number" min="0" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
-                        <div><label class="block text-xs text-slate-400 mb-1">Default bonus challenge points</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <h4 class="font-bold text-white">Default bonus and event rewards</h4>
+                        <p class="text-[11px] text-slate-400">For Scavenger Hunts these are points. For Speed Races these are minutes deducted from a team's final time.</p>
+                        <div><label class="block text-xs text-slate-300 mb-1">Bonus photo challenge reward</label><input id="create-bonus-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Wildcard challenge reward</label><input id="create-wildcard-default-reward" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Checkpoint Frenzy winner reward</label><input id="create-frenzy-default-reward" type="number" min="0" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
+                        <div><label class="block text-xs text-slate-300 mb-1">Correct trivia answer reward</label><input id="create-trivia-default-reward" type="number" min="0" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
                     </div>
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-3">
                         <h4 class="font-bold text-white">Default team portal views</h4>
@@ -2586,9 +2595,20 @@
 
         // ---------- Photo bingo (race creation) ----------
         document.getElementById('create-advanced-switch')?.addEventListener('change', () => {
-            document.getElementById('create-bingo-reward-advanced')?.classList.toggle('hidden', !document.getElementById('create-advanced-switch').checked);
+            const enabled = !!document.getElementById('create-advanced-switch').checked;
+            document.getElementById('create-bingo-reward-advanced')?.classList.toggle('hidden', !enabled);
+            document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !enabled);
+            if (!enabled && typeof rwStep !== 'undefined' && rwStep === 7) rwStep = 6;
             if (typeof rwRender === 'function') rwRender();
         });
+        window.updateWizardCheckpointScoring = function() {
+            const hunt = !!document.getElementById('create-mode-scavenger')?.checked;
+            document.getElementById('create-hunt-points-inline')?.classList.toggle('hidden', !hunt);
+            document.getElementById('create-speed-points-inline')?.classList.toggle('hidden', hunt);
+            document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !document.getElementById('create-advanced-switch')?.checked);
+        };
+        document.getElementById('create-mode-scavenger')?.addEventListener('change', () => window.updateWizardCheckpointScoring());
+        document.getElementById('create-mode-race')?.addEventListener('change', () => window.updateWizardCheckpointScoring());
         window.toggleBingoCreateSettings = function() {
             const on = document.getElementById('create-bingo-switch')?.checked;
             document.getElementById('create-bingo-options')?.classList.toggle('hidden', !on);
@@ -3898,14 +3918,14 @@
             const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && !(bingoTagOn && [].concat(p.bingo || []).map(window.bingoTag).includes(bingoTagOn)) && window.bonusAppliesToAreas(p, parks));
             if (!pool.length) return null;
             const p = pool[Math.floor(Math.random() * pool.length)];
-            const ded = p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10;
+            const ded = Number(race.defaultWildcardReward ?? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10));
             return {
                 id: 'cp_wc_' + Date.now(),
                 name: p.name,
                 type: 'BONUS_PHOTO',
                 lat: p.lat || 28.4177,
                 lng: p.lng || -81.5812,
-                points: p.bonusMinDeduction || 10,
+                points: ded,
                 bonusMinDeduction: ded,
                 park: p.park || 'Bonus Challenge',
                 land: p.land || ''
@@ -4079,7 +4099,7 @@
                     const latest = snap.data() || {};
                     if (latest.frenzyAutoResolved || (latest.frenzies || []).some(f => !f.cancelled)) return;
                     const fNow = Date.now();
-                    tx.update(raceRef, { frenzies: [...(latest.frenzies || []), { id: 'fz_auto_' + fNow, startedAt: fNow, endsAt: fNow + duration * 60000, durationMin: duration, bonus: window.FRENZY_BONUS, cancelled: false, auto: true }], frenzyAutoResolved: true });
+                    tx.update(raceRef, { frenzies: [...(latest.frenzies || []), { id: 'fz_auto_' + fNow, startedAt: fNow, endsAt: fNow + duration * 60000, durationMin: duration, bonus: Number(cfg.reward ?? latest.defaultFrenzyReward ?? window.FRENZY_BONUS), cancelled: false, auto: true }], frenzyAutoResolved: true });
                 });
             } catch (e) { console.warn('Checkpoint Frenzy auto-check failed', e); }
             finally { frenzyAutoBusy = false; }
@@ -4299,6 +4319,9 @@
                 ? Math.max(0, Number(document.getElementById(gameMode === 'scavenger' ? 'create-hunt-default-points' : 'create-speed-default-points')?.value ?? (gameMode === 'scavenger' ? 10 : 0)))
                 : (gameMode === 'scavenger' ? 10 : 0);
             const defaultBonusPoints = advanced ? Math.max(0, Number(document.getElementById('create-bonus-default-points')?.value ?? 10)) : 10;
+            const defaultWildcardReward = advanced ? Math.max(0, Number(document.getElementById('create-wildcard-default-reward')?.value ?? defaultBonusPoints)) : defaultBonusPoints;
+            const defaultFrenzyReward = advanced ? Math.max(0, Number(document.getElementById('create-frenzy-default-reward')?.value ?? 5)) : 5;
+            const defaultTriviaReward = advanced ? Math.max(0, Number(document.getElementById('create-trivia-default-reward')?.value ?? (gameMode === 'scavenger' ? 1 : 5))) : (gameMode === 'scavenger' ? 1 : 5);
             const isScavengerMode = gameMode === 'scavenger';
             const timeLimitMinutes = isScavengerMode ? Number(document.getElementById('create-scavenger-time-limit')?.value ?? 60) : 0;
             const enforceHostStart = isScavengerMode || !!document.getElementById('create-enforce-host-start')?.checked;
@@ -4314,11 +4337,13 @@
             const triviaCount = parseInt(document.getElementById('trivia-random-count').value) || 3;
             const wildcardAuto = {
                 enabled: !!document.getElementById('create-wildcard-switch')?.checked,
-                durationMin: Number(document.getElementById('create-wildcard-duration')?.value) || 15
+                durationMin: Number(document.getElementById('create-wildcard-duration')?.value) || 15,
+                reward: defaultWildcardReward
             };
             const frenzyAuto = {
                 enabled: !!document.getElementById('create-frenzy-switch')?.checked,
-                durationMin: Number(document.getElementById('create-frenzy-duration')?.value) || 15
+                durationMin: Number(document.getElementById('create-frenzy-duration')?.value) || 15,
+                reward: defaultFrenzyReward
             };
 
             if (!title) return alert("Please give your race a name.");
@@ -4436,7 +4461,7 @@
                         ? "No bingo card has 4 challenges that can be done in the parks your stops cover. Turn bingo off or add more stops/tags."
                         : "That bingo card doesn't have 4 challenges that can be done in the parks your stops cover. Pick another card or add stops from more parks.");
                     const reward = Math.max(1, parseInt(document.getElementById('create-bingo-reward')?.value) || 20);
-                    bingoInfo = { enabled: true, cardId: card.id, name: card.name, emoji: card.emoji, reward, onlyOneWinner: !!document.getElementById('create-bingo-one-winner')?.checked };
+                    bingoInfo = { enabled: true, cardId: card.id, name: card.name, emoji: card.emoji, reward, onlyOneWinner: document.getElementById('create-bingo-rule-one-winner')?.checked === true };
                     bingoCps = pickRandom(card.items, 4).map((p, idx) => ({ ...toCheckpoint(p, idx, 'cp_bingo_'), points: 0, bonusMinDeduction: 0, bingoId: card.id }));
                 }
                 const bingoNames = new Set(bingoCps.map(c => c.name));
@@ -4456,7 +4481,7 @@
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
                 // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
-                initialCps.push(...bonusPicked.map((p, idx) => toCheckpoint(p, idx, 'cp_bonus_')));
+                initialCps.push(...bonusPicked.map((p, idx) => { const cp = toCheckpoint(p, idx, 'cp_bonus_'); cp.points = defaultBonusPoints; cp.bonusMinDeduction = defaultBonusPoints; return cp; }));
                 initialCps.push(...bingoCps);
 
                 let finalCheckpointId = null;
@@ -4488,6 +4513,9 @@
                     pauseAccumulatedMs: 0,
                     defaultPoints: defaultPoints,
                     defaultBonusPoints: defaultBonusPoints,
+                    defaultWildcardReward: defaultWildcardReward,
+                    defaultFrenzyReward: defaultFrenzyReward,
+                    defaultTriviaReward: defaultTriviaReward,
                     advancedSettings: advanced,
                     chatEnabled: advanced ? !!document.getElementById('create-view-chat')?.checked : true,
                     hideBonuses: advanced ? !!document.getElementById('create-view-hide-bonuses')?.checked : true,
@@ -4510,7 +4538,7 @@
                 if (document.getElementById('create-host-team-switch')?.checked) {
                     const hostTeamName = document.getElementById('create-host-team-name').value.trim();
                     const hostTeamPin = document.getElementById('create-host-team-pin').value.trim();
-                    const hostTeamId = hostTeamName.toLowerCase().replace(/\\s+/g, '_');
+                    const hostTeamId = hostTeamName.toLowerCase().replace(/\s+/g, '_');
                     await setDoc(doc(window.db, "races", code, "teams", hostTeamId), {
                         teamName: hostTeamName, pin: hostTeamPin, photoUrl: DEFAULT_AVATAR,
                         isApproved: true, completedCheckpoints: [], customRouteOrder: [],
@@ -4573,13 +4601,18 @@
             if (rwEl('create-view-hide-timers')) rwEl('create-view-hide-timers').checked = true;
             if (rwEl('create-host-team-name')) rwEl('create-host-team-name').value = '';
             if (rwEl('create-host-team-pin')) rwEl('create-host-team-pin').value = '';
+            if (rwEl('create-host-team-pin-confirm')) rwEl('create-host-team-pin-confirm').value = '';
+            if (rwEl('create-wildcard-default-reward')) rwEl('create-wildcard-default-reward').value = 10;
+            if (rwEl('create-frenzy-default-reward')) rwEl('create-frenzy-default-reward').value = 5;
+            if (rwEl('create-trivia-default-reward')) rwEl('create-trivia-default-reward').value = 1;
             rwEl('create-host-team-fields')?.classList.add('hidden');
             setChk('create-wildcard-switch', false);
             setChk('create-frenzy-switch', false);
             window.toggleFrenzyCreateSettings();
             setChk('create-bonus-switch', false);
             setChk('create-bingo-switch', false);
-            setChk('create-bingo-one-winner', false);
+            if (rwEl('create-bingo-rule-one-winner')) rwEl('create-bingo-rule-one-winner').checked = false;
+            if (rwEl('create-bingo-rule-casual')) rwEl('create-bingo-rule-casual').checked = true;
             rwEl('create-bingo-reward-advanced')?.classList.add('hidden');
             setVal('create-bingo-reward', 20);
             setVal('create-scavenger-time-limit', 60);
@@ -4593,12 +4626,14 @@
             if (window.selectAllBonusCheckboxes) window.selectAllBonusCheckboxes(false);
             { const bs = document.getElementById('bonus-search-input'); if (bs) bs.value = ''; }
             window.toggleGameModeSelection();
+            window.updateWizardCheckpointScoring?.();
             window.toggleHostStartCreationOptions();
             window.toggleTriviaSettings();
             window.toggleTriviaFreq();
             window.toggleWildcardCreateSettings();
             window.toggleBonusCreateSettings();
             window.toggleBingoCreateSettings();
+            window.updateWizardCheckpointScoring?.();
             window.switchPopMethod('random');
             window.switchBonusMethod('random');
         }
@@ -4709,7 +4744,9 @@
                 const name = rwEl('create-host-team-name')?.value.trim() || '';
                 const pin = rwEl('create-host-team-pin')?.value.trim() || '';
                 if (!name) { alert('Please enter a team name, or turn off host team registration.'); return false; }
-                if (!/^\\d{4}$/.test(pin)) { alert('Please choose a 4-digit team PIN.'); return false; }
+                if (!/^\d{4}$/.test(pin)) { alert('Please choose a 4-digit team PIN using numbers only.'); return false; }
+                const confirmPin = rwEl('create-host-team-pin-confirm')?.value.trim() || '';
+                if (pin !== confirmPin) { alert('The PINs do not match. Please re-enter them.'); rwEl('create-host-team-pin-confirm')?.focus(); return false; }
             }
             if (step === 4) {
                 if (creationPopMethod === 'manual' && document.querySelectorAll('input[name="manual_cp_checkbox"]:checked').length === 0) {
@@ -4765,7 +4802,7 @@
             rows.push(rwRow('Start', start));
             rows.push(rwRow('Trivia', trivia));
             rows.push(rwRow('Wildcard', info.wildcardAuto.enabled ? `On (${info.wildcardAuto.durationMin} min window)` : 'Off'),
-                rwRow('Photo bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-one-winner')?.checked ? 'On · one winner ends the game' : 'On') : 'Off'),
+                rwRow('Photo bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-rule-one-winner')?.checked ? 'On · one winner' : 'On · every team can win') : 'Off'),
                 rwRow('Advanced settings', document.getElementById('create-advanced-switch')?.checked ? 'Configured' : 'Standard defaults'),
                 rwRow('Host team', document.getElementById('create-host-team-switch')?.checked ? document.getElementById('create-host-team-name')?.value || 'Registered' : 'Not registered'));
             rwEl('rw-success-details').innerHTML = rows.join('');
@@ -6998,7 +7035,8 @@
             if (!ui || ui.answeredAt || !q) return;
             const isScav = (window.liveTeamRaceData || {}).gameMode === 'scavenger';
             const isCorrect = idx === q.answer;
-            const bonus = isCorrect ? (isScav ? 1 : 5) : 0;
+            const triviaRace = window.liveTeamRaceData || {};
+            const bonus = isCorrect ? Math.max(0, Number(triviaRace.defaultTriviaReward ?? (isScav ? 1 : 5))) : 0;
             ui.answeredAt = Date.now();
             ui.result = { isCorrect, bonus, correctAnswer: q.options[q.answer] };
             window.refreshTriviaPanel(cpId);
@@ -9144,9 +9182,10 @@
             const mins = Math.max(1, Math.min(240, Number(cfg.durationMin) || 15));
             const list = owned.data.frenzies || [], now = Date.now();
             if (list.some(f => window.frenzyState(f, now) === 'active')) return window.appToast("A Checkpoint Frenzy is already running.");
-            const prize = owned.data.gameMode === 'scavenger' ? `${window.FRENZY_BONUS} points` : `a ${window.FRENZY_BONUS} minute deduction`;
+            const frenzyReward = Number(cfg.reward ?? owned.data.defaultFrenzyReward ?? window.FRENZY_BONUS);
+            const prize = owned.data.gameMode === 'scavenger' ? `${frenzyReward} points` : `a ${frenzyReward} minute deduction`;
             if (!await appConfirm(`Start the configured ${mins} minute Checkpoint Frenzy now? The team with the most check-ins wins ${prize}. This uses the same event as the automatic trigger.`, { title: "Checkpoint Frenzy", confirmText: "Start frenzy" })) return;
-            await fastUpdate(owned.ref, { frenzies: [...list, { id: 'fz_manual_' + now, startedAt: now, endsAt: now + mins * 60000, durationMin: mins, bonus: window.FRENZY_BONUS, cancelled: false, manual: true }], frenzyAutoResolved: true });
+            await fastUpdate(owned.ref, { frenzies: [...list, { id: 'fz_manual_' + now, startedAt: now, endsAt: now + mins * 60000, durationMin: mins, bonus: frenzyReward, cancelled: false, manual: true }], frenzyAutoResolved: true });
             window.appToast("Checkpoint Frenzy started!"); loadAdminRaces();
         };
         window.hostCancelFrenzy = async function(code, id) {
