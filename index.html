@@ -750,6 +750,58 @@
         </div>
     </div>
 
+    <!-- Compass Guide (final-approach helper) -->
+    <style>
+        #compass-modal .compass-dial { position: relative; width: min(78vw, 19rem); aspect-ratio: 1; }
+        #compass-modal .compass-dial.in-zone { border-radius: 9999px; animation: compassZonePulse 1.6s ease-out infinite; }
+        @keyframes compassZonePulse {
+            0%   { box-shadow: 0 0 0 0 rgba(52,211,153,.55); }
+            100% { box-shadow: 0 0 0 28px rgba(52,211,153,0); }
+        }
+        #compass-arrow { transition: opacity .3s; }
+        @media (prefers-reduced-motion: reduce) { #compass-modal .compass-dial.in-zone { animation: none; } }
+    </style>
+    <div id="compass-modal" class="fixed inset-0 z-[85] bg-slate-950/95 backdrop-blur-sm hidden flex flex-col items-center px-4" style="padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+        <div class="w-full max-w-md flex items-center justify-between gap-3 pb-3">
+            <div class="min-w-0">
+                <p class="text-[10px] uppercase tracking-wide font-bold text-slate-400">Compass guide</p>
+                <h3 id="compass-title" class="font-bold text-sm text-disneyGold truncate"></h3>
+            </div>
+            <button type="button" onclick="closeCompass()" aria-label="Close compass" class="w-10 h-10 shrink-0 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 w-full max-w-md flex flex-col items-center justify-center gap-4 min-h-0">
+            <div id="compass-dial" class="compass-dial">
+                <svg viewBox="0 0 240 240" class="w-full h-full" aria-hidden="true">
+                    <circle cx="120" cy="120" r="114" fill="rgba(15,23,42,.85)" stroke="var(--theme-card-border)" stroke-width="2"></circle>
+                    <circle cx="120" cy="120" r="70" fill="none" stroke="rgba(148,163,184,.18)" stroke-width="1"></circle>
+                    <g id="compass-ring"></g>
+                    <g id="compass-arrow">
+                        <path id="compass-arrow-shape" d="M120 26 L144 130 L120 114 L96 130 Z" fill="var(--theme-accent)" stroke="rgba(0,0,0,.35)" stroke-width="1.5" stroke-linejoin="round"></path>
+                    </g>
+                    <circle cx="120" cy="120" r="7" fill="#0f172a" stroke="rgba(255,255,255,.5)" stroke-width="2"></circle>
+                </svg>
+            </div>
+
+            <div class="text-center space-y-1.5 px-2">
+                <p id="compass-dist" class="font-mono font-bold text-5xl text-white leading-none">--</p>
+                <p id="compass-msg" class="text-sm font-semibold text-slate-200 leading-snug">Finding your location…</p>
+                <p id="compass-note" class="text-[11px] text-slate-400 leading-snug"></p>
+            </div>
+
+            <span id="compass-acc" class="hidden text-[10px] font-bold px-2.5 py-1 rounded-full border"></span>
+        </div>
+
+        <div class="w-full max-w-md space-y-2 pt-3">
+            <button type="button" id="compass-checkin-btn" onclick="compassCheckIn()" class="w-full h-12 bg-disneyBlue hover:bg-blue-600 active:scale-[0.98] text-white font-bold rounded-2xl text-sm transition shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-location-crosshairs"></i><span>Check in here</span>
+            </button>
+            <p class="text-[10px] text-slate-500 text-center leading-snug">Still showing outside the zone? You can check in anyway. It's logged for the host to review.</p>
+        </div>
+    </div>
+
     <!-- Checkpoint Info / Hint Modal -->
     <div id="checkpoint-info-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-disneyGold/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
@@ -2285,7 +2337,7 @@
         (function initAppModalMotion() {
             const modalIds = [
                 'image-modal', 'app-map-modal', 'checkpoint-info-modal', 'trivia-modal',
-                'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal', 'bonus-preview-modal'
+                'team-verify-modal', 'organizer-edit-modal', 'organizer-add-cp-modal', 'bonus-preview-modal', 'compass-modal'
             ];
             const guarded = new WeakSet();
             const modalObserver = new MutationObserver(mutations => {
@@ -2968,6 +3020,234 @@
             iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lon}`;
             modal.classList.remove('hidden');
         };
+
+        // ===================== COMPASS GUIDE (final approach to a stop) =====================
+        // GPS can put the pin at the front door while a team is round the back. This points an arrow at the
+        // exact check-in coordinates and counts down the distance until the team is inside the zone.
+        window.CHECKIN_RADIUS_METERS = 150;   // "in the zone" distance. checkInGps uses this same value.
+        window.COMPASS_RANGE_METERS = 500;    // the arrow only switches on this close, so it can't replace the map / blind navigation
+        (function () {
+            const S = {
+                open: false, cpId: null, lat: 0, lng: 0, watchId: null, pos: null, geoErr: null,
+                sensorHeading: null, gpsHeading: null, headingU: null, bearingU: null,
+                trendRef: null, trend: '', sensorDenied: false, openedAt: 0,
+                wake: null, handlers: [], raf: false, noteTimer: null
+            };
+            const $ = id => document.getElementById(id);
+            const rad = d => d * Math.PI / 180;
+
+            function distanceM(lat1, lon1, lat2, lon2) {
+                const R = 6371e3, dLat = rad(lat2 - lat1), dLon = rad(lon2 - lon1);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+            function bearingDeg(lat1, lon1, lat2, lon2) {
+                const p1 = rad(lat1), p2 = rad(lat2), dl = rad(lon2 - lon1);
+                const y = Math.sin(dl) * Math.cos(p2);
+                const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+                return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            }
+            // Tilt-compensated compass heading from alpha/beta/gamma (W3C method): works flat or held upright.
+            function tiltHeading(alpha, beta, gamma) {
+                const a = rad(alpha), b = rad(beta), g = rad(gamma);
+                const rA = -Math.cos(a) * Math.sin(g) - Math.sin(a) * Math.sin(b) * Math.cos(g);
+                const rB = -Math.sin(a) * Math.sin(g) + Math.cos(a) * Math.sin(b) * Math.cos(g);
+                let h = Math.atan(rA / rB);
+                if (rB < 0) h += Math.PI; else if (rA < 0) h += 2 * Math.PI;
+                return (h * 180 / Math.PI) % 360;
+            }
+            // Smooth towards a target angle the short way round, without ever snapping across 0/360.
+            function approach(cur, target, k) {
+                if (cur === null) return target;
+                const d = (((target - cur) % 360) + 540) % 360 - 180;
+                return cur + d * k;
+            }
+
+            function buildRing() {
+                const ring = $('compass-ring');
+                if (!ring || ring.childNodes.length) return;
+                let svg = '';
+                for (let a = 0; a < 360; a += 15) {
+                    const major = a % 90 === 0;
+                    svg += `<line x1="120" y1="${major ? 12 : 12}" x2="120" y2="${major ? 26 : 20}" stroke="${major ? 'rgba(255,255,255,.85)' : 'rgba(148,163,184,.55)'}" stroke-width="${major ? 2.5 : 1.5}" transform="rotate(${a} 120 120)"></line>`;
+                }
+                [['N', 0, 'var(--theme-highlight)'], ['E', 90, '#cbd5e1'], ['S', 180, '#cbd5e1'], ['W', 270, '#cbd5e1']].forEach(([l, a, c]) => {
+                    svg += `<text x="120" y="46" text-anchor="middle" font-size="15" font-weight="800" fill="${c}" transform="rotate(${a} 120 120)">${l}</text>`;
+                });
+                ring.innerHTML = svg;
+            }
+
+            function schedule() {
+                if (S.raf) return;
+                S.raf = true;
+                requestAnimationFrame(() => { S.raf = false; render(); });
+            }
+
+            function render() {
+                if (!S.open) return;
+                const distEl = $('compass-dist'), msgEl = $('compass-msg'), noteEl = $('compass-note');
+                const accEl = $('compass-acc'), dial = $('compass-dial'), arrow = $('compass-arrow'), shape = $('compass-arrow-shape');
+                const btn = $('compass-checkin-btn');
+                if (!distEl) return;
+
+                if (!navigator.geolocation) {
+                    distEl.textContent = '--'; msgEl.textContent = 'This device can’t share its location.';
+                    noteEl.textContent = 'Use the map for this stop.'; return;
+                }
+                if (S.geoErr === 1) {
+                    distEl.textContent = '--'; msgEl.textContent = 'Location is blocked.';
+                    noteEl.textContent = 'Turn location on for this site in your browser or phone settings, then reopen the compass.'; return;
+                }
+                const p = S.pos;
+                if (!p) {
+                    distEl.textContent = '--'; msgEl.textContent = 'Finding your location…';
+                    noteEl.textContent = S.geoErr ? 'Still looking for a GPS signal. Try stepping into the open.' : ''; return;
+                }
+
+                const dist = distanceM(p.lat, p.lng, S.lat, S.lng);
+                const bearing = bearingDeg(p.lat, p.lng, S.lat, S.lng);
+                const inRange = dist <= window.COMPASS_RANGE_METERS;
+                const inZone = dist <= window.CHECKIN_RADIUS_METERS;
+
+                distEl.textContent = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+
+                // GPS accuracy chip: the real reason people end up "not found"
+                if (p.acc != null) {
+                    const weak = p.acc > 30, ok = p.acc <= 15;
+                    accEl.textContent = (weak ? 'Weak GPS ±' : 'GPS ±') + Math.round(p.acc) + ' m';
+                    accEl.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border ' +
+                        (weak ? 'text-amber-300 border-amber-500/40 bg-amber-500/10' : ok ? 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' : 'text-slate-300 border-slate-600 bg-slate-800');
+                    accEl.classList.remove('hidden');
+                }
+
+                // Heading: phone compass first, then the direction of travel from GPS
+                const heading = S.sensorHeading != null ? S.sensorHeading : S.gpsHeading;
+                const haveHeading = heading != null;
+                if (haveHeading) S.headingU = approach(S.headingU, heading, 0.25);
+                else S.headingU = 0;
+                S.bearingU = approach(S.bearingU, bearing, 0.25);
+                const ringRot = -S.headingU;
+                const arrowRot = S.bearingU - S.headingU;
+                $('compass-ring').setAttribute('transform', `rotate(${ringRot.toFixed(1)} 120 120)`);
+                arrow.setAttribute('transform', `rotate(${arrowRot.toFixed(1)} 120 120)`);
+
+                dial.classList.toggle('in-zone', inZone);
+                shape.setAttribute('fill', inZone ? 'var(--theme-success)' : 'var(--theme-accent)');
+                arrow.style.opacity = inRange ? '1' : '0.12';
+
+                if (!inRange) {
+                    msgEl.textContent = 'Still a way off. Head for the stop using your map.';
+                    noteEl.textContent = `The arrow switches on within ${window.COMPASS_RANGE_METERS} m.`;
+                } else if (inZone) {
+                    msgEl.textContent = 'You’re in the check-in zone!';
+                    noteEl.textContent = 'Tap Check in below.';
+                } else {
+                    msgEl.textContent = (S.trend === 'warmer' ? '🔥 Getting warmer. ' : S.trend === 'colder' ? '🧊 Getting colder. ' : '') + 'Follow the arrow.';
+                    if (!haveHeading) {
+                        noteEl.textContent = S.sensorDenied
+                            ? 'Compass access was declined, so the arrow points relative to north (top). Walk a few steps and it will follow your direction.'
+                            : (Date.now() - S.openedAt > 2500 ? 'No compass reading yet, so the arrow points relative to north (top). Walk a few steps and it will follow your direction.' : '');
+                    } else {
+                        noteEl.textContent = 'Hold your phone flat or upright and turn until the arrow points up.';
+                    }
+                }
+
+                btn.className = 'w-full h-12 active:scale-[0.98] text-white font-bold rounded-2xl text-sm transition shadow flex items-center justify-center gap-2 ' +
+                    (inZone ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-disneyBlue hover:bg-blue-600');
+            }
+
+            function addHandler(type, fn) { window.addEventListener(type, fn, true); S.handlers.push([type, fn]); }
+
+            async function startSensors() {
+                const DOE = window.DeviceOrientationEvent;
+                if (!DOE) return;
+                try {
+                    // iPhones ask permission, and only from a tap (this runs straight from the Guide button)
+                    if (typeof DOE.requestPermission === 'function') {
+                        const r = await DOE.requestPermission();
+                        if (r !== 'granted') { S.sensorDenied = true; schedule(); return; }
+                    }
+                } catch (e) { S.sensorDenied = true; schedule(); return; }
+                if (!S.open) return;
+                const onOri = (e) => {
+                    let h = null;
+                    if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;            // iOS
+                    else if (e.absolute && e.alpha != null && e.beta != null && e.gamma != null) h = tiltHeading(e.alpha, e.beta, e.gamma);   // Android
+                    if (h == null || isNaN(h)) return;
+                    S.sensorHeading = h;
+                    schedule();
+                };
+                addHandler('deviceorientationabsolute', onOri);
+                addHandler('deviceorientation', onOri);
+            }
+
+            function startWatch() {
+                if (!navigator.geolocation) return;
+                S.watchId = navigator.geolocation.watchPosition(pos => {
+                    const c = pos.coords;
+                    const prev = S.pos;
+                    S.pos = { lat: c.latitude, lng: c.longitude, acc: c.accuracy };
+                    S.geoErr = null;
+                    if (c.heading != null && !isNaN(c.heading) && (c.speed || 0) > 0.7) S.gpsHeading = c.heading;
+                    // warmer / colder, only once the team has moved a few metres
+                    const d = distanceM(c.latitude, c.longitude, S.lat, S.lng);
+                    if (S.trendRef === null) S.trendRef = d;
+                    else if (Math.abs(d - S.trendRef) >= 4) { S.trend = d < S.trendRef ? 'warmer' : 'colder'; S.trendRef = d; }
+                    schedule();
+                }, err => {
+                    S.geoErr = err && err.code ? err.code : 2;
+                    schedule();
+                }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+            }
+
+            async function keepAwake() {
+                try { if (navigator.wakeLock) S.wake = await navigator.wakeLock.request('screen'); } catch (e) { /* not essential */ }
+            }
+
+            window.openCompass = function (cpId, name, lat, lng) {
+                const modal = $('compass-modal');
+                if (!modal) return;
+                lat = Number(lat); lng = Number(lng);
+                if (!isFinite(lat) || !isFinite(lng)) return;
+                if (S.open) window.closeCompass(true);
+                Object.assign(S, {
+                    open: true, cpId, lat, lng, pos: null, geoErr: null, sensorHeading: null, gpsHeading: null,
+                    headingU: null, bearingU: null, trendRef: null, trend: '', sensorDenied: false, openedAt: Date.now()
+                });
+                $('compass-title').textContent = name || 'Checkpoint';
+                $('compass-acc').classList.add('hidden');
+                buildRing();
+                modal.classList.remove('hidden');
+                startSensors();     // first, so the iPhone permission prompt is still tied to the tap
+                startWatch();
+                keepAwake();
+                render();
+                clearTimeout(S.noteTimer);
+                S.noteTimer = setTimeout(schedule, 2600);   // reveals the "no compass reading" hint if nothing arrives
+            };
+
+            window.closeCompass = function (silent) {
+                if (!S.open) return;
+                S.open = false;
+                if (S.watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(S.watchId);
+                S.watchId = null;
+                S.handlers.forEach(([t, f]) => window.removeEventListener(t, f, true));
+                S.handlers = [];
+                clearTimeout(S.noteTimer);
+                try { if (S.wake) S.wake.release(); } catch (e) { /* ignore */ }
+                S.wake = null;
+                if (!silent) window.closeAppModal('compass-modal');
+                else $('compass-modal').classList.add('hidden');
+            };
+
+            // Hands over to the normal check-in (same checks, same radius, same manual-override prompt)
+            window.compassCheckIn = function () {
+                const id = S.cpId;
+                window.closeCompass();
+                const cardBtn = document.querySelector(`[data-id="${id}"] button[onclick^="checkInGps"]`);
+                if (typeof window.checkInGps === 'function') window.checkInGps(id, cardBtn || undefined);
+            };
+        })();
     </script>
 
 
@@ -8044,11 +8324,19 @@
                                 </button>
                             </div>`;
                     } else {
+                        const gEsc = (v) => String(v).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const hasGuideCoords = cp.lat != null && cp.lat !== '' && cp.lng != null && cp.lng !== '' && Number.isFinite(Number(cp.lat)) && Number.isFinite(Number(cp.lng));
+                        const guideBtn = hasGuideCoords ? `
+                                <button type="button" onclick="openCompass('${gEsc(cp.id)}', '${gEsc(cp.name)}', ${Number(cp.lat)}, ${Number(cp.lng)})" aria-label="Compass guide to this stop" title="Compass guide" class="w-11 h-12 shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 text-disneyGold border border-disneyGold/40 font-bold rounded-xl text-[10px] whitespace-nowrap transition shadow flex flex-col items-center justify-center gap-0.5">
+                                    <i class="fa-solid fa-compass text-base"></i><span>Guide</span>
+                                </button>` : '';
                         frontAction = `
-                            <div class="w-[4.5rem] shrink-0" onclick="event.stopPropagation()">
-                                <button onclick="checkInGps('${cp.id}', this)" class="w-full h-12 bg-disneyBlue hover:bg-blue-600 active:scale-95 text-white font-bold rounded-xl text-[10px] whitespace-nowrap transition shadow flex flex-col items-center justify-center gap-0.5">
-                                    <i class="fa-solid fa-location-crosshairs text-base"></i><span>Check in</span>
-                                </button>
+                            <div class="shrink-0 flex items-center gap-1.5" onclick="event.stopPropagation()">${guideBtn}
+                                <div class="w-[4.5rem] shrink-0">
+                                    <button onclick="checkInGps('${cp.id}', this)" class="w-full h-12 bg-disneyBlue hover:bg-blue-600 active:scale-95 text-white font-bold rounded-xl text-[10px] whitespace-nowrap transition shadow flex flex-col items-center justify-center gap-0.5">
+                                        <i class="fa-solid fa-location-crosshairs text-base"></i><span>Check in</span>
+                                    </button>
+                                </div>
                             </div>`;
                     }
 
@@ -8489,7 +8777,7 @@
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
                     const distance = calculateDistance(userLat, userLng, targetCp.lat, targetCp.lng);
-                    const ALLOWED_RADIUS_METERS = 150;
+                    const ALLOWED_RADIUS_METERS = window.CHECKIN_RADIUS_METERS || 150;
                     const isManual = distance > ALLOWED_RADIUS_METERS;
 
                     if (!isManual || await appConfirm(`You appear to be ${Math.round(distance)}m outside the check-in area. You can undo this later if you were in the wrong spot.`, { title: "Record manual override?", confirmText: "Record", tone: "warning" })) {
@@ -9533,6 +9821,7 @@
             modal('image-modal', () => window.closeImageModal && window.closeImageModal()),
             modal('bonus-preview-modal', () => window.cancelBonusPreview ? window.cancelBonusPreview() : window.closeAppModal('bonus-preview-modal')),
             modal('app-map-modal', () => { const m = el('app-map-modal'); if (m) m.classList.add('hidden'); }),
+            modal('compass-modal', () => window.closeCompass && window.closeCompass()),
             blocking('trivia-modal'),
             blocking('hostlock-team-modal'),
             dynamic('host-gallery-modal'),
