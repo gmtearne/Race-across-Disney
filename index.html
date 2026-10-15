@@ -4494,6 +4494,7 @@
                     }
                 }
 
+                let createdHostTeamId = null;
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
@@ -4534,6 +4535,7 @@
                     const hostTeamName = document.getElementById('create-host-team-name').value.trim();
                     const hostTeamPin = document.getElementById('create-host-team-pin').value.trim();
                     const hostTeamId = hostTeamName.toLowerCase().replace(/\s+/g, '_');
+                    createdHostTeamId = hostTeamId;
                     await setDoc(doc(window.db, "races", code, "teams", hostTeamId), {
                         teamName: hostTeamName, pin: hostTeamPin, photoUrl: DEFAULT_AVATAR,
                         isApproved: true, completedCheckpoints: [], customRouteOrder: [],
@@ -4553,6 +4555,16 @@
                     });
                 }
                 await loadAdminRaces();
+                // If the wizard registered a host team, sign that team into the portal immediately.
+                // Persist the same session keys used by normal team login so it survives a refresh.
+                if (createdHostTeamId) {
+                    localStorage.setItem('rad_race_code', code);
+                    localStorage.setItem('rad_team_id', createdHostTeamId);
+                    window.__wizardCreatedHostTeam = { code, teamId: createdHostTeamId };
+                    await restoreSession(code, createdHostTeamId);
+                } else {
+                    window.__wizardCreatedHostTeam = null;
+                }
                 return true;
             } catch (err) {
                 alert("Error creating race: " + err.message);
@@ -4707,8 +4719,14 @@
                 if (!discard) return;
             }
             const created = rwDone && rwInfo ? rwInfo.code : null;
+            const hostTeamSession = window.__wizardCreatedHostTeam && window.__wizardCreatedHostTeam.code === created
+                ? window.__wizardCreatedHostTeam : null;
             rwHide();
-            if (created) {
+            if (hostTeamSession) {
+                // Land directly in the logged-in host team's portal after the wizard closes.
+                window.switchTab('race');
+                window.__wizardCreatedHostTeam = null;
+            } else if (created) {
                 setTimeout(() => { rwEl(`admin-race-card-${created}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 400);
             }
         };
