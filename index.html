@@ -6304,6 +6304,9 @@
         window.openHostRacePanel = function(code) {
             if (!window.__hostRaceData[code]) return;
             hostPanelCode = code;
+            // Every time the panel is opened it starts clean: everything collapsed except Teams, scrolled to the top.
+            // (Live refreshes while it is open still keep whatever the host has expanded.)
+            window.__hrpSectionOpen = { teams: true };
             const el = hostPanelEl();
             hostPanelRender(false);
             el.classList.remove('hidden'); el.classList.add('flex');
