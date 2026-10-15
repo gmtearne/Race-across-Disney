@@ -1026,6 +1026,42 @@
         </div>
     </div>
 
+    <!-- Host Bonus Photo Challenges Modal -->
+    <div id="host-bonus-challenges-modal" class="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-amber-500/50 rounded-3xl max-w-lg w-full max-h-[88vh] flex flex-col shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-700 px-5 py-4 shrink-0">
+                <h3 class="font-bold text-base text-amber-300 flex items-center gap-2"><i class="fa-solid fa-camera"></i> Bonus Photo Challenges</h3>
+                <button type="button" onclick="closeBonusPhotoChallengesModal()" class="w-9 h-9 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-3 flex-1">
+                <p class="text-[11px] text-slate-400">Selected challenges appear here. Set the reward for each challenge, or add more challenges that match the GPS areas in this race.</p>
+                <div id="host-bonus-selected-list" class="space-y-2"></div>
+                <button type="button" onclick="openAddBonusPhotoChallengesModal()" class="w-full px-3 py-3 bg-amber-600/15 hover:bg-amber-600/25 border border-amber-500/40 text-amber-200 rounded-2xl text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-plus"></i> Add challenges</button>
+            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-3xl flex gap-3 shrink-0">
+                <button type="button" onclick="closeBonusPhotoChallengesModal()" class="flex-1 py-3 bg-slate-700 text-white font-bold text-xs rounded-xl">Cancel</button>
+                <button type="button" onclick="saveBonusPhotoChallengeEdits()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div id="host-add-bonus-challenges-modal" class="fixed inset-0 z-[80] bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-amber-500/50 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-700 px-5 py-4 shrink-0">
+                <h3 class="font-bold text-base text-amber-300 flex items-center gap-2"><i class="fa-solid fa-circle-plus"></i> Add Photo Challenges</h3>
+                <button type="button" onclick="closeAddBonusPhotoChallengesModal()" class="w-9 h-9 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-3 flex-1">
+                <p id="host-add-bonus-areas-note" class="text-[11px] text-slate-400"></p>
+                <input type="search" id="host-add-bonus-search" oninput="renderHostAddBonusPhotoChallenges()" placeholder="Search available challenges..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500">
+                <div id="host-add-bonus-list" class="space-y-2"></div>
+            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900/60 rounded-b-3xl flex gap-3 shrink-0">
+                <button type="button" onclick="closeAddBonusPhotoChallengesModal()" class="flex-1 py-3 bg-slate-700 text-white font-bold text-xs rounded-xl">Cancel</button>
+                <button type="button" onclick="confirmAddBonusPhotoChallenges()" class="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl">Add selected</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating glass dock: the five pages (all swipeable, in this order) -->
     <nav id="app-dock" aria-label="Main navigation">
         <button onclick="switchTab('race')" id="tab-btn-race" data-tab="race" class="dock-btn tab-active" aria-label="Team" title="Team"><i class="fa-solid fa-flag-checkered"></i></button>
@@ -4397,7 +4433,7 @@
                 const toCheckpoint = (p, idx, prefix) => ({
                     id: prefix + Date.now() + '_' + idx,
                     name: p.name,
-                    type: p.type || "GPS",
+                    type: "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4416,7 +4452,7 @@
                     initialCps = shuffledGps.map((p, idx) => ({
                         id: 'cp_rand_' + Date.now() + '_' + idx,
                         name: p.name,
-                        type: p.type || "GPS",
+                        type: "GPS",
                         lat: p.lat || 28.4177,
                         lng: p.lng || -81.5812,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4452,7 +4488,7 @@
                         initialCps.push({
                             id: 'cp_man_' + Date.now() + '_' + idx,
                             name: p.name,
-                            type: p.type || "GPS",
+                            type: "GPS",
                             lat: p.lat || 28.4177,
                             lng: p.lng || -81.5812,
                             points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4467,7 +4503,7 @@
                     initialCps = filtered.map((p, idx) => ({
                         id: 'cp_pre_' + Date.now() + '_' + idx,
                         name: p.name,
-                        type: p.type || "GPS",
+                        type: "GPS",
                         lat: p.lat || 28.4177,
                         lng: p.lng || -81.5812,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4880,7 +4916,7 @@
                 const race = raceSnap.data();
 
                 document.getElementById('edit-modal-race-code').value = raceCode;
-                editingRaceActiveCheckpoints = race.checkpoints || [];
+                editingRaceActiveCheckpoints = (race.checkpoints || []).filter(cp => cp.type !== 'BONUS_PHOTO');
                 editingRaceGameMode = race.gameMode || 'race';
                 editingRaceFinalCheckpointId = race.finalCheckpointId || null;
 
@@ -5014,7 +5050,7 @@
                     difficulty: newDifficulty,
                     finalCheckpointId: finalStopVal || null,
                     trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
-                    checkpoints: updatedCps
+                    checkpoints: [...updatedCps, ...(currentRace.checkpoints || []).filter(cp => cp.type === 'BONUS_PHOTO')]
                 });
 
                 window.appToast("Checkpoints updated");
@@ -5023,6 +5059,150 @@
             } catch (e) {
                 alert("Error saving race edits: " + e.message);
             }
+        };
+
+        // ================= HOST BONUS PHOTO CHALLENGE MANAGEMENT =================
+        let hostBonusEditingCode = null;
+        let hostBonusDraft = [];
+        let hostBonusPendingAdd = new Set();
+
+        function hostBonusRace(code = hostBonusEditingCode) {
+            return code && window.__hostRaceData && window.__hostRaceData[code] ? window.__hostRaceData[code].race : null;
+        }
+        function hostBonusCurrentList(race) {
+            if (Array.isArray(race.bonusPhotoChallenges)) return race.bonusPhotoChallenges.map(x => ({...x}));
+            return (race.checkpoints || []).filter(cp => cp.type === 'BONUS_PHOTO' && !cp.bingoId).map(cp => ({...cp}));
+        }
+        function hostBonusAreas(race) {
+            return new Set((race.checkpoints || []).filter(cp => cp.type !== 'BONUS_PHOTO').map(cp => cp.park).filter(Boolean));
+        }
+        window.toggleBonusPhotoChallenges = async function(code, checkbox) {
+            const options = document.getElementById('hrp-bonus-photo-options');
+            options?.classList.toggle('hidden', !checkbox.checked);
+            const owned = await getOwnedRaceForHost(code);
+            if (!owned) { checkbox.checked = !checkbox.checked; options?.classList.toggle('hidden', !checkbox.checked); return; }
+            const race = owned.data;
+            let list = hostBonusCurrentList(race);
+            let checkpoints = [...(race.checkpoints || [])].filter(cp => cp.type !== 'BONUS_PHOTO' || !!cp.bingoId);
+            if (checkbox.checked) {
+                const existingIds = new Set(checkpoints.map(cp => cp.id));
+                list.forEach(cp => { if (!existingIds.has(cp.id)) checkpoints.push({...cp, type:'BONUS_PHOTO', bingoId: null}); });
+            }
+            try {
+                await fastUpdate(owned.ref, {
+                    bonusPhotoChallengesEnabled: checkbox.checked,
+                    bonusPhotoChallenges: list,
+                    checkpoints
+                });
+                if (window.__hostRaceData[code]) {
+                    window.__hostRaceData[code].race = {...window.__hostRaceData[code].race, bonusPhotoChallengesEnabled: checkbox.checked, bonusPhotoChallenges: list, checkpoints};
+                    window.__hostRaceData[code].cps = checkpoints;
+                }
+                if (window.refreshHostRacePanel) window.refreshHostRacePanel();
+            } catch (e) {
+                checkbox.checked = !checkbox.checked;
+                options?.classList.toggle('hidden', !checkbox.checked);
+                window.appToast('Could not update bonus photo challenges'); console.error(e);
+            }
+        };
+        window.openBonusPhotoChallengesModal = function(code) {
+            hostBonusEditingCode = code;
+            const race = hostBonusRace(code);
+            if (!race) return;
+            hostBonusDraft = hostBonusCurrentList(race);
+            renderHostBonusSelectedList();
+            document.getElementById('host-bonus-challenges-modal')?.classList.remove('hidden');
+        };
+        window.closeBonusPhotoChallengesModal = function() {
+            document.getElementById('host-bonus-challenges-modal')?.classList.add('hidden');
+            document.getElementById('host-add-bonus-challenges-modal')?.classList.add('hidden');
+            hostBonusEditingCode = null; hostBonusDraft = []; hostBonusPendingAdd = new Set();
+        };
+        window.renderHostBonusSelectedList = function() {
+            const el = document.getElementById('host-bonus-selected-list');
+            if (!el) return;
+            const rewardLabel = hostBonusRace()?.gameMode === 'scavenger' ? 'Points' : 'Minutes off';
+            el.innerHTML = hostBonusDraft.map((cp, i) => `
+                <div class="p-3 rounded-2xl bg-slate-950 border border-slate-700 flex items-center gap-3">
+                    <div class="min-w-0 flex-1"><p class="font-bold text-sm text-white">${escHtml(cp.name || 'Photo challenge')}</p><p class="text-[10px] text-slate-400">${escHtml(cp.park || 'Area')} • ${escHtml(cp.land || 'Location')}</p></div>
+                    <label class="flex items-center gap-1.5 text-[10px] text-amber-300 shrink-0">${rewardLabel} <input type="number" min="0" inputmode="numeric" data-bonus-draft-index="${i}" value="${Number(cp.points ?? cp.bonusMinDeduction ?? 10)}" class="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-center text-white text-xs"></label>
+                    <button type="button" onclick="removeHostBonusDraftChallenge(${i})" class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300"><i class="fa-solid fa-trash"></i></button>
+                </div>`).join('') || '<p class="text-xs text-slate-500 text-center py-4">No photo challenges selected yet. Tap Add challenges to choose from the available challenges in this race’s GPS areas.</p>';
+        };
+        window.removeHostBonusDraftChallenge = function(index) {
+            hostBonusDraft.splice(index, 1); renderHostBonusSelectedList();
+        };
+        window.openAddBonusPhotoChallengesModal = function() {
+            hostBonusPendingAdd = new Set();
+            const search = document.getElementById('host-add-bonus-search'); if (search) search.value = '';
+            renderHostAddBonusPhotoChallenges();
+            document.getElementById('host-add-bonus-challenges-modal')?.classList.remove('hidden');
+        };
+        window.closeAddBonusPhotoChallengesModal = function() {
+            document.getElementById('host-add-bonus-challenges-modal')?.classList.add('hidden');
+        };
+        window.renderHostAddBonusPhotoChallenges = function() {
+            const el = document.getElementById('host-add-bonus-list');
+            const race = hostBonusRace();
+            if (!el || !race) return;
+            const areas = hostBonusAreas(race);
+            const areaText = [...areas].join(', ');
+            const note = document.getElementById('host-add-bonus-areas-note');
+            if (note) note.textContent = areas.size ? `Showing challenges applicable to this race’s GPS areas: ${areaText}.` : 'Add GPS checkpoints to the race first so matching photo challenges can be found.';
+            const query = (document.getElementById('host-add-bonus-search')?.value || '').toLowerCase();
+            const chosen = new Set(hostBonusDraft.map(cp => cp.name));
+            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !chosen.has(p.name) && window.bonusAppliesToAreas(p, areas) && (String(p.name || '').toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query) || String(p.land || '').toLowerCase().includes(query)));
+            el.innerHTML = presets.map(p => {
+                const key = String(p.name);
+                return `<label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700 bg-slate-950 cursor-pointer has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/20">
+                    <input type="checkbox" class="w-4 h-4 accent-amber-500" value="${escHtml(key)}" ${hostBonusPendingAdd.has(key) ? 'checked' : ''} onchange="this.checked ? hostBonusPendingAdd.add(this.value) : hostBonusPendingAdd.delete(this.value)">
+                    <span class="text-amber-300">⭐</span><span class="min-w-0 flex-1"><span class="block text-sm font-bold text-white">${escHtml(p.name)}</span><span class="block text-[10px] text-slate-400">${escHtml(p.park || '')} • ${escHtml(p.land || '')}</span></span>
+                </label>`;
+            }).join('') || '<p class="text-xs text-slate-500 text-center py-4">No more matching challenges are available for the GPS areas in this race.</p>';
+        };
+        window.confirmAddBonusPhotoChallenges = function() {
+            const race = hostBonusRace();
+            if (!race) return;
+            const areas = hostBonusAreas(race);
+            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && hostBonusPendingAdd.has(String(p.name)) && window.bonusAppliesToAreas(p, areas));
+            presets.forEach(p => {
+                hostBonusDraft.push({
+                    id: 'cp_bonus_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+                    name: p.name, type: 'BONUS_PHOTO', lat: p.lat || 28.4177, lng: p.lng || -81.5812,
+                    points: Number(p.bonusMinDeduction ?? 10), bonusMinDeduction: Number(p.bonusMinDeduction ?? 10),
+                    park: p.park || 'Disney', land: p.land || 'Attraction Area'
+                });
+            });
+            closeAddBonusPhotoChallengesModal();
+            renderHostBonusSelectedList();
+        };
+        window.saveBonusPhotoChallengeEdits = async function() {
+            const code = hostBonusEditingCode;
+            const owned = await getOwnedRaceForHost(code);
+            if (!owned) { window.appToast('Could not verify race ownership'); return; }
+            const race = owned.data;
+            document.querySelectorAll('#host-bonus-selected-list [data-bonus-draft-index]').forEach(input => {
+                const cp = hostBonusDraft[Number(input.dataset.bonusDraftIndex)];
+                if (!cp) return;
+                const pts = Math.max(0, Number(input.value) || 0);
+                cp.points = pts; cp.bonusMinDeduction = pts;
+            });
+            const list = hostBonusDraft.map(cp => ({...cp, type:'BONUS_PHOTO', points:Number(cp.points ?? cp.bonusMinDeduction ?? 10), bonusMinDeduction:Number(cp.points ?? cp.bonusMinDeduction ?? 10)}));
+            const existing = (race.checkpoints || []).filter(cp => cp.type === 'BONUS_PHOTO' && !cp.bingoId);
+            const existingById = new Map(existing.map(cp => [cp.id, cp]));
+            const mergedList = list.map(cp => ({...(existingById.get(cp.id) || {}), ...cp}));
+            let checkpoints = (race.checkpoints || []).filter(cp => cp.type !== 'BONUS_PHOTO' || !!cp.bingoId);
+            if (race.bonusPhotoChallengesEnabled !== false) checkpoints = checkpoints.concat(mergedList);
+            try {
+                await fastUpdate(owned.ref, { bonusPhotoChallenges: mergedList, checkpoints });
+                if (window.__hostRaceData[code]) {
+                    window.__hostRaceData[code].race = {...window.__hostRaceData[code].race, bonusPhotoChallenges:mergedList, checkpoints};
+                    window.__hostRaceData[code].cps = checkpoints;
+                }
+                window.appToast('Bonus photo challenges saved');
+                window.closeBonusPhotoChallengesModal();
+                if (window.refreshHostRacePanel) window.refreshHostRacePanel();
+            } catch (e) { window.appToast('Could not save photo challenges'); console.error(e); }
         };
 
         // ================= HOST ADD CHECKPOINTS SUB-MODAL LOGIC =================
@@ -5084,35 +5264,6 @@
                 }
             });
 
-            const bonusItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type === 'BONUS_PHOTO' && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
-            if (bonusItems.length > 0) {
-                html += `
-                    <div class="p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
-                        <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                            <span class="font-bold text-xs text-amber-300"><i class="fa-solid fa-star"></i> Bonus Photo Locations</span>
-                            <button type="button" onclick="selectBonusAddCheckboxes(true)" class="px-2.5 py-1 rounded-full border border-amber-500/40 text-amber-300 text-[10px] font-bold active:scale-95 transition">Select all</button>
-                        </div>
-                        <div class="space-y-2">
-                `;
-                bonusItems.forEach(p => {
-                    html += `
-                        <label class="flex items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/20">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <span class="text-amber-400">⭐</span>
-                                <div class="min-w-0">
-                                    <p class="font-bold text-white text-sm leading-tight">${p.name}</p>
-                                    <span class="text-[11px] text-slate-400">${p.land} (${p.park})</span>
-                                </div>
-                            </div>
-                            <span class="relative inline-flex items-center shrink-0">
-                                <input type="checkbox" name="add_cp_checkbox" value="${p.originalIndex}" data-type="BONUS_PHOTO" class="sr-only peer">
-                                <span class="w-11 h-6 bg-slate-700 rounded-full peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span>
-                            </span>
-                        </label>
-                    `;
-                });
-                html += `</div></div>`;
-            }
 
             const addTicked = new Set(Array.from(document.querySelectorAll('input[name="add_cp_checkbox"]:checked')).map(cb => cb.value));
             container.innerHTML = html || '<p class="text-center text-slate-500 py-4 text-xs">All available preset checkpoints have already been added.</p>';
@@ -5130,8 +5281,7 @@
         };
 
         window.selectBonusAddCheckboxes = function(selectState) {
-            const checkboxes = document.querySelectorAll(`input[name="add_cp_checkbox"][data-type="BONUS_PHOTO"]`);
-            checkboxes.forEach(cb => cb.checked = selectState);
+            return; // Bonus photo challenges are managed separately from GPS checkpoints.
         };
 
         window.confirmAddCheckpoints = function() {
@@ -5146,10 +5296,10 @@
                 editingRaceActiveCheckpoints.push({
                     id: 'cp_add_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
                     name: p.name,
-                    type: p.type || "GPS",
+                    type: "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
-                    points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10) : (editingRaceGameMode === 'scavenger' ? 10 : 0),
+                    points: editingRaceGameMode === 'scavenger' ? 10 : 0,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints,
                     park: p.park || "Disney",
                     land: p.land || "Attraction Area"
@@ -5937,7 +6087,13 @@
                         <p class="text-[10px] text-slate-500">Turning Bingo off stops it being active but keeps existing checkpoint history intact.</p>
                     </div>
                 </div>
-                <div class="border-t border-slate-800 pt-3"><button onclick="openOrganizerEditModal('${code}')" class="w-full px-3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-pen-to-square"></i> Edit checkpoints (${(d.cps || []).length})</button></div>`, 'options', false);
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-camera', 'text-amber-300', 'Bonus Photo Challenge', 'Standalone photo challenges for extra points or time deductions', race.bonusPhotoChallengesEnabled !== false, `toggleBonusPhotoChallenges('${code}', this)`, 'peer-checked:bg-amber-600')}
+                    <div id="hrp-bonus-photo-options" class="${race.bonusPhotoChallengesEnabled === false ? 'hidden' : ''} pt-1">
+                        <button type="button" onclick="openBonusPhotoChallengesModal('${code}')" class="w-full px-3 py-2.5 bg-amber-600/15 hover:bg-amber-600/25 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-list-check"></i> Edit challenges (${(race.bonusPhotoChallenges || (d.cps || []).filter(cp => cp.type === 'BONUS_PHOTO' && !cp.bingoId)).length})</button>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3"><button onclick="openOrganizerEditModal('${code}')" class="w-full px-3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-pen-to-square"></i> Edit checkpoints (${(d.cps || []).filter(cp => cp.type !== 'BONUS_PHOTO').length})</button></div>`, 'options', false);
 
             const tiles = teamList.map(t => {
                 const avatar = t.photoUrl || DEFAULT_AVATAR;
