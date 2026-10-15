@@ -967,6 +967,23 @@
                     </div>
                 </div>
 
+                <div class="space-y-4 bg-slate-900/70 p-4 rounded-2xl border border-indigo-500/30">
+                    <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Bonus & Surprise Event Settings</h4>
+                    <p class="text-[11px] text-slate-400">You can enable or disable these features while the race is running. Changes apply to future triggers; an event already in progress is not cancelled.</p>
+                    <div class="p-3 rounded-xl border border-fuchsia-500/30 bg-slate-950/70 space-y-3">
+                        <div class="flex items-center justify-between gap-3"><div><p class="text-sm font-bold text-white">🎲 Wildcard Challenge</p><p class="text-[10px] text-slate-400">Random bonus challenge</p></div><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="edit-wildcard-switch" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-fuchsia-600"></div></label></div>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] text-slate-400 mb-1">Offer duration</label><select id="edit-wildcard-duration" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div><div><label class="block text-[10px] text-slate-400 mb-1">Reward</label><input id="edit-wildcard-reward" type="number" min="0" value="10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"></div></div>
+                    </div>
+                    <div class="p-3 rounded-xl border border-orange-500/30 bg-slate-950/70 space-y-3">
+                        <div class="flex items-center justify-between gap-3"><div><p class="text-sm font-bold text-white">⚡ Checkpoint Frenzy</p><p class="text-[10px] text-slate-400">Most valid check-ins during the event wins</p></div><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="edit-frenzy-switch" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-orange-600"></div></label></div>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] text-slate-400 mb-1">Event duration</label><select id="edit-frenzy-duration" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div><div><label class="block text-[10px] text-slate-400 mb-1">Winner reward</label><input id="edit-frenzy-reward" type="number" min="0" value="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"></div></div>
+                    </div>
+                    <div class="p-3 rounded-xl border border-yellow-500/30 bg-slate-950/70 space-y-3">
+                        <div class="flex items-center justify-between gap-3"><div><p class="text-sm font-bold text-white">🎯 Photo Bingo</p><p class="text-[10px] text-slate-400">Complete a themed 2×2 photo card for a reward</p></div><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="edit-bingo-switch" class="sr-only peer"><div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-yellow-600"></div></label></div>
+                        <div id="edit-bingo-options" class="space-y-3"><div><label class="block text-[10px] text-slate-400 mb-1">Bingo card</label><select id="edit-bingo-card" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="">Choose a bingo card</option></select></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="edit-bingo-reward" type="number" min="1" value="20" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"></div><div><label class="block text-[10px] text-slate-400 mb-1">Rules</label><select id="edit-bingo-rule" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="casual">Every team can win</option><option value="one">Only one winner</option></select></div></div><p class="text-[10px] text-slate-500">Turning bingo on adds four themed challenges to the race. Turning it off removes bingo challenges that have not already been completed.</p></div>
+                    </div>
+                </div>
+
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Active Checkpoints & Bonuses</h4>
@@ -4903,6 +4920,26 @@
                 toggleEditTriviaSettings();
                 toggleEditTriviaFreq();
 
+                const wildcardCfg = race.wildcardAuto || {};
+                document.getElementById('edit-wildcard-switch').checked = !!wildcardCfg.enabled;
+                document.getElementById('edit-wildcard-duration').value = String(Number(wildcardCfg.durationMin) || 15);
+                document.getElementById('edit-wildcard-reward').value = Number(wildcardCfg.reward ?? race.defaultWildcardReward ?? 10);
+                const frenzyCfg = race.frenzyAuto || {};
+                document.getElementById('edit-frenzy-switch').checked = !!frenzyCfg.enabled;
+                document.getElementById('edit-frenzy-duration').value = String(Number(frenzyCfg.durationMin) || 15);
+                document.getElementById('edit-frenzy-reward').value = Number(frenzyCfg.reward ?? race.defaultFrenzyReward ?? 5);
+                const bingoCfg = race.bingo || {};
+                document.getElementById('edit-bingo-switch').checked = !!bingoCfg.enabled;
+                document.getElementById('edit-bingo-reward').value = Number(bingoCfg.reward) || 20;
+                document.getElementById('edit-bingo-rule').value = bingoCfg.onlyOneWinner ? 'one' : 'casual';
+                const bingoSelect = document.getElementById('edit-bingo-card');
+                const bingoPresets = window.DISNEY_PRESETS || [];
+                const bingoCards = window.bingoCardsFromPresets ? window.bingoCardsFromPresets(bingoPresets) : [];
+                bingoSelect.innerHTML = '<option value="">Choose a bingo card</option>' + bingoCards.map(c => `<option value="${String(c.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${String(c.emoji || '🎯')} ${String(c.name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</option>`).join('');
+                if (bingoCfg.cardId) bingoSelect.value = bingoCfg.cardId;
+                document.getElementById('edit-bingo-options').classList.toggle('hidden', !bingoCfg.enabled);
+                document.getElementById('edit-bingo-switch').onchange = () => document.getElementById('edit-bingo-options').classList.toggle('hidden', !document.getElementById('edit-bingo-switch').checked);
+
                 renderEditModalCheckpointsList(editingRaceActiveCheckpoints);
                 document.getElementById('organizer-edit-modal').classList.remove('hidden');
             } catch (e) {
@@ -5006,15 +5043,48 @@
                     return cp;
                 });
 
+                const currentRace = raceSnap.data();
+                const wildcardEnabled = document.getElementById('edit-wildcard-switch').checked;
+                const frenzyEnabled = document.getElementById('edit-frenzy-switch').checked;
+                const wildcardDuration = Math.max(1, Number(document.getElementById('edit-wildcard-duration').value) || 15);
+                const frenzyDuration = Math.max(1, Number(document.getElementById('edit-frenzy-duration').value) || 15);
+                const wildcardReward = Math.max(0, Number(document.getElementById('edit-wildcard-reward').value) || 0);
+                const frenzyReward = Math.max(0, Number(document.getElementById('edit-frenzy-reward').value) || 0);
+                const bingoEnabled = document.getElementById('edit-bingo-switch').checked;
+                const bingoReward = Math.max(1, Number(document.getElementById('edit-bingo-reward').value) || 20);
+                let finalCheckpoints = updatedCps.filter(cp => !(!bingoEnabled && cp.bingoId));
+                let bingoConfig = { ...(currentRace.bingo || {}), enabled: bingoEnabled, reward: bingoReward, onlyOneWinner: document.getElementById('edit-bingo-rule').value === 'one' };
+                if (bingoEnabled) {
+                    const chosenCardId = document.getElementById('edit-bingo-card').value || bingoConfig.cardId || '';
+                    const existingBingoCps = finalCheckpoints.filter(cp => cp.bingoId);
+                    if (!existingBingoCps.length) {
+                        if (!chosenCardId) return alert('Choose a bingo card before enabling Photo Bingo.');
+                        const presets = window.DISNEY_PRESETS || [];
+                        const card = (window.bingoCardsFromPresets(presets) || []).find(c => c.id === chosenCardId);
+                        if (!card) return alert('That bingo card could not be found. Please choose another card.');
+                        const stopAreas = new Set(finalCheckpoints.filter(cp => cp.type !== 'BONUS_PHOTO').map(cp => cp.park).filter(Boolean));
+                        const items = card.items.filter(item => window.bonusAppliesToAreas(item, stopAreas));
+                        if (items.length < 4) return alert('This bingo card needs at least four challenges in the race areas. Add checkpoints in the relevant area or choose another bingo card.');
+                        const chosen = items.sort(() => Math.random() - 0.5).slice(0, 4);
+                        const newBingoCps = chosen.map((preset, idx) => ({ id: 'cp_edit_bingo_' + Date.now() + '_' + idx, name: preset.name, type: 'BONUS_PHOTO', lat: preset.lat || 28.4177, lng: preset.lng || -81.5812, points: 0, bonusMinDeduction: 0, park: preset.park || 'Disney', land: preset.land || 'Attraction Area', bingoId: chosenCardId }));
+                        finalCheckpoints = [...finalCheckpoints, ...newBingoCps];
+                    }
+                    const card = (window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) || []).find(c => c.id === chosenCardId) || (window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) || []).find(c => c.id === bingoConfig.cardId);
+                    bingoConfig = { ...bingoConfig, enabled: true, cardId: chosenCardId || bingoConfig.cardId, name: card?.name || bingoConfig.name || 'Photo Bingo', emoji: card?.emoji || bingoConfig.emoji || '🎯', reward: bingoReward };
+                } else {
+                    bingoConfig = { ...bingoConfig, enabled: false };
+                }
+
                 await updateDoc(raceRef, {
                     difficulty: newDifficulty,
                     finalCheckpointId: finalStopVal || null,
-                    trivia: {
-                        enabled: triviaToggle === 'on',
-                        frequency: triviaFreq,
-                        randomCount: triviaCount
-                    },
-                    checkpoints: updatedCps
+                    trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
+                    wildcardAuto: { ...(currentRace.wildcardAuto || {}), enabled: wildcardEnabled, durationMin: wildcardDuration, reward: wildcardReward },
+                    frenzyAuto: { ...(currentRace.frenzyAuto || {}), enabled: frenzyEnabled, durationMin: frenzyDuration, reward: frenzyReward },
+                    defaultWildcardReward: wildcardReward,
+                    defaultFrenzyReward: frenzyReward,
+                    bingo: bingoConfig,
+                    checkpoints: finalCheckpoints
                 });
 
                 window.appToast("Checkpoints updated");
