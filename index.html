@@ -4433,7 +4433,7 @@
                 const toCheckpoint = (p, idx, prefix) => ({
                     id: prefix + Date.now() + '_' + idx,
                     name: p.name,
-                    type: "GPS",
+                    type: p.type || "GPS",
                     lat: p.lat || 28.4177,
                     lng: p.lng || -81.5812,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4452,7 +4452,7 @@
                     initialCps = shuffledGps.map((p, idx) => ({
                         id: 'cp_rand_' + Date.now() + '_' + idx,
                         name: p.name,
-                        type: "GPS",
+                        type: p.type || "GPS",
                         lat: p.lat || 28.4177,
                         lng: p.lng || -81.5812,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4488,7 +4488,7 @@
                         initialCps.push({
                             id: 'cp_man_' + Date.now() + '_' + idx,
                             name: p.name,
-                            type: "GPS",
+                            type: p.type || "GPS",
                             lat: p.lat || 28.4177,
                             lng: p.lng || -81.5812,
                             points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
@@ -4503,7 +4503,7 @@
                     initialCps = filtered.map((p, idx) => ({
                         id: 'cp_pre_' + Date.now() + '_' + idx,
                         name: p.name,
-                        type: "GPS",
+                        type: p.type || "GPS",
                         lat: p.lat || 28.4177,
                         lng: p.lng || -81.5812,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
