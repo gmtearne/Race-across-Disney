@@ -3065,8 +3065,8 @@
             const codeEl = document.getElementById('active-team-racecode');
             const code = codeEl ? codeEl.textContent.trim() : '';
             if (!code || code === '---') return;
-            const link = window.location.href.split('#')[0];
-            const text = `Join my race on The Amazing Mouse Race! Race Code: ${code}\nLink: ${link}`;
+            const link = window.raceInviteUrl(code);
+            const text = `Join my race on The Amazing Mouse Race! Tap the link, then enter a team name and PIN. Race Code: ${code}\nLink: ${link}`;
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(text);
@@ -3093,9 +3093,16 @@
             }
         };
 
+        // Invite link that opens the app with the race code already filled in: https://site/?race=CODE
+        window.raceInviteUrl = function(code) {
+            const u = new URL(window.location.href);
+            u.hash = ''; u.search = '';
+            u.searchParams.set('race', String(code || '').trim().toUpperCase());
+            return u.toString();
+        };
         window.shareRaceCode = function(code, title) {
-            const shareText = `Join my race "${title}" on The Amazing Mouse Race! Use Race Code: ${code}`;
-            const shareUrl = window.location.href.split('#')[0];
+            const shareText = `Join my race "${title}" on The Amazing Mouse Race! Tap the link, then enter a team name and PIN. Race Code: ${code}`;
+            const shareUrl = window.raceInviteUrl(code);
 
             if (navigator.share) {
                 navigator.share({
@@ -6924,6 +6931,25 @@
         document.getElementById('input-race-code').addEventListener('change', updateTeamPinConfirmationVisibility);
         document.getElementById('input-team-name').addEventListener('change', updateTeamPinConfirmationVisibility);
         document.getElementById('input-team-name').addEventListener('blur', updateTeamPinConfirmationVisibility);
+
+        // Invite links look like  /?race=84QNKJ . Fill in the race code and take the player to the team sign-in.
+        (function applyInviteLink() {
+            let code = '';
+            try { code = (new URLSearchParams(window.location.search).get('race') || '').trim().toUpperCase(); } catch (_) {}
+            if (!/^[A-Z0-9]{3,8}$/.test(code)) return;
+            try { const u = new URL(window.location.href); u.searchParams.delete('race'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); } catch (_) {}
+            // Already signed in to a team? Never override that session from a link.
+            if (localStorage.getItem('rad_race_code') && localStorage.getItem('rad_team_id')) return;
+            const input = document.getElementById('input-race-code');
+            if (!input) return;
+            input.value = code;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            setTimeout(() => {
+                switchTab('race', false, true);
+                if (window.appToast) window.appToast(`Race code ${code} filled in. Enter a team name and PIN.`, 4200);
+                document.getElementById('input-team-name')?.focus();
+            }, 500);
+        })();
 
 
         // Mobile keyboard ergonomics: Enter advances between text/PIN fields and scrolls focus above the keyboard.
