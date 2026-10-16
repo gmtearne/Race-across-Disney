@@ -10,8 +10,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Amazing Mouse Race: Magic Kingdom & Beyond</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -1614,17 +1612,18 @@
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl space-y-3">
                     <button type="button" id="map-picker-btn" onclick="openMapPicker()" aria-haspopup="dialog" class="w-full flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-left text-white transition active:scale-[0.99] focus:outline-none focus:border-disneyGold">
-                        <span id="map-picker-icon" class="text-lg shrink-0">🏰</span>
-                        <span id="map-picker-label" class="min-w-0 flex-1 text-sm font-semibold truncate">Magic Kingdom</span>
+                        <span id="map-picker-icon" class="text-lg shrink-0">🗺️</span>
+                        <span id="map-picker-label" class="min-w-0 flex-1 text-sm font-semibold truncate">Whole Resort</span>
                         <i class="fa-solid fa-chevron-down text-slate-400 text-xs shrink-0"></i>
                     </button>
-                    <div class="w-full h-96 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                        <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik" style="border: 0;"></iframe>
+                    <div class="w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner" style="height:min(62dvh,30rem)">
+                        <div id="wdw-map" class="absolute inset-0"></div>
+                        <p id="wdw-map-msg" class="hidden absolute left-2 right-2 bottom-8 text-center text-[11px] font-semibold text-amber-300 bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2"></p>
                     </div>
                     <p id="map-desc-text" class="text-xs text-slate-400 italic">
-                        Viewing Magic Kingdom area. Use mouse or touch gestures to inspect park paths, lands, and attractions.
+                        Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore.
                     </p>
-                    <a id="map-external-link" href="https://www.openstreetmap.org/#map=16/28.4194/-81.5812" target="_blank" rel="noopener" class="w-full text-xs bg-slate-900 hover:bg-slate-700 text-disneyGold px-3.5 py-3 rounded-xl border border-slate-600 transition flex items-center justify-center gap-1.5 font-semibold">
+                    <a id="map-external-link" href="https://www.openstreetmap.org/#map=12/28.3850/-81.5625" target="_blank" rel="noopener" class="w-full text-xs bg-slate-900 hover:bg-slate-700 text-disneyGold px-3.5 py-3 rounded-xl border border-slate-600 transition flex items-center justify-center gap-1.5 font-semibold">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
                     </a>
                 </div>
@@ -2781,6 +2780,7 @@
             }
 
             setActiveNavTab(tabName);
+            if (tabName === 'maps' && window.showParkMap) window.showParkMap();
 
             if (saveState) localStorage.setItem('rad_active_tab', tabName);
 
@@ -2922,6 +2922,7 @@
         }
 
         const MAP_LOCATIONS = {
+            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", link: "https://www.openstreetmap.org/#map=12/28.3850/-81.5625", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
             mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
             epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
             hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
@@ -2930,8 +2931,8 @@
             resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
         };
 
-        const MAP_NAMES = { mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
-        let currentMapKey = 'mk';
+        const MAP_NAMES = { wdw: 'Whole Resort', mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
+        let currentMapKey = 'wdw';
 
         window.switchMapArea = function(areaKey) {
             const mapData = MAP_LOCATIONS[areaKey];
@@ -2942,9 +2943,46 @@
             const label = document.getElementById('map-picker-label');
             if (icon) icon.textContent = (window.areaIcon ? window.areaIcon(name) : '📍');
             if (label) label.textContent = name;
-            document.getElementById('map-iframe').src = mapData.url;
+            flyToArea(areaKey, true);
             document.getElementById('map-external-link').href = mapData.link;
             document.getElementById('map-desc-text').innerText = mapData.desc;
+        };
+
+        // ---- Park Maps: one offline vector map of the whole resort; the picker flies the camera to each area ----
+        const areaBounds = key => { const m = MAP_LOCATIONS[key]; if (!m) return null; const [w, s, e, n] = String(m.bbox).replace(/%2C/gi, ',').split(',').map(Number); return [[s, w], [n, e]]; };
+        let parkMap = null, parkMapPromise = null;
+        const parkMapMessage = text => { const m = document.getElementById('wdw-map-msg'); if (m) { m.textContent = text || ''; m.classList.toggle('hidden', !text); } };
+        window.ensureParkMap = function () {
+            if (parkMap) return Promise.resolve(parkMap);
+            if (parkMapPromise) return parkMapPromise;
+            const box = document.getElementById('wdw-map');
+            if (!box || !window.WdwMap) return Promise.resolve(null);
+            parkMapPromise = WdwMap.create(box, {}).then(m => {
+                parkMap = m;
+                if (!m.__hasData) parkMapMessage('Map data (wdw-map.json) was not found, so only the base layer is shown.');
+                flyToArea(currentMapKey, false);
+                return m;
+            }).catch(e => {
+                console.error('Park map failed', e);
+                parkMapMessage('The map could not be started on this device.');
+                parkMapPromise = null;
+                return null;
+            });
+            return parkMapPromise;
+        };
+        function flyToArea(key, animate) {
+            const b = areaBounds(key); if (!b) return;
+            window.ensureParkMap().then(m => {
+                if (!m) return;
+                try { m.resize(); } catch (e) {}
+                const cam = WdwMap.cameraFor(m, b, { padding: 14, maxZoom: 17 });
+                if (animate) WdwMap.flyTo(m, cam.center, cam.zoom, { duration: 1.6 }); else WdwMap.jump(m, cam.center, cam.zoom);
+            });
+        }
+        // Called whenever the Park Maps page is shown: starts the map on first visit, and fixes its size afterwards
+        window.showParkMap = function () {
+            if (!window.WdwMap) { window.addEventListener('load', () => { if (window.showParkMap) window.showParkMap(); }, { once: true }); return; }
+            window.ensureParkMap().then(m => { if (m) setTimeout(() => { try { m.resize(); } catch (e) {} }, 380); });
         };
 
         // Bottom-sheet picker for the map area (same sheet as every other dropdown in the app)
@@ -8297,20 +8335,20 @@
                 document.addEventListener('keydown', onKey);
                 modal.querySelector('#orr-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
-                if (!window.L) { modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
+                const allLatLngs = [];
+                teams.forEach(tm => tm.pts.forEach(p => allLatLngs.push([p.lat, p.lng])));
+                try { map = await WdwMap.create(modal.querySelector('#orr-map'), { center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
+                catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
+                if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
+                const teamLines = WdwMap.lineLayer(map, 'team-trails', { width:3.5, opacity:.85 });
 
                 // ---- Map, pins, team layers ----
-                map = L.map('orr-map', { zoomControl:true, zoomSnap:1 });
-                window.replayTileLayer().addTo(map);
-                const allLatLngs = [];
                 (race.checkpoints || []).forEach(cp => {
                     if (!Number.isFinite(Number(cp.lat)) || !Number.isFinite(Number(cp.lng)) || cp.lat === null || cp.lng === null) return;
                     const bonus = cp.type === 'BONUS_PHOTO', c = bonus ? '#f472b6' : '#e2e8f0';
-                    L.circleMarker([Number(cp.lat), Number(cp.lng)], { radius:4, color:c, fillColor:c, fillOpacity:.5, weight:1.5 }).bindTooltip(esc((bonus ? '⭐ ' : '') + cp.name)).addTo(map);
+                    WdwMap.dot(map, [Number(cp.lat), Number(cp.lng)], { color:c, r:4, fill:.5, weight:1.5, title:(bonus ? '⭐ ' : '') + cp.name });
                 });
                 teams.forEach((tm, idx) => {
-                    tm.pts.forEach(p => allLatLngs.push([p.lat, p.lng]));
-                    tm.line = L.polyline([], { color:tm.color, weight:3.5, opacity:.85, lineCap:'round' }).addTo(map);
                     const el = document.createElement('div');
                     el.style.cssText = `position:relative;width:32px;height:32px;border-radius:50%;border:3px solid ${tm.color};background:#0f172a;box-shadow:0 2px 8px #000a`;
                     const img = new Image(); img.alt = ''; img.draggable = false;
@@ -8320,10 +8358,8 @@
                     tm.flag.style.cssText = 'position:absolute;right:-8px;top:-10px;font-size:13px;display:none;filter:drop-shadow(0 1px 2px #000)';
                     el.append(img, tm.flag);
                     const ang = idx * 2.399963, ox = Math.cos(ang) * 9, oy = Math.sin(ang) * 9;     // fan avatars out so teams on the same spot stay visible
-                    tm.marker = L.marker([tm.pts[0].lat, tm.pts[0].lng], { icon:L.divIcon({ className:'', html:el, iconSize:[32, 32], iconAnchor:[16 - ox, 16 - oy] }) })
-                        .bindTooltip(esc(tm.name), { direction:'top', offset:[0, -16] }).addTo(map);
+                    tm.marker = WdwMap.marker(map, [tm.pts[0].lat, tm.pts[0].lng], el, { size:[32, 32], offset:[ox, oy], title:tm.name });
                 });
-                map.setView(allLatLngs[0], 14);
 
                 // ---- Progress bar avatars + ranking chips ----
                 const barAv = modal.querySelector('#orr-avatars'), track = modal.querySelector('#orr-track'), fill = modal.querySelector('#orr-fill'), chips = modal.querySelector('#orr-chips');
@@ -8356,7 +8392,7 @@
                 chips.addEventListener('click', e => {
                     const b = e.target.closest('[data-tid]'); if (!b) return;
                     const tm = teams.find(x => x.id === b.dataset.tid); if (!tm) return;
-                    setAutoFrame(false); window.smoothFly(map, tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
+                    setAutoFrame(false); WdwMap.flyTo(map, tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
                 });
 
                 // ---- Clock + per-frame render ----
@@ -8364,15 +8400,17 @@
                 const render = () => {
                     slider.value = String(Math.round(T));
                     clockEl.textContent = mode === 'elapsed' ? fmt(T) : new Date(globalStart + T).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                    const trails = [];
                     teams.forEach(tm => {
                         const p = posAt(tm, T);
                         tm.marker.setLatLng([p.lat, p.lng]);
                         const trail = []; for (let k = 0; k <= p.i; k++) trail.push([tm.pts[k].lat, tm.pts[k].lng]);
-                        trail.push([p.lat, p.lng]); tm.line.setLatLngs(trail);
+                        trail.push([p.lat, p.lng]); trails.push({ latlngs:trail, color:tm.color });
                         tm.prog = progAt(tm, T);
                         tm.flag.style.display = (tm.finished && T >= tm.endT) ? 'block' : 'none';
-                        tm.marker.setZIndexOffset(Math.round(tm.prog * 100));       // leaders draw on top
+                        tm.marker.setZ(10 + Math.round(tm.prog * 100));       // leaders draw on top
                     });
+                    teamLines.set(trails);
                     renderBar();
                 };
 
@@ -8381,11 +8419,11 @@
                     if (!autoFrame || !map) return;
                     const active = teams.filter(tm => T > 0 && !(tm.finished && T >= tm.endT));
                     const set = active.length ? active : teams;
-                    const b = L.latLngBounds(set.map(tm => tm.marker.getLatLng()));
-                    let fit = map.getBoundsZoom(b, false, L.point(100, 100)); fit = Number.isFinite(fit) ? Math.min(16, fit) : 16;
-                    const inView = map.getBounds().pad(-0.1).contains(b);
-                    if (!force && inView && map.getZoom() - fit <= 1) return;       // already framed well enough
-                    window.smoothFly(map, b.getCenter(), fit, { duration:1 });
+                    const pts = set.map(tm => tm.marker.getLatLng());
+                    const cam = WdwMap.cameraFor(map, pts, { padding:50, maxZoom:16 });
+                    const inView = WdwMap.inView(map, pts, 0.1);
+                    if (!force && inView && map.getZoom() - cam.zoom <= 1) return;       // already framed well enough
+                    WdwMap.flyTo(map, cam.center, cam.zoom, { duration:1 });
                 };
                 const frameBtn = modal.querySelector('#orr-frame');
                 const setAutoFrame = on => { autoFrame = on; frameBtn.textContent = on ? '📍 Auto-frame' : '📍 Free camera'; frameBtn.style.opacity = on ? '1' : '.7'; };
@@ -8407,7 +8445,7 @@
                     if (now - lastChips > 400) { lastChips = now; renderChips(); }
                     if (T >= maxT) {
                         pause(); renderChips();
-                        if (autoFrame) window.smoothFit(map, allLatLngs, { padding:[28, 28], maxZoom:16 });   // finish: show the whole race
+                        if (autoFrame) WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16 });   // finish: show the whole race
                         return;
                     }
                     raf = requestAnimationFrame(tick);
@@ -8433,7 +8471,7 @@
                 };
 
                 render(); renderChips();
-                setTimeout(() => { if (!map) return; map.invalidateSize(); map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 }); }, 120);   // opening overview
+                setTimeout(() => { if (!map) return; map.resize(); WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:false }); }, 120);   // opening overview
             } catch (e) {
                 console.error('Could not open overall race replay', e);
                 window.appToast("Could not load the race replay. Please try again.");
@@ -8516,29 +8554,25 @@
                 document.addEventListener('keydown', onKey);
                 modal.querySelector('#replay-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
-                if (!window.L) { modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">Map library did not load. Check your connection and try again.</p>'; return; }
-
-                map = L.map('team-replay-map', { zoomControl:true, zoomSnap:1 }).setView([events[0].lat, events[0].lng], 15);
-                window.replayTileLayer().addTo(map);
                 const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
+                try { map = await WdwMap.create(modal.querySelector('#team-replay-map'), { center:[events[0].lat, events[0].lng], zoom:15, labelsMaxZoom:14.5 }); }
+                catch (e) { console.error('Replay map failed', e); modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
+                if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
+
 
                 // ---- Pins ----
                 const kindColor = { start:'#38bdf8', checkpoint:'#34d399', bonus:'#f472b6' };
-                const pins = L.layerGroup().addTo(map);
                 events.forEach((ev, i) => {
                     const c = kindColor[ev.kind] || '#34d399';
-                    L.circleMarker([ev.lat, ev.lng], { radius:i === 0 ? 7 : 5, color:c, fillColor:c, fillOpacity:ev.manual ? .2 : .95, weight:2 })
-                        .bindTooltip(`${i + 1}. ${esc(ev.label)}${ev.manual ? ' (manual check-in)' : ''}`)
-                        .on('click', () => { stopPlay(); renderStep(i, true); })
-                        .addTo(pins);
+                    WdwMap.dot(map, [ev.lat, ev.lng], { color:c, r:i === 0 ? 7 : 5, weight:2, fill:ev.manual ? .2 : .95,
+                        title:`${i + 1}. ${ev.label}${ev.manual ? ' (manual check-in)' : ''}`, onClick:() => { stopPlay(); renderStep(i, true); } });
                 });
                 skipped.forEach(ev => {
-                    L.marker([ev.lat, ev.lng], {
-                        icon:L.divIcon({ className:'', iconSize:[18, 18], iconAnchor:[9, 9],
-                            html:'<div style="width:18px;height:18px;border-radius:50%;background:#7f1d1d;border:2px solid #f87171;color:#fecaca;font-size:11px;font-weight:900;line-height:14px;text-align:center;opacity:.9">✕</div>' })
-                    }).bindTooltip(`Rejected by host: ${esc(ev.label)}`).addTo(pins);
+                    const x = document.createElement('div');
+                    x.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#7f1d1d;border:2px solid #f87171;color:#fecaca;font-size:11px;font-weight:900;line-height:14px;text-align:center;opacity:.9';
+                    x.textContent = '✕';
+                    WdwMap.marker(map, [ev.lat, ev.lng], x, { size:[18, 18], title:`Rejected by host: ${ev.label}` });
                 });
-
                 // ---- Route drawing ----
                 const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', bonus:'#f472b6', other:'#94a3b8' };
                 const lerp = (a, b, t) => [a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t];
@@ -8553,11 +8587,11 @@
                     for (let j = 0; j < n; j++) {
                         const t0 = j / n, t1 = Math.min((j + 1) / n, frac);
                         if (t1 <= t0) break;
-                        L.polyline([lerp(a, b, t0), lerp(a, b, t1)], { color:modeColors[modes[j]] || modeColors.other, weight:5, opacity:.94, lineCap:'round' }).addTo(layer);
+                        layer.add([lerp(a, b, t0), lerp(a, b, t1)], modeColors[modes[j]] || modeColors.other);
                     }
                 };
-                const routeLayer = L.layerGroup().addTo(map);   // finished legs
-                const liveLayer = L.layerGroup().addTo(map);    // leg currently being travelled
+                const routeLayer = WdwMap.lineLayer(map, 'route-done', { width:5, opacity:.94 });   // finished legs
+                const liveLayer = WdwMap.lineLayer(map, 'route-live', { width:5, opacity:.94 });    // leg currently being travelled
 
                 // ---- Avatar: the team's own photo ----
                 const avatarEl = document.createElement('div');
@@ -8567,14 +8601,12 @@
                 avatarImg.onerror = () => { avatarImg.onerror = null; avatarImg.src = DEFAULT_AVATAR; };
                 avatarImg.src = team.photoUrl || DEFAULT_AVATAR;
                 avatarEl.appendChild(avatarImg);
-                const avatar = L.marker([events[0].lat, events[0].lng], {
-                    icon:L.divIcon({ className:'', html:avatarEl, iconSize:[44, 44], iconAnchor:[22, 22] }), zIndexOffset:1000, interactive:false
-                }).addTo(map);
+                const avatar = WdwMap.marker(map, [events[0].lat, events[0].lng], avatarEl, { size:[44, 44], z:1000, interactive:false });
 
 
                 // ---- Transit badge: shown behind the avatar only while travelling a leg ----
                 const modeEmoji = { walk:'🚶', none:'🚶', bus:'🚌', monorail:'🚝', skyliner:'🚡', boat:'⛴️' };   // unknown / bonus legs show no badge
-                function clearModeMarker() { if (modeMarker && map) { try { map.removeLayer(modeMarker); } catch (e) {} } modeMarker = null; }
+                function clearModeMarker() { if (modeMarker && map) { try { modeMarker.remove(); } catch (e) {} } modeMarker = null; }
 
                 // ---- Bonus proof "postcard": tilted photo frame, shown at a bonus stop, then swiped away ----
                 function clearPostcard() {
@@ -8588,7 +8620,7 @@
                     if (!photo || typeof photo !== 'string') return resolve(true);       // no proof photo on file: carry on
                     clearPostcard();
                     const tilt = [-5, 4, -3, 5][postcardCount++ % 4];
-                    const size = map.getSize();
+                    const size = { x: map.getContainer().clientWidth, y: map.getContainer().clientHeight };
                     const imgH = Math.max(90, Math.min(size.y - 120, 320));
                     const imgW = Math.max(120, Math.min(imgH * 4 / 3, size.x * 0.78 - 20));
                     const el = document.createElement('div');
@@ -8623,33 +8655,31 @@
                 // frames the whole cluster so short hops are clearly visible, frames the full leg for long trips
                 // between clusters, zooms back into the next cluster on arrival, and shows the entire route
                 // after the final stop.
-                const CLUSTER_M = 1500, MAX_Z = 17, PAD = L.point(120, 120);
+                const CLUSTER_M = 1500, MAX_Z = 17, PAD = 60;
                 let cid = 0;
                 events.forEach((ev, i) => {
-                    if (i > 0 && map.distance([events[i - 1].lat, events[i - 1].lng], [ev.lat, ev.lng]) > CLUSTER_M) cid++;
+                    if (i > 0 && WdwMap.distance([events[i - 1].lat, events[i - 1].lng], [ev.lat, ev.lng]) > CLUSTER_M) cid++;
                     ev.cluster = cid;
                 });
-                const clusterBounds = {};
-                events.forEach(ev => { (clusterBounds[ev.cluster] = clusterBounds[ev.cluster] || L.latLngBounds([[ev.lat, ev.lng]])).extend([ev.lat, ev.lng]); });
+                const clusterPts = {};
+                events.forEach(ev => { (clusterPts[ev.cluster] = clusterPts[ev.cluster] || []).push([ev.lat, ev.lng]); });
                 let framed = null;      // what the camera is currently framing, so we never re-issue the same move
                 const camera = {
-                    fitTo(bounds, key, animate) {
+                    fitTo(pts, key, animate) {
                         if (framed === key) return false;
                         framed = key;
-                        let fit = map.getBoundsZoom(bounds, false, PAD);
-                        const z = Number.isFinite(fit) ? Math.min(MAX_Z, fit) : MAX_Z;
-                        const center = bounds.getCenter();
-                        if (!animate) map.setView(center, z, { animate:false });
-                        else if (z === map.getZoom()) { window.preloadView(map, center, z); map.panTo(center, { animate:true, duration:.8 }); }
-                        else window.smoothFly(map, center, z, { duration:1 });
+                        const cam = WdwMap.cameraFor(map, pts, { padding:PAD, maxZoom:MAX_Z });
+                        if (!animate) WdwMap.jump(map, cam.center, cam.zoom);
+                        else if (Math.abs(cam.zoom - map.getZoom()) < 0.05) WdwMap.panTo(map, cam.center, { duration:.8 });
+                        else WdwMap.flyTo(map, cam.center, cam.zoom, { duration:1 });
                         return true;
                     },
-                    cluster(ev, animate) { return this.fitTo(clusterBounds[ev.cluster], 'c' + ev.cluster, animate); },
+                    cluster(ev, animate) { return this.fitTo(clusterPts[ev.cluster], 'c' + ev.cluster, animate); },
                     leg(a, b, animate) {
                         if (a.cluster === b.cluster) return this.cluster(b, animate);          // short hop inside a park: frame the park
-                        return this.fitTo(L.latLngBounds([[a.lat, a.lng], [b.lat, b.lng]]), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg
+                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]], 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg
                     },
-                    overview(animate) { framed = 'all'; window.smoothFit(map, allLatLngs, { padding:[28, 28], maxZoom:16, animate:animate !== false }); },
+                    overview(animate) { framed = 'all'; WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:animate !== false }); },
                     reset() { framed = null; }
                 };
 
@@ -8666,7 +8696,7 @@
 
                 const renderStep = (n, moveCamera) => {
                     step = Math.max(0, Math.min(events.length - 1, Number(n) || 0)); slider.value = String(step);
-                    routeLayer.clearLayers(); liveLayer.clearLayers();
+                    routeLayer.clear(); liveLayer.clear();
                     for (let i = 1; i <= step; i++) drawLeg(routeLayer, events[i - 1], events[i], legModes(events[i]), 1);
                     const ev = events[step]; avatar.setLatLng([ev.lat, ev.lng]);
                     nameEl.textContent = ev.label;
@@ -8678,17 +8708,17 @@
                 const stopPlay = () => {
                     playing = false; playToken++; stopWaiting();
                     clearPostcard(); clearModeMarker();
-                    liveLayer.clearLayers(); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
+                    liveLayer.clear(); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
                     play.innerHTML = '<i class="fa-solid fa-play"></i> Play';
                 };
                 const wait = (ms, token) => new Promise(resolve => { waitTimer = setTimeout(() => resolve(token === playToken && playing), ms); });
                 const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
                 const animateLeg = (a, b, token) => new Promise(resolve => {
-                    const dist = map.distance([a.lat, a.lng], [b.lat, b.lng]);
+                    const dist = WdwMap.distance([a.lat, a.lng], [b.lat, b.lng]);
                     const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
                     const modes = legModes(b), started = performance.now();
                     // The transit badge trails behind the avatar (opposite the direction of travel on screen).
-                    const p0 = map.latLngToContainerPoint([a.lat, a.lng]), p1 = map.latLngToContainerPoint([b.lat, b.lng]);
+                    const p0 = map.project([a.lng, a.lat]), p1 = map.project([b.lng, b.lat]);
                     let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
                     const ox = -ux * 34, oy = -uy * 34;
                     let shownIdx = -1;
@@ -8700,9 +8730,8 @@
                         badge.style.cssText = `width:40px;height:40px;border-radius:50%;background:#0f172ae6;border:2px solid ${modeColors[modes[idx]]};display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;box-shadow:0 2px 8px #0008`;
                         badge.textContent = emoji;
                         badge.animate([{ transform:'scale(.3)', opacity:0 }, { transform:'scale(1)', opacity:1 }], { duration:240, easing:'ease-out' });
-                        const icon = L.divIcon({ className:'', html:badge, iconSize:[40, 40], iconAnchor:[20 - ox, 20 - oy] });
-                        if (modeMarker) modeMarker.setIcon(icon);
-                        else modeMarker = L.marker(avatar.getLatLng(), { icon, zIndexOffset:900, interactive:false }).addTo(map);
+                        if (modeMarker) modeMarker.remove();
+                        modeMarker = WdwMap.marker(map, avatar.getLatLng(), badge, { size:[40, 40], offset:[ox, oy], z:900, interactive:false });
                     };
                     const frame = now => {
                         if (token !== playToken || !playing) { clearModeMarker(); return resolve(false); }
@@ -8711,7 +8740,7 @@
                         avatar.setLatLng(pos);
                         showMode(Math.min(modes.length - 1, Math.floor(t * modes.length)));   // badge changes with the line's colour sections
                         if (modeMarker) modeMarker.setLatLng(pos);
-                        liveLayer.clearLayers(); drawLeg(liveLayer, a, b, modes, t);         // trail follows the avatar
+                        liveLayer.clear(); drawLeg(liveLayer, a, b, modes, t);         // trail follows the avatar
                         if (t < 1) requestAnimationFrame(frame); else { clearModeMarker(); resolve(true); }
                     };
                     requestAnimationFrame(frame);
@@ -8745,8 +8774,8 @@
                 renderStep(0, false);
                 setTimeout(() => {
                     if (!map) return;
-                    map.invalidateSize();
-                    if (allLatLngs.length > 1) map.fitBounds(allLatLngs, { padding:[28, 28], maxZoom:16 });   // opening overview; Play then frames each leg
+                    map.resize();
+                    if (allLatLngs.length > 1) WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:false });   // opening overview; Play then frames each leg
                 }, 120);
             } catch (e) {
                 console.error('Could not open race replay', e);
@@ -10615,6 +10644,7 @@
         // Icons for areas; unknown areas fall back to a sensible default
         window.areaIcon = function (name) {
             const n = String(name || '').toLowerCase();
+            if (n.includes('whole')) return '🗺️';
             if (n.includes('magic kingdom')) return '🏰';
             if (n.includes('epcot')) return '🌐';
             if (n.includes('hollywood')) return '🎬';
@@ -10833,61 +10863,206 @@
     })();
     </script>
     <script>
-    /* Replay map smoothness.
-       The jumpy "reload" feel came from Leaflet fetching tiles for every zoom level a camera flight passes
-       through. So: (1) the tile layer only loads once the flight has landed (the old tiles simply scale
-       meanwhile) and keeps a wider ring of tiles, and (2) the tiles for the view being flown TO are fetched
-       into the browser cache the moment the flight starts, so they are already there on arrival.
-       Only the destination view is fetched (about a screenful of tiles), never whole areas. */
+    /* WdwMap: one offline vector map of Walt Disney World, shared by the Park Maps page and both race replays.
+       The map is drawn by MapLibre GL from wdw-map.json (built once with tools/build-wdw-map.mjs), so nothing
+       is fetched tile-by-tile while a replay flies around. Positions in this API are [lat, lng] pairs. */
     (function () {
-        const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-        const warmed = new Set();
-        window.replayTileLayer = function () {
-            return L.tileLayer(TILE_URL, {
-                maxZoom: 19, attribution: '&copy; OpenStreetMap',
-                updateWhenZooming: false,   // no tile loading at the zoom levels passed on the way
-                updateInterval: 120,
-                keepBuffer: 4,              // keep more tiles around the view so panning back is instant
-                className: 'replay-tiles'
-            });
-        };
-        // Fetch the tiles that will be on screen when the camera lands (URLs match the layer's, so the browser cache serves them)
-        window.preloadView = function (map, center, zoom) {
-            try {
-                const z = Math.max(0, Math.min(19, Math.round(zoom)));
-                const size = map.getSize(), c = map.project(L.latLng(center), z);
-                const min = c.subtract(size.divideBy(2)), max = c.add(size.divideBy(2));
-                const n = Math.pow(2, z), subs = ['a', 'b', 'c'];
-                let budget = 30;
-                for (let x = Math.floor(min.x / 256); x <= Math.floor(max.x / 256); x++) {
-                    for (let y = Math.floor(min.y / 256); y <= Math.floor(max.y / 256); y++) {
-                        if (y < 0 || y >= n || budget <= 0) continue;
-                        const url = TILE_URL.replace('{s}', subs[Math.abs(x + y) % 3]).replace('{z}', z).replace('{x}', ((x % n) + n) % n).replace('{y}', y);
-                        if (warmed.has(url)) continue;
-                        warmed.add(url); budget--;
-                        const im = new Image(); im.decoding = 'async'; im.src = url;
-                    }
+        'use strict';
+        const MAPLIBRE_VERSION = '4.7.1';
+        const DATA_URL = 'wdw-map.json?v=1';                       // bump v= after you rebuild the data file
+        const WDW_BOUNDS = [[28.335, -81.625], [28.435, -81.500]]; // [[south, west], [north, east]]: same box as the build script
+        const EMPTY = { type: 'FeatureCollection', features: [] };
+        let libPromise = null, dataPromise = null;
+
+        // ---------- loading ----------
+        const addTag = (tag, attrs) => new Promise((resolve, reject) => {
+            const n = document.createElement(tag); Object.assign(n, attrs);
+            n.onload = () => resolve(n); n.onerror = () => { n.remove(); reject(new Error('could not load ' + (attrs.src || attrs.href))); };
+            document.head.appendChild(n);
+        });
+        function loadLib() {
+            if (window.maplibregl) return Promise.resolve();
+            if (libPromise) return libPromise;
+            const sets = [
+                ['vendor/maplibre-gl.css', 'vendor/maplibre-gl.js'],                                                                                   // stored with the app
+                [`https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.css`, `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.js`]   // fallback
+            ];
+            libPromise = (async () => {
+                for (const [css, js] of sets) {
+                    try { await addTag('link', { rel: 'stylesheet', href: css }).catch(() => {}); await addTag('script', { src: js }); if (window.maplibregl) return; } catch (e) { /* try the next source */ }
                 }
-                if (warmed.size > 600) warmed.clear();
-            } catch (e) { /* preloading is only an optimisation */ }
-        };
-        window.smoothFly = function (map, center, zoom, opts) {
-            window.preloadView(map, center, zoom);
-            return map.flyTo(center, zoom, opts);
-        };
-        window.smoothFit = function (map, latlngs, opts) {
-            try {
-                const t = map._getBoundsCenterZoom(L.latLngBounds(latlngs), opts || {});
-                window.preloadView(map, t.center, t.zoom);
-            } catch (e) { /* optimisation only */ }
-            return map.fitBounds(latlngs, opts);
-        };
+                throw new Error('MapLibre could not be loaded');
+            })();
+            libPromise.catch(() => { libPromise = null; });
+            return libPromise;
+        }
+        function loadData() {
+            if (!dataPromise) {
+                dataPromise = fetch(DATA_URL).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+                dataPromise.catch(() => { dataPromise = null; });
+            }
+            return dataPromise;
+        }
+
+        // ---------- look: dark navy to match the app, gold monorail ----------
+        const C = { bg: '#0b1220', water: '#1b4468', waterLine: '#2b6a9c', wood: '#0f2a22', grass: '#13301f', park: '#16382a', golf: '#174a2f', wetland: '#143a38',
+                    building: '#2a3556', buildingLine: '#3a4770', major: '#5a6a96', minor: '#41507a', service: '#313d62', path: '#8a97bd',
+                    rail: '#7c8ab0', monorail: '#fbbf24', gondola: '#f472b6', ferry: '#38bdf8', theme: '#fbbf24' };
+        const K = k => ['==', ['get', 'k'], k];
+        const zoomW = (...stops) => ['interpolate', ['linear'], ['zoom'], ...stops];
+        function buildStyle(data) {
+            return {
+                version: 8, name: 'wdw-dark',
+                sources: { wdw: { type: 'geojson', data: data || EMPTY, maxzoom: 16, tolerance: 0.35, buffer: 64 } },
+                layers: [
+                    { id: 'bg', type: 'background', paint: { 'background-color': C.bg } },
+                    { id: 'green', type: 'fill', source: 'wdw', filter: K('green'), paint: { 'fill-color': ['match', ['get', 'c'], 'wood', C.wood, 'golf', C.golf, 'wetland', C.wetland, 'park', C.park, C.grass] } },
+                    { id: 'water', type: 'fill', source: 'wdw', filter: K('water'), paint: { 'fill-color': C.water } },
+                    { id: 'water-edge', type: 'line', source: 'wdw', filter: K('water'), paint: { 'line-color': C.waterLine, 'line-width': 0.8, 'line-opacity': 0.7 } },
+                    { id: 'waterway', type: 'line', source: 'wdw', filter: K('waterway'), paint: { 'line-color': C.water, 'line-width': zoomW(11, 0.6, 16, 3) } },
+                    { id: 'theme-fill', type: 'fill', source: 'wdw', filter: K('park'), paint: { 'fill-color': C.theme, 'fill-opacity': 0.06 } },
+                    { id: 'theme-edge', type: 'line', source: 'wdw', filter: K('park'), paint: { 'line-color': C.theme, 'line-opacity': 0.45, 'line-width': 1.4, 'line-dasharray': [3, 2] } },
+                    { id: 'building', type: 'fill', source: 'wdw', filter: K('building'), minzoom: 13.5, paint: { 'fill-color': C.building, 'fill-opacity': zoomW(13.5, 0, 15, 0.95) } },
+                    { id: 'building-edge', type: 'line', source: 'wdw', filter: K('building'), minzoom: 16, paint: { 'line-color': C.buildingLine, 'line-width': 0.6 } },
+                    { id: 'path', type: 'line', source: 'wdw', filter: K('path'), minzoom: 13.5, layout: { 'line-cap': 'round' }, paint: { 'line-color': C.path, 'line-opacity': 0.6, 'line-width': zoomW(14, 0.5, 18, 2.4), 'line-dasharray': [2, 1.5] } },
+                    { id: 'road-service', type: 'line', source: 'wdw', filter: ['all', K('road'), ['==', ['get', 'c'], 'service']], minzoom: 13.5, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': C.service, 'line-width': zoomW(14, 0.5, 18, 5) } },
+                    { id: 'road-minor', type: 'line', source: 'wdw', filter: ['all', K('road'), ['==', ['get', 'c'], 'minor']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': C.minor, 'line-width': zoomW(10, 0.4, 14, 1.8, 18, 8) } },
+                    { id: 'road-major', type: 'line', source: 'wdw', filter: ['all', K('road'), ['==', ['get', 'c'], 'major']], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': C.major, 'line-width': zoomW(9, 0.8, 14, 3, 18, 12) } },
+                    { id: 'rail', type: 'line', source: 'wdw', filter: K('rail'), paint: { 'line-color': C.rail, 'line-width': zoomW(11, 0.6, 18, 2.5), 'line-dasharray': [4, 2] } },
+                    { id: 'ferry', type: 'line', source: 'wdw', filter: K('ferry'), paint: { 'line-color': C.ferry, 'line-width': zoomW(11, 1, 18, 3), 'line-dasharray': [1.5, 2] } },
+                    { id: 'gondola', type: 'line', source: 'wdw', filter: K('gondola'), paint: { 'line-color': C.gondola, 'line-width': zoomW(11, 1, 18, 3.5), 'line-dasharray': [3, 2] } },
+                    { id: 'monorail-casing', type: 'line', source: 'wdw', filter: K('monorail'), paint: { 'line-color': '#0b1220', 'line-width': zoomW(11, 2.4, 18, 9) } },
+                    { id: 'monorail', type: 'line', source: 'wdw', filter: K('monorail'), layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': C.monorail, 'line-width': zoomW(11, 1.2, 18, 5) } }
+                ]
+            };
+        }
+
+        // ---------- labels (HTML, so no font files are needed) ----------
+        function addLabels(map, data, maxZ) {
+            const items = [];
+            ((data && data.features) || []).forEach(f => {
+                const p = f.properties || {};
+                if (p.k !== 'poi' || !p.n || p.z > maxZ) return;
+                const el = document.createElement('div');
+                el.className = 'wdw-label wdw-label--' + p.c; el.textContent = p.n; el.style.display = 'none';
+                const m = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(f.geometry.coordinates).addTo(map);
+                items.push({ el, z: p.z, shown: false, m });
+            });
+            const refresh = () => { const z = map.getZoom(); items.forEach(it => { const on = z >= it.z; if (on !== it.shown) { it.shown = on; it.el.style.display = on ? '' : 'none'; } }); };
+            map.on('zoom', refresh); refresh();
+        }
+
+        // ---------- map ----------
+        const ll = p => [p[1], p[0]];                              // [lat,lng] -> [lng,lat]
+        async function create(container, o = {}) {
+            const [, data] = await Promise.all([loadLib(), loadData().catch(e => { console.warn('WDW map data unavailable', e); return null; })]);
+            const map = new maplibregl.Map({
+                container, style: buildStyle(data), center: ll(o.center || [28.385, -81.5625]), zoom: o.zoom != null ? o.zoom : 11,
+                minZoom: 8, maxZoom: 19, attributionControl: false, dragRotate: false, pitchWithRotate: false, fadeDuration: 0, renderWorldCopies: false
+            });
+            map.touchZoomRotate.disableRotation();
+            map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: '&copy; OpenStreetMap contributors' }));
+            map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+            await Promise.race([new Promise(res => map.once('load', res)), new Promise(res => setTimeout(res, 7000))]);
+            map.__hasData = !!data;
+            if (data) addLabels(map, data, o.labelsMaxZoom != null ? o.labelsMaxZoom : 99);
+            return map;
+        }
+
+        // ---------- camera ----------
+        function cameraFor(map, latlngs, o = {}) {
+            const b = new maplibregl.LngLatBounds();
+            latlngs.forEach(p => b.extend(ll(p)));
+            const maxZoom = o.maxZoom != null ? o.maxZoom : 17;
+            let cam = null;
+            try { cam = map.cameraForBounds(b, { padding: o.padding != null ? o.padding : 28, maxZoom }); } catch (e) { /* falls through */ }
+            if (!cam) { const c = b.getCenter(); return { center: [c.lat, c.lng], zoom: Math.min(maxZoom, map.getZoom()) }; }
+            const c = maplibregl.LngLat.convert(cam.center);
+            return { center: [c.lat, c.lng], zoom: Math.min(maxZoom, cam.zoom) };
+        }
+        const ms = s => Math.round((s != null ? s : 1) * 1000);
+        function flyTo(map, center, zoom, o = {}) { map.flyTo({ center: ll(center), zoom, duration: ms(o.duration), essential: true }); }
+        function panTo(map, center, o = {}) { map.easeTo({ center: ll(center), duration: ms(o.duration), essential: true }); }
+        function jump(map, center, zoom) { map.jumpTo({ center: ll(center), zoom }); }
+        function fit(map, latlngs, o = {}) {
+            const cam = cameraFor(map, latlngs, o);
+            if (o.animate === false) jump(map, cam.center, cam.zoom); else map.easeTo({ center: ll(cam.center), zoom: cam.zoom, duration: ms(o.duration != null ? o.duration : 0.9), essential: true });
+            return cam;
+        }
+        function inView(map, latlngs, margin) {
+            const c = map.getContainer(), w = c.clientWidth, h = c.clientHeight, m = margin != null ? margin : 0.1;
+            return latlngs.every(p => { const q = map.project(ll(p)); return q.x > w * m && q.x < w * (1 - m) && q.y > h * m && q.y < h * (1 - m); });
+        }
+        function distance(a, b) {                                  // metres, haversine
+            const R = 6371000, rad = Math.PI / 180, dLat = (b[0] - a[0]) * rad, dLng = (b[1] - a[1]) * rad;
+            const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(h));
+        }
+
+        // ---------- things to draw ----------
+        // The element is wrapped in a fixed-size box: MapLibre positions the box with transforms, so animating the inner element stays safe.
+        function marker(map, latlng, el, o = {}) {
+            const size = o.size || [el.offsetWidth || 24, el.offsetHeight || 24];
+            const box = document.createElement('div');
+            box.style.cssText = `width:${size[0]}px;height:${size[1]}px;${o.interactive === false ? 'pointer-events:none;' : ''}`;
+            if (o.title) box.title = o.title;
+            box.appendChild(el);
+            const m = new maplibregl.Marker({ element: box, anchor: 'center', offset: o.offset || [0, 0] }).setLngLat(ll(latlng)).addTo(map);
+            let pos = [latlng[0], latlng[1]];
+            if (o.z != null) box.style.zIndex = String(o.z);
+            return { el: box, setLatLng(p) { pos = [p[0], p[1]]; m.setLngLat(ll(p)); }, getLatLng() { return pos.slice(); }, setZ(z) { box.style.zIndex = String(z); }, remove() { m.remove(); } };
+        }
+        function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+        function dot(map, latlng, o = {}) {
+            const r = o.r || 5, bw = o.weight || 2, d = r * 2 + bw * 2, color = o.color || '#e2e8f0';
+            const el = document.createElement('div');
+            el.style.cssText = `width:${d}px;height:${d}px;border-radius:50%;box-sizing:border-box;border:${bw}px solid ${color};background:${rgba(color, o.fill != null ? o.fill : 0.9)};${o.onClick ? 'cursor:pointer;' : ''}`;
+            let popup = null;
+            const show = () => { if (!o.title || popup) return; popup = new maplibregl.Popup({ closeButton: false, offset: d / 2 + 4, className: 'wdw-tip', maxWidth: '240px' }).setLngLat(ll(latlng)).setText(o.title).addTo(map); popup.on('close', () => { popup = null; }); };
+            const hide = () => { if (popup) { popup.remove(); popup = null; } };
+            el.addEventListener('mouseenter', show); el.addEventListener('mouseleave', hide);
+            el.addEventListener('click', e => { e.stopPropagation(); show(); if (o.onClick) o.onClick(); });
+            const box = document.createElement('div'); box.style.cssText = `width:${d}px;height:${d}px`; box.appendChild(el);
+            const m = new maplibregl.Marker({ element: box, anchor: 'center' }).setLngLat(ll(latlng)).addTo(map);
+            return { remove() { hide(); m.remove(); } };
+        }
+        // A group of coloured line segments that can be redrawn cheaply (batched: many add() calls cost one update).
+        function lineLayer(map, id, o = {}) {
+            map.addSource(id, { type: 'geojson', data: EMPTY });
+            map.addLayer({ id, type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': ['get', 'color'], 'line-width': o.width || 4, 'line-opacity': o.opacity != null ? o.opacity : 0.9 } });
+            let feats = [], queued = false;
+            const flush = () => { queued = false; try { const s = map.getSource(id); if (s) s.setData({ type: 'FeatureCollection', features: feats }); } catch (e) { /* map already closed */ } };
+            const mark = () => { if (!queued) { queued = true; queueMicrotask(flush); } };
+            const feature = (latlngs, color) => ({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: latlngs.map(ll) } });
+            return {
+                clear() { feats = []; mark(); },
+                add(latlngs, color) { feats.push(feature(latlngs, color)); mark(); },
+                set(list) { feats = list.filter(x => x.latlngs.length > 1).map(x => feature(x.latlngs, x.color)); mark(); }
+            };
+        }
+
+        window.WdwMap = { WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
     })();
     </script>
     <style>
-        /* no white flash while tiles arrive; tiles fade in softly */
-        .leaflet-container { background: #0b1220; }
-        .replay-tiles.leaflet-tile-loaded { transition: opacity .3s linear; }
+        /* map surfaces + labels + controls in the app's dark style */
+        .maplibregl-map { background: #0b1220; font-family: inherit; }
+        .maplibregl-ctrl-group { background: rgba(15,23,42,.88) !important; border: 1px solid rgba(255,255,255,.12); box-shadow: none !important; }
+        .maplibregl-ctrl-group button + button { border-top: 1px solid rgba(255,255,255,.12) !important; }
+        .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(1.2); }
+        .maplibregl-ctrl-attrib { background: rgba(2,6,23,.6) !important; }
+        .maplibregl-ctrl-attrib a { color: #cbd5e1 !important; }
+        .wdw-label { pointer-events: none; white-space: nowrap; font: 600 11px/1.2 'Nunito', system-ui, sans-serif; color: #e8e1c6;
+            text-shadow: 0 0 3px #020617, 0 0 6px #020617, 0 1px 2px #020617; z-index: 1; }
+        .wdw-label--park { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 700; font-size: 14px; color: #fbbf24; letter-spacing: .02em; }
+        .wdw-label--water { font-style: italic; font-weight: 500; color: #8cc4ef; }
+        .wdw-label--golf { color: #86d9a6; font-weight: 500; }
+        .wdw-label--resort { color: #f3e7c0; }
+        .wdw-label--station { color: #c4b5fd; }
+        .wdw-label--attraction { color: #f5d0fe; font-weight: 500; }
+        .wdw-tip .maplibregl-popup-content { background: #0f172a; color: #fff; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15); }
+        .wdw-tip .maplibregl-popup-tip { border-top-color: #0f172a !important; border-bottom-color: #0f172a !important; }
     </style>
     <script>
     /* Side menu + utility pages. Opening a page closes the menu first, so X returns to the previous screen with the menu closed. */
