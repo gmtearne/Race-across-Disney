@@ -1433,6 +1433,10 @@
                     <p class="page-sub">Read carefully before starting your journey across Disney property!</p>
                     <span id="rules-preset-badge" class="hidden inline-block mt-2 px-2.5 py-1 rounded-full bg-slate-800 border border-disneyGold/40 text-[10px] font-bold uppercase tracking-widest text-disneyGold"></span>
                 </div>
+                <div id="rules-generic-notice" class="bg-sky-950/50 border border-sky-400/30 rounded-2xl p-4 shadow-xl text-xs space-y-1">
+                    <div class="flex items-center gap-2 text-sky-300 font-bold text-sm"><i class="fa-solid fa-circle-info"></i> General rules</div>
+                    <p class="text-slate-300 leading-relaxed">This page explains how the game works in general. Each host chooses their own settings, so <strong>the exact rules for transport, internet use, penalties and special challenges are shown here once you join a race</strong>.</p>
+                </div>
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
                     <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
                         <i class="fa-solid fa-stopwatch"></i> Objective
@@ -1446,7 +1450,7 @@
                         <i class="fa-solid fa-bus"></i> Transportation
                     </div>
                     <p id="rules-transport-text" class="text-slate-300 leading-relaxed">
-                        You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
+                        <strong>Your host decides which transportation is allowed</strong>, anywhere from walking only to free park transit, paid options like taxis, or any mode at all. The rules for your race will appear here once you join.
                     </p>
                 </div>
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
@@ -1462,7 +1466,7 @@
                         <i class="fa-solid fa-triangle-exclamation"></i> Penalties
                     </div>
                     <p id="rules-penalty-text" class="text-slate-300 leading-relaxed">
-                        All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
+                        In a Speed Race, skipping a required checkpoint adds a <strong>time penalty</strong> to your final score. Your host sets the size of the penalty (60 minutes unless they change it). In a Scavenger Hunt there are no time penalties, but skipped checkpoints earn no points.
                     </p>
                 </div>
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
@@ -1471,6 +1475,14 @@
                     </div>
                     <p class="text-slate-300 leading-relaxed">
                         Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
+                    </p>
+                </div>
+                <div id="rules-optional-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-fuchsia-300 font-bold text-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Special Challenges
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Depending on your host's settings, a race may include extras such as <strong>trivia questions</strong>, surprise <strong>wildcard</strong> bonuses, <strong>checkpoint frenzies</strong> and <strong>Hidden Mickey Bingo</strong>. If your race uses them, their rules appear on this page after you join.
                     </p>
                 </div>
                 <div id="rules-bingo-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
@@ -1484,7 +1496,7 @@
                         <i class="fa-solid fa-ban"></i> Route Planning & Internet Use
                     </div>
                     <p id="rules-internet-text" class="text-slate-300 leading-relaxed">
-                        Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
+                        <strong>Your host decides whether internet help is allowed</strong>: none at all, maps and the park app only, or anything goes. The rules for your race will appear here once you join.
                     </p>
                 </div>
                 <div id="rules-host-card" class="hidden bg-slate-800 border border-violet-500/40 rounded-2xl p-5 shadow-xl text-xs space-y-2">
@@ -2158,32 +2170,46 @@
         window.RULE_PRESET_NAMES = { casual: 'Casual', competitive: 'Competitive', custom: 'Custom' };
         window.RULE_TRANSPORT_LABELS = { walk: 'Walking only', free_transit: 'Free park transit only', paid_transit: 'Free + paid transit', any: 'Anything goes' };
         window.RULE_INTERNET_LABELS = { none: 'Not allowed', maps: 'Maps and park app only', any: 'Allowed' };
+        // Races created before rules existed (no race.rules) keep the original competitive wording.
+        window.RULE_LEGACY_TRANSPORT_HTML = 'You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.';
+        window.RULE_LEGACY_INTERNET_HTML = 'Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!';
+        window.RULE_LEGACY_PENALTY_HTML = 'All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.';
         window.RULE_TRANSPORT_HTML = {
             walk: '<strong>Walking only.</strong> No buses, monorails, boats, the Skyliner, ride-sharing or taxis.',
+            free_transit: window.RULE_LEGACY_TRANSPORT_HTML,
             paid_transit: 'Free Disney transportation <strong>and paid options</strong> such as taxis and ride-sharing are allowed. Driving your own car is <strong>not</strong> allowed.',
             any: '<strong>Any transportation is allowed</strong>, including paid taxis, ride-sharing and driving your own car.'
         };
         window.RULE_INTERNET_HTML = {
+            none: window.RULE_LEGACY_INTERNET_HTML,
             maps: 'You may use <strong>maps and the official park app</strong> to find your way and check wait times. Searching the web for clue answers or looking up transit timetables is <strong>not allowed</strong>.',
             any: '<strong>Internet use is allowed</strong>, including maps, web searches and park apps.'
         };
+        // With no race (logged out) the page shows the generic text written in the HTML; with a race it shows that race's rules.
         window.renderRaceRules = function(race) {
             const $ = (id) => document.getElementById(id);
             const tEl = $('rules-transport-text'), iEl = $('rules-internet-text'), pEl = $('rules-penalty-text');
             if (!tEl || !iEl || !pEl) return;
-            // Remember the original page text so races without custom rules (and logged-out visitors) still see it.
-            if (tEl.dataset.orig === undefined) { tEl.dataset.orig = tEl.innerHTML; iEl.dataset.orig = iEl.innerHTML; pEl.dataset.orig = pEl.innerHTML; }
+            if (tEl.dataset.generic === undefined) { tEl.dataset.generic = tEl.innerHTML; iEl.dataset.generic = iEl.innerHTML; pEl.dataset.generic = pEl.innerHTML; }
+            const inRace = !!race;
+            $('rules-generic-notice')?.classList.toggle('hidden', inRace);
+            $('rules-optional-card')?.classList.toggle('hidden', inRace);
+            if (!inRace) {
+                tEl.innerHTML = tEl.dataset.generic; iEl.innerHTML = iEl.dataset.generic; pEl.innerHTML = pEl.dataset.generic;
+            } else {
+                const rules = race.rules;
+                tEl.innerHTML = (rules && window.RULE_TRANSPORT_HTML[rules.transport]) || window.RULE_LEGACY_TRANSPORT_HTML;
+                iEl.innerHTML = (rules && window.RULE_INTERNET_HTML[rules.internet]) || window.RULE_LEGACY_INTERNET_HTML;
+                if (race.gameMode === 'scavenger') {
+                    pEl.innerHTML = 'Scavenger Hunts have <strong>no time penalties</strong>. Checkpoints you skip simply earn no points.';
+                } else if (race.missedPenaltyMin !== undefined && race.missedPenaltyMin !== null) {
+                    const n = window.missedPenaltyMin(race);
+                    pEl.innerHTML = n > 0
+                        ? `All <strong>missed checkpoints</strong> in a Speed Race will carry a <strong>${n}-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.`
+                        : 'There is <strong>no time penalty</strong> for missed checkpoints in this race, but skipping stops still means you will not finish them.';
+                } else pEl.innerHTML = window.RULE_LEGACY_PENALTY_HTML;
+            }
             const rules = race && race.rules;
-            tEl.innerHTML = (rules && window.RULE_TRANSPORT_HTML[rules.transport]) || tEl.dataset.orig;
-            iEl.innerHTML = (rules && window.RULE_INTERNET_HTML[rules.internet]) || iEl.dataset.orig;
-            if (race && race.gameMode === 'scavenger') {
-                pEl.innerHTML = 'Scavenger Hunts have <strong>no time penalties</strong>. Checkpoints you skip simply earn no points.';
-            } else if (race && race.missedPenaltyMin !== undefined && race.missedPenaltyMin !== null) {
-                const n = window.missedPenaltyMin(race);
-                pEl.innerHTML = n > 0
-                    ? `All <strong>missed checkpoints</strong> in a Speed Race will carry a <strong>${n}-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.`
-                    : 'There is <strong>no time penalty</strong> for missed checkpoints in this race, but skipping stops still means you will not finish them.';
-            } else pEl.innerHTML = pEl.dataset.orig;
             const badge = $('rules-preset-badge');
             if (badge) {
                 if (rules && rules.preset) { badge.textContent = (window.RULE_PRESET_NAMES[rules.preset] || 'Custom') + ' rules'; badge.classList.remove('hidden'); }
@@ -2513,6 +2539,8 @@
             window.resetPageScroll();
             const portalViewport = document.getElementById('portal-viewport');
             window.currentTab = tabName;
+            // Re-apply the host's rules whenever the Rules page is opened, using the live race data of the signed-in team.
+            if (tabName === 'rules') { try { window.renderRaceRules(window.liveTeamRaceData || null); } catch (e) { console.warn('Rules render failed', e); } }
 
             if (portalViewport) {
                 const pageIndex = PORTAL_PAGES.indexOf(tabName);
@@ -2838,6 +2866,65 @@
             }
             return copy.slice(0, Math.max(0, n));
         }
+
+        // ---------- Spread-out stop selection (random + by-area modes only; manual / preset picks are never touched) ----------
+        // Goal: stops come from as many different lands as possible, and no two stops can be checked in without walking.
+        //  * Land rounds: each land gets one stop before any land gets a second (then a third...). The land with the fewest
+        //    picks so far always goes next, ties broken at random, so a 10-stop Magic Kingdom race covers every land.
+        //  * Spacing: two stops must be at least 2x the check-in radius apart (their circles never overlap).
+        //  * Fallback: if nothing fits, spacing is relaxed in steps (2x, 1x, 0.5x, 0) for just that stop, so the race always
+        //    fills as long as enough stops exist. Land rounds are never relaxed.
+        function spreadDistM(a, b) {
+            const R = 6371000, rad = Math.PI / 180;
+            const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+            const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(h));
+        }
+        window.selectSpreadStops = function(pool, n, opts) {
+            opts = opts || {};
+            const radius = Math.max(0, Number(opts.radiusM) || 0);
+            const target = Math.max(0, Math.floor(Number(n) || 0));
+            const hasCoord = p => !!p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)) && Number(p.lat) !== 0 && Number(p.lng) !== 0;
+            const pt = p => ({ lat: Number(p.lat), lng: Number(p.lng) });
+            const landKey = p => (p.park || '') + '||' + (p.land || '');
+            const factors = radius > 0 ? [2, 1, 0.5, 0] : [0];
+            const picked = [], relaxed = [];
+            const used = new Map();           // land key -> stops picked from it so far
+            const buckets = new Map();        // land key -> shuffled candidates still available
+            const seed = opts.seed || null;
+            if (seed && target > 0) { picked.push(seed); used.set(landKey(seed), 1); }
+            pool.forEach(p => {
+                if (p === seed) return;
+                const k = landKey(p);
+                if (!buckets.has(k)) buckets.set(k, []);
+                buckets.get(k).push(p);
+            });
+            buckets.forEach((arr, k) => buckets.set(k, pickRandom(arr, arr.length)));
+            const fits = (p, minD) => minD <= 0 || !hasCoord(p) || picked.every(q => !hasCoord(q) || spreadDistM(pt(p), pt(q)) >= minD);
+            while (picked.length < target) {
+                const open = [...buckets.keys()].filter(k => buckets.get(k).length);
+                if (!open.length) break;
+                const counts = [...new Set(open.map(k => used.get(k) || 0))].sort((a, b) => a - b);
+                let chosen = null;
+                for (const c of counts) {                                   // fewest-picked lands first
+                    const tier = pickRandom(open.filter(k => (used.get(k) || 0) === c), open.length);
+                    for (let li = 0; li < factors.length && !chosen; li++) {
+                        const minD = factors[li] * radius;
+                        for (const k of tier) {
+                            const arr = buckets.get(k);
+                            const idx = arr.findIndex(p => fits(p, minD));
+                            if (idx !== -1) { chosen = { k, p: arr.splice(idx, 1)[0], relaxed: li > 0 }; break; }
+                        }
+                    }
+                    if (chosen) break;
+                }
+                if (!chosen) break;
+                picked.push(chosen.p);
+                used.set(chosen.k, (used.get(chosen.k) || 0) + 1);
+                if (chosen.relaxed) relaxed.push(chosen.p);
+            }
+            return { picked, relaxed, short: Math.max(0, target - picked.length) };
+        };
 
         // Make sure a chosen mandatory final stop is part of a random selection
         function ensureIncluded(picked, finalPreset) {
@@ -3253,7 +3340,29 @@
         // ===================== COMPASS GUIDE (final approach to a stop) =====================
         // GPS can put the pin at the front door while a team is round the back. This points an arrow at the
         // exact check-in coordinates and counts down the distance until the team is inside the zone.
-        window.CHECKIN_RADIUS_METERS = 150;   // "in the zone" distance. checkInGps uses this same value.
+        window.CHECKIN_RADIUS_METERS = 50;   // fallback "in the zone" distance
+        // Tiered check-in radius: the harder the race, the closer you have to be. Each stop's pin is the start of the
+        // ride queue / shop door / hotel lobby, so a smaller radius means getting to the front of the line.
+        window.CHECKIN_RADIUS_BY_DIFFICULTY = { easy: 50, medium: 40, hard: 30 };
+        // GPS accuracy buffer: a phone reports how far off it might be. Up to this much of that error is forgiven
+        // (so a team 45 m away with 10 m accuracy still counts on Hard). Worse accuracy is recorded for the host to judge.
+        window.CHECKIN_BUFFER_BY_DIFFICULTY = { easy: 15, medium: 10, hard: 5 };
+        window.checkinBufferCap = function (race, team) {
+            race = race || window.liveTeamRaceData || {}; team = team || window.liveTeamData || {};
+            const diff = String(team.difficultyOverride || race.difficulty || 'easy').toLowerCase();
+            const c = window.CHECKIN_BUFFER_BY_DIFFICULTY[diff];
+            return c === undefined ? 15 : c;
+        };
+        window.checkinAllowedMeters = function (accuracy, race, team) {
+            const a = Number(accuracy);
+            const buffer = Number.isFinite(a) && a > 0 ? Math.min(a, window.checkinBufferCap(race, team)) : 0;
+            return window.checkinRadiusMeters(race, team) + buffer;
+        };
+        window.checkinRadiusMeters = function (race, team) {
+            race = race || window.liveTeamRaceData || {}; team = team || window.liveTeamData || {};
+            const diff = String(team.difficultyOverride || race.difficulty || 'easy').toLowerCase();
+            return window.CHECKIN_RADIUS_BY_DIFFICULTY[diff] || window.CHECKIN_RADIUS_METERS;
+        };
         window.COMPASS_RANGE_METERS = 500;    // fallback only. The real range depends on difficulty (see below).
         // Guide only works this close to the stop. Easier difficulties get more help; blind (hard) gets the least.
         window.COMPASS_RANGE_BY_DIFFICULTY = { easy: 800, medium: 650, hard: 500 };
@@ -3344,7 +3453,7 @@
                 const bearing = bearingDeg(p.lat, p.lng, S.lat, S.lng);
                 const rangeM = window.compassRangeMeters();
                 const inRange = dist <= rangeM;
-                const inZone = dist <= window.CHECKIN_RADIUS_METERS;
+                const inZone = dist <= window.checkinAllowedMeters(p.acc);
 
                 distEl.textContent = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
 
@@ -4632,10 +4741,14 @@
                 });
 
                 let areaSwitchedOn = null;
+                let spreadRelaxed = 0, spreadShort = 0;
+                const spreadRadius = ((window.CHECKIN_RADIUS_BY_DIFFICULTY || {})[difficulty] || window.CHECKIN_RADIUS_METERS || 50) + ((window.CHECKIN_BUFFER_BY_DIFFICULTY || {})[difficulty] ?? 15);   // radius + accuracy buffer
                 if (creationPopMethod === 'random') {
                     const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
                     const gpsOnly = presets.filter(p => p.type === 'GPS');
-                    const shuffledGps = pickRandom(gpsOnly, gpsReq);
+                    const spread = window.selectSpreadStops(gpsOnly, gpsReq, { radiusM: spreadRadius, seed: (finalPreset && gpsOnly.includes(finalPreset)) ? finalPreset : null });
+                    spreadRelaxed += spread.relaxed.length; spreadShort += spread.short;
+                    const shuffledGps = spread.picked;
                     ensureIncluded(shuffledGps, finalPreset);
 
                     initialCps = shuffledGps.map((p, idx) => ({
@@ -4658,7 +4771,9 @@
                         if (!st || !st.enabled) return;
                         switchedOn.push(a.name);
                         if (st.count <= 0) return;
-                        picked.push(...pickRandom(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.park === a.name), st.count));
+                        const spread = window.selectSpreadStops(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.park === a.name), st.count, { radiusM: spreadRadius, seed: (finalPreset && finalPreset.park === a.name && finalPreset.type !== 'BONUS_PHOTO') ? finalPreset : null });
+                        spreadRelaxed += spread.relaxed.length; spreadShort += spread.short;
+                        picked.push(...spread.picked);
                     });
                     if (picked.length === 0) {
                         return alert("Switch on at least one area and give it one or more stops.");
@@ -4813,7 +4928,8 @@
                         bingoName: bingoInfo ? bingoInfo.name : '',
                         timeLimitMinutes, enforceHostStart, startMode, staggerMinutes,
                         trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
-                        wildcardAuto, rules: raceRules, missedPenaltyMin
+                        wildcardAuto, rules: raceRules, missedPenaltyMin,
+                        checkinRadius: spreadRadius, spreadRelaxed: (creationPopMethod === 'random' || creationPopMethod === 'area') ? spreadRelaxed : 0, spreadShort: (creationPopMethod === 'random' || creationPopMethod === 'area') ? spreadShort : 0
                     });
                 }
                 await loadAdminRaces();
@@ -5101,6 +5217,9 @@
             ];
             if (isHunt) rows.push(rwRow('Time limit', info.timeLimitMinutes > 0 ? `${info.timeLimitMinutes} min` : 'No limit'));
             rows.push(rwRow('Start', start));
+            if (info.checkinRadius) rows.push(rwRow('Check-in zone (incl. GPS buffer)', `${info.checkinRadius} m`));
+            if (info.spreadShort > 0) rows.push(rwRow('Stop spread', `Only ${info.spreadShort} fewer stops available than requested`));
+            else if (info.spreadRelaxed > 0) rows.push(rwRow('Stop spread', `${info.spreadRelaxed} stop${info.spreadRelaxed === 1 ? '' : 's'} closer together than ideal`));
             if (info.rules) rows.push(rwRow('Rules', `${window.RULE_PRESET_NAMES[info.rules.preset] || 'Custom'} · ${window.RULE_TRANSPORT_LABELS[info.rules.transport] || ''} · internet ${String(window.RULE_INTERNET_LABELS[info.rules.internet] || '').toLowerCase()}`));
             if (!isHunt && info.missedPenaltyMin !== 60) rows.push(rwRow('Missed checkpoint', `+${info.missedPenaltyMin} min`));
             rows.push(rwRow('Trivia', trivia));
@@ -5808,6 +5927,7 @@
                                     <span>GPS: <span class="text-slate-300 font-mono">${latLngText}</span> (${detail.note || 'Verified'})</span>
                                     ${overrideBadgeHtml}
                                 </div>
+                                ${detail.distance != null ? `<div class="text-[11px] ${(detail.accuracy != null && detail.accuracy > 15) ? 'text-amber-300' : 'text-slate-400'}">Distance <span class="font-mono text-slate-300">${detail.distance} m</span> · GPS accuracy <span class="font-mono text-slate-300">${detail.accuracy != null ? '±' + detail.accuracy + ' m' : 'not recorded'}</span>${detail.allowedRadius != null ? ' · allowed ' + detail.allowedRadius + ' m' : ''}${(detail.accuracy != null && detail.accuracy > 15) ? ' · weak GPS signal' : ''}</div>` : ''}
                                 ${(team.transitLegs || {})[cpId] ? `<div class="text-[11px] text-sky-300 font-semibold">Transit: ${window.formatTransitLeg(team.transitLegs[cpId])}</div>` : ((team.transitPending || {})[cpId] ? '<div class="text-[11px] text-slate-500 italic">Transit: not answered yet</div>' : '')}
                                 <div class="flex justify-between items-center gap-2 pt-1">
                                     <span class="text-[10px] ${isRejected ? 'text-rose-300 font-bold' : 'text-slate-500'}">${isRejected ? '⛔ Rejected: ' + rejectPenaltyText : ''}</span>
@@ -9511,11 +9631,13 @@
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
                     const distance = calculateDistance(userLat, userLng, targetCp.lat, targetCp.lng);
-                    const ALLOWED_RADIUS_METERS = window.CHECKIN_RADIUS_METERS || 150;
+                    const gpsAccuracy = Number.isFinite(Number(position.coords.accuracy)) ? Math.round(Number(position.coords.accuracy)) : null;
+                    const ALLOWED_RADIUS_METERS = window.checkinAllowedMeters(gpsAccuracy);
                     const isManual = distance > ALLOWED_RADIUS_METERS;
+                    const gpsMeta = { accuracy: gpsAccuracy, allowed: Math.round(ALLOWED_RADIUS_METERS) };
 
                     if (!isManual || await appConfirm(`You appear to be ${Math.round(distance)}m outside the check-in area. You can undo this later if you were in the wrong spot.`, { title: "Record manual override?", confirmText: "Record", tone: "warning" })) {
-                        await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement);
+                        await handleTriviaOrSave(cpId, userLat, userLng, Math.round(distance), isManual, isManual ? "Manual Override" : "GPS Verified", btnElement, gpsMeta);
                     }
                 },
                 async (error) => {
@@ -9532,7 +9654,7 @@
             );
         };
 
-        async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement) {
+        async function handleTriviaOrSave(cpId, lat, lng, distance, isManual, note, btnElement, gpsMeta = null) {
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             const raceData = raceSnap.data();
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
@@ -9559,10 +9681,10 @@
                 if (triggerTrivia && (locTrivia[difficulty] || locTrivia.easy)) triviaPending = true;
             }
 
-            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null, priorAttempt ? null : (triviaPending ? { asked: false, pending: true } : { asked: false }));
+            await saveCheckInRecord(cpId, lat, lng, distance, isManual, note, 0, null, priorAttempt ? null : (triviaPending ? { asked: false, pending: true } : { asked: false }), gpsMeta);
         }
 
-        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null, triviaAttempt = null) {
+        async function saveCheckInRecord(cpId, lat, lng, distance, isManual, note, triviaBonus = 0, triviaLogEntry = null, triviaAttempt = null, gpsMeta = null) {
             const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
             const teamSnap = await safeGetDoc(teamRef);
             const tData = teamSnap.data();
@@ -9590,6 +9712,8 @@
                 latitude: lat,
                 longitude: lng,
                 distance: distance,
+                accuracy: gpsMeta && gpsMeta.accuracy != null ? gpsMeta.accuracy : null,   // reported GPS accuracy in metres
+                allowedRadius: gpsMeta && gpsMeta.allowed != null ? gpsMeta.allowed : null,   // radius + accuracy buffer used for this check-in
                 isManual: isManual,
                 note: note
             };
