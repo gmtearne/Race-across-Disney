@@ -7493,7 +7493,9 @@
             if (prev && [prev.lat, prev.lng, cp.lat, cp.lng].every(v => v !== undefined && v !== null && isFinite(Number(v)))) {
                 miles = Math.round(calculateDistance(Number(prev.lat), Number(prev.lng), Number(cp.lat), Number(cp.lng)) / 1609.344 * 1000) / 1000;
             }
-            const samePark = !!(prev && prev.park && cp.park && prev.park === cp.park);
+            // Resorts are many separate sites that share one "park" value, so a hop between two resort stops is never assumed to be a walk.
+            const isResortArea = p => /resort/i.test(String(p || ''));
+            const samePark = !!(prev && prev.park && cp.park && prev.park === cp.park && !isResortArea(cp.park) && !isResortArea(prev.park));
             return { fromId: prev ? prev.id : null, miles, samePark };
         };
 
