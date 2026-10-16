@@ -215,6 +215,10 @@
         .no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .no-spinner { -moz-appearance: textfield; appearance: textfield; }
 
+        /* Status bar: logged out shows the app logo + name, logged in shows the team avatar, name, code and actions */
+        #team-status-banner.banner-guest .banner-team-only { display: none !important; }
+        #team-status-banner:not(.banner-guest) .banner-guest-only { display: none !important; }
+
         /* Team card only appears on the race / leaderboard portal tabs */
         html:not(.on-portal) #team-status-banner {
             display: none !important;
@@ -1077,22 +1081,29 @@
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
     <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-4 pb-0 min-h-screen flex flex-col w-full">
 
-        <div id="team-status-banner" class="hidden mb-2 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
-            <div class="relative group cursor-pointer shrink-0" title="Click to update team avatar">
+        <div id="team-status-banner" class="banner-guest mb-2 bg-slate-800/90 border border-slate-700 px-3 py-2 rounded-2xl flex items-center gap-3 shadow-xl shrink-0">
+            <button type="button" id="app-menu-btn" onclick="window.openAppMenu && window.openAppMenu()" title="Menu" aria-label="Menu" aria-haspopup="menu" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm rounded-xl transition flex items-center justify-center">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="banner-team-only relative group cursor-pointer shrink-0" title="Click to update team avatar">
                 <img id="active-team-avatar" src="" class="w-8 h-8 rounded-full object-cover border-2 border-disneyGold">
                 <label class="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] text-white font-bold cursor-pointer">
                     <i class="fa-solid fa-camera"></i>
                     <input type="file" accept="image/*" class="hidden" onchange="updateTeamAvatar(this)">
                 </label>
             </div>
-            <div class="min-w-0 flex-1 flex items-baseline gap-2">
-                <h2 id="active-team-name" class="font-bold text-sm text-white truncate"></h2>
-                <span class="font-mono text-xs text-disneyGold font-bold shrink-0" id="active-team-racecode">---</span>
+            <div class="banner-guest-only w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 text-sm border-2 border-disneyGold" aria-hidden="true">
+                <i class="fa-solid fa-compass"></i>
             </div>
-            <button onclick="copyTeamInvite(this)" id="team-invite-btn" title="Copy invite (race code + link)" aria-label="Copy invite" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-disneyGold text-xs rounded-xl transition flex items-center justify-center">
+            <div class="min-w-0 flex-1 flex items-baseline gap-2">
+                <h2 id="active-team-name" class="banner-team-only font-bold text-sm text-white truncate"></h2>
+                <h2 id="active-app-name" class="banner-guest-only font-disney font-bold text-sm text-white truncate">The Amazing Mouse Race</h2>
+                <span class="banner-team-only font-mono text-xs text-disneyGold font-bold shrink-0" id="active-team-racecode">---</span>
+            </div>
+            <button onclick="copyTeamInvite(this)" id="team-invite-btn" title="Copy invite (race code + link)" aria-label="Copy invite" class="banner-team-only shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-disneyGold text-xs rounded-xl transition flex items-center justify-center">
                 <i class="fa-solid fa-user-plus"></i>
             </button>
-            <button onclick="logoutTeam()" title="Switch Team" class="shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center justify-center">
+            <button onclick="logoutTeam()" title="Switch Team" class="banner-team-only shrink-0 w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl transition flex items-center justify-center">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -4359,7 +4370,7 @@
                 document.getElementById('active-team-name').innerText = tData.teamName;
                 document.getElementById('active-team-racecode').innerText = code;
                 document.getElementById('active-team-avatar').src = avatarUrl;
-                document.getElementById('team-status-banner').classList.remove('hidden');
+                document.getElementById('team-status-banner').classList.remove('hidden', 'banner-guest');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
@@ -7015,7 +7026,7 @@
                 document.getElementById('active-team-name').innerText = teamName;
                 document.getElementById('active-team-racecode').innerText = code;
                 document.getElementById('active-team-avatar').src = activeAvatarUrl;
-                document.getElementById('team-status-banner').classList.remove('hidden');
+                document.getElementById('team-status-banner').classList.remove('hidden', 'banner-guest');
                 document.getElementById('login-prompt-card').classList.add('hidden');
                 document.getElementById('team-pending-card').classList.add('hidden');
                 document.getElementById('team-dashboard-active').classList.remove('hidden');
@@ -7052,7 +7063,7 @@
             if (window.cleanupWildcard) window.cleanupWildcard();
             stopWildcardWatcher();
             if (chatUnsubscribe) chatUnsubscribe();
-            document.getElementById('team-status-banner').classList.add('hidden');
+            document.getElementById('team-status-banner').classList.add('banner-guest');
             document.getElementById('team-dashboard-active').classList.add('hidden');
             document.getElementById('team-pending-card').classList.add('hidden');
             document.getElementById('login-prompt-card').classList.remove('hidden');
