@@ -672,6 +672,69 @@
         #race-wizard .rw-choice:active > div { transform: scale(.98); }
         #race-wizard input[type="radio"].rw-r:checked + div { border-color: var(--theme-accent); background: rgba(255,184,0,.10); box-shadow: 0 0 0 1px rgba(255,184,0,.6); }
     </style>
+    <style>
+        /* ===== Side menu (glass drawer, mirrors the dock) + utility pages ===== */
+        #app-side-menu { position: fixed; inset: 0; z-index: 150; visibility: hidden; pointer-events: none;
+            transition: visibility 0s linear .38s; }
+        #app-side-menu.sm-open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+        #app-side-menu .sm-backdrop { position: absolute; inset: 0; background: rgba(2,6,23,.45);
+            -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+            opacity: 0; transition: opacity .3s ease; }
+        #app-side-menu.sm-open .sm-backdrop { opacity: 1; }
+        #app-side-menu .sm-panel {
+            position: absolute; left: var(--dock-gap);
+            top: calc(var(--dock-gap) + env(safe-area-inset-top, 0px));
+            bottom: calc(var(--dock-gap) + env(safe-area-inset-bottom, 0px));
+            width: min(80vw, 310px);
+            display: flex; flex-direction: column; padding: 18px 14px 14px;
+            border-radius: 28px;
+            background: var(--theme-dock-bg);
+            -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+            border: 1px solid var(--theme-dock-border);
+            box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 2px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.14);
+            transform: translateX(calc(-100% - 24px));
+            transition: transform .38s var(--app-motion);
+        }
+        #app-side-menu.sm-open .sm-panel { transform: translateX(0); }
+        #app-side-menu .sm-head { display: flex; align-items: center; gap: .6rem; padding: 0 6px 14px; margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,229,143,.18); }
+        #app-side-menu .sm-title { flex: 1; min-width: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.05rem;
+            color: var(--theme-cream); text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+        .sm-icon-btn { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9999px; border: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
+            color: rgba(226,220,246,.8); background: rgba(255,255,255,.07);
+            -webkit-tap-highlight-color: transparent; transition: background-color .2s ease, transform .3s var(--app-spring); }
+        .sm-icon-btn:active { transform: scale(.9); }
+        .sm-icon-btn:hover { background: rgba(255,255,255,.14); }
+        #app-side-menu .sm-item { display: flex; align-items: center; gap: .85rem; width: 100%; text-align: left;
+            padding: .85rem .9rem; margin-top: 4px; border: 0; border-radius: 9999px; background: transparent;
+            color: rgba(240,236,255,.92); font-weight: 600; font-size: .95rem;
+            -webkit-tap-highlight-color: transparent;
+            opacity: 0; transform: translateX(-12px);
+            transition: opacity .3s ease, transform .4s var(--app-motion), background-color .2s ease; }
+        #app-side-menu.sm-open .sm-item { opacity: 1; transform: none; }
+        #app-side-menu.sm-open .sm-item:nth-of-type(1) { transition-delay: 80ms, 80ms, 0s; }
+        #app-side-menu.sm-open .sm-item:nth-of-type(2) { transition-delay: 120ms, 120ms, 0s; }
+        #app-side-menu.sm-open .sm-item:nth-of-type(3) { transition-delay: 160ms, 160ms, 0s; }
+        #app-side-menu .sm-item:active { background: var(--theme-dock-active); }
+        #app-side-menu .sm-item i { width: 1.4rem; text-align: center; font-size: 1.05rem; color: var(--theme-accent);
+            filter: drop-shadow(0 0 6px rgba(255,200,60,.4)); }
+
+        .util-page { position: fixed; inset: 0; z-index: 170; display: none; flex-direction: column;
+            background: linear-gradient(180deg, rgba(2,6,23,.80) 0%, rgba(2,6,23,.92) 100%), var(--theme-bg-image) var(--theme-bg-position) / cover no-repeat, #020617;
+            opacity: 0; transform: translateY(14px); transition: opacity .3s ease, transform .4s var(--app-motion); }
+        .util-page.up-show { display: flex; }
+        .util-page.up-open { opacity: 1; transform: none; }
+        .util-page .up-top { display: flex; align-items: center; gap: .75rem;
+            padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 12px 20px; }
+        .util-page .up-title { flex: 1; min-width: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.1;
+            color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 4px 18px rgba(0,0,0,.55); }
+        .util-page .up-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+        @media (prefers-reduced-motion: reduce) {
+            #app-side-menu .sm-panel, #app-side-menu .sm-backdrop, #app-side-menu .sm-item, .util-page { transition: none !important; }
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
 
@@ -1077,6 +1140,43 @@
             <span id="nav-pending-badge" class="dock-badge hidden bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 animate-bounce">0</span>
         </button>
     </nav>
+
+    <!-- Side menu: glass drawer that slides out from the left -->
+    <div id="app-side-menu" aria-hidden="true">
+        <div class="sm-backdrop" onclick="closeAppMenu()"></div>
+        <nav class="sm-panel" role="menu" aria-label="Menu">
+            <div class="sm-head">
+                <div class="sm-title">Menu</div>
+                <button type="button" class="sm-icon-btn" onclick="closeAppMenu()" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('how-to-play')"><i class="fa-solid fa-circle-question"></i>How to play</button>
+            <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('support')"><i class="fa-solid fa-life-ring"></i>Support</button>
+            <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('disclaimer')"><i class="fa-solid fa-scale-balanced"></i>Disclaimer</button>
+        </nav>
+    </div>
+
+    <!-- Utility pages: full screen, above everything. Placeholders for now. -->
+    <section id="util-how-to-play" class="util-page" role="dialog" aria-modal="true" aria-labelledby="util-how-to-play-title" aria-hidden="true">
+        <header class="up-top">
+            <h1 id="util-how-to-play-title" class="up-title">How to play</h1>
+            <button type="button" class="sm-icon-btn" onclick="closeUtilPage()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="up-body"></div>
+    </section>
+    <section id="util-support" class="util-page" role="dialog" aria-modal="true" aria-labelledby="util-support-title" aria-hidden="true">
+        <header class="up-top">
+            <h1 id="util-support-title" class="up-title">Support</h1>
+            <button type="button" class="sm-icon-btn" onclick="closeUtilPage()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="up-body"></div>
+    </section>
+    <section id="util-disclaimer" class="util-page" role="dialog" aria-modal="true" aria-labelledby="util-disclaimer-title" aria-hidden="true">
+        <header class="up-top">
+            <h1 id="util-disclaimer-title" class="up-title">Disclaimer</h1>
+            <button type="button" class="sm-icon-btn" onclick="closeUtilPage()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="up-body"></div>
+    </section>
 
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
     <main style="display: none;" class="max-w-4xl mx-auto px-4 pt-4 pb-0 min-h-screen flex flex-col w-full">
@@ -10668,6 +10768,50 @@
         .replay-tiles.leaflet-tile-loaded { transition: opacity .3s linear; }
     </style>
     <script>
+    /* Side menu + utility pages. Opening a page closes the menu first, so X returns to the previous screen with the menu closed. */
+    (function () {
+        'use strict';
+        const el = id => document.getElementById(id);
+        const PAGES = ['how-to-play', 'support', 'disclaimer'];
+        let activePage = null, hideTimer = null;
+
+        window.openAppMenu = function () {
+            const m = el('app-side-menu'); if (!m) return;
+            m.classList.add('sm-open'); m.setAttribute('aria-hidden', 'false');
+            const b = el('app-menu-btn'); if (b) b.setAttribute('aria-expanded', 'true');
+        };
+        window.closeAppMenu = function () {
+            const m = el('app-side-menu'); if (!m) return;
+            m.classList.remove('sm-open'); m.setAttribute('aria-hidden', 'true');
+            const b = el('app-menu-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+        };
+        window.isAppMenuOpen = () => { const m = el('app-side-menu'); return !!m && m.classList.contains('sm-open'); };
+
+        window.openUtilPage = function (name) {
+            const p = el('util-' + name); if (!p || !PAGES.includes(name)) return;
+            clearTimeout(hideTimer);
+            activePage = name;
+            window.closeAppMenu();
+            p.classList.add('up-show'); p.setAttribute('aria-hidden', 'false');
+            void p.offsetWidth;                       // let the browser register display:flex before fading in
+            p.classList.add('up-open');
+            const body = p.querySelector('.up-body'); if (body) body.scrollTop = 0;
+        };
+        window.closeUtilPage = function () {
+            const p = activePage && el('util-' + activePage); if (!p) return;
+            activePage = null;
+            p.classList.remove('up-open'); p.setAttribute('aria-hidden', 'true');
+            hideTimer = setTimeout(() => p.classList.remove('up-show'), 340);
+        };
+        window.isUtilPageOpen = () => !!activePage;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (activePage) window.closeUtilPage(); else if (window.isAppMenuOpen()) window.closeAppMenu();
+        });
+    })();
+    </script>
+    <script>
     /* =====================================================================
        BACK BUTTON / SWIPE-BACK
        The whole app is one page, so the browser's Back would normally leave it.
@@ -10697,6 +10841,8 @@
                   else if (window.closeRaceWizard) window.closeRaceWizard();
               } },
             { key: 'hostpanel', isOpen: () => shown(el('host-race-panel')), close: () => window.closeHostRacePanel && window.closeHostRacePanel() },
+            { key: 'appmenu', isOpen: () => !!window.isAppMenuOpen && window.isAppMenuOpen(), close: () => window.closeAppMenu && window.closeAppMenu() },
+            { key: 'utilpage', isOpen: () => !!window.isUtilPageOpen && window.isUtilPageOpen(), close: () => window.closeUtilPage && window.closeUtilPage() },
             modal('checkpoint-info-modal', () => window.closeCheckpointInfoModal && window.closeCheckpointInfoModal()),
             modal('team-verify-modal', () => window.closeTeamVerifyModal && window.closeTeamVerifyModal()),
             modal('organizer-edit-modal', () => window.closeOrganizerEditModal && window.closeOrganizerEditModal()),
