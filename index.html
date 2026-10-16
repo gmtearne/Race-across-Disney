@@ -1260,7 +1260,7 @@
                         <div id="team-checkpoints-list" class="space-y-3.5"></div>
                     </div>
 
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                    <div id="team-bonus-wrap" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
                         <div class="border-b border-slate-700 pb-3 mb-4">
                             <h3 class="text-lg font-bold text-white flex items-center gap-2">
                                 <i class="fa-solid fa-camera-retro text-disneyGold"></i>
@@ -1830,8 +1830,8 @@
                     <div class="bg-slate-900 p-4 rounded-3xl border border-disneyGold/40 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
-                                            <span class="block text-xs font-bold text-disneyGold uppercase tracking-wider">🎯 Photo Bingo</span>
-                                            <p class="text-[11px] text-slate-400 mt-0.5">A 2x2 card of themed photo challenges. Finish the whole card for a big reward</p>
+                                            <span class="block text-xs font-bold text-disneyGold uppercase tracking-wider">🐭 Hidden Mickey Bingo</span>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">A 2x2 card where teams photograph four hidden Mickeys. Finish the whole card for a big reward</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                                             <input type="checkbox" id="create-bingo-switch" onchange="toggleBingoCreateSettings()" class="sr-only peer">
@@ -1839,16 +1839,14 @@
                                         </label>
                                     </div>
                                     <div id="create-bingo-options" class="hidden space-y-3 pt-3 border-t border-slate-800">
-                                        <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Bingo card</label>
-                                        <select id="create-bingo-card" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold"></select>
                                         <div id="create-bingo-reward-advanced" class="space-y-2 hidden"><label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Reward for a completed card</label>
                                         <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
                                             <button type="button" onclick="stepNumber('create-bingo-reward', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
                                             <input type="number" id="create-bingo-reward" value="20" min="1" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
                                             <button type="button" onclick="stepNumber('create-bingo-reward', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
                                         </div>
-                                        <p class="text-[10px] text-slate-500 leading-relaxed">Speed Race: minutes taken off the final time. Scavenger Hunt: bonus points. An incomplete card earns nothing. The card's challenges are added to the race and are never also offered as standalone bonuses or wildcards. Challenges come from bonus photos tagged with a bingo name in your locations data.</p></div>
-                                        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Bingo rules">
+                                        <p class="text-[10px] text-slate-500 leading-relaxed">Speed Race: minutes taken off the final time. Scavenger Hunt: bonus points. An incomplete card earns nothing. Teams submit a photo of a hidden Mickey for each of the four squares.</p></div>
+                                        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Hidden Mickey Bingo rules">
                                             <label class="cursor-pointer"><input type="radio" name="create-bingo-rule" id="create-bingo-rule-one-winner" value="one" class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-yellow-400 peer-checked:bg-yellow-500/10 transition"><span class="block text-sm font-bold text-yellow-200">🏆 Bingo Rules</span><span class="block text-xs font-semibold text-white mt-1">Only one winner</span><span class="block text-[10px] leading-relaxed text-slate-400 mt-2">The first team to complete bingo wins.</span></div></label>
                                             <label class="cursor-pointer"><input type="radio" name="create-bingo-rule" id="create-bingo-rule-casual" value="casual" checked class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-emerald-400 peer-checked:bg-emerald-500/10 transition"><span class="block text-sm font-bold text-emerald-200">🎉 Casual</span><span class="block text-xs font-semibold text-white mt-1">Every team can win</span><span class="block text-[10px] leading-relaxed text-slate-400 mt-2">Each team that completes the card earns the reward.</span></div></label>
                                         </div>
@@ -2073,32 +2071,19 @@
         // team status bar up under the header. Keep it pinned to the top.
 
         // ===================== BINGO + CHECKPOINT FRENZY HELPERS =====================
-        // Bingo: a bonus preset in locations-data.js is tagged with  bingo: 'foodbingo'  (any lowercase tag).
-        // A race with bingo on stores  race.bingo = { enabled, cardId, name, emoji, reward }  and the 4 chosen challenges
-        // as normal BONUS_PHOTO checkpoints carrying  bingoId: cardId  (worth 0 on their own). Completing all of them earns race.bingo.reward.
-        window.BINGO_META = {
-            foodbingo: { name: 'Foodie Bingo', emoji: '🍔' },
-            snackbingo: { name: 'Snack Bingo', emoji: '🍿' },
-            photobingo: { name: 'Photo Bingo', emoji: '📸' },
-            characterbingo: { name: 'Character Bingo', emoji: '🐭' },
-            shopbingo: { name: 'Shopping Bingo', emoji: '🛍️' },
-            ridebingo: { name: 'Ride Bingo', emoji: '🎢' }
-        };
-        window.bingoTag = (v) => String(v || '').trim().toLowerCase();
-        window.bingoMeta = function(tag) {
-            const id = window.bingoTag(tag);
-            const m = window.BINGO_META[id];
-            if (m) return { id, name: m.name, emoji: m.emoji };
-            const label = id.replace(/bingo$/, '').replace(/[_-]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
-            return { id, name: (label ? label + ' ' : '') + 'Bingo', emoji: '🎯' };
-        };
-        window.bingoCardsFromPresets = function(presets) {
-            const map = {};
-            (presets || []).forEach(p => {
-                if (!p || p.type !== 'BONUS_PHOTO' || !p.bingo) return;
-                [].concat(p.bingo).map(window.bingoTag).filter(Boolean).forEach(tag => { (map[tag] = map[tag] || []).push(p); });
-            });
-            return Object.keys(map).map(id => ({ ...window.bingoMeta(id), items: map[id] })).sort((a, b) => a.name.localeCompare(b.name));
+        // Hidden Mickey Bingo: a fixed 2x2 card. No preset challenges are used. A race with it on stores
+        // race.bingo = { enabled, cardId:'hiddenmickey', name, emoji, reward, onlyOneWinner } plus 4 BONUS_PHOTO checkpoints
+        // ("Hidden Mickey #1".."#4") carrying bingoId: 'hiddenmickey' (worth 0 on their own). Teams submit a photo of a
+        // hidden Mickey for each square. Completing all four earns race.bingo.reward.
+        window.HIDDEN_MICKEY_ID = 'hiddenmickey';
+        window.HIDDEN_MICKEY_META = { id: 'hiddenmickey', name: 'Hidden Mickey Bingo', emoji: '🐭' };
+        window.hiddenMickeyCheckpoints = function(prefix) {
+            const stamp = Date.now();
+            return [1, 2, 3, 4].map(n => ({
+                id: prefix + stamp + '_' + (n - 1), name: 'Hidden Mickey #' + n, type: 'BONUS_PHOTO',
+                lat: 28.4177, lng: -81.5812, points: 0, bonusMinDeduction: 0,
+                park: 'Disney', land: 'Hidden Mickey', bingoId: window.HIDDEN_MICKEY_ID
+            }));
         };
         window.bingoRewardText = function(race) {
             const r = Number(race && race.bingo && race.bingo.reward) || 20;
@@ -2630,7 +2615,7 @@
         window.toggleGameModeSelection();
         window.toggleHostStartCreationOptions();
 
-        // ---------- Photo bingo (race creation) ----------
+        // ---------- Hidden Mickey Bingo (race creation) ----------
         document.getElementById('create-advanced-switch')?.addEventListener('change', () => {
             const enabled = !!document.getElementById('create-advanced-switch').checked;
             ['create-bingo-reward-advanced','create-bonus-reward-advanced','create-trivia-reward-advanced','create-wildcard-reward-advanced','create-frenzy-reward-advanced'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !enabled));
@@ -2648,15 +2633,6 @@
         window.toggleBingoCreateSettings = function() {
             const on = document.getElementById('create-bingo-switch')?.checked;
             document.getElementById('create-bingo-options')?.classList.toggle('hidden', !on);
-            const sel = document.getElementById('create-bingo-card');
-            if (!on || !sel) return;
-            const cards = window.bingoCardsFromPresets(window.DISNEY_PRESETS || []);
-            const prev = sel.value;
-            sel.innerHTML = `<option value="random" data-icon="🎲" data-sub="A surprise card">Random card</option>` + cards.map(c =>
-                `<option value="${c.id}" data-icon="${c.emoji}" data-sub="${c.items.length} challenge${c.items.length === 1 ? '' : 's'}${c.items.length < 4 ? ' (needs 4)' : ''}" ${c.items.length < 4 ? 'disabled' : ''}>${c.name}</option>`).join('');
-            if (prev && [...sel.options].some(o => o.value === prev && !o.disabled)) sel.value = prev;
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
-            if (!cards.some(c => c.items.length >= 4)) window.appToast && window.appToast("No bingo cards found yet. Tag at least 4 bonus photos with the same bingo name (e.g. bingo: 'foodbingo').", 4200);
         };
 
         window.toggleBonusCreateSettings = function() {
@@ -3999,8 +3975,7 @@
             const cps = race.checkpoints || [];
             const parks = new Set(cps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
             const have = new Set(cps.map(c => c.name));
-            const bingoTagOn = race.bingo && race.bingo.enabled ? race.bingo.cardId : null;
-            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && !(bingoTagOn && [].concat(p.bingo || []).map(window.bingoTag).includes(bingoTagOn)) && window.bonusAppliesToAreas(p, parks));
+            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && window.bonusAppliesToAreas(p, parks));
             if (!pool.length) return null;
             const p = pool[Math.floor(Math.random() * pool.length)];
             const ded = Number(race.defaultWildcardReward ?? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10));
@@ -4587,24 +4562,14 @@
                     }));
                 }
 
-                // Photo bingo: 4 challenges from one tagged card. They are never also standalone bonuses.
+                // Hidden Mickey Bingo: a fixed 2x2 card of four photo squares (no preset challenges).
                 let bingoInfo = null, bingoCps = [];
                 if (document.getElementById('create-bingo-switch')?.checked) {
-                    const stopAreasForBingo = new Set(initialCps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
-                    const usable = window.bingoCardsFromPresets(presets)
-                        .map(c => ({ ...c, items: c.items.filter(p => window.bonusAppliesToAreas(p, stopAreasForBingo)) }))
-                        .filter(c => c.items.length >= 4);
-                    const wanted = document.getElementById('create-bingo-card')?.value || 'random';
-                    const card = wanted === 'random' ? pickRandom(usable, 1)[0] : usable.find(c => c.id === wanted);
-                    if (!card) return alert(wanted === 'random'
-                        ? "No bingo card has 4 challenges that can be done in the parks your stops cover. Turn bingo off or add more stops/tags."
-                        : "That bingo card doesn't have 4 challenges that can be done in the parks your stops cover. Pick another card or add stops from more parks.");
                     const reward = Math.max(1, parseInt(document.getElementById('create-bingo-reward')?.value) || 20);
-                    bingoInfo = { enabled: true, cardId: card.id, name: card.name, emoji: card.emoji, reward, onlyOneWinner: document.getElementById('create-bingo-rule-one-winner')?.checked === true };
-                    bingoCps = pickRandom(card.items, 4).map((p, idx) => ({ ...toCheckpoint(p, idx, 'cp_bingo_'), points: 0, bonusMinDeduction: 0, bingoId: card.id }));
+                    bingoInfo = { enabled: true, cardId: window.HIDDEN_MICKEY_ID, name: window.HIDDEN_MICKEY_META.name, emoji: window.HIDDEN_MICKEY_META.emoji, reward, onlyOneWinner: document.getElementById('create-bingo-rule-one-winner')?.checked === true };
+                    bingoCps = window.hiddenMickeyCheckpoints('cp_bingo_');
                 }
                 const bingoNames = new Set(bingoCps.map(c => c.name));
-                const inBingoFamily = (p) => !!bingoInfo && [].concat(p.bingo || []).map(window.bingoTag).includes(bingoInfo.cardId);
 
                 // Bonus photo checkpoints are chosen separately from the GPS stops
                 let bonusPicked = [];
@@ -4616,7 +4581,7 @@
                     const raw = parseInt(document.getElementById('bonus-rand-count').value);
                     const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
                     const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
-                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && !inBingoFamily(p) && window.bonusAppliesToAreas(p, stopAreas));
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && window.bonusAppliesToAreas(p, stopAreas));
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
                 // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
@@ -4962,7 +4927,7 @@
             rows.push(rwRow('Trivia', trivia));
             rows.push(rwRow('Wildcard', info.wildcardAuto.enabled ? `On (${info.wildcardAuto.durationMin} min window)` : 'Off'),
                 rwRow('Checkpoint Frenzy', document.getElementById('create-frenzy-switch')?.checked ? `On (${document.getElementById('create-frenzy-duration')?.value || 15} min)` : 'Off'),
-                rwRow('Photo bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-rule-one-winner')?.checked ? 'On · one winner' : 'On · every team can win') : 'Off'),
+                rwRow('Hidden Mickey Bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-rule-one-winner')?.checked ? 'On · one winner' : 'On · every team can win') : 'Off'),
                 rwRow('Advanced settings', document.getElementById('create-advanced-switch')?.checked ? 'Configured' : 'Standard defaults'),
                 rwRow('Host team', document.getElementById('create-host-team-switch')?.checked ? document.getElementById('create-host-team-name')?.value || 'Registered' : 'Not registered'));
             rwEl('rw-success-details').innerHTML = rows.join('');
@@ -5071,7 +5036,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        ${cp.type === 'BONUS_PHOTO' && cp.bingoId ? `<span class="text-[10px] text-disneyGold font-bold">🎯 Bingo</span>` : cp.type === 'BONUS_PHOTO' ? `
+                        ${cp.type === 'BONUS_PHOTO' && cp.bingoId ? `<span class="text-[10px] text-disneyGold font-bold">🐭 Hidden Mickey</span>` : cp.type === 'BONUS_PHOTO' ? `
                             <span class="flex items-center gap-1 text-[10px] text-amber-400">
                                 Pts: <input type="number" id="edit-cp-pts-${cp.id}" value="${cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10}" min="1" class="w-14 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center text-white font-mono text-xs">
                             </span>
@@ -6110,7 +6075,6 @@
             const wc = race.wildcardAuto || {};
             const fr = race.frenzyAuto || {};
             const bi = race.bingo || {};
-            const bingoCards = window.bingoCardsFromPresets ? window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) : [];
             const selectOpts = (id, values, selected) => `<select id="${id}" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">${values.map(v => `<option value="${v[0]}" ${String(v[0])===String(selected)?'selected':''}>${v[1]}</option>`).join('')}</select>`;
             const durations = [[5,'5 minutes'],[10,'10 minutes'],[15,'15 minutes'],[20,'20 minutes'],[30,'30 minutes'],[45,'45 minutes'],[60,'60 minutes']];
             const diffBtn = (v, label, sub) => `<button type="button" onclick="setRaceBaseDifficulty('${code}', '${v}')" class="px-2 py-3 rounded-2xl border text-center transition active:scale-95 ${raceBaseDiff === v ? 'border-disneyGold bg-disneyGold/10' : 'border-slate-700 bg-slate-950'}"><span class="block font-bold text-sm ${raceBaseDiff === v ? 'text-disneyGold' : 'text-white'}">${label}</span><span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">${sub}</span></button>`;
@@ -6149,9 +6113,8 @@
                     </div>
                 </div>
                 <div class="border-t border-slate-800 pt-3 space-y-3">
-                    ${hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Photo Bingo', 'Complete a themed 2×2 photo card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600')}
+                    ${hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Hidden Mickey Bingo', 'Photograph four hidden Mickeys on a 2×2 card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600')}
                     <div id="hrp-bingo-options" class="${bi.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
-                        <div><label class="block text-[10px] text-slate-400 mb-1">Bingo card</label>${selectOpts('hrp-bingo-card',[['','Choose a bingo card'],...bingoCards.map(c=>[c.id,`${c.emoji||'🎯'} ${c.name}`])],bi.cardId||'')}</div>
                         <div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="hrp-bingo-reward" type="number" min="1" value="${Number(bi.reward)||20}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
                         <div><label class="block text-[10px] text-slate-400 mb-1">Rules</label>${selectOpts('hrp-bingo-rule',[['casual','Every team can win'],['one','Only one winner']],bi.onlyOneWinner?'one':'casual')}</div>
                         <p class="text-[10px] text-slate-500">Turning Bingo off stops it being active but keeps existing checkpoint history intact.</p>
@@ -6225,9 +6188,9 @@
             el.querySelector('#hrp-share').onclick = () => window.shareRaceCode(race.code, race.title || race.code);
             el.querySelector('#hrp-delete').onclick = () => window.deleteEntireRace(race.code);
             body.innerHTML = hostPanelBodyHtml(code);
-            ['hrp-wildcard-duration','hrp-frenzy-duration','hrp-bingo-card','hrp-bingo-rule'].forEach(id => {
+            ['hrp-wildcard-duration','hrp-frenzy-duration','hrp-bingo-rule'].forEach(id => {
                 const sel = document.getElementById(id);
-                if (sel && window.enhanceSelect) window.enhanceSelect(id, { title: ({'hrp-wildcard-duration':'Wildcard offer duration','hrp-frenzy-duration':'Frenzy duration','hrp-bingo-card':'Choose a bingo card','hrp-bingo-rule':'Bingo rules'})[id], searchable: false });
+                if (sel && window.enhanceSelect) window.enhanceSelect(id, { title: ({'hrp-wildcard-duration':'Wildcard offer duration','hrp-frenzy-duration':'Frenzy duration','hrp-bingo-rule':'Bingo rules'})[id], searchable: false });
             });
             // Bonus settings save automatically after a field is changed; keep one debounce per panel.
             if (body.dataset.autoSaveBound !== '1') {
@@ -6271,24 +6234,12 @@
             const wildcardReward = Math.max(0, Number(document.getElementById('hrp-wildcard-reward')?.value) || 0);
             const frenzyReward = Math.max(0, Number(document.getElementById('hrp-frenzy-reward')?.value) || 0);
             const bingoReward = Math.max(1, Number(document.getElementById('hrp-bingo-reward')?.value) || 20);
-            const selectedCard = document.getElementById('hrp-bingo-card')?.value || (race.bingo || {}).cardId || '';
             let bingo = { ...(race.bingo || {}), enabled: bingoEnabled, reward: bingoReward, onlyOneWinner: document.getElementById('hrp-bingo-rule')?.value === 'one' };
             let checkpoints = [...(race.checkpoints || [])];
             if (bingoEnabled) {
-                const existing = checkpoints.filter(cp => cp.bingoId);
-                if (!existing.length) {
-                    if (!selectedCard) { window.appToast('Choose a bingo card first'); return; }
-                    const card = (window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) || []).find(c => c.id === selectedCard);
-                    if (!card) { window.appToast('That bingo card is unavailable'); return; }
-                    const areas = new Set(checkpoints.filter(cp => cp.type !== 'BONUS_PHOTO').map(cp => cp.park).filter(Boolean));
-                    const items = card.items.filter(item => window.bonusAppliesToAreas(item, areas));
-                    if (items.length < 4) { window.appToast('Choose a bingo card with four challenges in the race areas'); return; }
-                    items.sort(() => Math.random() - 0.5).slice(0,4).forEach((preset, idx) => checkpoints.push({ id:'cp_live_bingo_'+Date.now()+'_'+idx, name:preset.name, type:'BONUS_PHOTO', lat:preset.lat||28.4177, lng:preset.lng||-81.5812, points:0, bonusMinDeduction:0, park:preset.park||'Disney', land:preset.land||'Attraction Area', bingoId:selectedCard }));
-                } else if ((race.bingo || {}).cardId && selectedCard !== race.bingo.cardId) {
-                    window.appToast('To change the Bingo card, turn Bingo off and save first. Existing checkpoint history is preserved.'); return;
-                }
-                const card = (window.bingoCardsFromPresets(window.DISNEY_PRESETS || []) || []).find(c => c.id === selectedCard);
-                bingo = { ...bingo, enabled:true, cardId:selectedCard, name:card?.name || bingo.name || 'Photo Bingo', emoji:card?.emoji || bingo.emoji || '🎯' };
+                if (!checkpoints.some(cp => cp.bingoId)) checkpoints.push(...window.hiddenMickeyCheckpoints('cp_live_bingo_'));
+                const cardId = (race.bingo || {}).cardId || window.HIDDEN_MICKEY_ID;
+                bingo = { ...bingo, enabled: true, cardId, name: (race.bingo || {}).name || window.HIDDEN_MICKEY_META.name, emoji: (race.bingo || {}).emoji || window.HIDDEN_MICKEY_META.emoji };
             }
             try {
                 await fastUpdate(owned.ref, {
@@ -9070,6 +9021,8 @@
             }
 
             const wcState = wildcardStatus(raceData, window.liveWildcardClaim);
+            // The Bonus Photo Challenges card only shows when the race actually has standalone bonus challenges (bingo squares have their own card).
+            document.getElementById('team-bonus-wrap')?.classList.toggle('hidden', !bonus.some(cp => !cp.bingoId));
             document.getElementById('team-bonus-list').innerHTML = bonus.filter(cp => !cp.bingoId).map(cp => {
                 const isClaimed = claimedBonus.includes(cp.id);
                 const deductionVal = cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10;
@@ -9134,8 +9087,8 @@
                             : bingoClosed
                             ? `<span class="text-rose-300 font-bold">🏁 Bingo has been called by ${String(bingoWin.teamName || 'another team').replace(/</g, '&lt;')}. The bingo game is over.</span>`
                             : oneWinner
-                            ? `Only <span class="text-disneyGold font-bold">1 winner</span>. The first team to complete all ${bp.total} wins <span class="text-disneyGold font-bold">${rewardTxt}</span>, then the game ends. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`
-                            : `Complete all ${bp.total} to earn <span class="text-disneyGold font-bold">${rewardTxt}</span>. No credit for a partial card. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`;
+                            ? `Only <span class="text-disneyGold font-bold">1 winner</span>. The first team to photograph all ${bp.total} hidden Mickeys wins <span class="text-disneyGold font-bold">${rewardTxt}</span>, then the game ends. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`
+                            : `Find and photograph ${bp.total} hidden Mickeys to earn <span class="text-disneyGold font-bold">${rewardTxt}</span>. No credit for a partial card. <span class="text-slate-300 font-bold">${bp.done}/${bp.total} done</span>`;
                         const photos = tData.bonusPhotos || {};
                         document.getElementById('team-bingo-grid').innerHTML = bp.items.map(({ cp, state }) => {
                             const name = String(cp.name).replace(/</g, '&lt;');
@@ -9158,7 +9111,7 @@
                             }
                             return `<label class="min-h-[7.5rem] rounded-2xl border-2 border-dashed border-amber-500/50 bg-slate-900 hover:bg-slate-800 active:scale-95 p-2 flex flex-col justify-between cursor-pointer transition">
                                 <p class="text-[11px] font-bold leading-tight text-amber-200">${name}</p>
-                                <span class="flex items-center gap-1 text-[10px] font-bold text-amber-300"><i class="fa-solid fa-camera"></i> Upload proof</span>
+                                <span class="flex items-center gap-1 text-[10px] font-bold text-amber-300"><i class="fa-solid fa-camera"></i> Hidden Mickey photo</span>
                                 <input type="file" accept="image/*" class="hidden" onchange="uploadBonusPhoto('${cp.id}', this)"></label>`;
                         }).join('');
                     }
