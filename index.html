@@ -774,6 +774,35 @@
         .htp-txt li::marker { color: var(--theme-accent); }
         .htp-txt b { color: #fff; }
         @media (prefers-reduced-motion: reduce) { .htp-collapse, .htp-chev, .htp-head, .htp-collapse-inner { transition: none !important; } }
+        /* ----- Support + Disclaimer ----- */
+        .sup-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-accent); margin: 12px 0 6px; }
+        .sup-label span { text-transform: none; letter-spacing: 0; font-weight: 500; color: rgba(226,232,240,.65); }
+        .sup-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .sup-chip { padding: .5rem .85rem; border-radius: 9999px; font-size: .78rem; font-weight: 600; color: rgba(240,236,255,.9);
+            background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); -webkit-tap-highlight-color: transparent;
+            transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .3s var(--app-spring); }
+        .sup-chip:active { transform: scale(.94); }
+        .sup-chip[aria-pressed="true"] { color: var(--theme-accent); background: var(--theme-dock-active); border-color: rgba(255,200,60,.55);
+            box-shadow: 0 0 14px rgba(255,184,0,.18); }
+        .sup-input { width: 100%; padding: .7rem .9rem; border-radius: 16px; font-size: .85rem; color: #fff;
+            background: rgba(2,6,23,.45); border: 1px solid rgba(255,255,255,.14); outline: none; user-select: text; -webkit-user-select: text; }
+        .sup-input:focus { border-color: rgba(255,200,60,.6); }
+        .sup-input::placeholder { color: rgba(148,163,184,.8); }
+        .sup-primary, .sup-secondary { width: 100%; margin-top: 14px; padding: .8rem 1rem; border-radius: 9999px; font-weight: 700; font-size: .85rem;
+            display: flex; align-items: center; justify-content: center; gap: .5rem; -webkit-tap-highlight-color: transparent;
+            transition: transform .3s var(--app-spring), background-color .2s ease; }
+        .sup-primary { border: 0; color: #1e1b4b; background: var(--theme-accent); }
+        .sup-secondary { color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); margin-top: 6px; }
+        .sup-primary:active, .sup-secondary:active { transform: scale(.97); }
+        .sup-small { font-size: .72rem !important; color: rgba(226,232,240,.7) !important; margin-top: 10px !important; }
+        .sup-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem !important; color: var(--theme-cream) !important; word-break: break-all; user-select: text; -webkit-user-select: text; }
+        .legal-card { padding: 18px 18px 8px; border-radius: 24px; border: 1px solid var(--theme-card-border);
+            background-color: var(--theme-card-bg); background-image: var(--theme-card-gradient);
+            -webkit-backdrop-filter: blur(var(--theme-card-blur)); backdrop-filter: blur(var(--theme-card-blur));
+            box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06); }
+        .legal-card h4 { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: .95rem; color: var(--theme-cream); margin: 0 0 4px; }
+        .legal-card p { font-size: .78rem; line-height: 1.6; color: #e2e8f0; margin: 0 0 16px; }
+        .legal-card b { color: #fff; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
@@ -1226,14 +1255,49 @@
             <h1 id="util-support-title" class="up-title">Support</h1>
             <button type="button" class="sm-icon-btn" onclick="closeUtilPage()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
         </header>
-        <div class="up-body"></div>
+        <div class="up-body">
+        <p class="htp-intro">Stuck, found a bug, or got an idea? We&rsquo;re happy to help.</p>
+        <div class="htp-cards">
+            <div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-envelope"></i></div><div class="htp-txt">
+                <h4>Email us</h4>
+                <p>Pick a topic, add your race code if you have one, and your email app opens with a message ready to fill in.</p>
+                <h5 class="sup-label">What do you need help with?</h5>
+                <div class="sup-chips" id="support-topics"><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Joining a race</button><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Check-ins &amp; GPS</button><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Bonus games</button><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Hosting a race</button><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Report a bug</button><button type="button" class="sup-chip" aria-pressed="false" onclick="pickSupportTopic(this)">Something else</button></div>
+                <h5 class="sup-label">Race code <span>(optional)</span></h5>
+                <input type="text" id="support-race-code" class="sup-input" autocomplete="off" autocapitalize="characters" placeholder="e.g. MAGIC1">
+                <button type="button" class="sup-primary" onclick="sendSupportEmail()"><i class="fa-solid fa-paper-plane"></i> Email support</button>
+                <p class="sup-small">Screenshots help a lot. Attach them in your email app once it opens.</p>
+            </div></div>
+            <div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-at"></i></div><div class="htp-txt">
+                <h4>Prefer to write it yourself?</h4>
+                <p class="sup-addr">developer@amazingmouserace.com</p>
+                <button type="button" class="sup-secondary" onclick="copySupportEmail()"><i class="fa-regular fa-copy"></i> Copy email address</button>
+            </div></div>
+            <h3 class="htp-sub">Quick fixes</h3>
+            <div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-right-to-bracket"></i></div><div class="htp-txt">
+                <h4>Logged out?</h4>
+                <p>Sign back in with your race code, team name and PIN on the Team page. It works on any device.</p>
+            </div></div>
+            <div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-location-crosshairs"></i></div><div class="htp-txt">
+                <h4>Check in not working?</h4>
+                <p>GPS can drift, especially near buildings. If you are sure you are in the right place, use a manual check in and take a photo as evidence. Your host can review it.</p>
+            </div></div>
+            <div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-user-clock"></i></div><div class="htp-txt">
+                <h4>Waiting to get in?</h4>
+                <p>Your host has to approve your team before you can race. Let them know you have joined.</p>
+            </div></div>
+        </div>
+    </div>
     </section>
     <section id="util-disclaimer" class="util-page" role="dialog" aria-modal="true" aria-labelledby="util-disclaimer-title" aria-hidden="true">
         <header class="up-top">
             <h1 id="util-disclaimer-title" class="up-title">Disclaimer</h1>
             <button type="button" class="sm-icon-btn" onclick="closeUtilPage()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
         </header>
-        <div class="up-body"></div>
+        <div class="up-body">
+        <!-- DRAFT placeholder wording: have this reviewed by a qualified legal professional before launch. -->
+        <div class="legal-card"><h4>1. Not affiliated</h4><p>The Amazing Mouse Race is an independent, fan-made project. It is not affiliated with, authorised, sponsored, endorsed or otherwise connected to The Walt Disney Company or any of its subsidiaries or affiliates.</p><h4>2. Trademarks</h4><p>Disney, Magic Kingdom, Epcot, Disney&rsquo;s Hollywood Studios, Disney&rsquo;s Animal Kingdom and all related names, logos, characters and marks are trademarks or registered trademarks of The Walt Disney Company and its affiliates. All other trademarks are the property of their respective owners.</p><h4>3. Factual references only</h4><p>Any use of these names within this app is solely to factually identify real-world locations, attractions and transport options so that players can find and travel to them. No ownership of, or association with, any such name is claimed or implied.</p><h4>4. Play safely and follow the rules</h4><p>Players take part entirely at their own risk. Always follow park rules, posted signs, staff instructions and local laws. Do not run, trespass, enter restricted areas or put yourself or others in danger to complete a checkpoint, challenge or bonus. Stay aware of your surroundings and keep your group together. This app is a game and should never replace your own judgement.</p><h4>5. Accuracy of information</h4><p>Locations, hints, fun facts, trivia, maps and GPS positioning are provided for entertainment and may be inaccurate, incomplete or out of date. Attractions, areas and transport can open, close or change without notice.</p><h4>6. No warranty</h4><p>The app is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;, without warranties of any kind, express or implied. We do not guarantee that it will be uninterrupted, error-free or secure.</p><h4>7. Limitation of liability</h4><p>To the fullest extent permitted by law, the creators and operators of this app are not liable for any loss, damage, injury or expense arising from your use of it, or from taking part in any race or hunt run through it.</p><h4>8. Hosts and user content</h4><p>Races are created and run by independent hosts, and photos, team names and messages are submitted by players. We are not responsible for the conduct of hosts or players, or for user-submitted content.</p><h4>9. Changes</h4><p>We may update this disclaimer from time to time. Continued use of the app means you accept the current version.</p><h4>10. Contact</h4><p>Questions about this disclaimer? Email <b>developer@amazingmouserace.com</b>.</p></div>
+    </div>
     </section>
 
     <!-- Hidden by default via style="display: none;" to prevent layout flashing. pt-28 ensures content scrolls behind the fixed header, min-h-screen flex flex-col prevents empty space issues. -->
@@ -10862,6 +10926,31 @@
             hideTimer = setTimeout(() => p.classList.remove('up-show'), 340);
         };
         window.isUtilPageOpen = () => !!activePage;
+        const SUPPORT_EMAIL = 'developer@amazingmouserace.com';
+        window.pickSupportTopic = function (btn) {
+            const was = btn.getAttribute('aria-pressed') === 'true';
+            document.querySelectorAll('#support-topics .sup-chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
+            if (!was) btn.setAttribute('aria-pressed', 'true');
+        };
+        window.sendSupportEmail = function () {
+            const on = document.querySelector('#support-topics .sup-chip[aria-pressed="true"]');
+            const topic = on ? on.textContent.trim() : 'General';
+            const code = (el('support-race-code') && el('support-race-code').value || '').trim();
+            const subject = 'Amazing Mouse Race support: ' + topic;
+            const body = 'Hi,\n\n[Describe what happened here]\n\n---\nTopic: ' + topic +
+                (code ? '\nRace code: ' + code : '') +
+                '\nDevice: ' + (navigator.userAgent || 'unknown') +
+                '\n(Feel free to attach screenshots.)';
+            window.location.href = 'mailto:' + SUPPORT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+        };
+        window.copySupportEmail = function () {
+            const done = () => { if (window.appToast) window.appToast('Email address copied', 2000); };
+            const fallback = () => {
+                const t = document.createElement('textarea'); t.value = SUPPORT_EMAIL; t.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove();
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(SUPPORT_EMAIL).then(done, fallback); else fallback();
+        };
         window.toggleHtpSection = function (key) {
             const sec = el('htp-' + key); if (!sec) return;
             const open = !sec.classList.contains('open');
