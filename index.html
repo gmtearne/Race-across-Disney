@@ -1623,9 +1623,6 @@
                     <p id="map-desc-text" class="text-xs text-slate-400 italic">
                         Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore.
                     </p>
-                    <a id="map-external-link" href="https://www.openstreetmap.org/#map=12/28.3850/-81.5625" target="_blank" rel="noopener" class="w-full text-xs bg-slate-900 hover:bg-slate-700 text-disneyGold px-3.5 py-3 rounded-xl border border-slate-600 transition flex items-center justify-center gap-1.5 font-semibold">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full OpenStreetMap
-                    </a>
                 </div>
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
@@ -2944,7 +2941,6 @@
             if (icon) icon.textContent = (window.areaIcon ? window.areaIcon(name) : '📍');
             if (label) label.textContent = name;
             flyToArea(areaKey, true);
-            document.getElementById('map-external-link').href = mapData.link;
             document.getElementById('map-desc-text').innerText = mapData.desc;
         };
 
