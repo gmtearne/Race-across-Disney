@@ -1431,6 +1431,7 @@
                 <div>
                     <h1 class="page-title" style="margin-bottom:0"><i class="fa-solid fa-book-open"></i>Rules</h1>
                     <p class="page-sub">Read carefully before starting your journey across Disney property!</p>
+                    <span id="rules-preset-badge" class="hidden inline-block mt-2 px-2.5 py-1 rounded-full bg-slate-800 border border-disneyGold/40 text-[10px] font-bold uppercase tracking-widest text-disneyGold"></span>
                 </div>
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
                     <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
@@ -1444,7 +1445,7 @@
                     <div class="flex items-center gap-2 text-disneyBlue font-bold text-sm">
                         <i class="fa-solid fa-bus"></i> Transportation
                     </div>
-                    <p class="text-slate-300 leading-relaxed">
+                    <p id="rules-transport-text" class="text-slate-300 leading-relaxed">
                         You can <strong>only use free Disney transportation</strong>. Absolutely no ride-sharing (Uber/Lyft) or paid taxis. Permitted options include buses, the Disney Skyliner, monorails, and watercraft/boats.
                     </p>
                 </div>
@@ -1460,7 +1461,7 @@
                     <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
                         <i class="fa-solid fa-triangle-exclamation"></i> Penalties
                     </div>
-                    <p class="text-slate-300 leading-relaxed">
+                    <p id="rules-penalty-text" class="text-slate-300 leading-relaxed">
                         All <strong>missed checkpoints</strong> in a Speed Race will carry a heavy <strong>60-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.
                     </p>
                 </div>
@@ -1472,13 +1473,25 @@
                         Bonus checkpoints are entirely optional and will improve your overall standings. There are <strong>no penalties</strong> for missing bonus checkpoints.
                     </p>
                 </div>
+                <div id="rules-bingo-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
+                        <span aria-hidden="true">🐭</span> Hidden Mickey Bingo
+                    </div>
+                    <p id="rules-bingo-text" class="text-slate-300 leading-relaxed"></p>
+                </div>
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
                     <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                        <i class="fa-solid fa-ban"></i> Route Planning Restriction
+                        <i class="fa-solid fa-ban"></i> Route Planning & Internet Use
                     </div>
-                    <p class="text-slate-300 leading-relaxed">
+                    <p id="rules-internet-text" class="text-slate-300 leading-relaxed">
                         Any use of the internet or external web search tools to look up transit timetables or plan routes during the race is <strong>strictly prohibited</strong>. The only exception is the in-app Photo clue button on Easy mode. Otherwise, rely on physical park layouts and signage!
                     </p>
+                </div>
+                <div id="rules-host-card" class="hidden bg-slate-800 border border-violet-500/40 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-violet-300 font-bold text-sm">
+                        <i class="fa-solid fa-clipboard-list"></i> Host's Additional Rules
+                    </div>
+                    <p id="rules-host-text" class="text-slate-300 leading-relaxed whitespace-pre-line"></p>
                 </div>
                 <div class="bg-amber-950/60 border border-amber-500/40 rounded-2xl p-5 shadow-xl backdrop-blur-md text-xs space-y-2">
                     <div class="font-bold text-amber-300 flex items-center gap-2">
@@ -1595,7 +1608,7 @@
         <div class="rw-top px-5 pb-3 border-b border-slate-800 shrink-0">
             <div class="flex items-center justify-between gap-3 max-w-lg mx-auto w-full">
                 <div class="min-w-0">
-                    <p id="rw-step-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step 1 of 6</p>
+                    <p id="rw-step-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step 1 of 7</p>
                     <h2 id="rw-step-title" class="font-disney font-bold text-lg text-white leading-tight">Name your race</h2>
                 </div>
                 <button type="button" onclick="closeRaceWizard()" aria-label="Close" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-xmark"></i></button>
@@ -1608,7 +1621,7 @@
                 </label>
             </div>
             <div id="rw-progress" class="flex gap-1.5 mt-3 max-w-lg mx-auto w-full">
-                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
+                <span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span><span class="rw-seg"></span>
             </div>
         </div>
 
@@ -1937,8 +1950,46 @@
                     <input type="number" id="create-default-points" value="0" class="hidden">
                 </section>
 
-                <!-- Step 6: host also playing -->
+                <!-- Step 6: rules -->
                 <section data-rw-step="6" class="rw-step hidden space-y-5">
+                    <div class="text-center space-y-2 pt-3">
+                        <div class="text-5xl">📜</div>
+                        <h3 class="font-disney font-bold text-2xl text-white">Set the rules</h3>
+                        <p class="text-sm text-slate-400">Pick a starting point, then adjust anything. Rules are locked once the race starts.</p>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Rules preset">
+                        <label class="cursor-pointer"><input type="radio" name="create_rules_preset" id="create-rules-preset-casual" value="casual" class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-emerald-400 peer-checked:bg-emerald-500/10 transition text-center"><span class="block text-xl">🎉</span><span class="block text-xs font-bold text-emerald-200 mt-1">Casual</span><span class="block text-[10px] leading-snug text-slate-400 mt-1">Any transport, internet OK</span></div></label>
+                        <label class="cursor-pointer"><input type="radio" name="create_rules_preset" id="create-rules-preset-competitive" value="competitive" checked class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-yellow-400 peer-checked:bg-yellow-500/10 transition text-center"><span class="block text-xl">🏆</span><span class="block text-xs font-bold text-yellow-200 mt-1">Competitive</span><span class="block text-[10px] leading-snug text-slate-400 mt-1">Free transit, no internet</span></div></label>
+                        <label class="cursor-pointer"><input type="radio" name="create_rules_preset" id="create-rules-preset-custom" value="custom" class="peer sr-only"><div class="h-full p-3 rounded-2xl border border-slate-700 bg-slate-950/70 peer-checked:border-violet-400 peer-checked:bg-violet-500/10 transition text-center"><span class="block text-xl">✏️</span><span class="block text-xs font-bold text-violet-200 mt-1">Custom</span><span class="block text-[10px] leading-snug text-slate-400 mt-1">Your own mix</span></div></label>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-4">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Transportation</label>
+                            <select id="create-rules-transport" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                                <option value="walk" data-icon="🚶" data-sub="No buses, boats, monorail or rides">Walking only</option>
+                                <option value="free_transit" data-icon="🚌" data-sub="Buses, Skyliner, monorail, boats">Free park transit only</option>
+                                <option value="paid_transit" data-icon="🚕" data-sub="Free transit plus taxis and rideshare">Free + paid transit</option>
+                                <option value="any" data-icon="🚗" data-sub="Including driving your own car">Anything goes</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Internet help</label>
+                            <select id="create-rules-internet" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                                <option value="none" data-icon="🚫" data-sub="No web searches or route planning">Not allowed</option>
+                                <option value="maps" data-icon="🗺️" data-sub="Maps and the park app, no searching for answers">Maps and park app only</option>
+                                <option value="any" data-icon="🌐" data-sub="Search anything">Allowed</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold" for="create-rules-extra">Your own rules (optional)</label>
+                            <textarea id="create-rules-extra" rows="4" maxlength="500" placeholder="e.g. Meet back at the fountain by 5pm. No skipping ride lines." class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-disneyGold resize-none"></textarea>
+                            <p class="text-[10px] text-slate-500">Shown to players on the Rules page, under the app's own rules.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 7: host also playing -->
+                <section data-rw-step="7" class="rw-step hidden space-y-5">
                     <div class="text-center space-y-2 pt-3">
                         <div class="text-5xl">🙋</div>
                         <h3 class="font-disney font-bold text-2xl text-white">Host also playing?</h3>
@@ -1957,8 +2008,18 @@
                 </section>
 
                 <!-- Advanced settings step (shown only when Advanced settings is enabled) -->
-                <section data-rw-step="7" class="rw-step hidden space-y-5">
+                <section data-rw-step="8" class="rw-step hidden space-y-5">
                     <div class="text-center space-y-2 pt-3"><div class="text-5xl">⚙️</div><h3 class="font-disney font-bold text-2xl text-white">Fine-tune your race</h3><p class="text-sm text-slate-400">These are defaults. Hosts can still adjust the score on individual bonus challenges after creation.</p></div>
+                    <div id="create-penalty-block" class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-3">
+                        <h4 class="font-bold text-white">Missed checkpoint penalty</h4>
+                        <p class="text-xs text-slate-400">Minutes added to a team's time for each required checkpoint they skip (Speed Race only).</p>
+                        <div class="flex items-center bg-slate-950 border border-slate-700 rounded-2xl overflow-hidden">
+                            <button type="button" onclick="stepNumber('create-missed-penalty', -5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">−</button>
+                            <input type="number" id="create-missed-penalty" value="60" min="0" max="600" inputmode="numeric" class="no-spinner flex-1 min-w-0 bg-transparent text-center text-sm text-white font-mono font-bold focus:outline-none">
+                            <button type="button" onclick="stepNumber('create-missed-penalty', 5)" class="w-11 h-11 text-lg font-bold text-slate-300 active:bg-slate-800 shrink-0">+</button>
+                        </div>
+                        <p class="text-[10px] text-slate-500">Default is 60 minutes. Set 0 for no penalty.</p>
+                    </div>
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 space-y-3">
                         <h4 class="font-bold text-white">Default team portal views</h4>
                         <label class="flex items-center justify-between text-sm text-slate-200"><span>Chat enabled</span><input id="create-view-chat" type="checkbox" checked class="w-5 h-5 accent-emerald-500"></label>
@@ -2080,6 +2141,73 @@
         // <main> is overflow:hidden on portal pages but can still be scrolled programmatically
         // (focusing a field, or a leftover scroll position from Rules/Maps), which pushed the
         // team status bar up under the header. Keep it pinned to the top.
+
+        // ===================== RACE RULES + MISSED-CHECKPOINT PENALTY =====================
+        // race.rules = { preset:'casual'|'competitive'|'custom', transport:'walk'|'free_transit'|'paid_transit'|'any',
+        //                internet:'none'|'maps'|'any', extra:'' }. Set in the wizard; locked once the race starts.
+        // race.missedPenaltyMin = minutes added per missed required checkpoint in a Speed Race (default 60).
+        window.missedPenaltyMin = function(race) {
+            const raw = race && race.missedPenaltyMin;
+            const v = Number(raw);
+            return (raw !== undefined && raw !== null && raw !== '' && Number.isFinite(v) && v >= 0) ? v : 60;
+        };
+        window.RULE_PRESETS = {
+            casual: { transport: 'any', internet: 'any' },
+            competitive: { transport: 'free_transit', internet: 'none' }
+        };
+        window.RULE_PRESET_NAMES = { casual: 'Casual', competitive: 'Competitive', custom: 'Custom' };
+        window.RULE_TRANSPORT_LABELS = { walk: 'Walking only', free_transit: 'Free park transit only', paid_transit: 'Free + paid transit', any: 'Anything goes' };
+        window.RULE_INTERNET_LABELS = { none: 'Not allowed', maps: 'Maps and park app only', any: 'Allowed' };
+        window.RULE_TRANSPORT_HTML = {
+            walk: '<strong>Walking only.</strong> No buses, monorails, boats, the Skyliner, ride-sharing or taxis.',
+            paid_transit: 'Free Disney transportation <strong>and paid options</strong> such as taxis and ride-sharing are allowed. Driving your own car is <strong>not</strong> allowed.',
+            any: '<strong>Any transportation is allowed</strong>, including paid taxis, ride-sharing and driving your own car.'
+        };
+        window.RULE_INTERNET_HTML = {
+            maps: 'You may use <strong>maps and the official park app</strong> to find your way and check wait times. Searching the web for clue answers or looking up transit timetables is <strong>not allowed</strong>.',
+            any: '<strong>Internet use is allowed</strong>, including maps, web searches and park apps.'
+        };
+        window.renderRaceRules = function(race) {
+            const $ = (id) => document.getElementById(id);
+            const tEl = $('rules-transport-text'), iEl = $('rules-internet-text'), pEl = $('rules-penalty-text');
+            if (!tEl || !iEl || !pEl) return;
+            // Remember the original page text so races without custom rules (and logged-out visitors) still see it.
+            if (tEl.dataset.orig === undefined) { tEl.dataset.orig = tEl.innerHTML; iEl.dataset.orig = iEl.innerHTML; pEl.dataset.orig = pEl.innerHTML; }
+            const rules = race && race.rules;
+            tEl.innerHTML = (rules && window.RULE_TRANSPORT_HTML[rules.transport]) || tEl.dataset.orig;
+            iEl.innerHTML = (rules && window.RULE_INTERNET_HTML[rules.internet]) || iEl.dataset.orig;
+            if (race && race.gameMode === 'scavenger') {
+                pEl.innerHTML = 'Scavenger Hunts have <strong>no time penalties</strong>. Checkpoints you skip simply earn no points.';
+            } else if (race && race.missedPenaltyMin !== undefined && race.missedPenaltyMin !== null) {
+                const n = window.missedPenaltyMin(race);
+                pEl.innerHTML = n > 0
+                    ? `All <strong>missed checkpoints</strong> in a Speed Race will carry a <strong>${n}-minute time penalty</strong> added to your final score. Choose wisely if you decide to skip any stop.`
+                    : 'There is <strong>no time penalty</strong> for missed checkpoints in this race, but skipping stops still means you will not finish them.';
+            } else pEl.innerHTML = pEl.dataset.orig;
+            const badge = $('rules-preset-badge');
+            if (badge) {
+                if (rules && rules.preset) { badge.textContent = (window.RULE_PRESET_NAMES[rules.preset] || 'Custom') + ' rules'; badge.classList.remove('hidden'); }
+                else badge.classList.add('hidden');
+            }
+            const bingoCard = $('rules-bingo-card');
+            if (bingoCard) {
+                const b = race && race.bingo;
+                if (b && b.enabled) {
+                    const rewardTxt = window.bingoRewardText(race);
+                    const winnerTxt = race.bingo.onlyOneWinner === true
+                        ? `Only <strong>one team</strong> can win: the first team to complete the card earns <strong>${rewardTxt}</strong>, then bingo is over.`
+                        : `Every team that completes the card earns <strong>${rewardTxt}</strong>.`;
+                    $('rules-bingo-text').innerHTML = `Find and photograph <strong>four hidden Mickeys</strong> to fill your 2×2 card, one photo per square. ${winnerTxt} A partly filled card earns nothing, and the host reviews every photo.`;
+                    bingoCard.classList.remove('hidden');
+                } else bingoCard.classList.add('hidden');
+            }
+            const hostCard = $('rules-host-card');
+            if (hostCard) {
+                const extra = rules && String(rules.extra || '').trim();
+                if (extra) { $('rules-host-text').textContent = extra; hostCard.classList.remove('hidden'); }
+                else hostCard.classList.add('hidden');
+            }
+        };
 
         // ===================== BINGO + CHECKPOINT FRENZY HELPERS =====================
         // Hidden Mickey Bingo: a fixed 2x2 card. No preset challenges are used. A race with it on stores
@@ -2631,12 +2759,13 @@
             const enabled = !!document.getElementById('create-advanced-switch').checked;
             ['create-bingo-reward-advanced','create-bonus-reward-advanced','create-trivia-reward-advanced','create-wildcard-reward-advanced','create-frenzy-reward-advanced'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !enabled));
             if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
-            if (!enabled && typeof rwStep !== 'undefined' && rwStep === 7) rwStep = 6;
+            if (!enabled && typeof rwStep !== 'undefined' && rwStep === 8) rwStep = 7;
             if (typeof rwRender === 'function') rwRender();
         });
         window.updateWizardCheckpointScoring = function() {
             const hunt = !!document.getElementById('create-mode-scavenger')?.checked;
             document.getElementById('create-hunt-points-inline')?.classList.toggle('hidden', !hunt);
+            document.getElementById('create-penalty-block')?.classList.toggle('hidden', hunt);
             document.getElementById('create-checkpoint-scoring-inline')?.classList.toggle('hidden', !hunt || !document.getElementById('create-advanced-switch')?.checked);
         };
         document.getElementById('create-mode-scavenger')?.addEventListener('change', () => window.updateWizardCheckpointScoring());
@@ -4573,6 +4702,17 @@
                     }));
                 }
 
+                // Rules (set in the wizard, locked once the race starts) and the missed-checkpoint penalty (advanced).
+                const rulePresetVal = document.querySelector('input[name="create_rules_preset"]:checked')?.value || 'competitive';
+                const raceRules = {
+                    preset: ['casual', 'competitive', 'custom'].includes(rulePresetVal) ? rulePresetVal : 'competitive',
+                    transport: document.getElementById('create-rules-transport')?.value || 'free_transit',
+                    internet: document.getElementById('create-rules-internet')?.value || 'none',
+                    extra: String(document.getElementById('create-rules-extra')?.value || '').trim().slice(0, 500)
+                };
+                const rawPenalty = parseInt(document.getElementById('create-missed-penalty')?.value);
+                const missedPenaltyMin = (advanced && gameMode === 'race' && Number.isFinite(rawPenalty)) ? Math.min(600, Math.max(0, rawPenalty)) : 60;
+
                 // Hidden Mickey Bingo: a fixed 2x2 card of four photo squares (no preset challenges).
                 let bingoInfo = null, bingoCps = [];
                 if (document.getElementById('create-bingo-switch')?.checked) {
@@ -4640,6 +4780,8 @@
                     wildcardAuto: wildcardAuto,
                     frenzyAuto: frenzyAuto,
                     bingo: bingoInfo || { enabled: false },
+                    rules: raceRules,
+                    missedPenaltyMin: missedPenaltyMin,
                     frenzies: [],
                     trivia: {
                         enabled: triviaToggle === 'on',
@@ -4671,7 +4813,7 @@
                         bingoName: bingoInfo ? bingoInfo.name : '',
                         timeLimitMinutes, enforceHostStart, startMode, staggerMinutes,
                         trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
-                        wildcardAuto
+                        wildcardAuto, rules: raceRules, missedPenaltyMin
                     });
                 }
                 await loadAdminRaces();
@@ -4693,9 +4835,29 @@
 
 
         // ================= NEW RACE WIZARD =================
-        const RW_TOTAL = 7;
-        const rwTotal = () => (rwEl('create-advanced-switch')?.checked ? 7 : 6);
-        const RW_TITLES = ['Name your race', 'Race mode', 'Difficulty', 'Checkpoints', 'Bonuses', 'Register your team', 'Advanced settings'];
+        // Rules step: presets fill the two dropdowns; editing anything flips the preset to Custom.
+        window.__rulesApplying = false;
+        window.applyRulesPreset = function(name) {
+            const p = window.RULE_PRESETS[name];
+            if (!p) return;
+            window.__rulesApplying = true;
+            [['create-rules-transport', p.transport], ['create-rules-internet', p.internet]].forEach(([id, v]) => {
+                const el = document.getElementById(id);
+                if (el) { el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); }
+            });
+            window.__rulesApplying = false;
+        };
+        window.markRulesCustom = function() {
+            if (window.__rulesApplying) return;
+            const r = document.getElementById('create-rules-preset-custom');
+            if (r) r.checked = true;
+        };
+        document.querySelectorAll('input[name="create_rules_preset"]').forEach(r => r.addEventListener('change', () => { if (r.checked) window.applyRulesPreset(r.value); }));
+        ['create-rules-transport', 'create-rules-internet'].forEach(id => document.getElementById(id)?.addEventListener('change', window.markRulesCustom));
+        document.getElementById('create-rules-extra')?.addEventListener('input', window.markRulesCustom);
+        const RW_TOTAL = 8;
+        const rwTotal = () => (rwEl('create-advanced-switch')?.checked ? 8 : 7);
+        const RW_TITLES = ['Name your race', 'Race mode', 'Difficulty', 'Checkpoints', 'Bonuses', 'Rules', 'Register your team', 'Advanced settings'];
         document.getElementById('create-host-team-switch')?.addEventListener('change', e => {
             document.getElementById('create-host-team-fields')?.classList.toggle('hidden', !e.target.checked);
         });
@@ -4721,6 +4883,10 @@
             window.toggleTriviaSettings();
             setChk('create-host-team-switch', false);
             setChk('create-advanced-switch', false);
+            setRadio('create_rules_preset', 'competitive');
+            window.applyRulesPreset('competitive');
+            if (rwEl('create-rules-extra')) rwEl('create-rules-extra').value = '';
+            if (rwEl('create-missed-penalty')) rwEl('create-missed-penalty').value = 60;
             ['create-bingo-reward-advanced','create-bonus-reward-advanced','create-trivia-reward-advanced','create-wildcard-reward-advanced','create-frenzy-reward-advanced'].forEach(id => rwEl(id)?.classList.add('hidden'));
             if (typeof window.updateWizardCheckpointScoring === 'function') window.updateWizardCheckpointScoring();
             if (rwEl('create-hunt-default-points')) rwEl('create-hunt-default-points').value = 10;
@@ -4769,7 +4935,7 @@
 
         function rwRender() {
             document.querySelectorAll('#race-wizard [data-rw-step]').forEach(sec => {
-                sec.classList.toggle('hidden', rwDone || Number(sec.dataset.rwStep) !== rwStep || (Number(sec.dataset.rwStep) === 7 && !rwEl('create-advanced-switch')?.checked));
+                sec.classList.toggle('hidden', rwDone || Number(sec.dataset.rwStep) !== rwStep || (Number(sec.dataset.rwStep) === 8 && !rwEl('create-advanced-switch')?.checked));
             });
             // restart the entrance animation for the visible step
             const visible = document.querySelector(`#race-wizard [data-rw-step="${rwStep}"]`);
@@ -4819,7 +4985,7 @@
                 document.querySelectorAll('#race-wizard [data-rw-step]').forEach(sec => {
                     sec.classList.toggle('hidden', Number(sec.dataset.rwStep) !== 1);
                 });
-                const label = rwEl('rw-step-label'); if (label) label.textContent = 'Step 1 of 6';
+                const label = rwEl('rw-step-label'); if (label) label.textContent = 'Step 1 of 7';
                 const heading = rwEl('rw-step-title'); if (heading) heading.textContent = 'Name your race';
             }
             setTimeout(() => { if (rwStep === 1 && !rwDone) rwEl('new-race-title')?.focus(); }, 380);
@@ -4875,7 +5041,7 @@
                     if (!Number.isFinite(st) || st < 1 || st > 120) { alert('Late-team interval must be between 1 and 120 minutes.'); return false; }
                 }
             }
-            if (step === 6 && rwEl('create-host-team-switch')?.checked) {
+            if (step === 7 && rwEl('create-host-team-switch')?.checked) {
                 const name = rwEl('create-host-team-name')?.value.trim() || '';
                 const pin = rwEl('create-host-team-pin')?.value.trim() || '';
                 if (!name) { alert('Please enter a team name, or turn off host team registration.'); return false; }
@@ -4935,6 +5101,8 @@
             ];
             if (isHunt) rows.push(rwRow('Time limit', info.timeLimitMinutes > 0 ? `${info.timeLimitMinutes} min` : 'No limit'));
             rows.push(rwRow('Start', start));
+            if (info.rules) rows.push(rwRow('Rules', `${window.RULE_PRESET_NAMES[info.rules.preset] || 'Custom'} · ${window.RULE_TRANSPORT_LABELS[info.rules.transport] || ''} · internet ${String(window.RULE_INTERNET_LABELS[info.rules.internet] || '').toLowerCase()}`));
+            if (!isHunt && info.missedPenaltyMin !== 60) rows.push(rwRow('Missed checkpoint', `+${info.missedPenaltyMin} min`));
             rows.push(rwRow('Trivia', trivia));
             rows.push(rwRow('Wildcard', info.wildcardAuto.enabled ? `On (${info.wildcardAuto.durationMin} min window)` : 'Off'),
                 rwRow('Checkpoint Frenzy', document.getElementById('create-frenzy-switch')?.checked ? `On (${document.getElementById('create-frenzy-duration')?.value || 15} min)` : 'Off'),
@@ -5429,7 +5597,7 @@
         };
 
         // Host rejects (or restores) a team's check-in. The check-in stays on record, but it stops counting:
-        // Speed Race = the stop is treated as missed (+60 min); Scavenger Hunt = the stop's points are lost.
+        // Speed Race = the stop is treated as missed (+ the race's missed-checkpoint penalty, 60 min by default); Scavenger Hunt = the stop's points are lost.
         // ---- Host side of a challenged ruling ----
         window.hostChallengeBox = function(raceCode, teamId, cpId, team, cp) {
             const ch = (team.checkinChallenges || {})[cpId];
@@ -5504,7 +5672,7 @@
                 const what = isBonus ? (isWild ? 'wildcard photo' : 'bonus photo') : 'check-in';
                 const effect = isHunt
                     ? (isBonus ? "The team loses that bonus's points." : "The team loses that stop's points.")
-                    : (isBonus ? 'The team loses that bonus time deduction (no time penalty).' : 'The team gets a 60-minute penalty.');
+                    : (isBonus ? 'The team loses that bonus time deduction (no time penalty).' : `The team gets a ${window.missedPenaltyMin(rejRace)}-minute penalty.`);
                 const ok = await appConfirm(`Reject this ${what}${cp ? ' (' + cp.name + ')' : ''}? ${effect} The team can challenge this ruling, and you can restore it later.`, { title: "Reject " + what, confirmText: "Reject", danger: true });
                 if (!ok) return;
             }
@@ -5591,7 +5759,7 @@
                 const bonusRejectText = race.gameMode === 'scavenger' ? 'the bonus points are removed' : 'the time deduction is removed (no penalty)';
                 let wcOffer = null;
                 try { wcOffer = await window.fetchWildcardOffer(raceCode); } catch (e) { /* optional */ }
-                const rejectPenaltyText = race.gameMode === 'scavenger' ? 'the stop\'s points are removed' : 'a 60-minute penalty is added';
+                const rejectPenaltyText = race.gameMode === 'scavenger' ? 'the stop\'s points are removed' : `a ${window.missedPenaltyMin(race)}-minute penalty is added`;
 
                 let html = `
                     <div class="space-y-4">
@@ -6587,7 +6755,7 @@
                     const rejectedBonusCount = claimed.filter(id => rejectedMap[id] && bonuses.some(b => b.id === id)).length;
 
                     const missedCount = mandatory.length - completed.length;
-                    const penaltyMin = (missedCount + rejectedCount) * 60;   // a rejected check-in counts as a missed stop; a rejected bonus only loses its reward (bonuses are optional, so no penalty)
+                    const penaltyMin = (missedCount + rejectedCount) * window.missedPenaltyMin(raceData);   // a rejected check-in counts as a missed stop; a rejected bonus only loses its reward (bonuses are optional, so no penalty)
 
                     let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj : 0);
                     claimed.forEach(bId => {
@@ -7044,6 +7212,7 @@
         };
 
         window.logoutTeam = function() {
+            try { window.renderRaceRules(null); } catch (e) {}
             window.activeRaceCode = null;
             window.activeTeamId = null;
             updateLeaderboardLoginNotice();
@@ -8269,7 +8438,7 @@
                 const frenzyRes = window.frenzyResults(race, allTeams);
                 const frenzyDed = race.gameMode === 'scavenger' ? 0 : Number(frenzyRes.bonusByTeam[teamId] || 0);
                 const triviaDed = race.gameMode === 'scavenger' ? 0 : Number(team.triviaBonus || 0);
-                const penaltyDed = race.gameMode === 'scavenger' ? 0 : missed * 60;
+                const penaltyDed = race.gameMode === 'scavenger' ? 0 : missed * window.missedPenaltyMin(race);
                 const elapsedMin = window.teamElapsedMs(team, race) / 60000;
                 const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed);
                 const fmt = mins => {
@@ -8647,6 +8816,7 @@
             // Many callers pass the raw race document, which has no wildcard info (the offer lives in its own record).
             // Overlay it here so every render, including a late joiner's first one, knows which bonus is the wildcard.
             raceData = window.applyWildcardOffer(raceData, window.liveWildcardOffer);
+            try { window.renderRaceRules(raceData); } catch (e) { console.warn('Rules render failed', e); }
             const teamSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId));
             if (!teamSnap.exists()) {
                 hideSplashScreen();
@@ -10302,6 +10472,9 @@
         window.enhanceSelect('hostlock-team-select', { title: 'Nominate a team', placeholder: 'Choose a team…', searchable: false });
         window.enhanceSelect('edit-final-stop-select', { title: 'Final location', searchable: true });
         window.enhanceSelect('create-wildcard-duration', { title: 'Wildcard offered for', searchable: false });
+        window.enhanceSelect('create-rules-transport', { title: 'Transportation', searchable: false });
+        window.enhanceSelect('create-rules-internet', { title: 'Internet help', searchable: false });
+        window.applyRulesPreset('competitive');
         window.enhanceSegmented('trivia-frequency');
         window.enhanceSegmented('edit-trivia-frequency');
 
