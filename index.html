@@ -875,9 +875,7 @@
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
-            <div class="w-full h-80 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                <iframe id="app-map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
-            </div>
+            <div id="app-map-box" class="w-full h-80 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner"></div>
             <button onclick="document.getElementById('app-map-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close Map
             </button>
@@ -968,9 +966,7 @@
                     <div class="font-bold text-disneyGold flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> Transit & Route Advice:</div>
                     <p id="cp-modal-transit-text" class="text-slate-300 leading-relaxed"></p>
                 </div>
-                <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                    <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
-                </div>
+                <div id="cp-modal-extra" class="w-full h-64 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner"></div>
                 <button type="button" id="cp-modal-photo-btn" onclick="openPhotoClue()" class="hidden w-full py-2.5 bg-slate-900 border border-slate-600 hover:border-disneyGold text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-image text-disneyGold"></i> Photo clue: what does it look like?
                 </button>
@@ -3579,19 +3575,44 @@
             }
         };
 
+        // Shows one location on the app's own vector map (WdwMap) inside a box that is already on screen.
+        // The map is created once per box and reused, so reopening a popup is instant and doesn't leak WebGL contexts.
+        window.showPinMap = async function(boxId, lat, lng, label) {
+            const box = document.getElementById(boxId);
+            if (!box) return;
+            lat = Number(lat); lng = Number(lng);
+            const token = box.__pinToken = (box.__pinToken || 0) + 1;       // a newer open supersedes this one
+            const fail = () => {
+                if (box.__pinToken !== token || box.__pinMap) return;
+                const link = Number.isFinite(lat) && Number.isFinite(lng) ? ` <a class="underline text-sky-300" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}">Open in Maps</a>` : '';
+                box.innerHTML = `<p class="p-4 text-xs text-slate-300">The map could not be loaded.${link}</p>`;
+            };
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return fail();
+            try {
+                if (!box.__pinMap) {
+                    box.innerHTML = '';
+                    const m = await WdwMap.create(box, { center: [lat, lng], zoom: 16.5, labelsMaxZoom: 99 });
+                    if (box.__pinToken !== token) { try { m.remove(); } catch (e) {} return; }
+                    box.__pinMap = m;
+                }
+                const map = box.__pinMap;
+                try { map.resize(); } catch (e) {}
+                if (box.__pinMarker) { try { box.__pinMarker.remove(); } catch (e) {} box.__pinMarker = null; }
+                const el = document.createElement('div');
+                el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:#f472b6;border:3px solid #fff;box-shadow:0 2px 8px #000a';
+                box.__pinMarker = WdwMap.marker(map, [lat, lng], el, { size: [22, 22], title: label || '' });
+                WdwMap.jump(map, [lat, lng], 16.5);
+            } catch (e) {
+                console.error('Pin map failed', e);
+                fail();
+            }
+        };
+
         window.openAppMapModal = function(lat, lon) {
             const modal = document.getElementById('app-map-modal');
-            const iframe = document.getElementById('app-map-iframe');
-            if (!modal || !iframe) return;
-
-            const bboxDelta = 0.005;
-            const minLon = (lon - bboxDelta).toFixed(4);
-            const minLat = (lat - bboxDelta).toFixed(4);
-            const maxLon = (lon + bboxDelta).toFixed(4);
-            const maxLat = (lat + bboxDelta).toFixed(4);
-
-            iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lon}`;
-            modal.classList.remove('hidden');
+            if (!modal) return;
+            modal.classList.remove('hidden');                                    // must be visible before the map can size itself
+            window.showPinMap('app-map-box', lat, lon, 'Check-in location');
         };
 
         // ===================== COMPASS GUIDE (final approach to a stop) =====================
@@ -8210,7 +8231,6 @@
             const transitBox = document.getElementById('cp-modal-transit-box');
             const transitText = document.getElementById('cp-modal-transit-text');
             const extraBox = document.getElementById('cp-modal-extra');
-            const iframeEl = document.getElementById('cp-modal-iframe');
 
             const facts = window.getFunFacts(cpName, cpPark, cpLand);
             descEl.classList.remove('hidden');
@@ -8218,6 +8238,7 @@
             if (photoBtn) photoBtn.classList.add('hidden');
             window.photoClueState = { name: cpName, park: cpPark };
 
+            let showMap = false;
             const triviaRes = cpId ? window.getTriviaResultFor(cpId, cpName) : null;
             const triviaBox = document.getElementById('cp-modal-trivia-box');
             if (triviaRes) {
@@ -8240,7 +8261,6 @@
                 descEl.classList.add('hidden');
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
-                iframeEl.src = '';
             } else if (difficulty === 'medium') {
                 titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
                 descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'Park Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
@@ -8255,12 +8275,7 @@
                 transitBox.classList.remove('hidden');
 
                 extraBox.classList.remove('hidden');
-                const bboxDelta = 0.005;
-                const minLon = (lng - bboxDelta).toFixed(4);
-                const minLat = (lat - bboxDelta).toFixed(4);
-                const maxLon = (lng + bboxDelta).toFixed(4);
-                const maxLat = (lat + bboxDelta).toFixed(4);
-                iframeEl.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
+                showMap = true;
             }
 
             // Fun fact box (all difficulties)
@@ -8280,6 +8295,7 @@
             }
 
             modal.classList.remove('hidden');
+            if (showMap) window.showPinMap('cp-modal-extra', lat, lng, cpName);   // easy hints: pin on the vector map (after the modal is visible)
         };
 
 
