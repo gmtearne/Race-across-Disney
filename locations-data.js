@@ -226,3 +226,48 @@ window.DISNEY_PRESETS = [
     { name: "Photo outside a Disney attraction entrance", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Attractions", bingo: ["ridebingo", "photobingo"] },
     { name: "Photo with a ride vehicle or ride sign", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Attractions", bingo: ["ridebingo", "photobingo"] }
 ];
+
+// ================= TRANSIT TRANSFERS =================
+// Some trips cannot be made directly and always need a transfer. After a check-in on one of these legs the app asks
+// "Which resort did you transfer through?", then records the transit TO the resort and the transit FROM it.
+// A rule matches when one end's "park" is in `between` and the other end's "park" is in `and` (either direction;
+// names are matched case-insensitively and must match the "park" values used above).
+window.TRANSIT_TRANSFER_RULES = [
+    {
+        between: ["Disney Springs"],
+        and: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"],
+        reason: "You can't travel directly between a theme park and Disney Springs."
+    }
+];
+
+// Every on-property resort, offered in the "Which resort?" list (grouped by "area", in this order).
+// Coordinates are not used for the question yet. Entries marked dummy: true still have placeholder coordinates:
+// search this file for  lat: 28.0000, lng: -81.0000  (and for dummy: true) to find them. Remove dummy: true once real.
+window.DISNEY_RESORTS = [
+    { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4158, lng: -81.5744 },  // from Contemporary Resort Lobby
+    { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. next to the Contemporary
+    { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4057, lng: -81.5843 },  // from Polynesian Village Resort Lobby
+    { name: "Grand Floridian Resort & Spa", area: "Magic Kingdom area", lat: 28.4109, lng: -81.5886 },  // from Grand Floridian Resort Entrance
+    { name: "Wilderness Lodge", area: "Magic Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Boulder Ridge / Copper Creek Villas
+    { name: "Fort Wilderness Resort & Campground", area: "Magic Kingdom area", lat: 28.4101, lng: -81.5644 },  // from Pioneer Hall
+    { name: "Beach Club Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Yacht Club Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "BoardWalk Inn & Villas", area: "Epcot area", lat: 28.3668, lng: -81.5558 },  // from Disney's BoardWalk Inn Entrance
+    { name: "Swan Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. Walt Disney World Swan
+    { name: "Dolphin Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. Walt Disney World Dolphin
+    { name: "Swan Reserve", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Riviera Resort", area: "Epcot area", lat: 28.3658, lng: -81.5435 },  // from Riviera Resort (Skyliner Station)
+    { name: "Caribbean Beach Resort", area: "Epcot area", lat: 28.3582, lng: -81.5438 },  // from Caribbean Beach Resort Skyliner Hub
+    { name: "Pop Century Resort", area: "Epcot area", lat: 28.3508, lng: -81.5412, dummy: true },  // APPROXIMATE - shared coordinate copied from the combined 'Art of Animation & Pop Century Skyliner' stop - split when you have both
+    { name: "Art of Animation Resort", area: "Epcot area", lat: 28.3508, lng: -81.5412, dummy: true },  // APPROXIMATE - shared coordinate copied from the combined 'Art of Animation & Pop Century Skyliner' stop - split when you have both
+    { name: "Animal Kingdom Lodge (Jambo House)", area: "Animal Kingdom area", lat: 28.3528, lng: -81.6025 },  // from Animal Kingdom Lodge (Jambo House)
+    { name: "Animal Kingdom Villas (Kidani Village)", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "All-Star Movies Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "All-Star Music Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "All-Star Sports Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Coronado Springs Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Gran Destino Tower
+    { name: "Old Key West Resort", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Saratoga Springs Resort & Spa", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Treehouse Villas
+    { name: "Port Orleans Resort - French Quarter", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Port Orleans Resort - Riverside", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+];
