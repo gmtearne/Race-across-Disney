@@ -7737,6 +7737,14 @@
                 (hit(r.between, a) && hit(r.and, b)) || (hit(r.between, b) && hit(r.and, a))) || null;
         };
         window.transitNeedsVia = function(a, b) { return !!window.transitRuleFor(a, b); };
+        // Where the replay should bend a leg: the resort a team transferred through, looked up by name in
+        // window.DISNEY_RESORTS. Resorts still marked dummy: true (or "Other"/unknown) are ignored, so the leg stays a straight line.
+        window.transitViaPoint = function(leg) {
+            if (!leg || !leg.via || !leg.via.resort) return null;
+            const r = (window.DISNEY_RESORTS || []).find(x => x && x.name === leg.via.resort);
+            if (!r || r.dummy || r.lat == null || r.lng == null || !isFinite(Number(r.lat)) || !isFinite(Number(r.lng))) return null;
+            return { lat: Number(r.lat), lng: Number(r.lng), name: r.name };
+        };
 
         window.planTransitLeg = function(race, tData, cpId) {
             const cps = race.checkpoints || [];
@@ -8380,7 +8388,8 @@
                     }
                     const bonusPre = [0];                                                  // bonusPre[k] = bonus ms earned on legs 1..k
                     for (let k = 1; k <= m; k++) bonusPre.push(bonusPre[k - 1] + items[k].reduce((a, b) => a + b.min, 0) * 60000);
-                    teams.push({ id:t.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, finished:!!t.endTime, start, stops, m, cum, items, bonusPre });
+                    const vias = stops.map(sp => (sp.transit && sp.transit.segments && sp.transit.segments.length === 2) ? window.transitViaPoint(sp.transit) : null);   // resort a team transferred through, if we have its coordinates
+                    teams.push({ id:t.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, finished:!!t.endTime, start, stops, m, cum, items, bonusPre, vias });
                 });
                 if (!teams.length) return window.appToast("No team has recorded locations to replay yet.");
                 teams.sort((a, b) => a.name.localeCompare(b.name)).forEach((tm, i) => { tm.color = PALETTE[i % PALETTE.length]; });
@@ -8464,7 +8473,7 @@
                 modal.querySelector('#orr-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = [];
-                teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); });
+                teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); tm.vias.forEach(v => { if (v) allLatLngs.push([v.lat, v.lng]); }); });
                 try { map = await WdwMap.create(modal.querySelector('#orr-map'), { center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
@@ -8531,8 +8540,10 @@
                     const trails = [];
                     teams.forEach(tm => {
                         const done = Math.min(Math.floor(tm.prog + 1e-6), tm.m);
-                        const pts = [[tm.start.lat, tm.start.lng]]; for (let k = 0; k < done; k++) pts.push([tm.stops[k].lat, tm.stops[k].lng]);
-                        const p = live && live[tm.id]; if (p) pts.push([p.lat, p.lng]);
+                        const pts = [[tm.start.lat, tm.start.lng]];
+                        for (let k = 0; k < done; k++) { if (tm.vias[k]) pts.push([tm.vias[k].lat, tm.vias[k].lng]); pts.push([tm.stops[k].lat, tm.stops[k].lng]); }
+                        const p = live && live[tm.id];
+                        if (p) { if (p.viaPassed && tm.vias[done]) pts.push([tm.vias[done].lat, tm.vias[done].lng]); pts.push([p.lat, p.lng]); }
                         if (pts.length > 1) trails.push({ latlngs:pts, color:tm.color });
                     });
                     teamLines.set(trails);
@@ -8580,7 +8591,7 @@
                     const act = teams.filter(tm => n <= tm.m);
                     const prevAdj = tm => tm.cum[n - 1] - tm.bonusPre[n - 1];                // standing going into this leg (bonuses included)
                     const minPrev = Math.min(...act.map(prevAdj));
-                    const plan = act.map(tm => ({ tm, delay:prevAdj(tm) - minPrev, leg:legMs(tm, n), from:spotAt(tm, n - 1), to:spotAt(tm, n) }));
+                    const plan = act.map(tm => ({ tm, delay:prevAdj(tm) - minPrev, leg:legMs(tm, n), from:spotAt(tm, n - 1), to:spotAt(tm, n), via:tm.vias[n - 1] }));
                     const maxArr = Math.max(1, ...plan.map(p => p.delay + p.leg));
                     const total = 4200 / speed, s = total / maxArr, minMove = 400 / speed;
                     plan.forEach(p => { p.off = p.delay * s; p.mv = Math.max(minMove, p.leg * s); });
@@ -8591,7 +8602,9 @@
                         const t = now - started, live = {};
                         plan.forEach(p => {
                             const f = ease(Math.max(0, Math.min(1, (t - p.off) / p.mv)));
-                            const pos = lerp(p.from, p.to, f); live[p.tm.id] = pos;
+                            // Via a resort: first half of the trip goes to the resort, second half on to the checkpoint (same total time).
+                            const pos = p.via ? (f < .5 ? lerp(p.from, p.via, f * 2) : lerp(p.via, p.to, (f - .5) * 2)) : lerp(p.from, p.to, f);
+                            live[p.tm.id] = { lat:pos.lat, lng:pos.lng, viaPassed:!!p.via && f >= .5 };
                             p.tm.marker.setLatLng([pos.lat, pos.lng]);
                             p.tm.prog = (n - 1) + f;
                             p.tm.marker.setZ(10 + Math.round(p.tm.prog * 100));
@@ -8715,7 +8728,8 @@
                     while (token === playToken && playing && step < N) {
                         const n = step + 1;
                         const act = teams.filter(tm => n <= tm.m);
-                        const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; });
+                        const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; })
+                            .concat(act.filter(tm => tm.vias[n - 1]).map(tm => [tm.vias[n - 1].lat, tm.vias[n - 1].lng]));
                         if (frameTeams(true, extra) && !(await wait(900 / speed, token))) return;
                         if (!(await animateStage(n, token))) return;
                         step = n; syncUi();
@@ -8829,6 +8843,7 @@
                 modal.querySelector('#replay-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
+                events.forEach(ev => { const v = ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2 ? window.transitViaPoint(ev.transit) : null; if (v) allLatLngs.push([v.lat, v.lng]); });
                 try { map = await WdwMap.create(modal.querySelector('#team-replay-map'), { center:[events[0].lat, events[0].lng], zoom:15, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
@@ -8847,6 +8862,10 @@
                     x.textContent = '✕';
                     WdwMap.marker(map, [ev.lat, ev.lng], x, { size:[18, 18], title:`Rejected by host: ${ev.label}` });
                 });
+                events.forEach(ev => {     // small grey dot where a team transferred through a resort
+                    const v = ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2 ? window.transitViaPoint(ev.transit) : null;
+                    if (v) WdwMap.dot(map, [v.lat, v.lng], { color:'#94a3b8', r:4, weight:2, fill:.9, title:'Via ' + v.name });
+                });
                 // ---- Route drawing ----
                 const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', bonus:'#f472b6', other:'#94a3b8' };
                 const lerp = (a, b, t) => [a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t];
@@ -8854,6 +8873,15 @@
                     if (ev.kind === 'bonus') return ['bonus'];
                     const m = (ev.transit && ev.transit.modes || []).map(x => String(x).toLowerCase()).filter(x => modeColors[x]);
                     return m.length ? m : ['other'];       // no transit answer recorded: neutral grey, not a guess
+                };
+                // A leg is one straight segment, or two when the team transferred through a resort we have coordinates for
+                // (park → resort → Disney Springs). The two halves share the leg's time equally, so replay spacing is unchanged.
+                const viaOf = ev => (ev && ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2) ? window.transitViaPoint(ev.transit) : null;
+                const legSegs = (a, b, ev) => {
+                    const v = viaOf(ev);
+                    if (!v) return [{ a, b, modes:legModes(ev) }];
+                    const segModes = i => { const mm = (ev.transit.segments[i].modes || []).map(x => String(x).toLowerCase()).filter(x => modeColors[x]); return mm.length ? mm : ['other']; };
+                    return [{ a, b:v, modes:segModes(0) }, { a:v, b, modes:segModes(1) }];
                 };
                 // Multi-mode legs: successive portions of the straight line, in the order the modes were tapped.
                 const drawLeg = (layer, a, b, modes, frac) => {
@@ -8863,6 +8891,13 @@
                         if (t1 <= t0) break;
                         layer.add([lerp(a, b, t0), lerp(a, b, t1)], modeColors[modes[j]] || modeColors.other);
                     }
+                };
+                const drawLegSegs = (layer, a, b, ev, frac) => {
+                    const segs = legSegs(a, b, ev), n = segs.length;
+                    segs.forEach((sg, i) => {
+                        const f = Math.max(0, Math.min(1, (frac - i / n) * n));
+                        if (f > 0) drawLeg(layer, sg.a, sg.b, sg.modes, f);
+                    });
                 };
                 const routeLayer = WdwMap.lineLayer(map, 'route-done', { width:5, opacity:.94 });   // finished legs
                 const liveLayer = WdwMap.lineLayer(map, 'route-live', { width:5, opacity:.94 });    // leg currently being travelled
@@ -8950,8 +8985,9 @@
                     },
                     cluster(ev, animate) { return this.fitTo(clusterPts[ev.cluster], 'c' + ev.cluster, animate); },
                     leg(a, b, animate) {
-                        if (a.cluster === b.cluster) return this.cluster(b, animate);          // short hop inside a park: frame the park
-                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]], 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg
+                        if (a.cluster === b.cluster && !viaOf(b)) return this.cluster(b, animate);          // short hop inside a park: frame the park
+                        const v = viaOf(b);
+                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]].concat(v ? [[v.lat, v.lng]] : []), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg (and any resort in between)
                     },
                     overview(animate) { framed = 'all'; WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:animate !== false }); },
                     reset() { framed = null; }
@@ -8971,7 +9007,7 @@
                 const renderStep = (n, moveCamera) => {
                     step = Math.max(0, Math.min(events.length - 1, Number(n) || 0)); slider.value = String(step);
                     routeLayer.clear(); liveLayer.clear();
-                    for (let i = 1; i <= step; i++) drawLeg(routeLayer, events[i - 1], events[i], legModes(events[i]), 1);
+                    for (let i = 1; i <= step; i++) drawLegSegs(routeLayer, events[i - 1], events[i], events[i], 1);
                     const ev = events[step]; avatar.setLatLng([ev.lat, ev.lng]);
                     nameEl.textContent = ev.label;
                     const leg = (step > 0 && ev.kind !== 'bonus' && window.formatTransitLeg) ? window.formatTransitLeg(ev.transit) : '';
@@ -8990,31 +9026,37 @@
                 const animateLeg = (a, b, token) => new Promise(resolve => {
                     const dist = WdwMap.distance([a.lat, a.lng], [b.lat, b.lng]);
                     const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
-                    const modes = legModes(b), started = performance.now();
-                    // The transit badge trails behind the avatar (opposite the direction of travel on screen).
-                    const p0 = map.project([a.lng, a.lat]), p1 = map.project([b.lng, b.lat]);
-                    let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
-                    const ox = -ux * 34, oy = -uy * 34;
-                    let shownIdx = -1;
-                    const showMode = idx => {
-                        if (idx === shownIdx) return; shownIdx = idx;
-                        const emoji = modeEmoji[modes[idx]];
+                    const segs = legSegs(a, b, b), nSeg = segs.length, started = performance.now();
+                    // Badge sequence follows the line's colour sections; each segment keeps its own trailing direction.
+                    const flat = [], offs = [];
+                    segs.forEach(sg => { offs.push(flat.length); sg.modes.forEach(m => flat.push(m)); });
+                    segs.forEach(sg => {
+                        const p0 = map.project([sg.a.lng, sg.a.lat]), p1 = map.project([sg.b.lng, sg.b.lat]);
+                        let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+                        sg.ox = -ux * 34; sg.oy = -uy * 34;
+                    });
+                    let shownIdx = -1, shownSeg = -1;
+                    const showMode = (idx, si) => {
+                        if (idx === shownIdx) return; shownIdx = idx; shownSeg = si;
+                        const emoji = modeEmoji[flat[idx]];
                         if (!emoji) { clearModeMarker(); return; }
                         const badge = document.createElement('div');
-                        badge.style.cssText = `width:40px;height:40px;border-radius:50%;background:#0f172ae6;border:2px solid ${modeColors[modes[idx]]};display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;box-shadow:0 2px 8px #0008`;
+                        badge.style.cssText = `width:40px;height:40px;border-radius:50%;background:#0f172ae6;border:2px solid ${modeColors[flat[idx]]};display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;box-shadow:0 2px 8px #0008`;
                         badge.textContent = emoji;
                         badge.animate([{ transform:'scale(.3)', opacity:0 }, { transform:'scale(1)', opacity:1 }], { duration:240, easing:'ease-out' });
                         if (modeMarker) modeMarker.remove();
-                        modeMarker = WdwMap.marker(map, avatar.getLatLng(), badge, { size:[40, 40], offset:[ox, oy], z:900, interactive:false });
+                        modeMarker = WdwMap.marker(map, avatar.getLatLng(), badge, { size:[40, 40], offset:[segs[si].ox, segs[si].oy], z:900, interactive:false });
                     };
                     const frame = now => {
                         if (token !== playToken || !playing) { clearModeMarker(); return resolve(false); }
                         const t = ease(Math.min(1, (now - started) / duration));
-                        const pos = lerp(a, b, t);
+                        const si = Math.min(nSeg - 1, Math.floor(t * nSeg)), local = t * nSeg - si;      // which half of the leg, and how far through it
+                        const pos = lerp(segs[si].a, segs[si].b, local);
                         avatar.setLatLng(pos);
-                        showMode(Math.min(modes.length - 1, Math.floor(t * modes.length)));   // badge changes with the line's colour sections
+                        const ml = segs[si].modes.length;
+                        showMode(offs[si] + Math.min(ml - 1, Math.floor(local * ml)), si);
                         if (modeMarker) modeMarker.setLatLng(pos);
-                        liveLayer.clear(); drawLeg(liveLayer, a, b, modes, t);         // trail follows the avatar
+                        liveLayer.clear(); drawLegSegs(liveLayer, a, b, b, t);         // trail follows the avatar
                         if (t < 1) requestAnimationFrame(frame); else { clearModeMarker(); resolve(true); }
                     };
                     requestAnimationFrame(frame);
