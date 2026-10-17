@@ -876,7 +876,7 @@
                 </button>
             </div>
             <div class="w-full h-80 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                <div id="app-map-box" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
+                <iframe id="app-map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
             </div>
             <button onclick="document.getElementById('app-map-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close Map
@@ -968,8 +968,8 @@
                     <div class="font-bold text-disneyGold flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> Transit & Route Advice:</div>
                     <p id="cp-modal-transit-text" class="text-slate-300 leading-relaxed"></p>
                 </div>
-                <div id="cp-modal-extra" class="w-full h-56 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                    <div id="cp-modal-map" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
+                <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                    <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
                 </div>
                 <button type="button" id="cp-modal-photo-btn" onclick="openPhotoClue()" class="hidden w-full py-2.5 bg-slate-900 border border-slate-600 hover:border-disneyGold text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-image text-disneyGold"></i> Photo clue: what does it look like?
@@ -2919,13 +2919,13 @@
         }
 
         const MAP_LOCATIONS = {
-            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
-            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
-            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
-            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
-            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
-            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
-            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", link: "https://www.openstreetmap.org/#map=12/28.3850/-81.5625", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
+            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
+            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
+            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
+            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
+            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
+            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
         };
 
         const MAP_NAMES = { wdw: 'Whole Resort', mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
@@ -3581,12 +3581,17 @@
 
         window.openAppMapModal = function(lat, lon) {
             const modal = document.getElementById('app-map-modal');
-            const box = document.getElementById('app-map-box');
-            const la = Number(lat), lo = Number(lon);
-            if (!modal || !box || !window.WdwMap || !Number.isFinite(la) || !Number.isFinite(lo)) return;
+            const iframe = document.getElementById('app-map-iframe');
+            if (!modal || !iframe) return;
+
+            const bboxDelta = 0.005;
+            const minLon = (lon - bboxDelta).toFixed(4);
+            const minLat = (lat - bboxDelta).toFixed(4);
+            const maxLon = (lon + bboxDelta).toFixed(4);
+            const maxLat = (lat + bboxDelta).toFixed(4);
+
+            iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lon}`;
             modal.classList.remove('hidden');
-            WdwMap.showPin(box, la, lo, { color: '#fbbf24', zoom: 16 })
-                .catch(e => { console.warn('Check-in map failed', e); box.innerHTML = '<p style="padding:16px;font-size:12px;color:#94a3b8">The map could not be loaded.</p>'; });
         };
 
         // ===================== COMPASS GUIDE (final approach to a stop) =====================
@@ -8106,8 +8111,7 @@
             const transitBox = document.getElementById('cp-modal-transit-box');
             const transitText = document.getElementById('cp-modal-transit-text');
             const extraBox = document.getElementById('cp-modal-extra');
-            const mapEl = document.getElementById('cp-modal-map');
-            let pendingPin = null;   // easy mode: the map is started once the popup is on screen so it can measure itself
+            const iframeEl = document.getElementById('cp-modal-iframe');
 
             const facts = window.getFunFacts(cpName, cpPark, cpLand);
             descEl.classList.remove('hidden');
@@ -8137,6 +8141,7 @@
                 descEl.classList.add('hidden');
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
+                iframeEl.src = '';
             } else if (difficulty === 'medium') {
                 titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
                 descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'Park Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
@@ -8145,14 +8150,18 @@
             } else {
                 if (photoBtn) photoBtn.classList.remove('hidden');   // Easy mode only
                 titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
-                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the map pin below and review the transit advice before moving.`;
+                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
                 
                 transitText.innerText = getDetailedTransitAdvice(cpPark);
                 transitBox.classList.remove('hidden');
 
-                const pinLat = Number(lat), pinLng = Number(lng);
-                if (Number.isFinite(pinLat) && Number.isFinite(pinLng)) { extraBox.classList.remove('hidden'); pendingPin = { lat: pinLat, lng: pinLng }; }
-                else extraBox.classList.add('hidden');
+                extraBox.classList.remove('hidden');
+                const bboxDelta = 0.005;
+                const minLon = (lng - bboxDelta).toFixed(4);
+                const minLat = (lat - bboxDelta).toFixed(4);
+                const maxLon = (lng + bboxDelta).toFixed(4);
+                const maxLat = (lat + bboxDelta).toFixed(4);
+                iframeEl.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
             }
 
             // Fun fact box (all difficulties)
@@ -8172,10 +8181,6 @@
             }
 
             modal.classList.remove('hidden');
-            if (pendingPin && mapEl && window.WdwMap) {
-                WdwMap.showPin(mapEl, pendingPin.lat, pendingPin.lng, { color: '#f472b6', zoom: 16 })
-                    .catch(e => { console.warn('Hint map failed', e); mapEl.innerHTML = '<p style="padding:16px;font-size:12px;color:#94a3b8">The map could not be loaded.</p>'; });
-            }
         };
 
 
@@ -8209,7 +8214,12 @@
             return { events, skipped, startMs };
         };
 
-        // ---- Overall race replay: every team on one map, one shared clock, and a progress bar ----
+        // ---- Overall race replay (by checkpoint): every team on one map, stepping checkpoint by checkpoint ----
+        // Each "round" sends every team to its Nth checkpoint at once. Avatars leave with a head start equal to the
+        // lead they hold (like The Amazing Race scoreboard), then a leaderboard overlay appears:
+        //   page 1 = cumulative time at this checkpoint, before any bonus earned on this leg
+        //   page 2 = bonuses earned on this leg (Speed Race only), with the standings animating to their new order
+        // Bonus photos are never shown as map check-ins; their time is only applied on page 2 of the leg they fall in.
         window.openRaceReplay = async function(raceCode) {
             try {
                 if (window.__raceReplayClose) { try { window.__raceReplayClose(); } catch (e) {} }
@@ -8218,54 +8228,88 @@
                 const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
                 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 const PALETTE = ['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa','#fb923c','#f87171','#2dd4bf','#e879f9','#a3e635','#60a5fa','#fcd34d'];
+                const isScavenger = race.gameMode === 'scavenger';      // hunts score in points, so there is no bonus-time page
+                const checkpoints = race.checkpoints || [];
+                const toMs = v => typeof v === 'number' ? v : (Date.parse(v) || 0);
+                const HMS = ms => { const s = Math.max(0, Math.round(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
+                const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+                const minText = m => `−${+Number(m).toFixed(2)} min`;
 
-                // ---- Teams with replayable data ----
+                const teamDocs = [];
+                teamsSnap.forEach(d => teamDocs.push({ id:d.id, ...d.data() }));
+                let frenzyRes = { list: [], bonusByTeam: {} };
+                try { frenzyRes = window.frenzyResults(race, teamDocs); } catch (e) {}
+
+                // ---- Teams: ordered checkpoints, cumulative times, and the bonus minutes earned on each leg ----
                 const teams = [];
-                teamsSnap.forEach(d => {
-                    const t = d.data();
+                teamDocs.forEach(t => {
                     const built = window.buildReplayEvents(race, t);
-                    const evs = built.events.filter(e => e.ts > 0);          // an event with no timestamp can't be placed on the clock
-                    if (!evs.length) return;
-                    teams.push({ id:d.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, startMs:built.startMs, events:evs, finished:!!t.endTime });
+                    const timed = built.events.filter(e => e.ts > 0);                      // an event with no timestamp can't be placed
+                    const stops = timed.filter(e => e.kind === 'checkpoint');              // bonus check-ins are deliberately left out of the route
+                    if (!stops.length) return;
+                    const startEv = timed.find(e => e.kind === 'start');
+                    const startTs = built.startMs || (startEv && startEv.ts) || stops[0].ts;
+                    const start = startEv ? { lat:startEv.lat, lng:startEv.lng } : { lat:stops[0].lat, lng:stops[0].lng };
+                    const m = stops.length;
+                    const cum = [0]; stops.forEach(s => cum.push(Math.max(cum[cum.length - 1], s.ts - startTs)));   // cum[k] = time of checkpoint k
+                    const items = Array.from({ length:m + 1 }, () => []);                  // items[k] = bonuses earned on leg k
+                    if (!isScavenger) {
+                        const rj = t.rejectedCheckins || {};
+                        const legOfTs = ts => { for (let k = 1; k <= m; k++) if (ts <= stops[k - 1].ts) return k; return m; };
+                        const wc = race.wildcardBonusIds || [];
+                        (t.claimedBonus || []).forEach(id => {
+                            if (rj[id]) return;
+                            const cp = checkpoints.find(c => c.id === id && c.type === 'BONUS_PHOTO'); if (!cp) return;
+                            const mins = Number(cp.bonusMinDeduction !== undefined ? cp.bonusMinDeduction : 10) || 0;
+                            if (mins <= 0) return;
+                            const ts = toMs((t.bonusClaimTimes || {})[id]);
+                            items[ts ? legOfTs(ts) : m].push({ icon: wc.includes(id) ? '🃏' : '📸', label: cp.name, min: mins });
+                        });
+                        let triviaAllocated = 0;
+                        stops.forEach((s, i) => {
+                            const att = (t.triviaAttempts || {})[s.id];
+                            const b = att && att.asked ? Number(att.bonus) || 0 : 0;
+                            if (b > 0) { items[i + 1].push({ icon:'🧠', label:'Trivia', min:b }); triviaAllocated += b; }
+                        });
+                        const triviaLeft = (Number(t.triviaBonus) || 0) - triviaAllocated;   // trivia we can't tie to a leg still counts, on the last one
+                        if (triviaLeft > 0) items[m].push({ icon:'🧠', label:'Trivia', min:triviaLeft });
+                        const endMs = t.endTime ? toMs(t.endTime) : Infinity;
+                        (frenzyRes.list || []).forEach(r => {
+                            if (!(r.winnerIds || []).includes(t.id)) return;
+                            const at = Math.min(Number(r.effectiveEnd) || Infinity, endMs);
+                            items[isFinite(at) ? legOfTs(at) : m].push({ icon:'⚡', label:'Checkpoint frenzy', min:Number(r.f.bonus) || window.FRENZY_BONUS });
+                        });
+                        try {
+                            const bingoMin = Number(window.bingoBonusFor(race, t)) || 0;
+                            if (bingoMin > 0) {
+                                const ts = Math.max(0, ...(t.claimedBonus || []).filter(id => { const c = checkpoints.find(x => x.id === id); return c && race.bingo && c.bingoId === race.bingo.cardId; }).map(id => toMs((t.bonusClaimTimes || {})[id])));
+                                items[ts ? legOfTs(ts) : m].push({ icon:'🐭', label:'Hidden Mickey bingo', min:bingoMin });
+                            }
+                        } catch (e) {}
+                    }
+                    const bonusPre = [0];                                                  // bonusPre[k] = bonus ms earned on legs 1..k
+                    for (let k = 1; k <= m; k++) bonusPre.push(bonusPre[k - 1] + items[k].reduce((a, b) => a + b.min, 0) * 60000);
+                    teams.push({ id:t.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, finished:!!t.endTime, start, stops, m, cum, items, bonusPre });
                 });
                 if (!teams.length) return window.appToast("No team has recorded locations to replay yet.");
                 teams.sort((a, b) => a.name.localeCompare(b.name)).forEach((tm, i) => { tm.color = PALETTE[i % PALETTE.length]; });
-                const totalStops = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length || Math.max(1, ...teams.map(tm => tm.events.filter(e => e.kind === 'checkpoint').length));
+                const N = Math.max(...teams.map(tm => tm.m));                              // number of rounds
+                const totalStops = N;
+                const legMs = (tm, n) => Math.max(0, tm.cum[n] - tm.cum[n - 1]);
+                const spotAt = (tm, k) => k <= 0 ? tm.start : tm.stops[Math.min(k, tm.m) - 1];
 
-                // ---- Timeline: "From each team's start" (default) or real clock time ----
-                let mode = 'elapsed', maxT = 1;
-                const startOf = tm => tm.startMs || tm.events[0].ts;
-                const globalStart = Math.min(...teams.map(startOf));
-                const startSpread = Math.max(...teams.map(startOf)) - globalStart;
-                const layout = () => {
+                // Standings after round n. withBonus=false → page 1 (this leg's bonuses not yet applied).
+                const standings = (n, withBonus) => {
+                    const act = [], out = [];
                     teams.forEach(tm => {
-                        const shift = mode === 'elapsed' ? startOf(tm) : globalStart;
-                        tm.pts = tm.events.map(e => ({ t:Math.max(0, e.ts - shift), lat:e.lat, lng:e.lng, kind:e.kind }));
-                        // Progress anchors: 0 at the start, +1 for each mandatory stop reached; bonuses don't move the bar.
-                        const t0 = tm.startMs ? Math.max(0, tm.startMs - shift) : 0;
-                        tm.anchors = [{ t:t0, v:0 }]; let c = 0;
-                        tm.pts.forEach(p => { if (p.kind === 'checkpoint') { c++; tm.anchors.push({ t:Math.max(p.t, tm.anchors[tm.anchors.length - 1].t), v:c }); } });
-                        tm.endT = tm.pts[tm.pts.length - 1].t;
+                        if (n > tm.m) out.push({ tm, out:true });
+                        else act.push({ tm, time:Math.max(0, tm.cum[n] - tm.bonusPre[withBonus ? n : n - 1]) });
                     });
-                    maxT = Math.max(1000, ...teams.map(tm => tm.endT));
+                    act.sort((a, b) => a.time - b.time || a.tm.name.localeCompare(b.tm.name));
+                    out.sort((a, b) => a.tm.name.localeCompare(b.tm.name));
+                    return act.concat(out);
                 };
-                layout();
-                const posAt = (tm, T) => {
-                    const p = tm.pts;
-                    if (T <= p[0].t) return { lat:p[0].lat, lng:p[0].lng, i:0 };
-                    for (let i = 1; i < p.length; i++) {
-                        if (T <= p[i].t) { const a = p[i - 1], b = p[i], f = (T - a.t) / Math.max(1, b.t - a.t); return { lat:a.lat + (b.lat - a.lat) * f, lng:a.lng + (b.lng - a.lng) * f, i:i - 1 }; }
-                    }
-                    const l = p[p.length - 1]; return { lat:l.lat, lng:l.lng, i:p.length - 1 };
-                };
-                const progAt = (tm, T) => {
-                    const A = tm.anchors;
-                    if (T <= A[0].t) return 0;
-                    for (let i = 1; i < A.length; i++) if (T <= A[i].t) { const a = A[i - 1], b = A[i]; return a.v + (b.v - a.v) * ((T - a.t) / Math.max(1, b.t - a.t)); }
-                    return A[A.length - 1].v;
-                };
-                const doneCount = (tm, T) => { let c = 0; tm.anchors.forEach(a => { if (a.t <= T && a.v > c) c = a.v; }); return c; };
-                const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+                const legHasBonus = n => !isScavenger && teams.some(tm => n <= tm.m && tm.items[n].length);
 
                 // ---- Modal ----
                 const old = document.getElementById('team-race-replay-modal'); if (old) old.remove();
@@ -8281,23 +8325,22 @@
                   <div class="w-full max-w-4xl max-h-[94dvh] flex flex-col overflow-hidden rounded-3xl border border-sky-400/30 bg-slate-900 shadow-2xl">
                     <div class="flex items-center gap-3 p-4 border-b border-slate-700">
                       <div class="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><i class="fa-solid fa-flag-checkered text-lg"></i></div>
-                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Overall Race Replay</h2><p class="text-xs text-slate-400">Race ${esc(raceCode)} · ${teams.length} team${teams.length === 1 ? '' : 's'}</p></div>
+                      <div class="min-w-0 flex-1"><h2 class="font-disney text-xl font-bold text-white">Overall Race Replay</h2><p class="text-xs text-slate-400">Race ${esc(raceCode)} · ${teams.length} team${teams.length === 1 ? '' : 's'} · by checkpoint</p></div>
                       <button id="orr-close" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white" aria-label="Close replay"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    <div id="orr-map" class="w-full bg-slate-800" style="height:min(46dvh,430px);min-height:230px"></div>
+                    <div id="orr-map" class="w-full bg-slate-800" style="position:relative;height:min(46dvh,430px);min-height:230px"></div>
                     <div class="p-4 space-y-3 overflow-y-auto">
                       <div class="flex items-center justify-between gap-2 flex-wrap">
-                        <div><p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold" id="orr-clock-label">Race time</p><p id="orr-clock" class="font-mono font-bold text-xl text-white leading-none">0:00:00</p></div>
+                        <div><p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Round</p><p id="orr-clock" class="font-mono font-bold text-xl text-white leading-none">Race start</p></div>
                         <div class="flex items-center gap-2 flex-wrap justify-end">
-                          <button id="orr-mode" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200 ${startSpread < 60000 ? 'hidden' : ''}">⏱ Each team's start</button>
                           <button id="orr-frame" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200">📍 Auto-frame</button>
                           <button id="orr-speed" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Playback speed">1×</button>
                           <button id="orr-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button>
                         </div>
                       </div>
-                      <input id="orr-slider" type="range" min="0" max="${Math.round(maxT)}" value="0" step="1000" class="w-full accent-amber-400">
+                      <input id="orr-slider" type="range" min="0" max="${N}" value="0" step="1" class="w-full accent-amber-400">
                       <div>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Race progress · stops completed</p>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Race progress · checkpoints completed</p>
                         <div id="orr-bar" style="position:relative;height:${barH}px;user-select:none">
                           <div id="orr-avatars" style="position:absolute;left:0;right:0;top:0;bottom:0"></div>
                           <div id="orr-track" style="position:absolute;left:14px;right:14px;bottom:18px;height:8px;background:#334155;border-radius:4px">
@@ -8307,18 +8350,20 @@
                         </div>
                       </div>
                       <div id="orr-chips" class="flex flex-wrap gap-1.5"></div>
-                      <p class="text-[10px] text-slate-500">Straight-line legs between check-ins; teams may look still when their check-ins are far apart in time. Tap a team to follow it.</p>
+                      <p class="text-[10px] text-slate-500">Every team heads for its next checkpoint together; the leader sets off first, by the size of their lead. Times are cumulative from each team's own start${isScavenger ? '' : ', with bonus time applied at the end of each leg'}. Straight-line legs; tap a team to follow it.</p>
                     </div>
                   </div>`;
                 document.body.appendChild(modal);
 
                 // ---- Lifecycle ----
-                let T = 0, playing = false, raf = null, lastNow = 0, lastCam = 0, lastChips = 0, speed = 1, map = null, autoFrame = true;
+                let step = 0, playing = false, playToken = 0, speed = 1, map = null, autoFrame = true, board = null;
+                let waitTimer = null, holdResolve = null;
                 const SPEEDS = [0.5, 1, 2, 4];
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
-                    playing = false; if (raf) cancelAnimationFrame(raf);
+                    playing = false; playToken++; releaseHold();
                     document.removeEventListener('keydown', onKey);
+                    closeBoard(false);
                     if (map) { try { map.remove(); } catch (e) {} map = null; }
                     modal.remove();
                     if (window.__raceReplayClose === close) window.__raceReplayClose = null;
@@ -8328,14 +8373,14 @@
                 modal.querySelector('#orr-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = [];
-                teams.forEach(tm => tm.pts.forEach(p => allLatLngs.push([p.lat, p.lng])));
+                teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); });
                 try { map = await WdwMap.create(modal.querySelector('#orr-map'), { center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
                 const teamLines = WdwMap.lineLayer(map, 'team-trails', { width:3.5, opacity:.85 });
 
-                // ---- Map, pins, team layers ----
-                (race.checkpoints || []).forEach(cp => {
+                // ---- Map pins + team avatars ----
+                checkpoints.forEach(cp => {
                     if (!Number.isFinite(Number(cp.lat)) || !Number.isFinite(Number(cp.lng)) || cp.lat === null || cp.lng === null) return;
                     const bonus = cp.type === 'BONUS_PHOTO', c = bonus ? '#f472b6' : '#e2e8f0';
                     WdwMap.dot(map, [Number(cp.lat), Number(cp.lng)], { color:c, r:4, fill:.5, weight:1.5, title:(bonus ? '⭐ ' : '') + cp.name });
@@ -8350,11 +8395,12 @@
                     tm.flag.style.cssText = 'position:absolute;right:-8px;top:-10px;font-size:13px;display:none;filter:drop-shadow(0 1px 2px #000)';
                     el.append(img, tm.flag);
                     const ang = idx * 2.399963, ox = Math.cos(ang) * 9, oy = Math.sin(ang) * 9;     // fan avatars out so teams on the same spot stay visible
-                    tm.marker = WdwMap.marker(map, [tm.pts[0].lat, tm.pts[0].lng], el, { size:[32, 32], offset:[ox, oy], title:tm.name });
+                    tm.marker = WdwMap.marker(map, [tm.start.lat, tm.start.lng], el, { size:[32, 32], offset:[ox, oy], title:tm.name });
+                    tm.prog = 0;
                 });
 
                 // ---- Progress bar avatars + ranking chips ----
-                const barAv = modal.querySelector('#orr-avatars'), track = modal.querySelector('#orr-track'), fill = modal.querySelector('#orr-fill'), chips = modal.querySelector('#orr-chips');
+                const barAv = modal.querySelector('#orr-avatars'), fill = modal.querySelector('#orr-fill'), chips = modal.querySelector('#orr-chips');
                 teams.forEach(tm => {
                     const a = document.createElement('div');
                     a.style.cssText = `position:absolute;left:0;bottom:30px;width:22px;height:22px;border-radius:50%;border:2px solid ${tm.color};background:#0f172a;overflow:hidden;box-shadow:0 1px 4px #000a;will-change:transform`;
@@ -8374,11 +8420,12 @@
                         tm.barEl.style.transform = `translate(${x - 11}px, ${-r * 24}px)`;
                     });
                 };
-                const renderChips = () => {
-                    const ranked = [...teams].sort((a, b) => (b.prog - a.prog) || (a.endT - b.endT));
+                const renderChips = k => {
+                    const ranked = k >= 1 ? standings(k, true).map(r => r.tm) : [...teams];
                     chips.innerHTML = ranked.map((tm, i) => {
-                        const done = doneCount(tm, T), fin = tm.finished && T >= tm.endT;
-                        return `<button type="button" data-tid="${esc(tm.id)}" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px] text-slate-200"><span style="width:9px;height:9px;border-radius:50%;background:${tm.color};display:inline-block"></span><span class="font-bold">${i + 1}.</span> ${esc(tm.name)} <b class="text-slate-100">${fin ? '🏁 ' + fmt(tm.endT) : done + '/' + totalStops}</b></button>`;
+                        const done = Math.min(k, tm.m), fin = tm.finished && k >= tm.m;
+                        const finalMs = tm.cum[tm.m] - tm.bonusPre[tm.m];
+                        return `<button type="button" data-tid="${esc(tm.id)}" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px] text-slate-200"><span style="width:9px;height:9px;border-radius:50%;background:${tm.color};display:inline-block"></span>${k >= 1 ? `<span class="font-bold">${i + 1}.</span>` : ''} ${esc(tm.name)} <b class="text-slate-100">${fin ? '🏁 ' + fmt(Math.max(0, finalMs)) : done + '/' + totalStops}</b></button>`;
                     }).join('');
                 };
                 chips.addEventListener('click', e => {
@@ -8387,35 +8434,40 @@
                     setAutoFrame(false); WdwMap.flyTo(map, tm.marker.getLatLng(), Math.max(map.getZoom(), 15), { duration:.8 });
                 });
 
-                // ---- Clock + per-frame render ----
-                const clockEl = modal.querySelector('#orr-clock'), clockLabel = modal.querySelector('#orr-clock-label'), slider = modal.querySelector('#orr-slider');
-                const render = () => {
-                    slider.value = String(Math.round(T));
-                    clockEl.textContent = mode === 'elapsed' ? fmt(T) : new Date(globalStart + T).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                // ---- Trails + positions ----
+                const lerp = (a, b, t) => ({ lat:a.lat + (b.lat - a.lat) * t, lng:a.lng + (b.lng - a.lng) * t });
+                const drawTrails = live => {     // live: { teamId: {lat,lng} } current position of teams mid-leg
                     const trails = [];
                     teams.forEach(tm => {
-                        const p = posAt(tm, T);
-                        tm.marker.setLatLng([p.lat, p.lng]);
-                        const trail = []; for (let k = 0; k <= p.i; k++) trail.push([tm.pts[k].lat, tm.pts[k].lng]);
-                        trail.push([p.lat, p.lng]); trails.push({ latlngs:trail, color:tm.color });
-                        tm.prog = progAt(tm, T);
-                        tm.flag.style.display = (tm.finished && T >= tm.endT) ? 'block' : 'none';
-                        tm.marker.setZ(10 + Math.round(tm.prog * 100));       // leaders draw on top
+                        const done = Math.min(Math.floor(tm.prog + 1e-6), tm.m);
+                        const pts = [[tm.start.lat, tm.start.lng]]; for (let k = 0; k < done; k++) pts.push([tm.stops[k].lat, tm.stops[k].lng]);
+                        const p = live && live[tm.id]; if (p) pts.push([p.lat, p.lng]);
+                        if (pts.length > 1) trails.push({ latlngs:pts, color:tm.color });
                     });
                     teamLines.set(trails);
-                    renderBar();
+                };
+                const clockEl = modal.querySelector('#orr-clock'), slider = modal.querySelector('#orr-slider');
+                const syncUi = () => { slider.value = String(step); clockEl.textContent = step === 0 ? 'Race start' : `Checkpoint ${step} / ${N}`; };
+                const setStep = k => {     // jump straight to the state after round k (no leaderboard)
+                    closeBoard(false);
+                    step = Math.max(0, Math.min(N, Number(k) || 0));
+                    teams.forEach(tm => {
+                        const p = spotAt(tm, step); tm.marker.setLatLng([p.lat, p.lng]);
+                        tm.prog = Math.min(step, tm.m);
+                        tm.flag.style.display = (tm.finished && step >= tm.m) ? 'block' : 'none';
+                        tm.marker.setZ(10 + Math.round(tm.prog * 100));
+                    });
+                    drawTrails(null); renderBar(); renderChips(step); syncUi();
                 };
 
-                // ---- Camera: keep every active team in frame, but only move when needed ----
-                const frameTeams = force => {
-                    if (!autoFrame || !map) return;
-                    const active = teams.filter(tm => T > 0 && !(tm.finished && T >= tm.endT));
-                    const set = active.length ? active : teams;
-                    const pts = set.map(tm => tm.marker.getLatLng());
+                // ---- Camera ----
+                const frameTeams = (force, extra) => {
+                    if (!autoFrame || !map) return false;
+                    const pts = teams.map(tm => tm.marker.getLatLng()).concat(extra || []);
                     const cam = WdwMap.cameraFor(map, pts, { padding:50, maxZoom:16 });
-                    const inView = WdwMap.inView(map, pts, 0.1);
-                    if (!force && inView && map.getZoom() - cam.zoom <= 1) return;       // already framed well enough
+                    if (!force && WdwMap.inView(map, pts, 0.1) && map.getZoom() - cam.zoom <= 1) return false;
                     WdwMap.flyTo(map, cam.center, cam.zoom, { duration:1 });
+                    return true;
                 };
                 const frameBtn = modal.querySelector('#orr-frame');
                 const setAutoFrame = on => { autoFrame = on; frameBtn.textContent = on ? '📍 Auto-frame' : '📍 Free camera'; frameBtn.style.opacity = on ? '1' : '.7'; };
@@ -8424,45 +8476,184 @@
                 map.getContainer().addEventListener('pointerdown', userTouch);
                 map.getContainer().addEventListener('wheel', userTouch, { passive:true });
 
-                // ---- Playback: whole race plays in ~75 s at 1× ----
-                const rate = () => Math.max(1, maxT / 75000) * speed;
-                const playBtn = modal.querySelector('#orr-play');
-                const pause = () => { playing = false; if (raf) cancelAnimationFrame(raf); raf = null; playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play'; };
-                const tick = now => {
-                    if (!playing) return;
-                    const dt = Math.min(100, now - lastNow); lastNow = now;       // capped so a sleeping tab doesn't jump the clock
-                    T = Math.min(maxT, T + dt * rate());
-                    render();
-                    if (now - lastCam > 1000) { lastCam = now; frameTeams(false); }
-                    if (now - lastChips > 400) { lastChips = now; renderChips(); }
-                    if (T >= maxT) {
-                        pause(); renderChips();
-                        if (autoFrame) WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16 });   // finish: show the whole race
-                        return;
+                // ---- Waiting (tap the leaderboard to skip a hold) ----
+                function releaseHold() { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; const r = holdResolve; holdResolve = null; if (r) r(); }
+                const wait = (ms, token) => new Promise(resolve => {
+                    holdResolve = () => { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; holdResolve = null; resolve(token === playToken && playing); };
+                    waitTimer = setTimeout(() => holdResolve && holdResolve(), ms);
+                });
+                const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+                // ---- One round: everyone travels to checkpoint n; the leader leaves first by the size of their lead ----
+                const animateStage = (n, token) => new Promise(resolve => {
+                    const act = teams.filter(tm => n <= tm.m);
+                    const prevAdj = tm => tm.cum[n - 1] - tm.bonusPre[n - 1];                // standing going into this leg (bonuses included)
+                    const minPrev = Math.min(...act.map(prevAdj));
+                    const plan = act.map(tm => ({ tm, delay:prevAdj(tm) - minPrev, leg:legMs(tm, n), from:spotAt(tm, n - 1), to:spotAt(tm, n) }));
+                    const maxArr = Math.max(1, ...plan.map(p => p.delay + p.leg));
+                    const total = 4200 / speed, s = total / maxArr, minMove = 400 / speed;
+                    plan.forEach(p => { p.off = p.delay * s; p.mv = Math.max(minMove, p.leg * s); });
+                    const end = Math.max(...plan.map(p => p.off + p.mv));
+                    const started = performance.now();
+                    const frame = now => {
+                        if (token !== playToken || !playing) return resolve(false);
+                        const t = now - started, live = {};
+                        plan.forEach(p => {
+                            const f = ease(Math.max(0, Math.min(1, (t - p.off) / p.mv)));
+                            const pos = lerp(p.from, p.to, f); live[p.tm.id] = pos;
+                            p.tm.marker.setLatLng([pos.lat, pos.lng]);
+                            p.tm.prog = (n - 1) + f;
+                            p.tm.marker.setZ(10 + Math.round(p.tm.prog * 100));
+                        });
+                        drawTrails(live); renderBar();
+                        if (t < end) requestAnimationFrame(frame);
+                        else { plan.forEach(p => { p.tm.prog = n; if (p.tm.finished && n >= p.tm.m) p.tm.flag.style.display = 'block'; }); drawTrails(null); renderBar(); resolve(true); }
+                    };
+                    requestAnimationFrame(frame);
+                });
+
+                // ---- Leaderboard overlay (same card-over-map style as the single replay's photo postcards) ----
+                const ROW_H = 50;
+                function closeBoard(animate) {
+                    if (!board) return;
+                    const b = board; board = null;
+                    if (animate) {
+                        const a = b.el.animate([{ transform:'translate(-50%,-50%) scale(1)', opacity:1 }, { transform:'translate(-50%,-46%) scale(.94)', opacity:0 }], { duration:260, easing:'ease-in', fill:'forwards' });
+                        a.onfinish = () => b.el.remove();
+                    } else { try { b.el.remove(); } catch (e) {} }
+                }
+                const openBoard = n => {
+                    closeBoard(false);
+                    const el = document.createElement('div');
+                    el.style.cssText = 'position:absolute;left:50%;top:50%;z-index:1200;width:min(94%,410px);max-height:calc(100% - 14px);display:flex;flex-direction:column;background:rgba(15,23,42,.96);border:1px solid rgba(56,189,248,.4);border-radius:16px;box-shadow:0 14px 40px #000c;overflow:hidden;cursor:pointer;transform:translate(-50%,-50%)';
+                    const head = document.createElement('div');
+                    head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(100,116,139,.4)';
+                    const title = document.createElement('div'); title.style.cssText = 'font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;color:#fff;line-height:1.1';
+                    const sub = document.createElement('div'); sub.style.cssText = 'font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:2px';
+                    const tcol = document.createElement('div'); tcol.append(title, sub);
+                    const dots = document.createElement('div'); dots.style.cssText = 'display:flex;gap:4px;flex:none';
+                    head.append(tcol, dots);
+                    const scroller = document.createElement('div'); scroller.style.cssText = 'flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 6px';
+                    const body = document.createElement('div'); body.style.cssText = `position:relative;height:${teams.length * ROW_H}px`;
+                    scroller.appendChild(body);
+                    const foot = document.createElement('div'); foot.style.cssText = 'flex:none;text-align:center;font-size:9px;color:#64748b;padding:4px 0 6px';
+                    foot.textContent = 'Tap to continue';
+                    el.append(head, scroller, foot);
+                    const rows = {};
+                    teams.forEach(tm => {
+                        const r = document.createElement('div');
+                        r.style.cssText = `position:absolute;left:0;right:0;top:0;height:${ROW_H - 4}px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:12px;background:rgba(30,41,59,.85);border-left:4px solid ${tm.color};transition:transform .85s cubic-bezier(.3,1.1,.4,1),background .4s`;
+                        const rank = document.createElement('div'); rank.style.cssText = 'flex:none;width:22px;text-align:center;font-family:monospace;font-weight:800;font-size:14px;color:#e2e8f0;line-height:1';
+                        const rnum = document.createElement('div'); const arrow = document.createElement('div'); arrow.style.cssText = 'font-size:9px;height:10px;line-height:10px'; rank.append(rnum, arrow);
+                        const av = new Image(); av.alt = ''; av.draggable = false; av.style.cssText = `flex:none;width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid ${tm.color};background:#0f172a`;
+                        av.onerror = () => { av.onerror = null; av.src = DEFAULT_AVATAR; }; av.src = tm.photo;
+                        const mid = document.createElement('div'); mid.style.cssText = 'flex:1;min-width:0';
+                        const nm = document.createElement('div'); nm.style.cssText = 'font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'; nm.textContent = tm.name;
+                        const sb = document.createElement('div'); sb.style.cssText = 'font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+                        mid.append(nm, sb);
+                        const tt = document.createElement('div'); tt.style.cssText = 'flex:none;font-family:monospace;font-weight:800;font-size:14px;color:#cbd5e1;text-align:right';
+                        r.append(rank, av, mid, tt); body.appendChild(r);
+                        rows[tm.id] = { el:r, rnum, arrow, sb, tt };
+                    });
+                    const b = board = { el, rows, title, sub, dots, n, page:1, body, scroller };
+                    el.addEventListener('click', () => { if (playing) releaseHold(); else closeBoard(true); });   // tap: skip ahead (or dismiss when paused)
+                    map.getContainer().appendChild(el);
+                    el.animate([{ transform:'translate(-50%,-46%) scale(.9)', opacity:0 }, { transform:'translate(-50%,-50%) scale(1)', opacity:1 }], { duration:380, easing:'cubic-bezier(.2,1.2,.4,1)', fill:'forwards' });
+                    return b;
+                };
+                const setDots = (b, page, pages) => { b.dots.innerHTML = Array.from({ length:pages }, (_, i) => `<span style="width:7px;height:7px;border-radius:50%;background:${i === page - 1 ? '#fbbf24' : '#475569'};display:inline-block"></span>`).join(''); };
+                const fade = el => el.animate([{ opacity:0 }, { opacity:1 }], { duration:350, easing:'ease-out' });
+                // Position rows in the given order, set rank + time text. prevOrder (page 2) adds the ▲/▼ markers.
+                const paintOrder = (b, stand, prevOrder) => {
+                    const leader = stand.length && !stand[0].out ? stand[0].time : 0;
+                    stand.forEach((r, i) => {
+                        const R = b.rows[r.tm.id];
+                        R.el.style.transform = `translateY(${i * ROW_H + 2}px)`;
+                        R.rnum.textContent = r.out ? '–' : (i + 1);
+                        R.tt.textContent = r.out ? '—' : (i === 0 ? HMS(r.time) : '+' + HMS(r.time - leader));
+                        R.tt.style.color = i === 0 && !r.out ? '#fbbf24' : '#cbd5e1';
+                        R.el.style.opacity = r.out ? '.5' : '1';
+                        if (prevOrder && !r.out) {
+                            const was = prevOrder.indexOf(r.tm.id);
+                            R.arrow.textContent = was > i ? '▲' : (was < i ? '▼' : '');
+                            R.arrow.style.color = was > i ? '#34d399' : '#f87171';
+                        } else R.arrow.textContent = '';
+                    });
+                };
+                const paintPage1 = (b, n, stand) => {
+                    b.title.textContent = n === N ? `Checkpoint ${n} / ${N} · Finish` : `Checkpoint ${n} / ${N}`;
+                    b.sub.textContent = 'Leaderboard'; setDots(b, 1, legHasBonus(n) ? 2 : 1);
+                    stand.forEach(r => { const R = b.rows[r.tm.id]; R.sb.style.color = '#94a3b8'; R.sb.textContent = r.out ? `Stopped after checkpoint ${r.tm.m}` : `Leg time ${HMS(legMs(r.tm, n))}`; });
+                    paintOrder(b, stand, null);
+                };
+                const paintPage2Chips = (b, n, stand) => {
+                    b.page = 2; b.sub.textContent = 'Bonuses earned this leg'; setDots(b, 2, 2); fade(b.sub);
+                    stand.forEach(r => {
+                        const R = b.rows[r.tm.id]; R.sb.style.color = '#94a3b8';
+                        const its = r.out ? [] : r.tm.items[n];
+                        R.sb.innerHTML = its.length ? its.map(it => `<span style="color:#34d399;font-weight:700">${it.icon} ${minText(it.min)}</span>`).join(' · ') : (r.out ? '' : 'No bonus this leg');
+                        fade(R.sb);
+                    });
+                };
+
+                // Page 1 → (optional) page 2 → close. Resolves false if paused/closed.
+                const showBoards = async (n, token) => {
+                    const s1 = standings(n, false), b = openBoard(n);
+                    paintPage1(b, n, s1);
+                    if (!(await wait(3000 / speed, token))) return false;
+                    if (legHasBonus(n) && board === b) {
+                        const s2 = standings(n, true), order1 = s1.map(r => r.tm.id);
+                        paintPage2Chips(b, n, s1);                                   // bonuses appear first, standings unchanged
+                        if (!(await wait(1500 / speed, token))) return false;
+                        s2.forEach(r => { if (!r.out && r.tm.items[n].length) { const R = b.rows[r.tm.id]; R.el.style.background = 'rgba(16,185,129,.28)'; setTimeout(() => { if (board === b) R.el.style.background = 'rgba(30,41,59,.85)'; }, 1400); } });
+                        paintOrder(b, s2, order1);                                    // times update and rows slide into their new order
+                        if (!(await wait(3200 / speed, token))) return false;
                     }
-                    raf = requestAnimationFrame(tick);
+                    if (board === b) closeBoard(true);
+                    return true;
+                };
+
+                // ---- Playback ----
+                const playBtn = modal.querySelector('#orr-play');
+                const stopPlay = () => {
+                    playing = false; playToken++; releaseHold();
+                    if (!board) setStep(step);               // abandon a half-travelled leg; an open leaderboard stays up until dismissed
+                    playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+                };
+                const playSequence = async token => {
+                    while (token === playToken && playing && step < N) {
+                        const n = step + 1;
+                        const act = teams.filter(tm => n <= tm.m);
+                        const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; });
+                        if (frameTeams(true, extra) && !(await wait(900 / speed, token))) return;
+                        if (!(await animateStage(n, token))) return;
+                        step = n; syncUi();
+                        if (!(await showBoards(n, token))) return;
+                        renderChips(step);
+                        if (!(await wait(300 / speed, token))) return;
+                    }
+                    if (token === playToken) {
+                        if (autoFrame) WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16 });   // finish: show the whole race
+                        await wait(900, token);
+                        if (token === playToken) stopPlay();
+                    }
                 };
                 playBtn.onclick = () => {
-                    if (playing) { pause(); return; }
-                    if (T >= maxT) T = 0;
+                    if (playing) { stopPlay(); return; }
+                    closeBoard(false);
+                    if (step >= N) setStep(0);
                     playing = true; playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
-                    lastNow = performance.now(); raf = requestAnimationFrame(tick);
+                    playSequence(++playToken);
                 };
                 let scrubTimer = null;
                 slider.addEventListener('input', () => {
-                    pause(); T = Number(slider.value) || 0; render(); renderChips();
+                    playing = false; playToken++; releaseHold(); playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+                    setStep(slider.value);
                     clearTimeout(scrubTimer); scrubTimer = setTimeout(() => frameTeams(true), 150);
                 });
                 modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = speed + '×'; };
-                modal.querySelector('#orr-mode').onclick = e => {
-                    mode = mode === 'elapsed' ? 'clock' : 'elapsed';
-                    e.currentTarget.textContent = mode === 'elapsed' ? "⏱ Each team's start" : '🕒 Real clock time';
-                    clockLabel.textContent = mode === 'elapsed' ? 'Race time' : 'Time of day';
-                    pause(); layout(); slider.max = String(Math.round(maxT)); T = Math.min(T, maxT);
-                    render(); renderChips(); frameTeams(true);
-                };
 
-                render(); renderChips();
+                setStep(0);
                 setTimeout(() => { if (!map) return; map.resize(); WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:false }); }, 120);   // opening overview
             } catch (e) {
                 console.error('Could not open overall race replay', e);
@@ -11045,30 +11236,7 @@
             };
         }
 
-        // ---------- one highlighted pin (easy-mode hint, host's manual check-in view) ----------
-        // One map is created per container and reused, so reopening a popup is instant and uses no extra WebGL contexts.
-        const pinMaps = new WeakMap();
-        async function showPin(container, lat, lng, o = {}) {
-            let rec = pinMaps.get(container);
-            if (!rec) {
-                rec = { marker: null, el: null };
-                rec.ready = create(container, { center: [lat, lng], zoom: o.zoom || 16 });
-                pinMaps.set(container, rec);
-                rec.ready.catch(() => pinMaps.delete(container));
-            }
-            const map = await rec.ready;
-            try { map.resize(); } catch (e) { /* ignore */ }
-            if (!rec.marker) {
-                rec.el = document.createElement('div'); rec.el.className = 'wdw-pin'; rec.el.innerHTML = '<i class="fa-solid fa-location-dot"></i>';
-                rec.marker = new maplibregl.Marker({ element: rec.el, anchor: 'bottom' }).setLngLat(ll([lat, lng])).addTo(map);
-            }
-            rec.el.style.color = o.color || '#f472b6';
-            rec.marker.setLngLat(ll([lat, lng]));
-            map.jumpTo({ center: ll([lat, lng]), zoom: o.zoom || 16 });
-            return map;
-        }
-
-        window.WdwMap = { showPin, WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
+        window.WdwMap = { WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
     })();
     </script>
     <style>
@@ -11080,7 +11248,6 @@
         .maplibregl-ctrl-attrib { background: rgba(2,6,23,.6) !important; }
         .maplibregl-ctrl-attrib a { color: #cbd5e1 !important; }
         .wdw-status { position: absolute; top: 8px; left: 8px; z-index: 5; max-width: 70%; pointer-events: none; font: 600 10px/1.3 system-ui, sans-serif; color: #fbbf24; background: rgba(2,6,23,.85); padding: 4px 8px; border-radius: 8px; }
-        .wdw-pin { font-size: 34px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,.75)); z-index: 3; }
         .wdw-label { pointer-events: none; white-space: nowrap; font: 600 11px/1.2 'Nunito', system-ui, sans-serif; color: #e8e1c6;
             text-shadow: 0 0 3px #020617, 0 0 6px #020617, 0 1px 2px #020617; z-index: 1; }
         .wdw-label--park { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 700; font-size: 14px; color: #fbbf24; letter-spacing: .02em; }
