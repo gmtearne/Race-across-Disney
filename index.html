@@ -876,7 +876,7 @@
                 </button>
             </div>
             <div class="w-full h-80 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                <iframe id="app-map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
+                <div id="app-map-box" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
             </div>
             <button onclick="document.getElementById('app-map-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition">
                 Close Map
@@ -968,8 +968,8 @@
                     <div class="font-bold text-disneyGold flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> Transit & Route Advice:</div>
                     <p id="cp-modal-transit-text" class="text-slate-300 leading-relaxed"></p>
                 </div>
-                <div id="cp-modal-extra" class="w-full h-48 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
-                    <iframe id="cp-modal-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
+                <div id="cp-modal-extra" class="w-full h-56 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner">
+                    <div id="cp-modal-map" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
                 </div>
                 <button type="button" id="cp-modal-photo-btn" onclick="openPhotoClue()" class="hidden w-full py-2.5 bg-slate-900 border border-slate-600 hover:border-disneyGold text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-image text-disneyGold"></i> Photo clue: what does it look like?
@@ -2919,13 +2919,13 @@
         }
 
         const MAP_LOCATIONS = {
-            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", link: "https://www.openstreetmap.org/#map=12/28.3850/-81.5625", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
-            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
-            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
-            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
-            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
-            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
-            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
+            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
+            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
+            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
+            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
+            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
+            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
         };
 
         const MAP_NAMES = { wdw: 'Whole Resort', mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
@@ -2956,8 +2956,7 @@
             parkMapMessage('Starting map...');
             parkMapPromise = WdwMap.create(box, {}).then(m => {
                 parkMap = m;
-                const showDiag = () => { try { parkMapMessage(WdwMap.diag(m)); } catch (e) { parkMapMessage('DEBUG report failed: ' + e.message); } };
-                showDiag(); setTimeout(showDiag, 1500); setTimeout(showDiag, 5000);
+                parkMapMessage(m.__hasData ? '' : 'Map data (wdw-map.json) was not found, so only the base layer is shown.');
                 flyToArea(currentMapKey, false);
                 return m;
             }).catch(e => {
@@ -3582,17 +3581,12 @@
 
         window.openAppMapModal = function(lat, lon) {
             const modal = document.getElementById('app-map-modal');
-            const iframe = document.getElementById('app-map-iframe');
-            if (!modal || !iframe) return;
-
-            const bboxDelta = 0.005;
-            const minLon = (lon - bboxDelta).toFixed(4);
-            const minLat = (lat - bboxDelta).toFixed(4);
-            const maxLon = (lon + bboxDelta).toFixed(4);
-            const maxLat = (lat + bboxDelta).toFixed(4);
-
-            iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lon}`;
+            const box = document.getElementById('app-map-box');
+            const la = Number(lat), lo = Number(lon);
+            if (!modal || !box || !window.WdwMap || !Number.isFinite(la) || !Number.isFinite(lo)) return;
             modal.classList.remove('hidden');
+            WdwMap.showPin(box, la, lo, { color: '#fbbf24', zoom: 16 })
+                .catch(e => { console.warn('Check-in map failed', e); box.innerHTML = '<p style="padding:16px;font-size:12px;color:#94a3b8">The map could not be loaded.</p>'; });
         };
 
         // ===================== COMPASS GUIDE (final approach to a stop) =====================
@@ -8112,7 +8106,8 @@
             const transitBox = document.getElementById('cp-modal-transit-box');
             const transitText = document.getElementById('cp-modal-transit-text');
             const extraBox = document.getElementById('cp-modal-extra');
-            const iframeEl = document.getElementById('cp-modal-iframe');
+            const mapEl = document.getElementById('cp-modal-map');
+            let pendingPin = null;   // easy mode: the map is started once the popup is on screen so it can measure itself
 
             const facts = window.getFunFacts(cpName, cpPark, cpLand);
             descEl.classList.remove('hidden');
@@ -8142,7 +8137,6 @@
                 descEl.classList.add('hidden');
                 transitBox.classList.add('hidden');
                 extraBox.classList.add('hidden');
-                iframeEl.src = '';
             } else if (difficulty === 'medium') {
                 titleEl.innerHTML = `<i class="fa-solid fa-lightbulb text-disneyGold"></i> Area Hint: ${cpName}`;
                 descEl.innerHTML = `Area Clue: Located in <strong>${cpLand || 'Park Area'}</strong> within <strong>${cpPark}</strong>. Use your park knowledge and signage to locate it!`;
@@ -8151,18 +8145,14 @@
             } else {
                 if (photoBtn) photoBtn.classList.remove('hidden');   // Easy mode only
                 titleEl.innerHTML = `<i class="fa-solid fa-map-pin text-disneyPink"></i> Map & Transit Guide: ${cpName}`;
-                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the embedded map pin below and review the transit advice before moving.`;
+                descEl.innerHTML = `Location: <strong>${cpPark} - ${cpLand || 'Park Area'}</strong>. Use the map pin below and review the transit advice before moving.`;
                 
                 transitText.innerText = getDetailedTransitAdvice(cpPark);
                 transitBox.classList.remove('hidden');
 
-                extraBox.classList.remove('hidden');
-                const bboxDelta = 0.005;
-                const minLon = (lng - bboxDelta).toFixed(4);
-                const minLat = (lat - bboxDelta).toFixed(4);
-                const maxLon = (lng + bboxDelta).toFixed(4);
-                const maxLat = (lat + bboxDelta).toFixed(4);
-                iframeEl.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
+                const pinLat = Number(lat), pinLng = Number(lng);
+                if (Number.isFinite(pinLat) && Number.isFinite(pinLng)) { extraBox.classList.remove('hidden'); pendingPin = { lat: pinLat, lng: pinLng }; }
+                else extraBox.classList.add('hidden');
             }
 
             // Fun fact box (all difficulties)
@@ -8182,6 +8172,10 @@
             }
 
             modal.classList.remove('hidden');
+            if (pendingPin && mapEl && window.WdwMap) {
+                WdwMap.showPin(mapEl, pendingPin.lat, pendingPin.lng, { color: '#f472b6', zoom: 16 })
+                    .catch(e => { console.warn('Hint map failed', e); mapEl.innerHTML = '<p style="padding:16px;font-size:12px;color:#94a3b8">The map could not be loaded.</p>'; });
+            }
         };
 
 
@@ -11051,13 +11045,30 @@
             };
         }
 
-        // One-line health report (temporary, for tracking down a blank map)
-        function diag(map) {
-            const c = map.getContainer(), r = c.getBoundingClientRect(), cs = getComputedStyle(c), cv = map.getCanvas();
-            return `DEBUG box ${Math.round(r.width)}x${Math.round(r.height)} ${cs.position}/${cs.display}/${cs.visibility} | canvas ${cv.width}x${cv.height} | zoom ${map.getZoom().toFixed(1)} | ${map.loaded() ? 'loaded' : 'loading'} | data ${map.__hasData ? 'yes' : 'no'} | labels ${c.querySelectorAll('.wdw-label').length}${window.__wdwErr ? ' | err ' + window.__wdwErr : ''}`;
+        // ---------- one highlighted pin (easy-mode hint, host's manual check-in view) ----------
+        // One map is created per container and reused, so reopening a popup is instant and uses no extra WebGL contexts.
+        const pinMaps = new WeakMap();
+        async function showPin(container, lat, lng, o = {}) {
+            let rec = pinMaps.get(container);
+            if (!rec) {
+                rec = { marker: null, el: null };
+                rec.ready = create(container, { center: [lat, lng], zoom: o.zoom || 16 });
+                pinMaps.set(container, rec);
+                rec.ready.catch(() => pinMaps.delete(container));
+            }
+            const map = await rec.ready;
+            try { map.resize(); } catch (e) { /* ignore */ }
+            if (!rec.marker) {
+                rec.el = document.createElement('div'); rec.el.className = 'wdw-pin'; rec.el.innerHTML = '<i class="fa-solid fa-location-dot"></i>';
+                rec.marker = new maplibregl.Marker({ element: rec.el, anchor: 'bottom' }).setLngLat(ll([lat, lng])).addTo(map);
+            }
+            rec.el.style.color = o.color || '#f472b6';
+            rec.marker.setLngLat(ll([lat, lng]));
+            map.jumpTo({ center: ll([lat, lng]), zoom: o.zoom || 16 });
+            return map;
         }
 
-        window.WdwMap = { diag, WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
+        window.WdwMap = { showPin, WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
     })();
     </script>
     <style>
@@ -11069,6 +11080,7 @@
         .maplibregl-ctrl-attrib { background: rgba(2,6,23,.6) !important; }
         .maplibregl-ctrl-attrib a { color: #cbd5e1 !important; }
         .wdw-status { position: absolute; top: 8px; left: 8px; z-index: 5; max-width: 70%; pointer-events: none; font: 600 10px/1.3 system-ui, sans-serif; color: #fbbf24; background: rgba(2,6,23,.85); padding: 4px 8px; border-radius: 8px; }
+        .wdw-pin { font-size: 34px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,.75)); z-index: 3; }
         .wdw-label { pointer-events: none; white-space: nowrap; font: 600 11px/1.2 'Nunito', system-ui, sans-serif; color: #e8e1c6;
             text-shadow: 0 0 3px #020617, 0 0 6px #020617, 0 1px 2px #020617; z-index: 1; }
         .wdw-label--park { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 700; font-size: 14px; color: #fbbf24; letter-spacing: .02em; }
