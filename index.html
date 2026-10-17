@@ -1617,7 +1617,7 @@
                         <i class="fa-solid fa-chevron-down text-slate-400 text-xs shrink-0"></i>
                     </button>
                     <div class="w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner" style="height:min(62dvh,30rem)">
-                        <div id="wdw-map" class="absolute inset-0"></div>
+                        <div id="wdw-map" class="absolute inset-0" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
                         <p id="wdw-map-msg" class="hidden absolute left-2 right-2 bottom-8 text-center text-[11px] font-semibold text-amber-300 bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2"></p>
                     </div>
                     <p id="map-desc-text" class="text-xs text-slate-400 italic">
@@ -2956,8 +2956,8 @@
             parkMapMessage('Starting map...');
             parkMapPromise = WdwMap.create(box, {}).then(m => {
                 parkMap = m;
-                parkMapMessage('');
-                if (!m.__hasData) parkMapMessage('Map data (wdw-map.json) was not found, so only the base layer is shown.');
+                const showDiag = () => { try { parkMapMessage(WdwMap.diag(m)); } catch (e) { parkMapMessage('DEBUG report failed: ' + e.message); } };
+                showDiag(); setTimeout(showDiag, 1500); setTimeout(showDiag, 5000);
                 flyToArea(currentMapKey, false);
                 return m;
             }).catch(e => {
@@ -10968,7 +10968,7 @@
             note.textContent = data ? `Drawing map... (${(data.features || []).length} features)` : 'Map data not loaded';
             container.appendChild(note);
             let failed = false;
-            map.on('error', e => { failed = true; const msg = (e && e.error && e.error.message) || String(e); console.error('WdwMap error', e); note.textContent = 'Map error: ' + msg; });
+            map.on('error', e => { failed = true; const msg = (e && e.error && e.error.message) || String(e); window.__wdwErr = msg; console.error('WdwMap error', e); note.textContent = 'Map error: ' + msg; });
             map.once('idle', () => { if (failed) return; if (data) { note.textContent = 'Map ready'; setTimeout(() => note.remove(), 2500); } });
             await Promise.race([new Promise(res => map.once('load', res)), new Promise(res => setTimeout(res, 7000))]);
             try { map.resize(); } catch (e) { /* ignore */ }
@@ -11051,7 +11051,13 @@
             };
         }
 
-        window.WdwMap = { WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
+        // One-line health report (temporary, for tracking down a blank map)
+        function diag(map) {
+            const c = map.getContainer(), r = c.getBoundingClientRect(), cs = getComputedStyle(c), cv = map.getCanvas();
+            return `DEBUG box ${Math.round(r.width)}x${Math.round(r.height)} ${cs.position}/${cs.display}/${cs.visibility} | canvas ${cv.width}x${cv.height} | zoom ${map.getZoom().toFixed(1)} | ${map.loaded() ? 'loaded' : 'loading'} | data ${map.__hasData ? 'yes' : 'no'} | labels ${c.querySelectorAll('.wdw-label').length}${window.__wdwErr ? ' | err ' + window.__wdwErr : ''}`;
+        }
+
+        window.WdwMap = { diag, WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
     })();
     </script>
     <style>
