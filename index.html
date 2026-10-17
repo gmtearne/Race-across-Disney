@@ -7627,7 +7627,7 @@
             } else if (park.includes("animal kingdom")) {
                 return "Disney's Animal Kingdom is accessible exclusively via complimentary Disney Resort Buses from any resort hotel or park transfer hub.";
             } else if (park.includes("springs") || park.includes("bonus")) {
-                return "Disney Springs is not reachable directly via park-to-park buses! First, take a resort bus from any theme park to a nearby resort hotel (or Disney Springs transfer hub), and transfer to a Disney Springs bus.";
+                return "You can't travel straight between a theme park and Disney Springs. Go via a resort first, then a bus or boat on to Disney Springs. For example: Magic Kingdom to Contemporary by monorail; Epcot to BoardWalk on foot or by boat; Hollywood Studios to Pop Century by Skyliner; or Animal Kingdom to Old Key West by bus and then a boat.";
             }
             return "Use complimentary Disney Resort Buses, Monorails, Skyliner routes, or watercraft available across property. Remember: paid ride-shares and taxis are strictly prohibited!";
         }
@@ -7725,6 +7725,19 @@
         ];
         window.cpTransitUi = {};
 
+        // ---- Transfers: some trips can't be made directly ----
+        // The rules and the resort list live in locations-data.js (window.TRANSIT_TRANSFER_RULES and window.DISNEY_RESORTS).
+        // A leg that matches a rule asks "Which resort?" first, then records the transit TO the resort and FROM it.
+        window.TRANSIT_VIA_OTHER = 'Other resort / not listed';
+        window.transitRuleFor = function(a, b) {
+            if (!a || !b) return null;
+            const norm = v => String(v == null ? '' : v).toLowerCase();
+            const hit = (list, c) => (list || []).some(n => norm(c.park).includes(norm(n)) && norm(n));
+            return (window.TRANSIT_TRANSFER_RULES || []).find(r =>
+                (hit(r.between, a) && hit(r.and, b)) || (hit(r.between, b) && hit(r.and, a))) || null;
+        };
+        window.transitNeedsVia = function(a, b) { return !!window.transitRuleFor(a, b); };
+
         window.planTransitLeg = function(race, tData, cpId) {
             const cps = race.checkpoints || [];
             const cp = cps.find(c => c.id === cpId);
@@ -7753,15 +7766,20 @@
             // Resorts are many separate sites that share one "park" value, so a hop between two resort stops is never assumed to be a walk.
             const isResortArea = p => /resort/i.test(String(p || ''));
             const samePark = !!(prev && prev.park && cp.park && prev.park === cp.park && !isResortArea(cp.park) && !isResortArea(prev.park));
-            return { fromId: prev ? prev.id : null, miles, samePark };
+            const needsVia = !!(prev && window.transitNeedsVia(prev, cp));
+            return { fromId: prev ? prev.id : null, miles, samePark, needsVia, fromName: prev ? (prev.name || '') : '', fromPark: prev ? (prev.park || '') : '' };
         };
 
         window.transitDistanceTotals = function(legs) {
             const t = { walk: 0, bus: 0, boat: 0, monorail: 0, skyliner: 0 };
             Object.values(legs || {}).forEach(l => {
                 if (!l || l.miles === null || l.miles === undefined || !l.modes || !l.modes.length) return;
-                const share = Number(l.miles) / l.modes.length;
-                l.modes.forEach(m => { if (m in t) t[m] += share; });
+                // A transfer leg is two segments (to the resort, then from it): each gets half the distance.
+                const segs = (l.segments && l.segments.length) ? l.segments.filter(sg => sg && sg.modes && sg.modes.length) : [{ modes: l.modes }];
+                segs.forEach(sg => {
+                    const share = Number(l.miles) / segs.length / sg.modes.length;
+                    sg.modes.forEach(m => { if (m in t) t[m] += share; });
+                });
             });
             Object.keys(t).forEach(k => { t[k] = Math.round(t[k] * 1000) / 1000; });
             return t;
@@ -7770,7 +7788,10 @@
         window.formatTransitLeg = function(leg) {
             if (!leg || !leg.modes || !leg.modes.length) return '';
             const names = { walk: '🚶 On foot', bus: '🚌 Bus', boat: '⛴️ Boat', skyliner: '🚡 Skyliner', monorail: '🚝 Monorail' };
-            const txt = leg.modes.map(m => names[m] || m).join(' + ');
+            const one = ms => ms.map(m => names[m] || m).join(' + ');
+            const txt = (leg.segments && leg.segments.length > 1)
+                ? `via ${(leg.via && leg.via.resort) || 'a resort'}: ` + leg.segments.map(sg => one(sg.modes || [])).join(' → ')
+                : one(leg.modes);
             const mi = (leg.miles === null || leg.miles === undefined) ? '' : ' • ' + (leg.miles < 0.1 ? Number(leg.miles).toFixed(2) : Number(leg.miles).toFixed(1)) + ' mi';
             return txt + mi;
         };
@@ -7792,16 +7813,53 @@
                 cls = 'closing'; delay = now - u.answeredAt;
             } else if (now - u.t0 < 450) { cls = 'opening'; delay = now - u.t0; }
             const sel = u.sel || [];
-            const btns = window.TRANSIT_MODES.map(m => {
+            const p = pend || {};
+            const step = u.step || (p.needsVia ? 'via' : 'modes');
+            const fromName = p.fromName || 'your last stop';
+            let heading = '🚏 Transit used', question, body, canGo, goLabel = 'Confirm', back = '';
+            const modeBtns = () => window.TRANSIT_MODES.map(m => {
                 const on = sel.includes(m.id);
                 return `<button type="button" onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
             }).join('');
+            if (step === 'via') {
+                heading = '🚏 Transfer needed';
+                const rule = window.transitRuleFor({ park: p.fromPark }, cp);
+                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which resort did you transfer through to get to ${cp.name}?`;
+                const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const opt = o => `<option value="${q(o)}" ${u.via === o ? 'selected' : ''}>${q(o)}</option>`;
+                const groups = [];                                           // resorts grouped by area, in the order listed in locations-data.js
+                (window.DISNEY_RESORTS || []).forEach(r => {
+                    const area = r.area || 'Resorts';
+                    let g = groups.find(x => x.area === area); if (!g) groups.push(g = { area, names: [] });
+                    g.names.push(r.name);
+                });
+                const grouped = groups.map(g => `<optgroup label="${q(g.area)}">${g.names.map(opt).join('')}</optgroup>`).join('');
+                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${u.via ? '' : 'selected'} disabled>Select a resort…</option>${grouped}${opt(window.TRANSIT_VIA_OTHER)}</select>`;
+                canGo = !!u.via; goLabel = 'Next';
+            } else if (step === 'seg1') {
+                heading = '🚏 Transit · leg 1 of 2';
+                question = `How did you get from ${fromName} to ${u.via}? Pick everything you rode, or None if you only walked.`;
+                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
+                canGo = sel.length > 0; goLabel = 'Next';
+                back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Change resort</button>`;
+            } else if (step === 'seg2') {
+                heading = '🚏 Transit · leg 2 of 2';
+                question = `How did you get from ${u.via} to ${cp.name}? Pick everything you rode, or None if you only walked.`;
+                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
+                canGo = sel.length > 0;
+                back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to leg 1</button>`;
+            } else {
+                question = `What transit did you take to get to ${cp.name}? Pick everything you rode, or None if you only walked.`;
+                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
+                canGo = sel.length > 0;
+            }
             return `<div class="cp-transit ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()">
                 <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-sky-400/40 shadow-lg ${window.cpAttnClass(cpId, now)}">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-1">🚏 Transit used</p>
-                    <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">What transit did you take to get to ${cp.name}? Pick everything you rode, or None if you only walked.</p>
-                    <div class="grid grid-cols-2 gap-1.5">${btns}</div>
-                    <button type="button" ${sel.length ? '' : 'disabled'} onclick="confirmTransit('${cpId}')" class="mt-2.5 w-full py-2.5 rounded-xl text-xs font-black uppercase transition ${sel.length ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">${sel.length ? 'Confirm' : 'Pick at least one'}</button>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-1">${heading}</p>
+                    <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">${question}</p>
+                    ${body}
+                    <button type="button" ${canGo ? '' : 'disabled'} onclick="confirmTransit('${cpId}')" class="mt-2.5 w-full py-2.5 rounded-xl text-xs font-black uppercase transition ${canGo ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">${canGo ? goLabel : (step === 'via' ? 'Pick a resort' : 'Pick at least one')}</button>
+                    ${back}
                 </div></div>
             </div>`;
         };
@@ -7817,7 +7875,7 @@
 
         window.toggleTransitMode = function(cpId, mode) {
             const u = window.cpTransitUi[cpId];
-            if (!u || u.answeredAt) return;
+            if (!u || u.answeredAt || u.step === 'via') return;
             let sel = u.sel || [];
             if (mode === 'none') sel = sel.includes('none') ? [] : ['none'];
             else {
@@ -7828,10 +7886,32 @@
             window.refreshTransitPanel(cpId);
         };
 
+        window.pickTransitVia = function(cpId, resort) {
+            const u = window.cpTransitUi[cpId];
+            if (!u || u.answeredAt) return;
+            u.via = resort;
+            window.refreshTransitPanel(cpId);
+        };
+        window.backTransit = function(cpId) {
+            const u = window.cpTransitUi[cpId];
+            if (!u || u.answeredAt) return;
+            if (u.step === 'seg2') { u.step = 'seg1'; u.sel = (u.seg1 || []).slice(); }
+            else { u.step = 'via'; u.sel = []; }
+            window.refreshTransitPanel(cpId);
+        };
+
         window.confirmTransit = async function(cpId) {
             const u = window.cpTransitUi[cpId];
-            if (!u || u.answeredAt || !(u.sel || []).length) return;
+            if (!u || u.answeredAt) return;
+            const lt0 = window.liveTeamData || {};
+            const pend0 = (lt0.transitPending || {})[cpId] || {};
+            const step = u.step || (pend0.needsVia ? 'via' : 'modes');
+            // Transfer legs: resort first, then the ride to it, then the ride from it.
+            if (step === 'via') { if (!u.via) return; u.step = 'seg1'; u.sel = []; window.refreshTransitPanel(cpId); return; }
+            if (!(u.sel || []).length) return;
+            if (step === 'seg1') { u.seg1 = u.sel.slice(); u.step = 'seg2'; u.sel = []; window.refreshTransitPanel(cpId); return; }
             const sel = u.sel.slice();
+            const seg1Sel = step === 'seg2' ? (u.seg1 || []).slice() : null, via = u.via || null;
             u.answeredAt = Date.now();
             // Clear the pending flag locally right away. The trivia panel refuses to show while transit is
             // pending, and the saved copy can take longer than the slide animation to come back.
@@ -7854,9 +7934,20 @@
                 const pending = t.transitPending || {};
                 const entry = pending[cpId];
                 if (!entry) return;
-                const modes = sel.includes('none') ? ['walk'] : sel.slice();   // tap order = travel order (for the replay)
+                const toModes = ids => ids.includes('none') ? ['walk'] : ids.slice();   // tap order = travel order (for the replay)
                 const legs = t.transitLegs || {};
-                legs[cpId] = { fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles), modes, at: Date.now() };
+                const cpName = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
+                if (seg1Sel && via) {
+                    const m1 = toModes(seg1Sel), m2 = toModes(sel);
+                    legs[cpId] = {
+                        fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles),
+                        modes: m1.concat(m2), via: { resort: via },
+                        segments: [ { from: entry.fromName || '', to: via, modes: m1 }, { from: via, to: (cpName && cpName.name) || '', modes: m2 } ],
+                        at: Date.now()
+                    };
+                } else {
+                    legs[cpId] = { fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles), modes: toModes(sel), at: Date.now() };
+                }
                 delete pending[cpId];
                 await fastUpdate(teamRef, { transitPending: pending, transitLegs: legs, distanceMiles: window.transitDistanceTotals(legs) });
                 // Safety net: if the slide-out finished before the save, show the trivia question now.
@@ -10172,7 +10263,7 @@
                         transitLegs[cpId] = { fromId: plan.fromId, miles: plan.miles, modes: ['walk'], at: Date.now(), auto: true };
                         delete transitPending[cpId];
                     } else {
-                        transitPending[cpId] = { fromId: plan.fromId, miles: plan.miles };
+                        transitPending[cpId] = { fromId: plan.fromId, miles: plan.miles, needsVia: !!plan.needsVia, fromName: plan.fromName || '', fromPark: plan.fromPark || '' };
                         delete transitLegs[cpId];
                     }
                 }
