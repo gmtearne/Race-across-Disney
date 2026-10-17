@@ -131,16 +131,16 @@ window.DISNEY_PRESETS = [
     { name: "Fab 50: Pua & Hei-Hei", lat: 28.3699, lng: -81.5501, type: "GPS", park: "Epcot", land: "Showcase Plaza Statue" },
 
     // ================= DISNEY: HOLLYWOOD STUDIOS =================
-    { name: "Twilight Zone Tower of Terror", lat: 28.3560, lng: -81.5606, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-    { name: "Rock 'n' Roller Coaster", lat: 28.3561, lng: -81.5602, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+    { name: "Twilight Zone Tower of Terror", lat: 28.3525, lng: -81.5582, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+    { name: "Rock 'n' Roller Coaster", lat: 28.3528, lng: -81.5575, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
     { name: "Star Wars: Rise of the Resistance", lat: 28.3553, lng: -81.5626, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
     { name: "Millennium Falcon: Smugglers Run", lat: 28.3538, lng: -81.5622, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-    { name: "Toy Story Mania!", lat: 28.3564, lng: -81.5629, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-    { name: "Slinky Dog Dash", lat: 28.3559, lng: -81.5630, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+    { name: "Toy Story Mania!", lat: 28.3565, lng: -81.5565, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+    { name: "Slinky Dog Dash", lat: 28.3562, lng: -81.5558, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
     { name: "Dok-Ondar's Den of Antiquities", lat: 28.3536, lng: -81.5622, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Shop" },
     { name: "Oga's Cantina", lat: 28.3539, lng: -81.5625, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Lounge" },
-    { name: "The Hollywood Brown Derby", lat: 28.3570, lng: -81.5607, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining" },
-    { name: "Tower Hotel Gifts", lat: 28.3564, lng: -81.5607, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard / Shop" },
+    { name: "The Hollywood Brown Derby", lat: 28.3550, lng: -81.5585, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining" },
+    { name: "Tower Hotel Gifts", lat: 28.3525, lng: -81.5582, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard / Shop" },
     // Hollywood Studios Fab 50 Sculptures
     { name: "Fab 50: Woody & Bo Peep", lat: 28.3569, lng: -81.5612, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Statue" },
     { name: "Fab 50: R2-D2 & BB-8", lat: 28.3568, lng: -81.5615, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Statue" },
@@ -152,7 +152,7 @@ window.DISNEY_PRESETS = [
     // ================= DISNEY: ANIMAL KINGDOM =================
     { name: "Avatar Flight of Passage", lat: 28.3555, lng: -81.5925, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
     { name: "Expedition Everest", lat: 28.3587, lng: -81.5873, type: "GPS", park: "Animal Kingdom", land: "Asia" },
-    { name: "Kilimanjaro Safaris", lat: 28.3615, lng: -81.5920, type: "GPS", park: "Animal Kingdom", land: "Africa" },
+    { name: "Kilimanjaro Safaris", lat: 28.3597, lng: -81.5926, type: "GPS", park: "Animal Kingdom", land: "Africa" },
     { name: "Tree of Life Roots", lat: 28.3579, lng: -81.5901, type: "GPS", park: "Animal Kingdom", land: "Discovery Island" },
     { name: "Tiffins Restaurant & Nomad Lounge", lat: 28.3569, lng: -81.5916, type: "GPS", park: "Animal Kingdom", land: "Discovery Island / Dining" },
     { name: "Windtraders Shop", lat: 28.3552, lng: -81.5922, type: "GPS", park: "Animal Kingdom", land: "Pandora / Shop" },
