@@ -1,18 +1,18 @@
 // Locations and Pre-configured Checkpoints Data File - Coventry UK & Disney Edition (Precision Geocoded)
 window.DISNEY_PRESETS = [
     // ================= COVENTRY: CITY CENTRE =================
-    { name: "Coventry Cathedral (New)", lat: 52.4082, lng: -1.5071, type: "GPS", park: "Coventry", land: "City Centre (Historic Landmark)" },
+    { name: "Coventry Cathedral (New)", lat: 52.4082, lng: -1.5073, type: "GPS", park: "Coventry", land: "City Centre (Historic Landmark)" },
     { name: "St Michael's Cathedral Ruins", lat: 52.4085, lng: -1.5065, type: "GPS", park: "Coventry", land: "City Centre (Historic Landmark)" },
     { name: "Lady Godiva Statue (Broadgate)", lat: 52.4078, lng: -1.5097, type: "GPS", park: "Coventry", land: "City Centre (Public Square)" },
-    { name: "Coventry Transport Museum", lat: 52.4101, lng: -1.5089, type: "GPS", park: "Coventry", land: "City Centre (Museum)" },
-    { name: "The Wave Waterpark", lat: 52.4055, lng: -1.5126, type: "GPS", park: "Coventry", land: "City Centre (Leisure / Attraction)" },
-    { name: "Herbert Art Gallery & Museum", lat: 52.4076, lng: -1.5056, type: "GPS", park: "Coventry", land: "City Centre (Museum & Gallery)" },
+    { name: "Coventry Transport Museum", lat: 52.4103, lng: -1.5090, type: "GPS", park: "Coventry", land: "City Centre (Museum)" },
+    { name: "The Wave Waterpark", lat: 52.4054, lng: -1.5126, type: "GPS", park: "Coventry", land: "City Centre (Leisure / Attraction)" },
+    { name: "Herbert Art Gallery & Museum", lat: 52.4078, lng: -1.5058, type: "GPS", park: "Coventry", land: "City Centre (Museum & Gallery)" },
     { name: "St Mary's Guildhall", lat: 52.4078, lng: -1.5070, type: "GPS", park: "Coventry", land: "City Centre (Historic Building)" },
-    { name: "Belgrade Theatre", lat: 52.4098, lng: -1.5132, type: "GPS", park: "Coventry", land: "City Centre (Entertainment)" },
+    { name: "Belgrade Theatre", lat: 52.4098, lng: -1.5135, type: "GPS", park: "Coventry", land: "City Centre (Entertainment)" },
     { name: "Holy Trinity Church", lat: 52.4087, lng: -1.5078, type: "GPS", park: "Coventry", land: "City Centre (Historic Church)" },
     { name: "Lower Precinct Shopping Centre", lat: 52.4081, lng: -1.5128, type: "GPS", park: "Coventry", land: "City Centre (Shopping)" },
     { name: "West Orchards Shopping Centre", lat: 52.4091, lng: -1.5115, type: "GPS", park: "Coventry", land: "City Centre (Shopping)" },
-    { name: "Coventry Railway Station", lat: 52.4010, lng: -1.5135, type: "GPS", park: "Coventry", land: "City Centre (Transit Hub)" },
+    { name: "Coventry Railway Station", lat: 52.4008, lng: -1.5134, type: "GPS", park: "Coventry", land: "City Centre (Transit Hub)" },
     { name: "Skydome Arena / Ice Rink", lat: 52.4068, lng: -1.5182, type: "GPS", park: "Coventry", land: "City Centre (Sports & Leisure)" },
     { name: "Coventry Market", lat: 52.4067, lng: -1.5138, type: "GPS", park: "Coventry", land: "City Centre (Local Market)" },
     { name: "The Phoenix Pub", lat: 52.4088, lng: -1.5042, type: "GPS", park: "Coventry", land: "City Centre (Pub / Food)" },
@@ -54,22 +54,22 @@ window.DISNEY_PRESETS = [
 
     // ================= DISNEY: MAGIC KINGDOM =================
     { name: "Cinderella Castle", lat: 28.4194, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
-    { name: "Space Mountain", lat: 28.4192, lng: -81.5772, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Haunted Mansion", lat: 28.4204, lng: -81.5838, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
-    { name: "Big Thunder Mountain Railroad", lat: 28.4212, lng: -81.5852, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-    { name: "Pirates of the Caribbean", lat: 28.4181, lng: -81.5843, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
-    { name: "Tiana's Bayou Adventure", lat: 28.4200, lng: -81.5851, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-    { name: "Seven Dwarfs Mine Train", lat: 28.4206, lng: -81.5807, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "Peter Pan's Flight", lat: 28.4201, lng: -81.5821, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "It's a Small World", lat: 28.4208, lng: -81.5826, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "Dumbo the Flying Elephant", lat: 28.4209, lng: -81.5792, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)" },
-    { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.4185, lng: -81.5794, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Tron Lightcycle / Run", lat: 28.4211, lng: -81.5768, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Emporium Gift Shop", lat: 28.4178, lng: -81.5815, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
-    { name: "Main Street Confectionery", lat: 28.4175, lng: -81.5810, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
-    { name: "Cinderella's Royal Table", lat: 28.4195, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
-    { name: "Be Our Guest Restaurant", lat: 28.4215, lng: -81.5808, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
-    { name: "Pecos Bill Tall Tale Inn & Cafe", lat: 28.4188, lng: -81.5846, type: "GPS", park: "Magic Kingdom", land: "Frontierland / Dining" },
+    { name: "Space Mountain", lat: 28.4187, lng: -81.5776, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+    { name: "Haunted Mansion", lat: 28.4203, lng: -81.5832, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
+    { name: "Big Thunder Mountain Railroad", lat: 28.4208, lng: -81.5853, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
+    { name: "Pirates of the Caribbean", lat: 28.4181, lng: -81.5845, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
+    { name: "Tiana's Bayou Adventure", lat: 28.4196, lng: -81.5850, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
+    { name: "Seven Dwarfs Mine Train", lat: 28.4204, lng: -81.5809, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+    { name: "Peter Pan's Flight", lat: 28.4202, lng: -81.5818, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+    { name: "It's a Small World", lat: 28.4207, lng: -81.5823, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
+    { name: "Dumbo the Flying Elephant", lat: 28.4210, lng: -81.5793, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)" },
+    { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.4184, lng: -81.5794, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+    { name: "Tron Lightcycle / Run", lat: 28.4214, lng: -81.5775, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
+    { name: "Emporium Gift Shop", lat: 28.4173, lng: -81.5813, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
+    { name: "Main Street Confectionery", lat: 28.4173, lng: -81.5809, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
+    { name: "Cinderella's Royal Table", lat: 28.4193, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
+    { name: "Be Our Guest Restaurant", lat: 28.4213, lng: -81.5810, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
+    { name: "Pecos Bill Tall Tale Inn & Cafe", lat: 28.4187, lng: -81.5847, type: "GPS", park: "Magic Kingdom", land: "Frontierland / Dining" },
     // Magic Kingdom Fab 50 Sculptures
     { name: "Fab 50: Mickey Mouse & Minnie Mouse", lat: 28.4189, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Central Hub Statue" },
     { name: "Fab 50: Donald Duck & Daisy Duck", lat: 28.4188, lng: -81.5815, type: "GPS", park: "Magic Kingdom", land: "Central Hub Statue" },
@@ -88,40 +88,40 @@ window.DISNEY_PRESETS = [
     { name: "Fab 50: Mad Hatter & Cheshire Cat", lat: 28.4199, lng: -81.5798, type: "GPS", park: "Magic Kingdom", land: "Mad Tea Party Statue" },
 
     // ================= DISNEY: EPCOT =================
-    { name: "Spaceship Earth", lat: 28.3753, lng: -81.5494, type: "GPS", park: "Epcot", land: "World Celebration" },
-    { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3742, lng: -81.5478, type: "GPS", park: "Epcot", land: "World Discovery" },
-    { name: "Test Track", lat: 28.3728, lng: -81.5471, type: "GPS", park: "Epcot", land: "World Discovery" },
-    { name: "Soarin' Around the World", lat: 28.3745, lng: -81.5524, type: "GPS", park: "Epcot", land: "World Nature" },
-    { name: "Frozen Ever After (Norway)", lat: 28.3707, lng: -81.5484, type: "GPS", park: "Epcot", land: "World Showcase (Norway)" },
-    { name: "Remy's Ratatouille Adventure (France)", lat: 28.3662, lng: -81.5532, type: "GPS", park: "Epcot", land: "World Showcase (France)" },
+    { name: "Spaceship Earth", lat: 28.3753, lng: -81.5495, type: "GPS", park: "Epcot", land: "World Celebration" },
+    { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.3739, lng: -81.5482, type: "GPS", park: "Epcot", land: "World Discovery" },
+    { name: "Test Track", lat: 28.3731, lng: -81.5475, type: "GPS", park: "Epcot", land: "World Discovery" },
+    { name: "Soarin' Around the World", lat: 28.3741, lng: -81.5521, type: "GPS", park: "Epcot", land: "World Nature" },
+    { name: "Frozen Ever After (Norway)", lat: 28.3706, lng: -81.5484, type: "GPS", park: "Epcot", land: "World Showcase (Norway)" },
+    { name: "Remy's Ratatouille Adventure (France)", lat: 28.3660, lng: -81.5537, type: "GPS", park: "Epcot", land: "World Showcase (France)" },
     // Epcot World Showcase Dining & Shops
-    { name: "San Angel Inn Restaurante", lat: 28.3712, lng: -81.5478, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Dining)" },
-    { name: "Plaza de los Amigos Market", lat: 28.3713, lng: -81.5477, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Shop)" },
-    { name: "La Cava del Tequila", lat: 28.3711, lng: -81.5479, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Bar)" },
-    { name: "Kringla Bakeri og Kafé", lat: 28.3706, lng: -81.5483, type: "GPS", park: "Epcot", land: "World Showcase (Norway / Bakery)" },
-    { name: "The Fjording Gift Shop", lat: 28.3708, lng: -81.5482, type: "GPS", park: "Epcot", land: "World Showcase (Norway / Shop)" },
-    { name: "Nine Dragons Restaurant", lat: 28.3698, lng: -81.5488, type: "GPS", park: "Epcot", land: "World Showcase (China / Dining)" },
+    { name: "San Angel Inn Restaurante", lat: 28.3714, lng: -81.5478, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Dining)" },
+    { name: "Plaza de los Amigos Market", lat: 28.3714, lng: -81.5478, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Shop)" },
+    { name: "La Cava del Tequila", lat: 28.3714, lng: -81.5478, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Bar)" },
+    { name: "Kringla Bakeri og Kafé", lat: 28.3707, lng: -81.5484, type: "GPS", park: "Epcot", land: "World Showcase (Norway / Bakery)" },
+    { name: "The Fjording Gift Shop", lat: 28.3708, lng: -81.5483, type: "GPS", park: "Epcot", land: "World Showcase (Norway / Shop)" },
+    { name: "Nine Dragons Restaurant", lat: 28.3697, lng: -81.5488, type: "GPS", park: "Epcot", land: "World Showcase (China / Dining)" },
     { name: "Yong Feng Shangdian Shop", lat: 28.3697, lng: -81.5486, type: "GPS", park: "Epcot", land: "World Showcase (China / Shop)" },
     { name: "Joy of Tea Kiosk", lat: 28.3701, lng: -81.5490, type: "GPS", park: "Epcot", land: "World Showcase (China / Snack)" },
-    { name: "Biergarten Restaurant", lat: 28.3688, lng: -81.5488, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Dining)" },
+    { name: "Biergarten Restaurant", lat: 28.3686, lng: -81.5487, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Dining)" },
     { name: "Der Teddybär Toy Shop", lat: 28.3691, lng: -81.5489, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Shop)" },
     { name: "Karamell-Küche Candy Shop", lat: 28.3693, lng: -81.5487, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Bakery)" },
     { name: "Via Napoli Ristorante e Pizzeria", lat: 28.3678, lng: -81.5492, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Dining)" },
     { name: "Tutto Italia Ristorante", lat: 28.3681, lng: -81.5494, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Dining)" },
     { name: "La Bottega Italiana", lat: 28.3682, lng: -81.5493, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Shop)" },
-    { name: "Regal Eagle Smokehouse Barbecue", lat: 28.3681, lng: -81.5501, type: "GPS", park: "Epcot", land: "World Showcase (American / Dining)" },
+    { name: "Regal Eagle Smokehouse Barbecue", lat: 28.3681, lng: -81.5503, type: "GPS", park: "Epcot", land: "World Showcase (American / Dining)" },
     { name: "Art of Disney Gallery", lat: 28.3684, lng: -81.5503, type: "GPS", park: "Epcot", land: "World Showcase (American / Shop)" },
-    { name: "Teppan Edo Hibachi Restaurant", lat: 28.3674, lng: -81.5508, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Dining)" },
+    { name: "Teppan Edo Hibachi Restaurant", lat: 28.3675, lng: -81.5509, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Dining)" },
     { name: "Mitsukoshi Department Store", lat: 28.3673, lng: -81.5510, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Shop)" },
-    { name: "Spice Road Table", lat: 28.3670, lng: -81.5518, type: "GPS", park: "Epcot", land: "World Showcase (Morocco / Dining)" },
+    { name: "Spice Road Table", lat: 28.3671, lng: -81.5518, type: "GPS", park: "Epcot", land: "World Showcase (Morocco / Dining)" },
     { name: "Souk-al-Magreb Gift Shop", lat: 28.3668, lng: -81.5520, type: "GPS", park: "Epcot", land: "World Showcase (Morocco / Shop)" },
     { name: "Chefs de France", lat: 28.3665, lng: -81.5528, type: "GPS", park: "Epcot", land: "World Showcase (France / Dining)" },
-    { name: "Les Halles Boulangerie-Patisserie", lat: 28.3661, lng: -81.5530, type: "GPS", park: "Epcot", land: "World Showcase (France / Bakery)" },
+    { name: "Les Halles Boulangerie-Patisserie", lat: 28.3660, lng: -81.5531, type: "GPS", park: "Epcot", land: "World Showcase (France / Bakery)" },
     { name: "Plume et Palette Perfume Shop", lat: 28.3666, lng: -81.5526, type: "GPS", park: "Epcot", land: "World Showcase (France / Shop)" },
     { name: "Rose & Crown Pub & Dining Room", lat: 28.3678, lng: -81.5525, type: "GPS", park: "Epcot", land: "World Showcase (UK / Pub & Dining)" },
     { name: "Yorkshire County Fish Shop", lat: 28.3679, lng: -81.5522, type: "GPS", park: "Epcot", land: "World Showcase (UK / Quick Service)" },
     { name: "The Crown & Crest Shop", lat: 28.3676, lng: -81.5528, type: "GPS", park: "Epcot", land: "World Showcase (UK / Shop)" },
-    { name: "Le Cellier Steakhouse", lat: 28.3690, lng: -81.5522, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Dining)" },
+    { name: "Le Cellier Steakhouse", lat: 28.3692, lng: -81.5525, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Dining)" },
     { name: "Northwest Mercantile Gift Shop", lat: 28.3692, lng: -81.5520, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Shop)" },
     // Epcot Fab 50 Sculptures
     { name: "Fab 50: Figment", lat: 28.3715, lng: -81.5502, type: "GPS", park: "Epcot", land: "Bridge to World Showcase Statue" },
@@ -131,15 +131,15 @@ window.DISNEY_PRESETS = [
     { name: "Fab 50: Pua & Hei-Hei", lat: 28.3699, lng: -81.5501, type: "GPS", park: "Epcot", land: "Showcase Plaza Statue" },
 
     // ================= DISNEY: HOLLYWOOD STUDIOS =================
-    { name: "Twilight Zone Tower of Terror", lat: 28.3565, lng: -81.5606, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-    { name: "Rock 'n' Roller Coaster", lat: 28.3563, lng: -81.5598, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-    { name: "Star Wars: Rise of the Resistance", lat: 28.3551, lng: -81.5627, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-    { name: "Millennium Falcon: Smugglers Run", lat: 28.3533, lng: -81.5628, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-    { name: "Toy Story Mania!", lat: 28.3561, lng: -81.5630, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-    { name: "Slinky Dog Dash", lat: 28.3555, lng: -81.5639, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-    { name: "Dok-Ondar's Den of Antiquities", lat: 28.3535, lng: -81.5622, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Shop" },
-    { name: "Oga's Cantina", lat: 28.3538, lng: -81.5624, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Lounge" },
-    { name: "The Hollywood Brown Derby", lat: 28.3572, lng: -81.5608, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining" },
+    { name: "Twilight Zone Tower of Terror", lat: 28.3562, lng: -81.5603, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+    { name: "Rock 'n' Roller Coaster", lat: 28.3561, lng: -81.5596, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
+    { name: "Star Wars: Rise of the Resistance", lat: 28.3554, lng: -81.5623, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
+    { name: "Millennium Falcon: Smugglers Run", lat: 28.3537, lng: -81.5625, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
+    { name: "Toy Story Mania!", lat: 28.3562, lng: -81.5628, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+    { name: "Slinky Dog Dash", lat: 28.3557, lng: -81.5634, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+    { name: "Dok-Ondar's Den of Antiquities", lat: 28.3536, lng: -81.5622, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Shop" },
+    { name: "Oga's Cantina", lat: 28.3539, lng: -81.5625, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Lounge" },
+    { name: "The Hollywood Brown Derby", lat: 28.3570, lng: -81.5607, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining" },
     { name: "Tower Hotel Gifts", lat: 28.3564, lng: -81.5607, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard / Shop" },
     // Hollywood Studios Fab 50 Sculptures
     { name: "Fab 50: Woody & Bo Peep", lat: 28.3569, lng: -81.5612, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Statue" },
@@ -150,12 +150,12 @@ window.DISNEY_PRESETS = [
     { name: "Fab 50: Frozone", lat: 28.3566, lng: -81.5619, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Plaza Statue" },
 
     // ================= DISNEY: ANIMAL KINGDOM =================
-    { name: "Avatar Flight of Passage", lat: 28.3552, lng: -81.5925, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
-    { name: "Expedition Everest", lat: 28.3585, lng: -81.5872, type: "GPS", park: "Animal Kingdom", land: "Asia" },
-    { name: "Kilimanjaro Safaris", lat: 28.3614, lng: -81.5912, type: "GPS", park: "Animal Kingdom", land: "Africa" },
+    { name: "Avatar Flight of Passage", lat: 28.3555, lng: -81.5924, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
+    { name: "Expedition Everest", lat: 28.3585, lng: -81.5876, type: "GPS", park: "Animal Kingdom", land: "Asia" },
+    { name: "Kilimanjaro Safaris", lat: 28.3611, lng: -81.5913, type: "GPS", park: "Animal Kingdom", land: "Africa" },
     { name: "Tree of Life Roots", lat: 28.3579, lng: -81.5901, type: "GPS", park: "Animal Kingdom", land: "Discovery Island" },
-    { name: "Tiffins Restaurant & Nomad Lounge", lat: 28.3568, lng: -81.5915, type: "GPS", park: "Animal Kingdom", land: "Discovery Island / Dining" },
-    { name: "Windtraders Shop", lat: 28.3550, lng: -81.5922, type: "GPS", park: "Animal Kingdom", land: "Pandora / Shop" },
+    { name: "Tiffins Restaurant & Nomad Lounge", lat: 28.3569, lng: -81.5916, type: "GPS", park: "Animal Kingdom", land: "Discovery Island / Dining" },
+    { name: "Windtraders Shop", lat: 28.3552, lng: -81.5922, type: "GPS", park: "Animal Kingdom", land: "Pandora / Shop" },
     { name: "Mombasa Marketplace", lat: 28.3608, lng: -81.5906, type: "GPS", park: "Animal Kingdom", land: "Africa / Shop" },
     // Animal Kingdom Fab 50 Sculptures
     { name: "Fab 50: Simba, Timon & Pumbaa", lat: 28.3582, lng: -81.5898, type: "GPS", park: "Animal Kingdom", land: "Discovery Island Tree Pathway Statue" },
@@ -163,28 +163,25 @@ window.DISNEY_PRESETS = [
     { name: "Fab 50: Nemo & Dory", lat: 28.3584, lng: -81.5895, type: "GPS", park: "Animal Kingdom", land: "Discovery Island Tree Front Statue" },
 
     // ================= DISNEY SPRINGS =================
-    { name: "World of Disney Store", lat: 28.3718, lng: -81.5173, type: "GPS", park: "Disney Springs", land: "Marketplace" },
-    { name: "Aerophile Balloon Ascent", lat: 28.3705, lng: -81.5222, type: "GPS", park: "Disney Springs", land: "West Side" },
-    { name: "Gideon's Bakehouse", lat: 28.3708, lng: -81.5192, type: "GPS", park: "Disney Springs", land: "The Landing" },
-    { name: "The Boathouse Restaurant", lat: 28.3715, lng: -81.5204, type: "GPS", park: "Disney Springs", land: "The Landing" },
-    { name: "Lego Store Giant Dragon", lat: 28.3713, lng: -81.5168, type: "GPS", park: "Disney Springs", land: "Marketplace" },
-    { name: "AMC Disney Springs 24", lat: 28.3698, lng: -81.5215, type: "GPS", park: "Disney Springs", land: "West Side" },
+    { name: "World of Disney Store", lat: 28.3718, lng: -81.5170, type: "GPS", park: "Disney Springs", land: "Marketplace" },
+    { name: "Aerophile Balloon Ascent", lat: 28.3706, lng: -81.5222, type: "GPS", park: "Disney Springs", land: "West Side" },
+    { name: "Gideon's Bakehouse", lat: 28.3708, lng: -81.5191, type: "GPS", park: "Disney Springs", land: "The Landing" },
+    { name: "The Boathouse Restaurant", lat: 28.3714, lng: -81.5203, type: "GPS", park: "Disney Springs", land: "The Landing" },
+    { name: "Lego Store Giant Dragon", lat: 28.3713, lng: -81.5169, type: "GPS", park: "Disney Springs", land: "Marketplace" },
+    { name: "AMC Disney Springs 24", lat: 28.3701, lng: -81.5214, type: "GPS", park: "Disney Springs", land: "West Side" },
 
     // ================= DISNEY RESORTS & TRANSIT HUBS =================
-    { name: "Pioneer Hall (Fort Wilderness)", lat: 28.4101, lng: -81.5644, type: "GPS", park: "Disney Resorts", land: "Wilderness / Campground" },
-    { name: "Grand Floridian Resort Entrance", lat: 28.4109, lng: -81.5886, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
-    { name: "Contemporary Resort Lobby", lat: 28.4158, lng: -81.5744, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
-    { name: "Polynesian Village Resort Lobby", lat: 28.4057, lng: -81.5843, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
-    { name: "Disney's Riviera Resort (Skyliner Station)", lat: 28.3658, lng: -81.5435, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
+    { name: "Fort Wilderness Reception Outpost", lat: 28.4062, lng: -81.5543, type: "GPS", park: "Disney Resorts", land: "Wilderness / Campground" },
+    { name: "Grand Floridian Resort Entrance", lat: 28.4111, lng: -81.5878, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
+    { name: "Contemporary Resort Lobby", lat: 28.4154, lng: -81.5745, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
+    { name: "Polynesian Village Resort Lobby", lat: 28.4055, lng: -81.5839, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
+    { name: "Disney's Riviera Resort (Skyliner Station)", lat: 28.3665, lng: -81.5436, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
     { name: "Caribbean Beach Resort Skyliner Hub", lat: 28.3582, lng: -81.5438, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
-    { name: "Art of Animation & Pop Century Skyliner", lat: 28.3508, lng: -81.5412, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
-    { name: "Disney's BoardWalk Inn Entrance", lat: 28.3668, lng: -81.5558, type: "GPS", park: "Disney Resorts", land: "Epcot Resort Area" },
+    { name: "Art of Animation & Pop Century Skyliner", lat: 28.3508, lng: -81.5431, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
+    { name: "Disney's BoardWalk Inn Entrance", lat: 28.3665, lng: -81.5564, type: "GPS", park: "Disney Resorts", land: "Epcot Resort Area" },
     { name: "Animal Kingdom Lodge (Jambo House)", lat: 28.3528, lng: -81.6025, type: "GPS", park: "Disney Resorts", land: "Deluxe Resort" },
 
     // ================= BONUS PHOTO CHALLENGES =================
-    // Bonuses have no GPS point, so "areas" says which parks they can physically be done in.
-    // A wildcard is only picked from bonuses whose areas match a park/area the race already has stops in.
-    // Use ["*"] for a bonus that can be done anywhere. The names must match the "park" values above.
     { name: "Photo with the Lady Godiva Statue", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
     { name: "Photo eating a Batch / Cob from a Coventry Bakery", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Food & Snacks", bingo: ["foodbingo", "snackbingo"] },
     { name: "Photo with a Peeping Tom Clock Scene", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
@@ -194,11 +191,9 @@ window.DISNEY_PRESETS = [
     { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios"], land: "Character Meet & Greet", bingo: ["characterbingo", "photobingo"] },
     { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "All Parks", bingo: ["hiddenmickeybingo", "photobingo"] },
     { name: "Photo eating a Mickey Pretzel or Churro", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["*"], land: "Dining Locations", bingo: ["foodbingo", "snackbingo"] },
-    { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Disney Resorts"], land: "Transportation Hubs", bingo: ["transportbingo", "photobingo"] }
-,
+    { name: "Photo riding a Monorail", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Disney Resorts"], land: "Transportation Hubs", bingo: ["transportbingo", "photobingo"] },
 
-    // Disney bonus challenges grouped by bingo theme. These are photo/check-in tasks, not fixed GPS checkpoints.
-    // Food and snack tasks can be completed at eligible dining/snack locations in the listed parks.
+    // Disney bonus challenges grouped by bingo theme
     { name: "Photo with a Mickey-shaped snack", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs", "Disney Resorts"], land: "Food & Snacks", bingo: ["foodbingo", "snackbingo"] },
     { name: "Photo with a Dole Whip", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Disney Springs", "Disney Resorts"], land: "Food & Snacks", bingo: ["foodbingo", "snackbingo"] },
     { name: "Photo with a themed cupcake or pastry", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs", "Disney Resorts"], land: "Food & Snacks", bingo: ["foodbingo", "snackbingo"] },
@@ -227,11 +222,6 @@ window.DISNEY_PRESETS = [
     { name: "Photo with a ride vehicle or ride sign", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Attractions", bingo: ["ridebingo", "photobingo"] }
 ];
 
-// ================= TRANSIT TRANSFERS =================
-// Some trips cannot be made directly and always need a transfer. After a check-in on one of these legs the app asks
-// "Which resort did you transfer through?", then records the transit TO the resort and the transit FROM it.
-// A rule matches when one end's "park" is in `between` and the other end's "park" is in `and` (either direction;
-// names are matched case-insensitively and must match the "park" values used above).
 window.TRANSIT_TRANSFER_RULES = [
     {
         between: ["Disney Springs"],
@@ -240,34 +230,31 @@ window.TRANSIT_TRANSFER_RULES = [
     }
 ];
 
-// Every on-property resort, offered in the "Which resort?" list (grouped by "area", in this order).
-// Coordinates are not used for the question yet. Entries marked dummy: true still have placeholder coordinates:
-// search this file for  lat: 28.0000, lng: -81.0000  (and for dummy: true) to find them. Remove dummy: true once real.
 window.DISNEY_RESORTS = [
-    { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4158, lng: -81.5744 },  // from Contemporary Resort Lobby
-    { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. next to the Contemporary
-    { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4057, lng: -81.5843 },  // from Polynesian Village Resort Lobby
-    { name: "Grand Floridian Resort & Spa", area: "Magic Kingdom area", lat: 28.4109, lng: -81.5886 },  // from Grand Floridian Resort Entrance
-    { name: "Wilderness Lodge", area: "Magic Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Boulder Ridge / Copper Creek Villas
-    { name: "Fort Wilderness Resort & Campground", area: "Magic Kingdom area", lat: 28.4101, lng: -81.5644 },  // from Pioneer Hall
-    { name: "Beach Club Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "Yacht Club Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "BoardWalk Inn & Villas", area: "Epcot area", lat: 28.3668, lng: -81.5558 },  // from Disney's BoardWalk Inn Entrance
-    { name: "Swan Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. Walt Disney World Swan
-    { name: "Dolphin Resort", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. Walt Disney World Dolphin
-    { name: "Swan Reserve", area: "Epcot area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "Riviera Resort", area: "Epcot area", lat: 28.3658, lng: -81.5435 },  // from Riviera Resort (Skyliner Station)
-    { name: "Caribbean Beach Resort", area: "Epcot area", lat: 28.3582, lng: -81.5438 },  // from Caribbean Beach Resort Skyliner Hub
-    { name: "Pop Century Resort", area: "Epcot area", lat: 28.3508, lng: -81.5412, dummy: true },  // APPROXIMATE - shared coordinate copied from the combined 'Art of Animation & Pop Century Skyliner' stop - split when you have both
-    { name: "Art of Animation Resort", area: "Epcot area", lat: 28.3508, lng: -81.5412, dummy: true },  // APPROXIMATE - shared coordinate copied from the combined 'Art of Animation & Pop Century Skyliner' stop - split when you have both
-    { name: "Animal Kingdom Lodge (Jambo House)", area: "Animal Kingdom area", lat: 28.3528, lng: -81.6025 },  // from Animal Kingdom Lodge (Jambo House)
-    { name: "Animal Kingdom Villas (Kidani Village)", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "All-Star Movies Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "All-Star Music Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "All-Star Sports Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "Coronado Springs Resort", area: "Animal Kingdom area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Gran Destino Tower
-    { name: "Old Key West Resort", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "Saratoga Springs Resort & Spa", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace. includes Treehouse Villas
-    { name: "Port Orleans Resort - French Quarter", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
-    { name: "Port Orleans Resort - Riverside", area: "Disney Springs area", lat: 28.0000, lng: -81.0000, dummy: true },  // DUMMY COORDS - replace
+    { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4154, lng: -81.5745 },
+    { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.4173, lng: -81.5752 },
+    { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4055, lng: -81.5839 },
+    { name: "Grand Floridian Resort & Spa", area: "Magic Kingdom area", lat: 28.4111, lng: -81.5878 },
+    { name: "Wilderness Lodge", area: "Magic Kingdom area", lat: 28.4054, lng: -81.5727 },
+    { name: "Fort Wilderness Resort & Campground", area: "Magic Kingdom area", lat: 28.4062, lng: -81.5543 },
+    { name: "Beach Club Resort", area: "Epcot area", lat: 28.3713, lng: -81.5562 },
+    { name: "Yacht Club Resort", area: "Epcot area", lat: 28.3706, lng: -81.5583 },
+    { name: "BoardWalk Inn & Villas", area: "Epcot area", lat: 28.3665, lng: -81.5564 },
+    { name: "Swan Resort", area: "Epcot area", lat: 28.3683, lng: -81.5598 },
+    { name: "Dolphin Resort", area: "Epcot area", lat: 28.3662, lng: -81.5606 },
+    { name: "Swan Reserve", area: "Epcot area", lat: 28.3661, lng: -81.5630 },
+    { name: "Riviera Resort", area: "Epcot area", lat: 28.3648, lng: -81.5441 },
+    { name: "Caribbean Beach Resort", area: "Epcot area", lat: 28.3618, lng: -81.5414 },
+    { name: "Pop Century Resort", area: "Epcot area", lat: 28.3499, lng: -81.5417 },
+    { name: "Art of Animation Resort", area: "Epcot area", lat: 28.3496, lng: -81.5450 },
+    { name: "Animal Kingdom Lodge (Jambo House)", area: "Animal Kingdom area", lat: 28.3528, lng: -81.6025 },
+    { name: "Animal Kingdom Villas (Kidani Village)", area: "Animal Kingdom area", lat: 28.3537, lng: -81.6067 },
+    { name: "All-Star Movies Resort", area: "Animal Kingdom area", lat: 28.3375, lng: -81.5739 },
+    { name: "All-Star Music Resort", area: "Animal Kingdom area", lat: 28.3397, lng: -81.5735 },
+    { name: "All-Star Sports Resort", area: "Animal Kingdom area", lat: 28.3427, lng: -81.5738 },
+    { name: "Coronado Springs Resort", area: "Animal Kingdom area", lat: 28.3630, lng: -81.5746 },
+    { name: "Old Key West Resort", area: "Disney Springs area", lat: 28.3759, lng: -81.5350 },
+    { name: "Saratoga Springs Resort & Spa", area: "Disney Springs area", lat: 28.3762, lng: -81.5240 },
+    { name: "Port Orleans Resort - French Quarter", area: "Disney Springs area", lat: 28.3794, lng: -81.5367 },
+    { name: "Port Orleans Resort - Riverside", area: "Disney Springs area", lat: 28.3855, lng: -81.5365 }
 ];
