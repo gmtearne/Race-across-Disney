@@ -7214,9 +7214,9 @@
                         scoreClass = "text-disneyGold";
                     } else {
                         const displayMin = t.endTime ? t.adjustedMin : t.rawMin;
-                        const hrs = Math.floor(displayMin / 60);
-                        const mins = Math.floor(displayMin % 60);
-                        scoreValue = `${hrs}h ${String(mins).padStart(2, '0')}m`;
+                        // Final results show seconds (HH:MM:SS, same as the scorecard) so close finishes stay distinguishable
+                        const totalSecs = Math.max(0, Math.round(displayMin * 60));
+                        scoreValue = [Math.floor(totalSecs / 3600), Math.floor(totalSecs % 3600 / 60), totalSecs % 60].map(n => String(n).padStart(2, '0')).join(':');
                         scoreClass = t.endTime ? "text-emerald-400" : "text-slate-200";
                     }
 
@@ -9001,10 +9001,7 @@
                     const secs = Math.max(0, Math.round(Number(mins || 0) * 60));
                     return [Math.floor(secs / 3600), Math.floor((secs % 3600) / 60), secs % 60].map(n => String(n).padStart(2, '0')).join(':');
                 };
-                const fmtOverall = mins => {
-                    const total = Math.max(0, Math.round(Number(mins || 0)));
-                    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-                };
+                const fmtOverall = fmt;   // HH:MM:SS, same as the breakdown rows, so the rows add up to the total
                 const escT = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const triviaLogsSc = team.triviaLogs || [];
                 const triviaAnswersHtml = triviaLogsSc.length
