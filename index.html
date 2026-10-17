@@ -2777,7 +2777,6 @@
             }
 
             setActiveNavTab(tabName);
-            if (tabName === 'maps' && window.showParkMap) window.showParkMap();
 
             if (saveState) localStorage.setItem('rad_active_tab', tabName);
 
@@ -2794,6 +2793,7 @@
                 btn.classList.toggle('tab-active', isMatch);
                 if (isMatch) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
             });
+            if (tabName === 'maps' && window.showParkMap) window.showParkMap();   // dock tap, swipe or restored page: all end up here
         };
 
         // Give every app modal the same native-feeling open/close treatment.
@@ -2953,8 +2953,10 @@
             if (parkMapPromise) return parkMapPromise;
             const box = document.getElementById('wdw-map');
             if (!box || !window.WdwMap) return Promise.resolve(null);
+            parkMapMessage('Starting map...');
             parkMapPromise = WdwMap.create(box, {}).then(m => {
                 parkMap = m;
+                parkMapMessage('');
                 if (!m.__hasData) parkMapMessage('Map data (wdw-map.json) was not found, so only the base layer is shown.');
                 flyToArea(currentMapKey, false);
                 return m;
