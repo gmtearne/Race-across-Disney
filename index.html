@@ -340,6 +340,14 @@
         .cp-trivia-inner { overflow: hidden; min-height: 0; }
         .cp-trivia.opening, .cp-transit.opening { animation: cpSlideDown .45s ease both; animation-delay: var(--cp-trivia-delay, 0ms); }
         .cp-trivia.closing, .cp-transit.closing { animation: cpSlideUp .4s ease both; animation-delay: var(--cp-trivia-delay, 0ms); }
+        /* Poison apple: slide-down panels + the screen shake when a challenge lands */
+        .cp-apple, .cp-apple-offer { display: grid; grid-template-rows: 1fr; }
+        .cp-apple.opening { animation: cpSlideDown .45s ease both; animation-delay: var(--cp-trivia-delay, 0ms); }
+        @keyframes paShake { 0%,100% { transform: translate(0,0) rotate(0); } 10% { transform: translate(-10px,5px) rotate(-.7deg); } 20% { transform: translate(9px,-6px) rotate(.7deg); } 30% { transform: translate(-8px,-4px) rotate(-.5deg); } 40% { transform: translate(7px,6px) rotate(.5deg); } 50% { transform: translate(-6px,3px); } 60% { transform: translate(5px,-4px); } 70% { transform: translate(-4px,3px); } 80% { transform: translate(3px,-2px); } 90% { transform: translate(-2px,1px); } }
+        body.pa-shake { animation: paShake .75s ease both; }
+        @keyframes paPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(163,230,53,.0); } 50% { box-shadow: 0 0 0 4px rgba(163,230,53,.35); } }
+        .pa-pulse { animation: paPulse 1.6s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { body.pa-shake, .pa-pulse { animation: none; } }
         @keyframes cpAttn { 0%,100% { border-color: rgba(251,191,36,.35); background-color: #1e293b; } 50% { border-color: #fbbf24; background-color: rgba(251,191,36,.28); } }
         .cp-attn { animation: cpAttn .6s ease-in-out 4; }
         @media (prefers-reduced-motion: reduce) { .cp-attn { animation: none; border-color: #fbbf24; } }
@@ -1254,7 +1262,7 @@
                 <span class="htp-head-txt"><span class="htp-head-title">How to Race</span><span class="htp-head-blurb">Joining, checkpoints, bonuses and more</span></span>
                 <i class="fa-solid fa-chevron-down htp-chev"></i>
             </button>
-            <div class="htp-collapse" id="htp-race-body"><div class="htp-collapse-inner"><div class="htp-cards"><h3 class="htp-sub">Joining a race</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-key"></i></div><div class="htp-txt"><h4>Enter your race code</h4><p>Your host will share a race code (or an invite link). Enter it on the Team page to find the race.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-people-group"></i></div><div class="htp-txt"><h4>Pick a team name and PIN</h4><p>Choose a team name and set a PIN. You can also pin an avatar for your team, but that part is optional.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-right-to-bracket"></i></div><div class="htp-txt"><h4>Logging back in</h4><p>Your race code, team name and PIN are your login. Use them to sign in on another device, or if you ever get logged out.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-hourglass-half"></i></div><div class="htp-txt"><h4>Wait for approval</h4><p>Once you have joined, your host gets a notification to approve your team. You are in the race as soon as they do.</p></div></div><h3 class="htp-sub">The Team page</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-flag-checkered"></i></div><div class="htp-txt"><h4>Your race at a glance</h4><p>Once you are in, the Team page has four main areas:</p><ul><li><b>Race start</b> &ndash; where you start your race or hunt. If your host has enabled global start, they will start every team remotely.</li><li><b>Time</b> &ndash; your running clock.</li><li><b>Bonus</b> &ndash; any bonus rewards or time deductions you have earned.</li><li><b>Checkpoints achieved</b> &ndash; how many stops you have completed.</li></ul></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-route"></i></div><div class="htp-txt"><h4>Your journey so far</h4><p>Shows your chosen route at a glance, your next stop, and the time since your last stop.</p></div></div><h3 class="htp-sub">Checkpoints</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-grip-lines"></i></div><div class="htp-txt"><h4>Make the route yours</h4><p>Your checkpoint list can be reorganised to suit your preferred route. Press and hold a card, then drag it into place.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-lightbulb"></i></div><div class="htp-txt"><h4>Tap a card for more</h4><p>Tapping a checkpoint shows fun facts and, depending on your race&rsquo;s difficulty level, hints and/or a map of where the checkpoint is.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-compass"></i></div><div class="htp-txt"><h4>Guide</h4><p>The guide button opens compass navigation to help you home in as you close in on your checkpoint.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-circle-check"></i></div><div class="htp-txt"><h4>Check in</h4><p>Check in completes the checkpoint.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-camera"></i></div><div class="htp-txt"><h4>Too far away? Manual check in</h4><p>If the app thinks you are too far from the checkpoint but you are sure you are in the right place, you can do a manual check in. Your host can review and reject it, so take photo evidence of where you are!</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-bus"></i></div><div class="htp-txt"><h4>Transit questions</h4><p>After checking in, if you have left an area or park, you may be asked which transit system you used. If you used more than one (for example a boat and a bus), select them all.</p></div></div><h3 class="htp-sub">Bonus games</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-gift"></i></div><div class="htp-txt"><h4>Below your checkpoints</h4><p>Any bonus games your host has enabled appear below your checkpoint list. They might include:</p><ul><li><b>Photo challenge</b> &ndash; complete the challenges for time deductions or bonuses.</li><li><b>Hidden Mickey bingo</b> &ndash; photograph hidden Mickeys to complete your bingo card. Your host may have chosen bingo rules where only one team can win the reward.</li><li><b>Wildcard</b> &ndash; a random photo challenge is issued for a limited time. The first team to complete it wins.</li><li><b>Checkpoint frenzy</b> &ndash; the team that completes the most check ins during a set time wins an extra bonus.</li><li><b>Trivia</b> &ndash; after checking in you may be asked a trivia question. Answer wisely: correct answers earn time deductions.</li></ul></div></div><h3 class="htp-sub">The other pages</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-trophy"></i></div><div class="htp-txt"><h4>Race</h4><p>Leaderboards and live chat live here. Chat is moderated by your host. Badges and rewards also appear here once the race has finished.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-map"></i></div><div class="htp-txt"><h4>Maps</h4><p>Park maps to help you navigate and plan your journey.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-book-open"></i></div><div class="htp-txt"><h4>Rules</h4><p>Get familiar with the rules and options your host has enabled before you set off.</p></div></div></div></div></div>
+            <div class="htp-collapse" id="htp-race-body"><div class="htp-collapse-inner"><div class="htp-cards"><h3 class="htp-sub">Joining a race</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-key"></i></div><div class="htp-txt"><h4>Enter your race code</h4><p>Your host will share a race code (or an invite link). Enter it on the Team page to find the race.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-people-group"></i></div><div class="htp-txt"><h4>Pick a team name and PIN</h4><p>Choose a team name and set a PIN. You can also pin an avatar for your team, but that part is optional.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-right-to-bracket"></i></div><div class="htp-txt"><h4>Logging back in</h4><p>Your race code, team name and PIN are your login. Use them to sign in on another device, or if you ever get logged out.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-hourglass-half"></i></div><div class="htp-txt"><h4>Wait for approval</h4><p>Once you have joined, your host gets a notification to approve your team. You are in the race as soon as they do.</p></div></div><h3 class="htp-sub">The Team page</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-flag-checkered"></i></div><div class="htp-txt"><h4>Your race at a glance</h4><p>Once you are in, the Team page has four main areas:</p><ul><li><b>Race start</b> &ndash; where you start your race or hunt. If your host has enabled global start, they will start every team remotely.</li><li><b>Time</b> &ndash; your running clock.</li><li><b>Bonus</b> &ndash; any bonus rewards or time deductions you have earned.</li><li><b>Checkpoints achieved</b> &ndash; how many stops you have completed.</li></ul></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-route"></i></div><div class="htp-txt"><h4>Your journey so far</h4><p>Shows your chosen route at a glance, your next stop, and the time since your last stop.</p></div></div><h3 class="htp-sub">Checkpoints</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-grip-lines"></i></div><div class="htp-txt"><h4>Make the route yours</h4><p>Your checkpoint list can be reorganised to suit your preferred route. Press and hold a card, then drag it into place.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-lightbulb"></i></div><div class="htp-txt"><h4>Tap a card for more</h4><p>Tapping a checkpoint shows fun facts and, depending on your race&rsquo;s difficulty level, hints and/or a map of where the checkpoint is.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-compass"></i></div><div class="htp-txt"><h4>Guide</h4><p>The guide button opens compass navigation to help you home in as you close in on your checkpoint.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-circle-check"></i></div><div class="htp-txt"><h4>Check in</h4><p>Check in completes the checkpoint.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-camera"></i></div><div class="htp-txt"><h4>Too far away? Manual check in</h4><p>If the app thinks you are too far from the checkpoint but you are sure you are in the right place, you can do a manual check in. Your host can review and reject it, so take photo evidence of where you are!</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-bus"></i></div><div class="htp-txt"><h4>Transit questions</h4><p>After checking in, if you have left an area or park, you may be asked which transit system you used. If you used more than one (for example a boat and a bus), select them all.</p></div></div><h3 class="htp-sub">Bonus games</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-gift"></i></div><div class="htp-txt"><h4>Below your checkpoints</h4><p>Any bonus games your host has enabled appear below your checkpoint list. They might include:</p><ul><li><b>Photo challenge</b> &ndash; complete the challenges for time deductions or bonuses.</li><li><b>Hidden Mickey bingo</b> &ndash; photograph hidden Mickeys to complete your bingo card. Your host may have chosen bingo rules where only one team can win the reward.</li><li><b>Wildcard</b> &ndash; a random photo challenge is issued for a limited time. The first team to complete it wins.</li><li><b>Checkpoint frenzy</b> &ndash; the team that completes the most check ins during a set time wins an extra bonus.</li><li><b>Trivia</b> &ndash; after checking in you may be asked a trivia question. Answer wisely: correct answers earn time deductions.</li><li><b>Poison apple</b> &ndash; leave your one apple at a stop after you check in. The next team to check in there has to beat a challenge, and the result changes both teams&rsquo; times.</li></ul></div></div><h3 class="htp-sub">The other pages</h3><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-trophy"></i></div><div class="htp-txt"><h4>Race</h4><p>Leaderboards and live chat live here. Chat is moderated by your host. Badges and rewards also appear here once the race has finished.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-map"></i></div><div class="htp-txt"><h4>Maps</h4><p>Park maps to help you navigate and plan your journey.</p></div></div><div class="htp-card"><div class="htp-ico"><i class="fa-solid fa-book-open"></i></div><div class="htp-txt"><h4>Rules</h4><p>Get familiar with the rules and options your host has enabled before you set off.</p></div></div></div></div></div>
         </div>
         <div class="htp-sec" id="htp-host">
             <button type="button" class="htp-head" aria-expanded="false" aria-controls="htp-host-body" onclick="toggleHtpSection('host')">
@@ -1739,6 +1747,12 @@
                         Depending on your host's settings, a race may include extras such as <strong>trivia questions</strong>, surprise <strong>wildcard</strong> bonuses, <strong>checkpoint frenzies</strong> and <strong>Hidden Mickey Bingo</strong>. If your race uses them, their rules appear on this page after you join.
                     </p>
                 </div>
+                <div id="rules-poison-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-lime-300 font-bold text-sm">
+                        <span aria-hidden="true">🍎</span> Poison Apple
+                    </div>
+                    <p id="rules-poison-text" class="text-slate-300 leading-relaxed"></p>
+                </div>
                 <div id="rules-bingo-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
                     <div class="flex items-center gap-2 text-disneyGold font-bold text-sm">
                         <span aria-hidden="true">🐭</span> Hidden Mickey Bingo
@@ -2068,7 +2082,7 @@
                             <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Medium and Hard difficulty</span></li>
                             <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Choosing your own stops, other parks and more than 6 stops</span></li>
                             <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>A mandatory final location</span></li>
-                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Hidden Mickey Bingo and Checkpoint Frenzy</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Hidden Mickey Bingo, Checkpoint Frenzy and Poison Apple</span></li>
                             <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Approving more than one extra team</span></li>
                         </ul>
                     </div>
@@ -2335,7 +2349,7 @@
 
                 <!-- Step 5: bonuses and game extras -->
                 <section data-rw-step="5" class="rw-step hidden space-y-5">
-                    <p class="text-sm text-slate-400">Choose optional bonuses and surprise events. They will appear in this order: photo challenges, bingo, trivia, wildcard, then checkpoint frenzy.</p>
+                    <p class="text-sm text-slate-400">Choose optional bonuses and surprise events. They will appear in this order: photo challenges, bingo, trivia, wildcard, checkpoint frenzy, then the poison apple.</p>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-amber-500/30 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
@@ -2474,6 +2488,25 @@
                                 <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option>
                             </select>
                             <p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will never overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-lime-500/30 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="font-bold text-sm text-white flex items-center gap-2"><span aria-hidden="true">🍎</span> Poison Apple</span>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Sabotage! Each team gets one apple to leave at a checkpoint for another team to fall into.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="create-poison-switch" onchange="toggleCreatePoisonSettings()" class="sr-only peer">
+                                <div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-lime-600"></div>
+                            </label>
+                        </div>
+                        <div id="create-poison-sub-settings" class="hidden space-y-2 pt-3 border-t border-slate-800">
+                            <label class="block text-[10px] text-slate-400 uppercase tracking-wide font-semibold" for="create-poison-expiry">Unused apples expire after</label>
+                            <select id="create-poison-expiry" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
+                                <option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>60 minutes</option><option value="90">90 minutes</option><option value="120">2 hours</option><option value="0">Never (until the race ends)</option>
+                            </select>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">After a check-in a team can leave its apple there. The next team to check in at that stop must beat a challenge from that location. Beat it: they get a 5 minute deduction and the team that left it takes a 5 minute penalty. Fail it: the team that left it gets a 10 minute deduction, and the failing team is not penalised again. (Scavenger Hunts use points instead of minutes.) A team can fall for at most 2 apples, and a stop holds at most 2 waiting apples. An apple nobody triggers in time expires and goes back to its owner to play again.</p>
                         </div>
                     </div>
                     <input type="number" id="create-default-points" value="0" class="hidden">
@@ -2761,6 +2794,17 @@
                     $('rules-bingo-text').innerHTML = `Find and photograph <strong>four hidden Mickeys</strong> to fill your 2×2 card, one photo per square. ${winnerTxt} A partly filled card earns nothing, and the host reviews every photo.`;
                     bingoCard.classList.remove('hidden');
                 } else bingoCard.classList.add('hidden');
+            }
+            const poisonCard = $('rules-poison-card');
+            if (poisonCard) {
+                const pa = race && race.poisonApple;
+                if (pa && pa.enabled) {
+                    const hunt = race.gameMode === 'scavenger', u = hunt ? ' points' : ' minute';
+                    const hit = Number(pa.hitMin) || 5, pen = Number(pa.penaltyMin) || 5, fail = Number(pa.failMin) || 10;
+                    const exp = Number(pa.expiryMin) > 0 ? ` An apple nobody triggers within <strong>${pa.expiryMin} minutes</strong> expires and comes back to you to play again.` : '';
+                    $('rules-poison-text').innerHTML = `Every team has <strong>one poison apple</strong>. After you check in you can leave it at that stop. The next team to check in there must beat a challenge from that location. If they beat it, they earn <strong>${hit}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and you take a <strong>${pen}${u}${hunt ? '' : ''} ${hunt ? 'loss' : 'penalty'}</strong>. If they fail, you earn <strong>${fail}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and they are not penalised again. A team can fall for at most <strong>${Number(pa.perTeam) || 2} apples</strong> per race, and a stop holds at most ${Number(pa.perLocation) || 2} waiting apples.${exp} Apples still waiting when the race ends do nothing.`;
+                    poisonCard.classList.remove('hidden');
+                } else poisonCard.classList.add('hidden');
             }
             const hostCard = $('rules-host-card');
             if (hostCard) {
@@ -3386,6 +3430,10 @@
         window.toggleFrenzyCreateSettings = function() {
             const on = !!document.getElementById('create-frenzy-switch')?.checked;
             document.getElementById('create-frenzy-sub-settings')?.classList.toggle('hidden', !on);
+        };
+        window.toggleCreatePoisonSettings = function() {
+            const on = !!document.getElementById('create-poison-switch')?.checked;
+            document.getElementById('create-poison-sub-settings')?.classList.toggle('hidden', !on);
         };
         window.toggleWildcardCreateSettings = function() {
             const on = document.getElementById('create-wildcard-switch')?.checked;
@@ -5145,6 +5193,27 @@
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
             }, (err) => console.warn('Bingo winner listener error', err));
+            if (window.applesUnsub) { window.applesUnsub(); window.applesUnsub = null; }
+            window.liveApples = null;
+            window.applesUnsub = onSnapshot(collection(window.db, "races", code, "apples"), (snap) => {
+                const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const prev = window.__appleSeen && window.__appleSeen.team === teamId ? window.__appleSeen.map : null;
+                const seen = {};
+                list.forEach(a => {
+                    seen[a.id] = a.status;
+                    if (prev && a.ownerTeamId === teamId && prev[a.id] && prev[a.id] !== a.status) {
+                        const u = window.poisonUnit(window.liveTeamRaceData || {}), t = a.terms || {};
+                        if (a.status === 'active') window.appToast(`🍎 ${a.victimTeamName || 'A team'} just walked into your poison apple at ${a.cpName}!`, 4500);
+                        else if (a.status === 'won') window.appToast(`😬 ${a.victimTeamName || 'A team'} beat your poison apple at ${a.cpName}. You take ${t.penalty || 5}${u} penalty.`, 5000);
+                        else if (a.status === 'lost') window.appToast(`😈 ${a.victimTeamName || 'A team'} failed your poison apple at ${a.cpName}! You earn ${t.fail || 10}${u}.`, 5000);
+                    }
+                });
+                window.__appleSeen = { team: teamId, map: seen };
+                window.liveApples = list;
+                if (!window.liveTeamRaceData || window.activeRaceCode !== code) return;
+                const active = document.getElementById('team-dashboard-active');
+                if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+            }, (err) => { console.warn('Poison apple listener error', err); window.liveApples = window.liveApples || []; });
             startWildcardWatcher();
             if (window.watchTeamHostLock) window.watchTeamHostLock(code, teamId);
             const raceRef = doc(window.db, "races", code);
@@ -5327,6 +5396,11 @@
                 enabled: !demo && !!document.getElementById('create-frenzy-switch')?.checked,
                 durationMin: Number(document.getElementById('create-frenzy-duration')?.value) || 15,
                 reward: defaultFrenzyReward
+            };
+            const poisonApple = {
+                enabled: !demo && !!document.getElementById('create-poison-switch')?.checked,
+                expiryMin: Math.max(0, Number(document.getElementById('create-poison-expiry')?.value ?? 60)),
+                hitMin: 5, penaltyMin: 5, failMin: 10, perLocation: 2, perTeam: 2, challengeSec: 180
             };
 
             if (!title) return alert("Please give your race a name.");
@@ -5515,6 +5589,7 @@
                     resultsRevealed: false,
                     wildcardAuto: wildcardAuto,
                     frenzyAuto: frenzyAuto,
+                    poisonApple: poisonApple,
                     bingo: bingoInfo || { enabled: false },
                     rules: raceRules,
                     missedPenaltyMin: missedPenaltyMin,
@@ -5641,6 +5716,9 @@
             setChk('create-wildcard-switch', false);
             setChk('create-frenzy-switch', false);
             window.toggleFrenzyCreateSettings();
+            setChk('create-poison-switch', false);
+            if (rwEl('create-poison-expiry')) rwEl('create-poison-expiry').value = '60';
+            window.toggleCreatePoisonSettings();
             setChk('create-bonus-switch', false);
             setChk('create-bingo-switch', false);
             if (rwEl('create-bingo-rule-one-winner')) rwEl('create-bingo-rule-one-winner').checked = false;
@@ -5847,6 +5925,7 @@
             rows.push(rwRow('Trivia', trivia));
             rows.push(rwRow('Wildcard', info.wildcardAuto.enabled ? `On (${info.wildcardAuto.durationMin} min window)` : 'Off'),
                 rwRow('Checkpoint Frenzy', document.getElementById('create-frenzy-switch')?.checked ? `On (${document.getElementById('create-frenzy-duration')?.value || 15} min)` : 'Off'),
+                rwRow('Poison Apple', document.getElementById('create-poison-switch')?.checked ? (Number(document.getElementById('create-poison-expiry')?.value) > 0 ? `On (expires after ${document.getElementById('create-poison-expiry').value} min)` : 'On (never expires)') : 'Off'),
                 rwRow('Hidden Mickey Bingo', document.getElementById('create-bingo-switch')?.checked ? (document.getElementById('create-bingo-rule-one-winner')?.checked ? 'On · one winner' : 'On · every team can win') : 'Off'),
                 rwRow('Advanced settings', document.getElementById('create-advanced-switch')?.checked ? 'Configured' : 'Standard defaults'),
                 rwRow('Host team', document.getElementById('create-host-team-switch')?.checked ? document.getElementById('create-host-team-name')?.value || 'Registered' : 'Not registered'));
@@ -6018,7 +6097,7 @@
             const PROMPTS = {
                 teams:      'In demo mode you can approve one extra team besides your own. Upgrade to approve more.',
                 difficulty: 'Medium and Hard difficulty need a pass. Demo races run on Easy.',
-                bonus:      'Hidden Mickey Bingo and Checkpoint Frenzy need a pass.',
+                bonus:      'Hidden Mickey Bingo, Checkpoint Frenzy and Poison Apple need a pass.',
                 stops:      'Demo races are limited to ' + CFG.maxStops + ' stops from ' + CFG.park + '. Upgrade to choose your own stops.'
             };
             window.demoUpgradePrompt = async function (kind) {
@@ -6056,13 +6135,13 @@
                 lockEl($('speed-final-stop-container'), 'A final location needs a pass');
                 note(4, `Demo mode: ${CFG.maxStops} random stops, all from ${CFG.park}.`);
                 // Step 5: bonus photo, trivia and wildcard stay open; Bingo and Frenzy are locked off
-                ['create-bingo-switch', 'create-frenzy-switch'].forEach(id => {
+                ['create-bingo-switch', 'create-frenzy-switch', 'create-poison-switch'].forEach(id => {
                     const sw = $(id); if (!sw) return;
                     sw.checked = false;
-                    lockEl(sw.closest('.bg-slate-900'), 'Bingo and Frenzy need a pass');
+                    lockEl(sw.closest('.bg-slate-900'), 'Bingo, Frenzy and Poison Apple need a pass');
                 });
-                window.toggleBingoCreateSettings(); window.toggleFrenzyCreateSettings();
-                note(5, 'Demo mode: bonus photos, trivia and wildcard are included. Bingo and Frenzy need a pass.');
+                window.toggleBingoCreateSettings(); window.toggleFrenzyCreateSettings(); window.toggleCreatePoisonSettings();
+                note(5, 'Demo mode: bonus photos, trivia and wildcard are included. Bingo, Frenzy and Poison Apple need a pass.');
                 // Step 7: team limit reminder
                 note(7, 'Demo mode: your own team is free, and you can approve one extra team.');
             };
@@ -7046,6 +7125,7 @@
 
                 const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
                 const team = teamSnap.data();
+                const verifyPoisonNet = race.poisonApple ? window.poisonNetFor(race, teamId, await window.fetchApples(raceCode)) : 0;
                 if (window.renderVerifyModalActions) window.renderVerifyModalActions(raceCode, teamId, race, team);
                 const checkpoints = race.checkpoints || [];
                 const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
@@ -7165,6 +7245,7 @@
                                 <button onclick="toggleTriviaAnswersView(this)" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-disneyGold font-semibold rounded-lg text-[10px] transition"><i class="fa-solid fa-eye mr-1"></i> View Answers</button>
                             </div>
                             <p class="text-slate-300">Total Trivia Bonus Accumulated: <span class="font-mono font-bold text-emerald-400">${triviaBonus}</span></p>
+                            ${race.poisonApple ? `<p class="text-slate-300">Poison apple adjustment: <span class="font-mono font-bold ${verifyPoisonNet < 0 ? 'text-rose-400' : 'text-lime-300'}">${verifyPoisonNet >= 0 ? '+' : '−'}${Math.abs(verifyPoisonNet)} ${race.gameMode === 'scavenger' ? 'pts' : 'min (positive = time off)'}</span></p>` : ''}
                             
                             <div id="trivia-history-details-box" class="hidden space-y-2 pt-2">
                 `;
@@ -7556,6 +7637,7 @@
             const wc = race.wildcardAuto || {};
             const fr = race.frenzyAuto || {};
             const bi = race.bingo || {};
+            const pa = race.poisonApple || {};
             const selectOpts = (id, values, selected) => `<select id="${id}" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">${values.map(v => `<option value="${v[0]}" ${String(v[0])===String(selected)?'selected':''}>${v[1]}</option>`).join('')}</select>`;
             const durations = [[5,'5 minutes'],[10,'10 minutes'],[15,'15 minutes'],[20,'20 minutes'],[30,'30 minutes'],[45,'45 minutes'],[60,'60 minutes']];
             const diffBtn = (v, label, sub) => `<button type="button" onclick="setRaceBaseDifficulty('${code}', '${v}')" class="px-2 py-3 rounded-2xl border text-center transition active:scale-95 ${raceBaseDiff === v ? 'border-disneyGold bg-disneyGold/10' : 'border-slate-700 bg-slate-950'}"><span class="block font-bold text-sm ${raceBaseDiff === v ? 'text-disneyGold' : 'text-white'}">${label}</span><span class="block text-[10px] text-slate-400 mt-0.5 leading-tight">${sub}</span></button>`;
@@ -7599,6 +7681,16 @@
                         <div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="hrp-bingo-reward" type="number" min="1" value="${Number(bi.reward)||20}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
                         <div><label class="block text-[10px] text-slate-400 mb-1">Rules</label>${selectOpts('hrp-bingo-rule',[['casual','Every team can win'],['one','Only one winner']],bi.onlyOneWinner?'one':'casual')}</div>
                         <p class="text-[10px] text-slate-500">Turning Bingo off stops it being active but keeps existing checkpoint history intact.</p>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    ${hrpToggle('fa-solid fa-apple-whole', 'text-lime-300', 'Poison Apple', 'Teams leave sabotage challenges for each other', !!pa.enabled, `togglePoisonApple('${code}', this)`, 'peer-checked:bg-lime-600')}
+                    <div id="hrp-poison-options" class="${pa.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
+                        <div><label class="block text-[10px] text-slate-400 mb-1">Unused apples expire after</label>
+                            <select id="hrp-poison-expiry" onchange="savePoisonSettings('${code}')" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">${[[30,'30 minutes'],[45,'45 minutes'],[60,'60 minutes'],[90,'90 minutes'],[120,'2 hours'],[0,'Never']].map(v => `<option value="${v[0]}" ${String(v[0]) === String(pa.expiryMin ?? 60) ? 'selected' : ''}>${v[1]}</option>`).join('')}</select></div>
+                        <p class="text-[10px] text-slate-500">Expired apples return to the team that left them. Changing this only affects apples that are left from now on.</p>
+                        <button type="button" onclick="hostShowApples('${code}')" class="w-full px-3 py-2.5 bg-lime-600/15 hover:bg-lime-600/25 border border-lime-500/40 text-lime-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-list"></i> Show apple activity</button>
+                        <div id="hrp-apples-box" class="hidden space-y-1.5 text-[11px]"></div>
                     </div>
                 </div>
                 <div class="border-t border-slate-800 pt-3 space-y-3">
@@ -7706,6 +7798,31 @@
             const id = kind === 'wildcard' ? 'hrp-wildcard-options' : kind === 'frenzy' ? 'hrp-frenzy-options' : 'hrp-bingo-options';
             document.getElementById(id)?.classList.toggle('hidden', !checkbox.checked);
             window.saveHostBonusSettings(code);
+        };
+
+        window.togglePoisonApple = function(code, checkbox) {
+            if (window.isHostDemo && window.isHostDemo() && checkbox.checked) { checkbox.checked = false; window.demoUpgradePrompt('bonus'); return; }
+            document.getElementById('hrp-poison-options')?.classList.toggle('hidden', !checkbox.checked);
+            window.savePoisonSettings(code, checkbox.checked);
+        };
+        window.savePoisonSettings = async function(code, enabledOverride) {
+            const owned = await getOwnedRaceForHost(code);
+            if (!owned) { window.appToast('Could not verify race ownership'); return; }
+            const box = document.querySelector('#hrp-poison-options');
+            const enabled = typeof enabledOverride === 'boolean' ? enabledOverride : !!box && !box.classList.contains('hidden');
+            const expiry = Math.max(0, Number(document.getElementById('hrp-poison-expiry')?.value ?? 60));
+            try {
+                await fastUpdate(owned.ref, { poisonApple: { ...window.POISON_DEFAULTS, ...(owned.data.poisonApple || {}), enabled, expiryMin: expiry } });
+            } catch (e) { window.appToast('Could not save poison apple settings'); console.error(e); }
+        };
+        window.hostShowApples = async function(code) {
+            const box = document.getElementById('hrp-apples-box'); if (!box) return;
+            box.classList.remove('hidden'); box.innerHTML = '<p class="text-slate-500">Loading...</p>';
+            const race = ((window.__hostRaceData || {})[code] || {}).race || {};
+            const apples = (await window.fetchApples(code)).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+            const e = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const label = { armed: ['Waiting', 'text-lime-300'], active: ['In progress', 'text-amber-300'], won: ['Beaten', 'text-emerald-300'], lost: ['Poisoned!', 'text-rose-300'], expired: ['Expired', 'text-slate-500'] };
+            box.innerHTML = apples.length ? apples.map(a => { const st = window.appleStatus(a), l = label[st] || [st, 'text-slate-400']; return `<div class="flex items-center justify-between gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2"><span class="min-w-0 text-slate-300"><b class="text-white">${e(a.ownerTeamName)}</b> left one at <b class="text-white">${e(a.cpName)}</b>${a.victimTeamName ? ' · hit <b class="text-white">' + e(a.victimTeamName) + '</b>' : ''}</span><span class="shrink-0 font-bold ${l[1]}">${l[0]}</span></div>`; }).join('') : '<p class="text-slate-500">No apples have been left yet.</p>';
         };
 
         window.saveHostBonusSettings = async function(code) {
@@ -8721,7 +8838,9 @@
                 }
 
                 const frenzyRes = window.frenzyResults(raceData, teamList);
+                const poisonApples = raceData.poisonApple ? await window.fetchApples(targetCode) : [];
                 teamList.forEach(t => {
+                    const poisonNet = window.poisonNetFor(raceData, t.id, poisonApples);   // poison apples: +helps / -hurts (minutes or points)
                     const completed = t.completedCheckpoints || [];
                     const claimed = t.claimedBonus || [];
                     const extraAdj = window.bingoBonusFor(raceData, t) + (frenzyRes.bonusByTeam[t.id] || 0);   // bingo card + checkpoint frenzy wins
@@ -8730,7 +8849,7 @@
                     
                     const rejectedMap = t.rejectedCheckins || {};
                     const rejectedCount = completed.filter(id => rejectedMap[id] && mandatory.some(m => m.id === id)).length;
-                    let totalPoints = triviaBonusPts + (isScavenger ? extraAdj : 0);
+                    let totalPoints = triviaBonusPts + (isScavenger ? extraAdj + poisonNet : 0);
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
                         if (match && !rejectedMap[cpId]) {      // host-rejected check-ins lose their points
@@ -8748,7 +8867,7 @@
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = (missedCount + rejectedCount) * window.missedPenaltyMin(raceData);   // a rejected check-in counts as a missed stop; a rejected bonus only loses its reward (bonuses are optional, so no penalty)
 
-                    let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj : 0);
+                    let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj + poisonNet : 0);
                     claimed.forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match && !rejectedMap[bId]) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
@@ -9560,6 +9679,7 @@
                 if (el) el.remove();
                 delete window.cpTransitUi[cpId];
                 window.refreshTriviaPanel(cpId);          // the trivia question (if any) slides down next
+                if (window.refreshApplePanel) window.refreshApplePanel(cpId);   // then any poison apple (it waits for trivia)
             }, 480);
             try {
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
@@ -9675,7 +9795,11 @@
                 const att = (tData.triviaAttempts || {})[id];
                 if (att && att.pending && !att.asked) {
                     const locT = (window.DISNEY_TRIVIA_DATABASE || {})[cp.name];
-                    if (locT && (locT[diff] || locT.easy)) open.push({ id, t });
+                    if (locT && (locT[diff] || locT.easy)) { open.push({ id, t }); return; }
+                }
+                if (window.poisonOn && window.poisonOn(raceData)) {   // a poison apple challenge is the last question in the chain
+                    const ap = window.appleFor && window.appleFor(window.activeTeamId, id);
+                    if (ap && window.appleStatus(ap) === 'active') open.push({ id, t });
                 }
             });
             open.sort((a, b) => a.t - b.t);
@@ -9686,11 +9810,12 @@
             const cpId = window.getOpenQuestionCpId(window.liveTeamData, window.liveTeamRaceData || {});
             if (!cpId) return;
             window.cpAttn = { cpId, until: Date.now() + 2600 };
-            const find = () => document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-transit, #team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-trivia`);
+            const find = () => document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-transit, #team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-trivia, #team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-apple`);
             let panel = find();
             if (!panel) {
                 if ((window.liveTeamData.transitPending || {})[cpId]) window.refreshTransitPanel(cpId); else window.refreshTriviaPanel(cpId);
                 panel = find();
+                if (!panel && window.refreshApplePanel) { window.refreshApplePanel(cpId); panel = find(); }
             }
             const target = panel || document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"]`);
             if (!target) return;
@@ -9719,6 +9844,7 @@
                 const el = document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"] .cp-trivia`);
                 if (el) el.remove();
                 delete window.cpTriviaUi[cpId];
+                if (window.refreshApplePanel) window.refreshApplePanel(cpId);   // the poison apple step comes after trivia
             }, 2250);
             try {
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
@@ -9733,6 +9859,256 @@
             } catch (e) {
                 console.error('Could not save trivia answer', e);
             }
+        };
+
+
+        // ===================== POISON APPLE =====================
+        // races/{code}.poisonApple = { enabled, expiryMin, hitMin, penaltyMin, failMin, perLocation, perTeam, challengeSec }
+        // races/{code}/apples/{id} = { cpId, cpName, ownerTeamId, ownerTeamName, createdAt, expiresAt, status:'armed'|'active'|'won'|'lost',
+        //   terms:{hit,penalty,fail}, victimTeamId, victimTeamName, triggeredAt, challenge, startedAt, deadline, resolvedAt }
+        // Nothing is ever written to team documents for scoring: every adjustment is worked out from the apples, so it can't double-apply.
+        window.POISON_DEFAULTS = { enabled: false, expiryMin: 60, hitMin: 5, penaltyMin: 5, failMin: 10, perLocation: 2, perTeam: 2, challengeSec: 180 };
+        window.poisonCfg = (race) => Object.assign({}, window.POISON_DEFAULTS, (race && race.poisonApple) || {});
+        window.poisonOn = (race) => !!(race && race.poisonApple && race.poisonApple.enabled);
+        window.liveApples = null;
+        window.cpAppleUi = {};
+        const paEsc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+        // ---- Challenges. Add real ones per location here, or as `poisonChallenges: [...]` on a location in locations-data.js ----
+        //   { id, title, type:'task'|'question', prompt, options:[...], answer:<index>, timeLimitSec }
+        window.POISON_APPLE_CHALLENGES = window.POISON_APPLE_CHALLENGES || {};
+        window.DEFAULT_POISON_CHALLENGE = { id: 'default', title: 'Test challenge', type: 'task', timeLimitSec: 120,
+            prompt: 'This is a placeholder poison apple challenge. Location-specific challenges will replace it. Tap "We did it!" to pass, or "Give up" to fail.' };
+        window.poisonChallengesFor = function (cpName) {
+            const preset = (window.DISNEY_PRESETS || []).find(p => p.name === cpName);
+            const list = (preset && Array.isArray(preset.poisonChallenges) && preset.poisonChallenges.length) ? preset.poisonChallenges : (window.POISON_APPLE_CHALLENGES[cpName] || []);
+            return list.length ? list : [window.DEFAULT_POISON_CHALLENGE];
+        };
+
+        // armed (waiting) | expired | active (being attempted) | won | lost.  An abandoned challenge counts as failed.
+        window.appleStatus = function (a, now) {
+            now = now || Date.now();
+            if (a.status === 'armed') return (Number(a.expiresAt) > 0 && now > Number(a.expiresAt)) ? 'expired' : 'armed';
+            if (a.status === 'active') return (a.startedAt && now > Number(a.deadline || 0) + 3000) ? 'lost' : 'active';
+            return a.status;
+        };
+        // Net change for a team in minutes (Speed Race) or points (Hunt): positive helps, negative hurts.
+        window.poisonNetFor = function (race, teamId, apples) {
+            const cfg = window.poisonCfg(race); let net = 0;
+            (apples || []).forEach(a => {
+                const st = window.appleStatus(a), t = a.terms || { hit: cfg.hitMin, penalty: cfg.penaltyMin, fail: cfg.failMin };
+                if (st === 'won') { if (a.victimTeamId === teamId) net += Number(t.hit) || 0; if (a.ownerTeamId === teamId) net -= Number(t.penalty) || 0; }
+                else if (st === 'lost') { if (a.ownerTeamId === teamId) net += Number(t.fail) || 0; }
+            });
+            return net;
+        };
+        window.fetchApples = async function (code) {
+            try { const snap = await getDocs(collection(window.db, 'races', code, 'apples')); return snap.docs.map(d => ({ id: d.id, ...d.data() })); }
+            catch (e) { return []; }
+        };
+        window.appleFor = (teamId, cpId) => (window.liveApples || []).find(a => a.victimTeamId === teamId && a.cpId === cpId) || null;
+        const appleInPlay = (a) => ['armed', 'active', 'won', 'lost'].includes(window.appleStatus(a));
+        window.poisonUnit = (race) => race.gameMode === 'scavenger' ? ' pts' : ' min';
+
+        window.appleShake = function () {
+            try {
+                document.body.classList.remove('pa-shake'); void document.body.offsetWidth; document.body.classList.add('pa-shake');
+                setTimeout(() => document.body.classList.remove('pa-shake'), 800);
+                if (navigator.vibrate) navigator.vibrate([120, 60, 120, 60, 200]);
+            } catch (e) {}
+        };
+
+        // ---- Landing on an apple: runs right after a new check-in. The challenge itself is revealed after transit + trivia. ----
+        window.poisonOnCheckin = async function (cpId) {
+            try {
+                const race = window.liveTeamRaceData || {}; if (!window.poisonOn(race)) return;
+                const cfg = window.poisonCfg(race), me = window.activeTeamId, code = window.activeRaceCode;
+                const cp = (race.checkpoints || []).find(c => c.id === cpId); if (!cp || cp.type === 'BONUS_PHOTO') return;
+                const apples = await window.fetchApples(code);
+                if (apples.some(a => a.victimTeamId === me && a.cpId === cpId)) return;            // already hit here (check-in undone and redone)
+                if (apples.filter(a => a.victimTeamId === me).length >= cfg.perTeam) return;       // a team can only fall for two apples per race
+                const queue = apples.filter(a => a.cpId === cpId && a.ownerTeamId !== me && window.appleStatus(a) === 'armed').sort((a, b) => Number(a.createdAt) - Number(b.createdAt));
+                const teamName = (window.liveTeamData && window.liveTeamData.teamName) || 'A team';
+                for (const a of queue) {
+                    const list = window.poisonChallengesFor(cp.name);
+                    const challenge = list[Math.floor(Math.random() * list.length)];
+                    const ref = doc(window.db, 'races', code, 'apples', a.id);
+                    const got = await runTransaction(window.db, async (tx) => {
+                        const snap = await tx.get(ref), d = snap.data();
+                        if (!d || d.status !== 'armed' || (Number(d.expiresAt) > 0 && Date.now() > Number(d.expiresAt))) return false;
+                        tx.update(ref, { status: 'active', victimTeamId: me, victimTeamName: teamName, triggeredAt: Date.now(), challenge });
+                        return true;
+                    });
+                    if (got) return;
+                }
+            } catch (e) { console.warn('Poison apple check failed', e); }
+        };
+
+        // ---- Challenge reveal: the timer starts and the screen shakes ----
+        const appleRevealing = {};
+        window.appleReveal = async function (cpId) {
+            const a = window.appleFor(window.activeTeamId, cpId);
+            if (!a || a.startedAt || appleRevealing[a.id]) return;
+            appleRevealing[a.id] = true;
+            const race = window.liveTeamRaceData || {}, cfg = window.poisonCfg(race);
+            const sec = Math.max(15, Number(a.challenge && a.challenge.timeLimitSec) || cfg.challengeSec);
+            const now = Date.now();
+            try {
+                await runTransaction(window.db, async (tx) => {
+                    const ref = doc(window.db, 'races', window.activeRaceCode, 'apples', a.id), snap = await tx.get(ref), d = snap.data();
+                    if (!d || d.status !== 'active' || d.startedAt) return;
+                    tx.update(ref, { startedAt: now, deadline: now + sec * 1000 });
+                });
+                a.startedAt = now; a.deadline = now + sec * 1000;
+                window.cpAppleUi[cpId] = { t0: now };
+                window.appleShake();
+                window.refreshApplePanel(cpId);
+            } catch (e) { console.warn('Could not start poison apple challenge', e); }
+            finally { delete appleRevealing[a.id]; }
+        };
+
+        const appleResolving = {};
+        window.resolveApple = async function (cpId, success) {
+            const a = window.appleFor(window.activeTeamId, cpId);
+            if (!a || appleResolving[a.id] || window.appleStatus(a) === 'won' || a.status === 'won' || a.status === 'lost') return;
+            appleResolving[a.id] = true;
+            let final = null;
+            try {
+                await runTransaction(window.db, async (tx) => {
+                    const ref = doc(window.db, 'races', window.activeRaceCode, 'apples', a.id), snap = await tx.get(ref), d = snap.data();
+                    if (!d) return;
+                    if (d.status !== 'active') { final = d.status; return; }
+                    final = success ? 'won' : 'lost';
+                    tx.update(ref, { status: final, resolvedAt: Date.now() });
+                });
+            } catch (e) { console.warn('Could not save poison apple result', e); window.appToast('Could not save the result. Check your connection and try again.'); delete appleResolving[a.id]; return; }
+            a.status = final || a.status; a.resolvedAt = Date.now();
+            window.cpAppleUi[cpId] = { resultAt: Date.now(), result: final };
+            window.refreshApplePanel(cpId);
+            const card = (window.liveTeamRaceData || {});
+            if (window.liveTeamRaceData) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
+            setTimeout(() => { delete window.cpAppleUi[cpId]; window.refreshApplePanel(cpId); }, 4200);
+            delete appleResolving[a.id];
+        };
+        window.answerAppleQuestion = function (cpId, idx) {
+            const a = window.appleFor(window.activeTeamId, cpId); if (!a || !a.challenge) return;
+            window.resolveApple(cpId, idx === a.challenge.answer);
+        };
+        setInterval(() => {
+            document.querySelectorAll('[data-apple-deadline]').forEach(el => {
+                const left = Math.max(0, Number(el.dataset.appleDeadline) - Date.now()), sec = Math.ceil(left / 1000);
+                el.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+                if (left <= 15000) { el.classList.remove('text-lime-300'); el.classList.add('text-rose-400'); }
+                if (left <= 0 && !el.dataset.fired) { el.dataset.fired = '1'; window.resolveApple(el.dataset.cp, false); }
+            });
+        }, 1000);
+
+        // ---- Leaving an apple behind ----
+        window.poisonDrop = async function (cpId) {
+            const race = window.liveTeamRaceData || {}; if (!window.poisonOn(race)) return;
+            const cfg = window.poisonCfg(race), me = window.activeTeamId, code = window.activeRaceCode;
+            if (race.paused) return window.appToast('The race is paused.');
+            const cp = (race.checkpoints || []).find(c => c.id === cpId); if (!cp) return;
+            const apples = await window.fetchApples(code);
+            if (apples.some(a => a.ownerTeamId === me && appleInPlay(a))) return window.appToast('Your poison apple is already in play.', 3000);
+            if (apples.filter(a => a.cpId === cpId && window.appleStatus(a) === 'armed').length >= cfg.perLocation) {
+                return window.appToast('☠️ This location is already poisoned. Play your card somewhere else.', 4200);
+            }
+            const now = Date.now(), id = 'ap_' + now + '_' + Math.random().toString(36).slice(2, 7);
+            try {
+                await setDoc(doc(window.db, 'races', code, 'apples', id), {
+                    cpId, cpName: cp.name, ownerTeamId: me, ownerTeamName: (window.liveTeamData && window.liveTeamData.teamName) || 'A team',
+                    createdAt: now, expiresAt: cfg.expiryMin > 0 ? now + cfg.expiryMin * 60000 : 0, status: 'armed',
+                    terms: { hit: cfg.hitMin, penalty: cfg.penaltyMin, fail: cfg.failMin }
+                });
+                await window.poisonMarkOffer(cpId, 'dropped');
+                window.appToast('🍎 Apple left at ' + cp.name + '. The next team here is in trouble!', 3800);
+            } catch (e) { console.error(e); window.appToast('Could not leave the apple. Try again.'); }
+        };
+        window.poisonKeep = async function (cpId) { await window.poisonMarkOffer(cpId, 'kept'); };
+        window.poisonMarkOffer = async function (cpId, how) {
+            const teamRef = doc(window.db, 'races', window.activeRaceCode, 'teams', window.activeTeamId);
+            const offers = Object.assign({}, (window.liveTeamData && window.liveTeamData.appleOffers) || {}, { [cpId]: how });
+            if (window.liveTeamData) window.liveTeamData.appleOffers = offers;
+            try { await fastUpdate(teamRef, { appleOffers: offers }); } catch (e) { console.warn(e); }
+            window.refreshApplePanel(cpId);
+        };
+
+        // ---- Panels on the check-in card ----
+        const triviaOpenFor = (cpId, tData, raceData) => {
+            const att = (tData.triviaAttempts || {})[cpId];
+            if (!(att && att.pending && !att.asked)) return false;
+            const cp = (raceData.checkpoints || []).find(c => c.id === cpId); if (!cp) return false;
+            const diff = ((tData.difficultyOverride || raceData.difficulty) || 'easy').toLowerCase();
+            const locT = (window.DISNEY_TRIVIA_DATABASE || {})[cp.name];
+            return !!(locT && (locT[diff] || locT.easy));
+        };
+        window.buildApplePanel = function (cpId, tData, raceData, now) {
+            if (!window.poisonOn(raceData) || tData.endTime || (tData.rejectedCheckins || {})[cpId]) return '';
+            if ((tData.transitPending || {})[cpId] || window.cpTransitUi[cpId]) return '';       // transit first
+            if (window.cpTriviaUi[cpId] || triviaOpenFor(cpId, tData, raceData)) return '';        // then trivia
+            const fs = window.cpFlip;
+            if (fs && fs.cpId === cpId && now - fs.t0 < 1000) { setTimeout(() => window.refreshApplePanel(cpId), 1050 - (now - fs.t0)); return ''; }
+            const cp = (raceData.checkpoints || []).find(c => c.id === cpId); if (!cp || cp.type === 'BONUS_PHOTO') return '';
+            const me = window.activeTeamId, apples = window.liveApples;
+            if (!apples) return '';
+            const unit = window.poisonUnit(raceData), hunt = raceData.gameMode === 'scavenger';
+            const a = window.appleFor(me, cpId), ui = window.cpAppleUi[cpId];
+
+            // 1. The result of a challenge that was just finished
+            if (ui && ui.resultAt && now < ui.resultAt + 4000) {
+                const terms = (a && a.terms) || { hit: 5, penalty: 5, fail: 10 };
+                const won = ui.result === 'won';
+                return `<div class="cp-apple" onclick="event.stopPropagation()"><div class="cp-trivia-inner"><div class="mt-2 p-3 rounded-2xl border ${won ? 'border-emerald-400/50 bg-emerald-950/60' : 'border-rose-400/50 bg-rose-950/50'} shadow-lg">
+                    <p class="text-sm font-black ${won ? 'text-emerald-300' : 'text-rose-300'}">${won ? '✅ You survived the poison apple!' : '☠️ The poison apple got you!'}</p>
+                    <p class="text-[11px] text-slate-300 mt-1">${won ? `You earn ${terms.hit}${unit} ${hunt ? 'bonus' : 'off your time'}. ${paEsc(a && a.ownerTeamName)} takes a ${terms.penalty}${unit} ${hunt ? 'loss' : 'penalty'}.` : `No extra penalty for you. ${paEsc(a && a.ownerTeamName)} earns ${terms.fail}${unit} ${hunt ? 'bonus' : 'off their time'}.`}</p>
+                </div></div></div>`;
+            }
+            // 2. A challenge waiting to be done / in progress
+            if (a && window.appleStatus(a) === 'active') {
+                if (!a.startedAt) { setTimeout(() => window.appleReveal(cpId), 30); return ''; }
+                const ch = a.challenge || window.DEFAULT_POISON_CHALLENGE;
+                let u = window.cpAppleUi[cpId]; if (!u) u = window.cpAppleUi[cpId] = { t0: now };
+                const cls = (u.t0 && now - u.t0 < 450) ? 'opening' : '', delay = (u.t0 && now - u.t0 < 450) ? now - u.t0 : 0;
+                const terms = a.terms || { hit: 5 };
+                const actions = ch.type === 'question' && Array.isArray(ch.options)
+                    ? `<div class="space-y-1.5">${ch.options.map((o, i) => `<button type="button" onclick="answerAppleQuestion('${cpId}', ${i})" class="w-full p-2.5 bg-slate-900 hover:bg-lime-600 active:scale-[.99] text-white font-medium text-left rounded-xl border border-slate-700 text-xs transition">${paEsc(o)}</button>`).join('')}</div>`
+                    : `<div class="grid grid-cols-2 gap-2"><button type="button" onclick="resolveApple('${cpId}', true)" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase active:scale-95 transition">✅ We did it!</button><button type="button" onclick="resolveApple('${cpId}', false)" class="py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs font-bold uppercase active:scale-95 transition">🏳️ Give up</button></div>`;
+                return `<div class="cp-apple ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()"><div class="cp-trivia-inner"><div class="mt-2 p-3 rounded-2xl border-2 border-lime-400/70 bg-gradient-to-br from-slate-900 to-lime-950/70 shadow-lg pa-pulse">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0"><p class="text-[10px] font-black uppercase tracking-widest text-lime-300">🍎☠️ Poison apple!</p>
+                        <p class="text-[11px] text-slate-400">Left here by <b class="text-white">${paEsc(a.ownerTeamName)}</b></p></div>
+                        <span data-apple-deadline="${Number(a.deadline) || 0}" data-cp="${paEsc(cpId)}" class="font-mono font-black text-xl text-lime-300 shrink-0">--:--</span>
+                    </div>
+                    <p class="text-sm font-bold text-white mt-2">${paEsc(ch.title || 'Challenge')}</p>
+                    <p class="text-[13px] text-slate-200 leading-snug mt-1 mb-3">${paEsc(ch.prompt || '')}</p>
+                    ${actions}
+                    <p class="text-[10px] text-slate-500 mt-2">Beat it for ${terms.hit}${unit} ${hunt ? 'bonus' : 'off your time'}. Fail and you only lose the time spent here.</p>
+                </div></div></div>`;
+            }
+            // 3. Offer to leave your own apple here
+            const offers = tData.appleOffers || {};
+            if (offers[cpId]) return '';
+            if (apples.some(x => x.ownerTeamId === me && appleInPlay(x))) return '';
+            const latest = (tData.completedCheckpoints || []).filter(id => !(tData.rejectedCheckins || {})[id] && (raceData.checkpoints || []).some(c => c.id === id && c.type !== 'BONUS_PHOTO'))
+                .map(id => ({ id, t: Date.parse(((tData.checkinDetails || {})[id] || {}).timestamp) || 0 })).sort((x, y) => y.t - x.t)[0];
+            if (!latest || latest.id !== cpId) return '';
+            return `<div class="cp-apple-offer" onclick="event.stopPropagation()"><div class="cp-trivia-inner"><div class="mt-2 p-3 rounded-2xl border border-lime-400/40 bg-slate-800 shadow-lg">
+                <p class="text-[10px] font-black uppercase tracking-widest text-lime-300 mb-1">🍎 Poison apple</p>
+                <p class="text-[12px] text-slate-200 leading-snug mb-2.5">Leave your poison apple at <b>${paEsc(cp.name)}</b>? The next team to check in here must beat a challenge.</p>
+                <div class="grid grid-cols-2 gap-2"><button type="button" onclick="poisonDrop('${cpId}')" class="py-2.5 rounded-xl bg-lime-600 hover:bg-lime-500 text-white text-xs font-black uppercase active:scale-95 transition">Leave it here</button><button type="button" onclick="poisonKeep('${cpId}')" class="py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs font-bold uppercase active:scale-95 transition">Not here</button></div>
+            </div></div></div>`;
+        };
+        window.refreshApplePanel = function (cpId) {
+            const card = document.querySelector(`#team-checkpoints-list .checkpoint-card[data-id="${cpId}"]`);
+            if (!card) return;
+            card.querySelectorAll('.cp-apple, .cp-apple-offer').forEach(n => n.remove());
+            const html = window.buildApplePanel(cpId, window.liveTeamData || {}, window.liveTeamRaceData || {}, Date.now());
+            if (html) card.insertAdjacentHTML('beforeend', html);
+        };
+        window.hasActiveApple = function () {
+            const me = window.activeTeamId;
+            return (window.liveApples || []).some(a => a.victimTeamId === me && window.appleStatus(a) === 'active' && a.startedAt);
         };
 
         // Fireworks + streamers from behind the flipped card (no libraries, ~2 seconds, self-cleaning).
@@ -9953,7 +10329,8 @@
                 const toMs = v => typeof v === 'number' ? v : (Date.parse(v) || 0);
                 const HMS = ms => { const s = Math.max(0, Math.round(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
                 const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-                const minText = m => `−${+Number(m).toFixed(2)} min`;
+                const minText = m => m < 0 ? `+${+Math.abs(Number(m)).toFixed(2)} min` : `−${+Number(m).toFixed(2)} min`;
+                const replayApples = race.poisonApple ? await window.fetchApples(raceCode) : [];
 
                 const teamDocs = [];
                 teamsSnap.forEach(d => teamDocs.push({ id:d.id, ...d.data() }));
@@ -9999,6 +10376,15 @@
                             const at = Math.min(Number(r.effectiveEnd) || Infinity, endMs);
                             items[isFinite(at) ? legOfTs(at) : m].push({ icon:'⚡', label:'Checkpoint frenzy', min:Number(r.f.bonus) || window.FRENZY_BONUS });
                         });
+                        try {
+                            replayApples.forEach(a => {
+                                const st = window.appleStatus(a), terms = a.terms || { hit: 5, penalty: 5, fail: 10 };
+                                const at = Number(a.resolvedAt) || Number(a.deadline) || 0, leg = () => (at ? legOfTs(at) : m);
+                                if (st === 'won' && a.victimTeamId === t.id) items[leg()].push({ icon:'🍎', label:'Beat a poison apple', min:Number(terms.hit) || 0 });
+                                if (st === 'won' && a.ownerTeamId === t.id) items[leg()].push({ icon:'🍎', label:'Poison apple beaten', min:-(Number(terms.penalty) || 0) });
+                                if (st === 'lost' && a.ownerTeamId === t.id) items[leg()].push({ icon:'☠️', label:'Poison apple worked', min:Number(terms.fail) || 0 });
+                            });
+                        } catch (e) {}
                         try {
                             const bingoMin = Number(window.bingoBonusFor(race, t)) || 0;
                             if (bingoMin > 0) {
@@ -10316,7 +10702,7 @@
                     stand.forEach(r => {
                         const R = b.rows[r.tm.id]; R.sb.style.color = '#94a3b8';
                         const its = r.out ? [] : r.tm.items[n];
-                        R.sb.innerHTML = its.length ? its.map(it => `<span style="color:#34d399;font-weight:700">${it.icon} ${minText(it.min)}</span>`).join(' · ') : (r.out ? '' : 'No bonus this leg');
+                        R.sb.innerHTML = its.length ? its.map(it => `<span style="color:${it.min < 0 ? '#f87171' : '#34d399'};font-weight:700">${it.icon} ${minText(it.min)}</span>`).join(' · ') : (r.out ? '' : 'No bonus this leg');
                         fade(R.sb);
                     });
                 };
@@ -10732,6 +11118,8 @@
                 const race = window.applyWildcardOffer(raceSnap.data(), offer);
                 const team = { id: teamId, ...teamSnap.data() };
                 const allTeams = []; teamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
+                const poisonApples = race.poisonApple ? await window.fetchApples(raceCode) : [];
+                const poisonNet = window.poisonNetFor(race, teamId, poisonApples);
                 const mandatory = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
                 const rejected = team.rejectedCheckins || {};
@@ -10750,7 +11138,7 @@
                 const triviaDed = race.gameMode === 'scavenger' ? 0 : Number(team.triviaBonus || 0);
                 const penaltyDed = race.gameMode === 'scavenger' ? 0 : missed * window.missedPenaltyMin(race);
                 const elapsedMin = window.teamElapsedMs(team, race) / 60000;
-                const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed);
+                const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed - (race.gameMode === 'scavenger' ? 0 : poisonNet));
                 const fmt = mins => {
                     const secs = Math.max(0, Math.round(Number(mins || 0) * 60));
                     return [Math.floor(secs / 3600), Math.floor((secs % 3600) / 60), secs % 60].map(n => String(n).padStart(2, '0')).join(':');
@@ -10776,7 +11164,8 @@
                 const isScavenger = race.gameMode === 'scavenger';
                 const stopPoints = completed.size ? mandatory.filter(c => completed.has(c.id)).reduce((sum, cp) => sum + Number(window.stopPoints(cp, race) || 0), 0) : 0;
                 const bonusPoints = claimed.reduce((sum, id) => { const cp = bonuses.find(c => c.id === id); return sum + (cp ? Number(cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10)) : 0); }, 0);
-                const totalPoints = stopPoints + bonusPoints + Number(team.triviaBonus || 0) + Number(window.bingoBonusFor(race, team) || 0) + Number(frenzyRes.bonusByTeam[teamId] || 0);
+                const totalPoints = stopPoints + bonusPoints + Number(team.triviaBonus || 0) + Number(window.bingoBonusFor(race, team) || 0) + Number(frenzyRes.bonusByTeam[teamId] || 0) + poisonNet;
+                const poisonRow = race.poisonApple ? row('Poison Apple', isScavenger ? `${poisonNet >= 0 ? '+' : '−'}${Math.abs(poisonNet)} pts` : (poisonNet >= 0 ? `−${fmt(poisonNet)}` : `+${fmt(-poisonNet)}`), poisonNet < 0 ? 'text-rose-300' : 'text-lime-300') : '';
                 const content = `
                     <div class="fixed inset-0 z-[85] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="team-scorecard-modal">
                       <div class="w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl border border-emerald-400/30 bg-slate-900 shadow-2xl p-5 space-y-4">
@@ -10790,6 +11179,7 @@
                           ${row('Trivia', isScavenger ? `+${Number(team.triviaBonus || 0)} pts` : `−${fmt(triviaDed)}`, 'text-indigo-300')}
                           ${row('Wildcard', wildcardClaimed.length ? (isScavenger ? `+${wildcardClaimed.length} bonus` : `−${fmt(wildcardDed)}`) : 'No deduction', 'text-fuchsia-300')}
                           ${row('Checkpoint Frenzy', isScavenger ? `+${Number(frenzyRes.bonusByTeam[teamId] || 0)} pts` : `−${fmt(frenzyDed)}`, 'text-orange-300')}
+                          ${poisonRow}
                         </div>
                         ${triviaAnswersHtml}
                         <div class="rounded-2xl bg-gradient-to-r from-emerald-500/15 to-sky-500/10 border border-emerald-400/30 p-4 flex items-center justify-between gap-4"><div><p class="text-[10px] uppercase tracking-widest text-emerald-200 font-black">Overall ${isScavenger ? 'points' : 'time'}</p><p class="text-[10px] text-slate-400 mt-1">${isScavenger ? 'Based on the race points total' : 'Time + penalties − bonuses'}</p></div><strong class="text-2xl font-black text-white font-mono">${isScavenger ? `${totalPoints} pts` : fmtOverall(overallMin)}</strong></div>
@@ -11180,7 +11570,8 @@
             journeyTimerState = { stops: orderedMandatory, completed: completedIds, details: checkinDetails, started: !!tData.startTime, finished: !!tData.endTime };
             renderRaceJourney(orderedMandatory, completedIds, checkinDetails, !!tData.startTime, !!tData.endTime);
 
-            const portalExtra = window.bingoBonusFor(raceData, tData) + (window.portalFrenzyBonus ? window.portalFrenzyBonus(raceData, tData) : 0);
+            const portalExtra = window.bingoBonusFor(raceData, tData) + (window.portalFrenzyBonus ? window.portalFrenzyBonus(raceData, tData) : 0)
+                + (window.poisonNetFor ? window.poisonNetFor(raceData, window.activeTeamId, window.liveApples || []) : 0);
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
@@ -11204,7 +11595,7 @@
                 bonus.forEach(b => {
                     if (claimedBonus.includes(b.id) && !(tData.rejectedCheckins || {})[b.id]) totalDeductionMin += (b.bonusMinDeduction !== undefined ? b.bonusMinDeduction : 10);
                 });
-                document.getElementById('deduction-total').innerText = `-${totalDeductionMin}m`;
+                document.getElementById('deduction-total').innerText = `${totalDeductionMin >= 0 ? '-' : '+'}${Math.abs(totalDeductionMin)}m`;
             }
 
             window.updateLocationPrimeCard(tData);
@@ -11407,6 +11798,7 @@
                     const flipStyle = animating ? `style="--cp-flip-delay:-${nowMs - fs.t0}ms"` : '';
                     const triviaHtml = isDone ? window.buildTriviaPanel(cp.id, tData, raceData, nowMs) : '';
                     const transitHtml = isDone ? window.buildTransitPanel(cp.id, tData, raceData, nowMs) : '';
+                    const appleHtml = isDone ? window.buildApplePanel(cp.id, tData, raceData, nowMs) : '';
                     const legTxt = isDone ? window.formatTransitLeg((tData.transitLegs || {})[cp.id]) : '';
 
                     const handle = (cls) => `<div class="cursor-grab ${cls} px-1 py-3 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>`;
@@ -11444,7 +11836,7 @@
                                     </div>
                                 </div>
                             </div>
-                            ${transitHtml}${triviaHtml}
+                            ${transitHtml}${triviaHtml}${appleHtml}
                         </div>
                     `;
                 }).join('');
@@ -11958,6 +12350,7 @@
             const raceSnap = await safeGetDoc(doc(window.db, "races", window.activeRaceCode));
             loadTeamDashboardData(raceSnap.data());
             if (newlyCompleted) {
+                if (window.poisonOnCheckin) window.poisonOnCheckin(cpId);   // may land on a waiting poison apple
                 setTimeout(() => window.fireCheckinCelebration(cpId), 380);
                 if (window.cpTransitUi[cpId]) setTimeout(() => window.refreshTransitPanel(cpId), 920);
                 if (window.cpTriviaUi[cpId]) setTimeout(() => window.refreshTriviaPanel(cpId), 920);
@@ -12266,6 +12659,7 @@
                     if (!auto) alert("The host has paused the race. Please wait for the host to resume it before finishing.");
                     return;
                 }
+                if (!auto && window.hasActiveApple && window.hasActiveApple()) { alert("A poison apple challenge is still in progress. Finish it (or give up) before you finish the race."); window.focusOpenQuestion(); return; }
                 const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
                 const teamSnap = await safeGetDoc(teamRef);
                 const tData = teamSnap.data();
