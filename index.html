@@ -1827,6 +1827,60 @@
                             <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
                         </div>
 
+                        <!-- 3b. Promo codes (platform admin only) -->
+                        <div id="promo-admin-card" class="hidden bg-slate-800 border border-fuchsia-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-fuchsia-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-gift"></i> Promo codes</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Free race tickets and host passes. Players and hosts enter them on the payment screens.</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                <button type="button" id="pa-kind-ticket" onclick="paSetKind('ticket')" class="py-2 rounded-xl text-[11px] font-bold transition">🎟️ Race ticket</button>
+                                <button type="button" id="pa-kind-host" onclick="paSetKind('host')" class="py-2 rounded-xl text-[11px] font-bold transition">🔑 Host pass</button>
+                            </div>
+                            <div id="pa-ticket-fields" class="space-y-1">
+                                <label class="block text-[10px] text-slate-400">Race (one free entry per use)</label>
+                                <select id="pa-listing" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white"></select>
+                            </div>
+                            <div id="pa-host-fields" class="hidden space-y-2">
+                                <label class="block text-[10px] text-slate-400">Length of host access</label>
+                                <select id="pa-duration" onchange="paDurationChanged()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white">
+                                    <option value="1">1 day</option><option value="3">3 days</option><option value="7">1 week</option><option value="14" selected>2 weeks</option>
+                                    <option value="30">30 days</option><option value="90">90 days</option><option value="365">1 year</option>
+                                    <option value="custom">Custom number of days…</option><option value="perpetual">Perpetual (never expires)</option>
+                                </select>
+                                <input id="pa-days" type="number" min="1" max="3650" inputmode="numeric" placeholder="Days" class="hidden w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Number of uses</label><input id="pa-uses" type="number" min="0" inputmode="numeric" value="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white"><p class="text-[10px] text-slate-500 mt-1">0 = unlimited</p></div>
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Code expires (optional)</label><input id="pa-expires" type="date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Custom code (optional)</label><input id="pa-custom" type="text" maxlength="24" autocapitalize="characters" placeholder="Auto-generated" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white font-mono uppercase placeholder:normal-case"></div>
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Note (only you see it)</label><input id="pa-note" type="text" maxlength="60" placeholder="e.g. Sam's group" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white"></div>
+                            </div>
+                            <button type="button" id="pa-create" onclick="paCreate()" class="w-full py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black rounded-xl text-xs uppercase shadow active:scale-[0.98] transition">Create code</button>
+                            <div id="pa-result" class="hidden bg-slate-950 border border-fuchsia-500/40 rounded-2xl p-4 text-center space-y-2"></div>
+                            <div class="border-t border-slate-700 pt-3 space-y-2">
+                                <div class="flex items-center justify-between"><h5 class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Your codes</h5><button type="button" onclick="paLoadList()" class="text-[11px] text-slate-400 underline">Refresh</button></div>
+                                <div id="pa-list" class="space-y-2 text-xs text-slate-400">Loading...</div>
+                            </div>
+                        </div>
+
+                        <!-- 3c. Support access (platform admin only) -->
+                        <div id="support-admin-card" class="hidden bg-slate-800 border border-sky-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-sky-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-life-ring"></i> Support access</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Help a host with their race. They allow support from their race panel and give you their race code and a support code.</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Race code</label><input id="sa-race" type="text" autocapitalize="characters" autocomplete="off" maxlength="16" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white font-mono uppercase"></div>
+                                <div><label class="block text-[10px] text-slate-400 mb-1">Support code</label><input id="sa-code" type="text" autocapitalize="characters" autocomplete="off" maxlength="16" placeholder="SUP-XXXXXX" onkeydown="if(event.key==='Enter'){event.preventDefault();adminConnectSupport();}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white font-mono uppercase placeholder:normal-case"></div>
+                            </div>
+                            <button type="button" id="sa-connect" onclick="adminConnectSupport()" class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-xl text-xs uppercase shadow active:scale-[0.98] transition">Connect</button>
+                            <p id="sa-msg" class="hidden text-[11px] text-rose-300"></p>
+                            <div id="sa-sessions" class="space-y-2"></div>
+                        </div>
+
                         <!-- 4. Fair Play Dashboard Lock (a nominated team holds the PIN) -->
                         <div id="hostlock-card" class="bg-slate-800 border border-indigo-500/40 rounded-2xl p-5 shadow-xl space-y-3">
                             <div class="flex items-start justify-between gap-3 border-b border-slate-700 pb-3">
@@ -1888,7 +1942,23 @@
                     <p id="co-sub" class="text-xs text-slate-400"></p>
                     <div class="border-t border-slate-800 pt-3 space-y-1.5 text-sm">
                         <div class="flex justify-between text-slate-300"><span>1 team entry</span><span id="co-price"></span></div>
+                        <div id="co-promo-row" class="hidden flex justify-between text-emerald-300"><span>Promo code</span><span id="co-promo-off"></span></div>
                         <div class="flex justify-between font-bold text-white text-base pt-1.5 border-t border-slate-800"><span>Total</span><span id="co-total" class="text-emerald-300"></span></div>
+                    </div>
+                </div>
+                <div id="co-promo" class="space-y-2">
+                    <button type="button" id="co-promo-toggle" onclick="coTogglePromo()" class="w-full py-3 bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs rounded-2xl active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-gift text-disneyGold"></i> Have a promo code?</button>
+                    <div id="co-promo-box" class="hidden bg-slate-900 border border-slate-700 rounded-2xl p-3 space-y-2">
+                        <div class="flex gap-2">
+                            <input id="co-promo-input" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="32" placeholder="Enter race ticket code" onkeydown="if(event.key==='Enter'){event.preventDefault();coApplyPromo();}" class="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white font-mono uppercase tracking-wider placeholder-slate-500 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-disneyGold">
+                            <button type="button" id="co-promo-apply" onclick="coApplyPromo()" class="shrink-0 px-4 rounded-xl bg-disneyGold text-slate-950 font-bold text-xs active:scale-95 transition">Apply</button>
+                        </div>
+                        <p id="co-promo-msg" class="hidden text-[11px] leading-snug"></p>
+                    </div>
+                    <div id="co-promo-applied" class="hidden flex items-center gap-3 bg-emerald-950/50 border border-emerald-500/40 rounded-2xl px-4 py-3">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span class="min-w-0 flex-1 text-xs text-emerald-200"><b id="co-promo-code" class="font-mono"></b> applied<span class="block text-[11px] text-slate-400">Race ticket code accepted</span></span>
+                        <button type="button" onclick="coRemovePromo()" class="shrink-0 text-[11px] font-bold text-slate-300 underline">Remove</button>
                     </div>
                 </div>
                 <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 flex gap-3 items-start text-xs text-slate-400 leading-relaxed">
@@ -2005,6 +2075,16 @@
                     </div>
                     <p class="text-sm text-slate-400 leading-relaxed">Everything is unlocked for the length of your pass. It starts the moment you buy it.</p>
                     <div id="dm-plan-list" class="space-y-3"></div>
+                    <div class="pt-1 space-y-2">
+                        <button type="button" onclick="dmTogglePromo()" class="w-full py-3 bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs rounded-2xl active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-gift text-disneyGold"></i> Have a promo code?</button>
+                        <div id="dm-promo-box" class="hidden bg-slate-900 border border-slate-700 rounded-2xl p-3 space-y-2">
+                            <div class="flex gap-2">
+                                <input id="dm-promo-input" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="32" placeholder="Enter host pass code" onkeydown="if(event.key==='Enter'){event.preventDefault();dmRedeemPromo();}" class="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white font-mono uppercase tracking-wider placeholder-slate-500 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-disneyGold">
+                                <button type="button" id="dm-promo-apply" onclick="dmRedeemPromo()" class="shrink-0 px-4 rounded-xl bg-disneyGold text-slate-950 font-bold text-xs active:scale-95 transition">Redeem</button>
+                            </div>
+                            <p id="dm-promo-msg" class="hidden text-[11px] leading-snug"></p>
+                        </div>
+                    </div>
                     <p id="dm-test-note" class="text-[11px] text-slate-500 text-center">Test mode: no real payment is taken.</p>
                 </div>
 
@@ -4185,6 +4265,7 @@
         // Save to the device straight away. Firestore uploads it automatically once the network is back,
         // so we must not wait for the server to confirm or the app would hang while offline.
         window.fastUpdate = function(ref, data) {
+            try { if (window.supportLogWrite) window.supportLogWrite(ref, data); } catch (e) {}
             const write = updateDoc(ref, data);
             write.catch(err => console.error("Write failed:", err));
             updateSyncStatus();
@@ -4242,6 +4323,8 @@
                     if (adminDashboard) adminDashboard.classList.remove('hidden');
                     if (orgCog) orgCog.classList.remove('hidden');
                     if (window.checkPlatformAdmin) await window.checkPlatformAdmin(user);
+                    if (window.renderPromoAdmin) window.renderPromoAdmin();
+                    if (window.renderSupportAdmin) window.renderSupportAdmin();
                     if (window.loadHostAccess) {
                         await window.loadHostAccess(user);
                         window.renderHostAccessBanner();
@@ -4254,6 +4337,8 @@
                     window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
                     if (window.renderHostAccessBanner) window.renderHostAccessBanner();
                     document.getElementById('demo-mode-screen')?.classList.add('hidden');
+                    document.getElementById('promo-admin-card')?.classList.add('hidden');
+                    document.getElementById('support-admin-card')?.classList.add('hidden');
                     window.__publicListings = {};
                     stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
@@ -5768,14 +5853,14 @@
             const fmt = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
             window.loadHostAccess = async function (user) {
-                const acc = { loaded: true, expiresAt: 0, plan: null };
+                const acc = { loaded: true, expiresAt: 0, plan: null, days: 0, perpetual: false, promoCode: null };
                 try {
                     const snap = await getDoc(doc(window.db, 'hostAccess', user.uid));
-                    if (snap.exists()) { const d = snap.data(); acc.expiresAt = Number(d.expiresAt) || 0; acc.plan = d.plan || null; }
+                    if (snap.exists()) { const d = snap.data(); acc.expiresAt = Number(d.expiresAt) || 0; acc.plan = d.plan || null; acc.days = Number(d.days) || 0; acc.perpetual = !!d.perpetual; acc.promoCode = d.promoCode || null; }
                 } catch (e) { console.warn('Host access lookup failed, treating as demo:', e); }
                 try {   // fallback written only when the Firestore write was refused (e.g. rules not set up yet during testing)
                     const loc = JSON.parse(localStorage.getItem('mmr_sim_pass_' + user.uid) || 'null');
-                    if (loc && Number(loc.expiresAt) > acc.expiresAt) { acc.expiresAt = Number(loc.expiresAt); acc.plan = loc.plan || null; }
+                    if (loc && Number(loc.expiresAt) > acc.expiresAt) { acc.expiresAt = Number(loc.expiresAt); acc.plan = loc.plan || null; acc.days = Number(loc.days) || 0; acc.perpetual = !!loc.perpetual; acc.promoCode = loc.promoCode || null; }
                 } catch (e) {}
                 window.hostAccess = acc;
             };
@@ -5786,9 +5871,17 @@
                 if (!b) return;
                 if (!(window.auth && window.auth.currentUser) || window.isPlatformAdmin) { b.className = 'hidden'; b.innerHTML = ''; return; }
                 if (window.isHostPassActive()) {
-                    const plan = CFG.plans.find(p => p.id === window.hostAccess.plan);
+                    const ha = window.hostAccess;
+                    const plan = CFG.plans.find(p => p.id === ha.plan);
+                    const left = Math.max(1, Math.ceil((ha.expiresAt - Date.now()) / 86400000));
+                    let title, sub, icon = '🎟️';
+                    if (ha.perpetual) { icon = '♾️'; title = 'Promo access · perpetual'; sub = 'Everything unlocked, no expiry date'; }
+                    else {
+                        title = plan ? plan.name + ' active' : (ha.plan === 'promo' ? `Promo pass${ha.days ? ' · ' + ha.days + ' day' + (ha.days === 1 ? '' : 's') : ''} active` : 'Host pass active');
+                        sub = `Everything unlocked until ${fmt(ha.expiresAt)} · ${left} day${left === 1 ? '' : 's'} left`;
+                    }
                     b.className = 'bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
-                    b.innerHTML = `<span class="text-2xl">🎟️</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">${plan ? plan.name : 'Host pass'} active</p><p class="text-[11px] text-slate-400">Everything unlocked until ${fmt(window.hostAccess.expiresAt)}</p></div><button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-100 text-[11px] font-bold">Extend</button>`;
+                    b.innerHTML = `<span class="text-2xl">${icon}</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">${title}</p><p class="text-[11px] text-slate-400">${sub}</p></div>${ha.perpetual ? '' : `<button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-100 text-[11px] font-bold">Extend</button>`}`;
                 } else {
                     b.className = 'bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
                     b.innerHTML = `<span class="text-2xl">🔒</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-amber-300">Demo mode</p><p class="text-[11px] text-slate-400">${CFG.maxStops} stops · ${CFG.park} only · 1 extra team</p></div><button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-disneyGold text-slate-950 text-[11px] font-black uppercase">Upgrade</button>`;
@@ -5908,6 +6001,7 @@
                 const plan = CFG.plans.find(p => p.id === planId);
                 const user = window.auth && window.auth.currentUser;
                 if (!plan || !user || dmBusy) return;
+                if (window.hostAccess && window.hostAccess.perpetual) { window.appToast('Your account already has perpetual access.', 2600); return; }
                 dmBusy = true;
                 document.querySelectorAll('#dm-plan-list button[data-plan]').forEach(b => { b.disabled = true; b.classList.add('opacity-60'); if (b.dataset.plan === planId) b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; });
                 try {
@@ -5917,13 +6011,13 @@
                     const expiresAt = base + plan.days * 86400000;
                     let toDevice = false;
                     try {
-                        await setDoc(doc(window.db, 'hostAccess', user.uid), { plan: plan.id, days: plan.days, expiresAt, purchasedAt: now, simulated: true, email: user.email || '' });
+                        await setDoc(doc(window.db, 'hostAccess', user.uid), { plan: plan.id, days: plan.days, perpetual: false, expiresAt, purchasedAt: now, simulated: true, email: user.email || '' });
                     } catch (e) {
                         console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
                         localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify({ plan: plan.id, expiresAt }));
                         toDevice = true;
                     }
-                    window.hostAccess = { loaded: true, expiresAt, plan: plan.id };
+                    window.hostAccess = { loaded: true, expiresAt, plan: plan.id, days: plan.days, perpetual: false, promoCode: null };
                     window.renderHostAccessBanner();
                     window.applyWizardDemoLimits();   // unlocks an open wizard
                     if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
@@ -5932,7 +6026,204 @@
                     showView('done');
                 } finally { dmBusy = false; }
             };
+
+            // ---- Promo code redemption (host pass codes only; race ticket codes are rejected by lookupPromo) ----
+            const PERPETUAL_TS = 32503680000000;   // year 3000: "never expires" without special-casing every check
+            window.dmTogglePromo = function () { const b = $('dm-promo-box'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')) setTimeout(() => $('dm-promo-input')?.focus(), 50); };
+            function dmPromoMsg(text, bad) { const m = $('dm-promo-msg'); m.textContent = text || ''; m.className = 'text-[11px] leading-snug ' + (text ? '' : 'hidden ') + (bad ? 'text-rose-300' : 'text-emerald-300'); }
+            window.dmRedeemPromo = async function () {
+                const user = window.auth && window.auth.currentUser;
+                if (!user || dmBusy) return;
+                const btn = $('dm-promo-apply');
+                dmBusy = true; btn.disabled = true; dmPromoMsg('Checking...');
+                try {
+                    const r = await window.lookupPromo($('dm-promo-input').value, 'host', { uid: user.uid });
+                    if (!r.ok) { dmPromoMsg(r.error, true); return; }
+                    const d = r.data, now = Date.now(), cur = window.hostAccess || {};
+                    const perpetual = !!d.perpetual, days = perpetual ? 0 : Number(d.days) || 0;
+                    if (cur.perpetual && !perpetual) { dmPromoMsg('Your account already has perpetual access, so this code was not used.', true); return; }
+                    const expiresAt = perpetual ? PERPETUAL_TS : Math.max(now, cur.expiresAt || 0) + days * 86400000;
+                    const c = await window.consumePromo(r.code, user.uid);
+                    if (!c.ok) { dmPromoMsg(c.error, true); return; }
+                    const rec = { plan: 'promo', days, perpetual, expiresAt, promoCode: r.code, purchasedAt: now, simulated: false, email: user.email || '' };
+                    let toDevice = false;
+                    try { await setDoc(doc(window.db, 'hostAccess', user.uid), rec); }
+                    catch (e) {
+                        console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
+                        localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify({ plan: 'promo', days, perpetual, expiresAt, promoCode: r.code }));
+                        toDevice = true;
+                    }
+                    window.hostAccess = { loaded: true, expiresAt, plan: 'promo', days, perpetual, promoCode: r.code };
+                    window.renderHostAccessBanner();
+                    window.applyWizardDemoLimits();
+                    if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
+                    $('dm-promo-input').value = ''; dmPromoMsg('');
+                    $('dm-done-text').textContent = (perpetual
+                        ? 'Perpetual host access is now active on this account. All features are unlocked and it never expires.'
+                        : `${days} day${days === 1 ? '' : 's'} of host access added. Active until ${fmt(expiresAt)}. All features are unlocked.`) + (toDevice ? ' (Saved on this device only.)' : '');
+                    showView('done');
+                } finally { dmBusy = false; btn.disabled = false; }
+            };
         })();
+
+        // ================= SUPPORT ACCESS (host consent) =================
+        // Host taps "Allow support access" -> races/{code}.support = { code:'SUP-XXXXXX', status:'open' } and gives support BOTH the race code
+        // and that support code. A platform admin who enters the pair flips it to status:'connected' (adminUid recorded). The host sees a
+        // banner and can disconnect at any time. Ending the session (either side) clears `support`, so that code is dead and the next
+        // time the host allows support a brand-new code is issued. Everything support does is written to races/{code}/supportLog.
+        // RULES TO ADD: a platform admin may read and update a race doc ONLY while its support.status is 'connected' and support.adminUid is
+        // their uid (plus the one write that flips an 'open' session to 'connected' with a matching code); hosts read/write their own supportLog.
+        window.canManageRace = function (d) {
+            const u = window.auth && window.auth.currentUser;
+            if (!u || !d) return false;
+            if (d.organizerId === u.uid) return true;
+            const sp = d.support;
+            return !!(window.isPlatformAdmin && sp && sp.status === 'connected' && sp.adminUid === u.uid);
+        };
+        window.isSupportView = (race) => { const u = window.auth && window.auth.currentUser; return !!(u && race && race.organizerId && race.organizerId !== u.uid); };
+        window.isSupportCode = (code) => { const d = window.__hostRaceData && window.__hostRaceData[code]; return !!d && window.isSupportView(d.race); };
+
+        window.supportLog = function (code, action, detail, actor) {
+            try {
+                const u = window.auth && window.auth.currentUser; if (!u) return;
+                addDoc(collection(window.db, 'races', code, 'supportLog'), { at: Date.now(), actor: actor || 'support', uid: u.uid, action, detail: detail || '' }).catch(() => {});
+            } catch (e) {}
+        };
+        window.supportLogWrite = function (ref, data) {
+            const seg = String(ref && ref.path || '').split('/');
+            if (seg[0] !== 'races' || !window.isSupportCode(seg[1])) return;
+            const keys = Object.keys(data || {});
+            if (seg.length === 2) { if (keys.length === 1 && keys[0] === 'support') return; window.supportLog(seg[1], 'Changed race settings', keys.join(', ')); }
+            else if (seg[2] === 'teams') window.supportLog(seg[1], 'Updated a team', seg[3] + ': ' + keys.join(', '));
+        };
+
+        const $s = (id) => document.getElementById(id);
+        const SUP_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const newSupportCode = () => 'SUP-' + Array.from({ length: 6 }, () => SUP_ALPHA[Math.floor(Math.random() * SUP_ALPHA.length)]).join('');
+
+        // ---- Host side ----
+        window.hostEnableSupport = async function (code) {
+            const owned = await getOwnedRaceForHost(code); if (!owned) return;
+            await window.fastUpdate(owned.ref, { support: { code: newSupportCode(), status: 'open', createdAt: Date.now() } });
+            window.supportLog(code, 'Host allowed support access', '', 'host');
+            window.appToast('Support code created. Give it to support with your race code.', 3000);
+        };
+        window.hostRevokeSupport = async function (code) {
+            const owned = await getOwnedRaceForHost(code); if (!owned) return;
+            const connected = owned.data.support && owned.data.support.status === 'connected';
+            if (!(await appConfirm(connected ? 'Support will lose access straight away. You can allow it again later with a new support code.' : 'This support code will stop working.', { title: connected ? 'Disconnect support?' : 'Cancel support code?', confirmText: connected ? 'Disconnect' : 'Cancel code', cancelText: 'Keep', danger: true }))) return;
+            window.supportLog(code, connected ? 'Host disconnected support' : 'Host cancelled the support code', '', 'host');
+            await window.fastUpdate(owned.ref, { support: null });
+            window.appToast(connected ? 'Support disconnected' : 'Support code cancelled');
+        };
+        window.supportBannerHtml = function (race, code, sv) {
+            const sp = race.support;
+            if (sv) {
+                return `<div class="bg-sky-500/10 border border-sky-400/40 rounded-2xl p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-sky-400/20 text-sky-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-life-ring"></i></div>
+                    <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-sky-300">Support session</p><p class="text-[12px] text-white leading-snug">You are working on this race with the host's permission. Changes are logged. Team PINs are hidden and the race can't be deleted.</p></div>
+                    <button type="button" onclick="adminEndSupport('${code}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-black text-xs uppercase transition active:scale-95">End</button>
+                </div>`;
+            }
+            if (sp && sp.status === 'connected') {
+                return `<div class="bg-sky-500/10 border border-sky-400/40 rounded-2xl p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-sky-400/20 text-sky-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-life-ring"></i></div>
+                    <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-sky-300">Support connected</p><p class="text-[12px] text-white leading-snug">Mouse Race support can view and change this race. Disconnect any time.</p></div>
+                    <button type="button" onclick="hostRevokeSupport('${code}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-slate-800 border border-sky-400/40 text-sky-200 font-black text-xs uppercase transition active:scale-95">Disconnect</button>
+                </div>`;
+            }
+            return '';
+        };
+        window.supportAccessSectionHtml = function (race, code) {
+            const sp = race.support;
+            let inner;
+            if (sp && sp.status === 'connected') {
+                inner = `<p class="text-xs text-slate-300 leading-relaxed"><i class="fa-solid fa-circle text-sky-400 text-[8px] mr-1.5"></i>Support is connected and can help with this race right now.</p>
+                    <button type="button" onclick="hostRevokeSupport('${code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold">Disconnect support</button>`;
+            } else if (sp && sp.status === 'open') {
+                inner = `<p class="text-xs text-slate-300 leading-relaxed">Give support <b>both</b> your race code and this support code:</p>
+                    <div class="bg-slate-950 border border-sky-500/40 rounded-2xl p-4 text-center"><p class="font-mono font-bold text-2xl tracking-widest text-sky-300">${escHtml(sp.code)}</p></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="copyHostRaceCode('${escHtml(sp.code)}')" class="px-3 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-copy mr-1"></i>Copy code</button>
+                        <button type="button" onclick="hostRevokeSupport('${code}')" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 rounded-xl text-xs font-bold">Cancel</button>
+                    </div>
+                    <p class="text-[10px] text-slate-500">Waiting for support to connect. The code works once and stops working when the session ends.</p>`;
+            } else {
+                inner = `<p class="text-xs text-slate-300 leading-relaxed">Stuck? Let the support team open this race and help, for example by adding a checkpoint. You stay in control and can disconnect at any time.</p>
+                    <button type="button" onclick="hostEnableSupport('${code}')" class="w-full px-3 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black uppercase shadow"><i class="fa-solid fa-life-ring mr-1.5"></i>Allow support access</button>`;
+            }
+            return hrpSection('fa-solid fa-life-ring', 'Support access' + (sp ? (sp.status === 'connected' ? ' · connected' : ' · waiting') : ''), inner + '<div id="hrp-support-log" class="hidden border-t border-slate-800 pt-3 space-y-1.5"></div>', 'support', !!sp);
+        };
+        const supLogCache = {};
+        function paintSupportLog(box, rows) {
+            if (!rows || !rows.length) { box.classList.add('hidden'); return; }
+            box.classList.remove('hidden');
+            box.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support activity</p>' + rows.slice(0, 8).map(r =>
+                `<p class="text-[11px] text-slate-400 leading-snug"><span class="text-slate-500">${new Date(r.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span> · ${r.actor === 'host' ? 'You' : 'Support'}: ${escHtml(r.action)}${r.detail ? ' <span class="text-slate-500">(' + escHtml(r.detail) + ')</span>' : ''}</p>`).join('');
+        }
+        window.hrpAfterRender = function (code) {
+            const box = $s('hrp-support-log'); if (!box) return;
+            const c = supLogCache[code];
+            if (c) paintSupportLog(box, c.rows);
+            if (c && Date.now() - c.at < 15000) return;
+            supLogCache[code] = { at: Date.now(), rows: c ? c.rows : [] };
+            getDocs(collection(window.db, 'races', code, 'supportLog')).then(snap => {
+                const rows = []; snap.forEach(d => rows.push(d.data()));
+                rows.sort((a, b) => b.at - a.at);
+                supLogCache[code] = { at: Date.now(), rows };
+                const b2 = $s('hrp-support-log'); if (b2) paintSupportLog(b2, rows);
+            }).catch(() => {});
+        };
+
+        // ---- Admin side ----
+        window.renderSupportAdmin = function () {
+            const card = $s('support-admin-card'); if (!card) return;
+            card.classList.toggle('hidden', !window.isPlatformAdmin);
+            if (window.isPlatformAdmin) window.renderSupportSessions();
+        };
+        window.renderSupportSessions = function () {
+            const box = $s('sa-sessions'); if (!box) return;
+            const list = Object.values(window.__hostRaceData || {}).filter(d => window.isSupportView(d.race));
+            box.innerHTML = list.length ? '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">Active sessions</p>' + list.map(d => `
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center gap-2">
+                    <span class="min-w-0 flex-1"><span class="block text-sm font-bold text-white truncate">${escHtml(d.race.title || d.race.code)}</span><span class="block text-[11px] text-slate-500 font-mono">${escHtml(d.race.code)}</span></span>
+                    <button type="button" onclick="openHostRacePanel('${escHtml(d.race.code)}')" class="px-3 py-2 rounded-lg bg-sky-600 text-white text-[11px] font-bold">Open</button>
+                    <button type="button" onclick="adminEndSupport('${escHtml(d.race.code)}')" class="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-[11px] font-bold">End</button>
+                </div>`).join('') : '';
+        };
+        function saMsg(t) { const m = $s('sa-msg'); m.textContent = t || ''; m.classList.toggle('hidden', !t); }
+        window.adminConnectSupport = async function () {
+            if (!window.isPlatformAdmin) return;
+            const u = window.auth.currentUser, btn = $s('sa-connect');
+            const raceCode = String($s('sa-race').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const sup = window.normalizePromo($s('sa-code').value);
+            const NOPE = 'That race code and support code do not match, or the host has not allowed support access.';
+            if (!raceCode || !sup) { saMsg('Enter the race code and the support code.'); return; }
+            btn.disabled = true; saMsg('');
+            try {
+                const ref = doc(window.db, 'races', raceCode);
+                const snap = await getDoc(ref);
+                const sp = snap.exists() ? snap.data().support : null;
+                if (!snap.exists() || !sp || sp.code !== sup || !(sp.status === 'open' || (sp.status === 'connected' && sp.adminUid === u.uid))) { saMsg(NOPE); return; }
+                if (snap.data().organizerId === u.uid) { saMsg('That is your own race. Use it from Active Races.'); return; }
+                await updateDoc(ref, { support: { ...sp, status: 'connected', adminUid: u.uid, connectedAt: Date.now() } });
+                window.supportLog(raceCode, 'Support connected');
+                $s('sa-race').value = ''; $s('sa-code').value = '';
+                await loadAdminRaces();
+                window.openHostRacePanel(raceCode);
+            } catch (e) { saMsg('Could not connect: ' + e.message); }
+            finally { btn.disabled = false; }
+        };
+        window.adminEndSupport = async function (code) {
+            if (!(await appConfirm('The support code stops working and you lose access to this race. The host can allow support again with a new code.', { title: 'End support session?', confirmText: 'End session' }))) return;
+            try {
+                window.supportLog(code, 'Support session ended');
+                await updateDoc(doc(window.db, 'races', code), { support: null });
+                if (window.closeHostRacePanel) window.closeHostRacePanel();
+                window.appToast('Support session ended');
+                await loadAdminRaces();
+            } catch (e) { alert('Could not end the session: ' + e.message); }
+        };
 
         // ================= HOST EDIT MODAL LOGIC =================
         let editingRaceActiveCheckpoints = [];
@@ -6059,8 +6350,9 @@
             try {
                 const raceRef = doc(window.db, "races", currentEditingRaceCode);
                 const raceSnap = await getDoc(raceRef);
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+                if (!raceSnap.exists() || !window.canManageRace(raceSnap.data())) return;
 
+                window.supportLog(currentEditingRaceCode, 'Saved changes in the checkpoint editor');
                 const newDifficulty = document.querySelector('input[name="edit_difficulty"]:checked')?.value || 'easy';
                 const finalStopVal = document.getElementById('edit-final-stop-select')?.value || null;
                 const triviaToggle = document.getElementById('edit-trivia-switch').checked ? 'on' : 'off';
@@ -6357,7 +6649,7 @@
             if (!currentUser) return;
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+                if (!raceSnap.exists() || !window.canManageRace(raceSnap.data())) return;
 
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { difficultyOverride: newDifficulty });
                 alert("Team difficulty override updated successfully!");
@@ -6588,7 +6880,7 @@
                         <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex items-center justify-between">
                             <div>
                                 <p class="font-bold text-white text-sm">${team.teamName}</p>
-                                <p class="text-[11px] text-slate-400">PIN: <span class="font-mono text-disneyGold">${team.pin}</span> | Status: <span class="text-emerald-400 font-semibold">${team.endTime ? 'Finished' : (team.startTime ? 'Racing' : (team.isApproved ? 'Approved' : 'Pending'))}</span></p>
+                                <p class="text-[11px] text-slate-400">${window.isSupportCode(raceCode) ? 'PIN hidden for support' : 'PIN: <span class="font-mono text-disneyGold">' + team.pin + '</span>'} | Status: <span class="text-emerald-400 font-semibold">${team.endTime ? 'Finished' : (team.startTime ? 'Racing' : (team.isApproved ? 'Approved' : 'Pending'))}</span></p>
                             </div>
                             <img src="${team.photoUrl || DEFAULT_AVATAR}" class="w-10 h-10 rounded-full object-cover border-2 border-disneyGold">
                         </div>
@@ -7143,11 +7435,11 @@
                         <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold">
                         <div class="min-w-0 w-full">
                             <p class="font-bold text-white text-xs truncate">${escHtml(t.teamName || 'Team')}</p>
-                            <p class="text-[10px] text-slate-500 font-mono">PIN: ${escHtml(t.pin || '')}</p>
+                            ${window.isSupportView(race) ? '' : `<p class="text-[10px] text-slate-500 font-mono">PIN: ${escHtml(t.pin || '')}</p>`}
                         </div>
                         <div class="flex items-center justify-center gap-1.5 flex-wrap text-[10px]">
                             <span class="px-2 py-0.5 rounded-full font-bold ${badge}">${text}</span>
-                            ${t.ticket && t.ticket.paid ? '<span class="px-2 py-0.5 rounded-full font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🎟️ Paid</span>' : ''}
+                            ${t.ticket && t.ticket.via === 'promo' ? '<span class="px-2 py-0.5 rounded-full font-bold bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">🎁 Promo</span>' : (t.ticket && t.ticket.paid ? '<span class="px-2 py-0.5 rounded-full font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🎟️ Paid</span>' : '')}
                             ${flags ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">🚩 ${flags}</span>` : ''}
                         </div>
                         ${!t.isApproved ? ((window.demoTeamCapReached && window.demoTeamCapReached(teamList)) ? `<button onclick="event.stopPropagation(); demoUpgradePrompt('teams')" class="w-full px-2.5 py-1.5 bg-slate-800 border border-amber-500/40 text-amber-200 font-bold rounded-lg text-[11px]"><i class="fa-solid fa-lock mr-1"></i>Upgrade to approve</button>` : `<button onclick="event.stopPropagation(); approveTeam('${code}', '${t.id}')" class="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]">Approve</button>`) : ''}
@@ -7173,7 +7465,8 @@
                     </div>
                     <button type="button" onclick="scrollToPendingTeam('${pendingTeams[0].id}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase transition active:scale-95">Review now</button>
                 </div>` : '';
-            return pendingBanner + controls + portal + options + (window.isPlatformAdmin ? publicListingSectionHtml(race, code, teamList) : '') + teams;
+            const sv = window.isSupportView(race);
+            return window.supportBannerHtml(race, code, sv) + pendingBanner + controls + portal + options + (sv ? '' : window.supportAccessSectionHtml(race, code)) + (window.isPlatformAdmin && !sv ? publicListingSectionHtml(race, code, teamList) : '') + teams;
         }
 
         function hostPanelRender(keepScroll) {
@@ -7185,12 +7478,14 @@
             const top = keepScroll ? body.scrollTop : 0;
             const race = d.race;
             el.querySelector('#hrp-title').textContent = race.title || race.code;
-            el.querySelector('#hrp-sub').textContent = `${race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race'} • ${d.teamList.length} team${d.teamList.length === 1 ? '' : 's'}`;
+            el.querySelector('#hrp-sub').textContent = `${race.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race'} • ${d.teamList.length} team${d.teamList.length === 1 ? '' : 's'}` + (window.isSupportView(race) ? ' • Support session' : '');
+            el.querySelector('#hrp-delete').style.display = window.isSupportView(race) ? 'none' : '';
             el.querySelector('#hrp-code').textContent = race.code;
             el.querySelector('#hrp-copy').onclick = () => window.copyRaceCode(race.code);
             el.querySelector('#hrp-share').onclick = () => window.shareRaceCode(race.code, race.title || race.code);
             el.querySelector('#hrp-delete').onclick = () => window.deleteEntireRace(race.code);
             body.innerHTML = hostPanelBodyHtml(code);
+            if (window.hrpAfterRender) window.hrpAfterRender(code);
             ['hrp-wildcard-duration','hrp-frenzy-duration','hrp-bingo-rule'].forEach(id => {
                 const sel = document.getElementById(id);
                 if (sel && window.enhanceSelect) window.enhanceSelect(id, { title: ({'hrp-wildcard-duration':'Wildcard offer duration','hrp-frenzy-duration':'Frenzy duration','hrp-bingo-rule':'Bingo rules'})[id], searchable: false });
@@ -7385,7 +7680,7 @@
         const PENDING_KEY = 'mmr_pending_ticket';
         const loadPending = () => { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch (e) { return null; } };
         const savePending = (t) => { try { if (t) localStorage.setItem(PENDING_KEY, JSON.stringify(t)); else localStorage.removeItem(PENDING_KEY); } catch (e) {} };
-        let coListing = null, coBusy = false;
+        let coListing = null, coBusy = false, coPromo = null;
         const $id = (x) => document.getElementById(x);
 
         window.buyPublicRaceTicket = async function(id) {
@@ -7400,17 +7695,46 @@
                     if (ts.size >= Number(l.maxTeams)) return alert('Sorry, this race is full.');
                 }
             } catch (e) { console.warn('Pre-checkout checks skipped', e); }
-            coListing = { ...l, _code: code };
+            coListing = { ...l, _code: code }; coPromo = null;
+            $id('co-promo-input').value = ''; $id('co-promo-box').classList.add('hidden'); coMsg('');
             const monthly = l.ticketType === 'monthlong';
             $id('co-title').textContent = l.title || l.id;
             $id('co-sub').textContent = `${monthly ? 'Month-long' : 'Single race'} · ${l.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race'} · ${prDurationText(l)}`;
-            $id('co-price').textContent = $id('co-total').textContent = prMoney(l.priceCents);
-            $id('co-pay').disabled = false; $id('co-pay').classList.remove('opacity-60');
-            $id('co-pay').innerHTML = `<i class="fa-solid fa-lock"></i> ${Number(l.priceCents) > 0 ? 'Pay ' + prMoney(l.priceCents) : 'Get free ticket'}`;
+            refreshCheckoutPrice();
             $id('co-test-note').classList.toggle('hidden', !window.TICKET_CONFIG.simulatedPayments);
             $id('checkout-screen').classList.remove('hidden');
         };
         window.closeCheckout = function() { if (coBusy) return; $id('checkout-screen')?.classList.add('hidden'); };
+
+        function coMsg(text, bad) {
+            const m = $id('co-promo-msg'); if (!m) return;
+            m.textContent = text || ''; m.classList.toggle('hidden', !text);
+            m.className = 'text-[11px] leading-snug ' + (text ? '' : 'hidden ') + (bad ? 'text-rose-300' : 'text-emerald-300');
+        }
+        function refreshCheckoutPrice() {
+            if (!coListing) return;
+            const base = Number(coListing.priceCents) || 0, eff = coPromo ? 0 : base;
+            $id('co-price').textContent = prMoney(base);
+            $id('co-total').textContent = prMoney(eff);
+            $id('co-promo-row').classList.toggle('hidden', !coPromo);
+            $id('co-promo-off').textContent = coPromo ? '−' + prMoney(base) : '';
+            $id('co-promo-applied').classList.toggle('hidden', !coPromo);
+            $id('co-promo-toggle').classList.toggle('hidden', !!coPromo);
+            if (coPromo) { $id('co-promo-code').textContent = coPromo.code; $id('co-promo-box').classList.add('hidden'); }
+            const pay = $id('co-pay'); pay.disabled = false; pay.classList.remove('opacity-60');
+            pay.innerHTML = eff > 0 ? `<i class="fa-solid fa-lock"></i> Pay ${prMoney(eff)}` : '<i class="fa-solid fa-ticket"></i> Get free ticket';
+        }
+        window.coTogglePromo = function() { const b = $id('co-promo-box'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')) setTimeout(() => $id('co-promo-input')?.focus(), 50); };
+        window.coRemovePromo = function() { coPromo = null; coMsg(''); $id('co-promo-input').value = ''; refreshCheckoutPrice(); };
+        window.coApplyPromo = async function() {
+            if (coBusy || !coListing) return;
+            const btn = $id('co-promo-apply'); btn.disabled = true; coMsg('Checking...');
+            try {
+                const r = await window.lookupPromo($id('co-promo-input').value, 'ticket', { listingId: coListing.id });
+                if (!r.ok) { coMsg(r.error, true); return; }
+                coPromo = { code: r.code }; coMsg(''); refreshCheckoutPrice();
+            } finally { btn.disabled = false; }
+        };
 
         window.completeCheckout = async function() {
             if (coBusy || !coListing) return;
@@ -7418,14 +7742,22 @@
             const btn = $id('co-pay'); btn.disabled = true; btn.classList.add('opacity-60');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
             try {
-                await new Promise(r => setTimeout(r, 1100));   // stands in for the payment provider
+                let promoCode = null;
+                if (coPromo) {   // re-check at the moment of use, then count it
+                    const r = await window.lookupPromo(coPromo.code, 'ticket', { listingId: coListing.id });
+                    const c = r.ok ? await window.consumePromo(r.code) : r;
+                    if (!c.ok) { coPromo = null; refreshCheckoutPrice(); $id('co-promo-box').classList.remove('hidden'); coMsg(c.error, true); return; }
+                    promoCode = r.code;
+                } else {
+                    await new Promise(r => setTimeout(r, 1100));   // stands in for the payment provider
+                }
                 const l = coListing;
-                const ticket = { code: l._code, listingId: l.id, title: l.title || l.id, priceCents: Number(l.priceCents) || 0, paidAt: Date.now(), simulated: !!window.TICKET_CONFIG.simulatedPayments };
+                const ticket = { code: l._code, listingId: l.id, title: l.title || l.id, priceCents: promoCode ? 0 : (Number(l.priceCents) || 0), promo: promoCode, paidAt: Date.now(), simulated: !!window.TICKET_CONFIG.simulatedPayments };
                 savePending(ticket);
                 $id('checkout-screen').classList.add('hidden');
                 window.closePublicRace();
                 openTeamWizard(ticket);
-            } finally { coBusy = false; }
+            } finally { coBusy = false; if (!$id('checkout-screen').classList.contains('hidden')) refreshCheckoutPrice(); }
         };
 
         // ---- New team wizard ----
@@ -7512,7 +7844,7 @@
                 await setDoc(teamRef, {
                     teamName, pin, photoUrl: twAvatar || DEFAULT_AVATAR,
                     isApproved: true,   // paid through the built-in checkout, so the host does not need to approve
-                    ticket: { paid: true, via: 'checkout', listingId: twTicket.listingId, amountCents: twTicket.priceCents, paidAt: twTicket.paidAt, simulated: !!twTicket.simulated },
+                    ticket: { paid: !twTicket.promo, via: twTicket.promo ? 'promo' : 'checkout', promoCode: twTicket.promo || null, listingId: twTicket.listingId, amountCents: twTicket.priceCents, paidAt: twTicket.paidAt, simulated: !!twTicket.simulated },
                     completedCheckpoints: [], customRouteOrder: [], checkinDetails: {}, claimedBonus: [], bonusPhotos: {},
                     triviaBonus: 0, triviaLogs: [], startTime: null, endTime: null
                 });
@@ -7536,6 +7868,163 @@
         // A paid ticket that has not been turned into a team yet is never lost: resume it after a reload
         window.resumePendingTicket = function() { const t = loadPending(); if (t && t.code) openTeamWizard(t); };
         setTimeout(() => { if (!window.activeTeamId && loadPending()) window.resumePendingTicket(); }, 2500);
+
+        // ================= PROMO CODES =================
+        // promoCodes/{CODE} = { code, kind:'ticket'|'host', listingId/listingTitle (ticket), days + perpetual (host), maxUses, usedCount,
+        //                       codeExpires:'YYYY-MM-DD'|'', note, active, createdAt, createdBy }
+        // promoCodes/{CODE}/redemptions/{uid} = one redemption per host account.
+        // RULES TO ADD: platform admins read/write promoCodes; everyone else may only `get` one by id (no list). Counting uses and
+        // granting access should really happen in a Cloud Function so a client cannot skip it; consumePromo below is the one place to swap.
+        window.normalizePromo = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        const PROMO_KIND_NAMES = { ticket: 'race ticket', host: 'host pass' };
+        window.lookupPromo = async function(raw, expectKind, ctx) {
+            ctx = ctx || {};
+            const code = window.normalizePromo(raw);
+            if (code.length < 4) return { ok: false, error: 'Please enter your promo code.' };
+            let snap;
+            try { snap = await getDoc(doc(window.db, 'promoCodes', code)); }
+            catch (e) { return { ok: false, error: 'Could not check that code. Check your connection and try again.' }; }
+            if (!snap.exists()) return { ok: false, error: "That code wasn't recognised. Check it and try again." };
+            const d = snap.data();
+            if (d.kind !== expectKind) {
+                return { ok: false, error: expectKind === 'host'
+                    ? "That's a race ticket code. Use it at checkout when you buy a ticket for that race. It can't be used on the Host page."
+                    : "That's a host pass code. Redeem it on the Host page under Upgrade. It can't be used for race tickets." };
+            }
+            if (d.active === false) return { ok: false, error: 'This code is no longer active.' };
+            if (d.codeExpires && new Date().toISOString().slice(0, 10) > d.codeExpires) return { ok: false, error: 'This code has expired.' };
+            if (Number(d.maxUses) > 0 && Number(d.usedCount || 0) >= Number(d.maxUses)) return { ok: false, error: 'This code has already been used.' };
+            if (expectKind === 'ticket' && ctx.listingId && d.listingId !== ctx.listingId) {
+                return { ok: false, error: `This code is for ${d.listingTitle ? '“' + d.listingTitle + '”' : 'a different race'}, not this one.` };
+            }
+            if (expectKind === 'host' && ctx.uid) {
+                try { if ((await getDoc(doc(window.db, 'promoCodes', code, 'redemptions', ctx.uid))).exists()) return { ok: false, error: 'You have already redeemed this code on this account.' }; } catch (e) {}
+            }
+            return { ok: true, code, data: d };
+        };
+        window.consumePromo = async function(code, uid) {
+            const ref = doc(window.db, 'promoCodes', code);
+            try {
+                await runTransaction(window.db, async (tx) => {
+                    const snap = await tx.get(ref);
+                    if (!snap.exists()) throw new Error('GONE');
+                    const d = snap.data();
+                    if (d.active === false) throw new Error('OFF');
+                    if (Number(d.maxUses) > 0 && Number(d.usedCount || 0) >= Number(d.maxUses)) throw new Error('USED');
+                    tx.update(ref, { usedCount: Number(d.usedCount || 0) + 1, lastUsedAt: Date.now() });
+                    if (uid) tx.set(doc(window.db, 'promoCodes', code, 'redemptions', uid), { at: Date.now() });
+                });
+                return { ok: true };
+            } catch (e) {
+                const m = String(e && e.message || '');
+                if (m === 'USED') return { ok: false, error: 'This code has just been used up.' };
+                if (m === 'OFF' || m === 'GONE') return { ok: false, error: 'This code is no longer active.' };
+                console.warn('Could not count the promo use (add Firestore rules for promoCodes); continuing in test mode:', e);
+                return { ok: true, counted: false };
+            }
+        };
+
+        // ---- Admin: create / manage ----
+        let paKind = 'ticket', paCodes = [];
+        const PA_ON = 'bg-fuchsia-600 text-white shadow', PA_OFF = 'text-slate-400';
+        window.paSetKind = function(k) {
+            paKind = k;
+            [['ticket', 'pa-kind-ticket'], ['host', 'pa-kind-host']].forEach(([n, id]) => { const b = $id(id); if (b) b.className = 'py-2 rounded-xl text-[11px] font-bold transition ' + (n === k ? PA_ON : PA_OFF); });
+            $id('pa-ticket-fields')?.classList.toggle('hidden', k !== 'ticket');
+            $id('pa-host-fields')?.classList.toggle('hidden', k !== 'host');
+        };
+        window.paDurationChanged = function() { $id('pa-days')?.classList.toggle('hidden', $id('pa-duration').value !== 'custom'); };
+        function paFillListings() {
+            const sel = $id('pa-listing'); if (!sel) return;
+            const list = publicRacesState.list || [];
+            const prev = sel.value;
+            sel.innerHTML = list.length ? list.map(l => `<option value="${escHtml(l.id)}">${escHtml(l.title || l.id)} · ${prMoney(l.priceCents)}</option>`).join('') : '<option value="">No live public races. List one first.</option>';
+            if (prev && list.some(l => l.id === prev)) sel.value = prev;
+        }
+        window.renderPromoAdmin = async function() {
+            const card = $id('promo-admin-card'); if (!card) return;
+            card.classList.toggle('hidden', !window.isPlatformAdmin);
+            if (!window.isPlatformAdmin) return;
+            window.paSetKind(paKind);
+            if (!publicRacesState.loaded) { try { await window.loadPublicRaces(); } catch (e) {} }
+            paFillListings();
+            window.paLoadList();
+        };
+        const paDescribe = (c) => c.kind === 'ticket'
+            ? `🎟️ ${escHtml(c.listingTitle || c.listingId || 'Race')}`
+            : (c.perpetual ? '🔑 Perpetual host access' : `🔑 ${Number(c.days)} day host pass`);
+        window.paLoadList = async function() {
+            const box = $id('pa-list'); if (!box) return;
+            try {
+                const snap = await getDocs(collection(window.db, 'promoCodes'));
+                paCodes = []; snap.forEach(d => paCodes.push({ id: d.id, ...d.data() }));
+                paCodes.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+            } catch (e) { box.textContent = 'Could not load codes: ' + e.message; return; }
+            if (!paCodes.length) { box.textContent = 'No codes yet.'; return; }
+            box.innerHTML = paCodes.map(c => {
+                const used = Number(c.usedCount || 0), max = Number(c.maxUses) || 0;
+                const dead = c.active === false || (max > 0 && used >= max) || (c.codeExpires && new Date().toISOString().slice(0, 10) > c.codeExpires);
+                const status = c.active === false ? 'Disabled' : (max > 0 && used >= max) ? 'Used up' : (dead ? 'Expired' : 'Live');
+                const sc = dead ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                return `<div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2"><span class="font-mono font-bold text-white text-sm tracking-wider break-all">${escHtml(c.id)}</span><span class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${sc}">${status}</span></div>
+                    <p class="text-[11px] text-slate-300">${paDescribe(c)} · used ${used}/${max || '∞'}${c.codeExpires ? ' · expires ' + escHtml(c.codeExpires) : ''}</p>
+                    ${c.note ? `<p class="text-[11px] text-slate-500">${escHtml(c.note)}</p>` : ''}
+                    <div class="flex gap-2">
+                        <button type="button" onclick="paCopy('${escHtml(c.id)}')" class="flex-1 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-[11px] font-bold">Copy</button>
+                        <button type="button" onclick="paToggle('${escHtml(c.id)}')" class="flex-1 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-[11px] font-bold">${c.active === false ? 'Enable' : 'Disable'}</button>
+                        <button type="button" onclick="paDelete('${escHtml(c.id)}')" aria-label="Delete code" class="px-3 py-2 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px]"><i class="fa-solid fa-trash"></i></button>
+                    </div></div>`;
+            }).join('');
+        };
+        window.paCopy = async function(code) {
+            try { await navigator.clipboard.writeText(code); window.appToast('Code ' + code + ' copied'); } catch (e) { window.appToast('Code: ' + code, 3000); }
+        };
+        window.paToggle = async function(code) {
+            const c = paCodes.find(x => x.id === code); if (!c) return;
+            try { await updateDoc(doc(window.db, 'promoCodes', code), { active: c.active === false }); window.paLoadList(); } catch (e) { alert('Could not update: ' + e.message); }
+        };
+        window.paDelete = async function(code) {
+            if (!(await appConfirm(`Delete code ${code}? It will stop working straight away.`, { title: 'Delete promo code', confirmText: 'Delete', danger: true }))) return;
+            try { await deleteDoc(doc(window.db, 'promoCodes', code)); window.paLoadList(); } catch (e) { alert('Could not delete: ' + e.message); }
+        };
+        window.paCreate = async function() {
+            if (!window.isPlatformAdmin) return;
+            const btn = $id('pa-create');
+            const uses = Math.max(0, Math.floor(Number($id('pa-uses').value) || 0));
+            const rec = { kind: paKind, maxUses: uses, usedCount: 0, codeExpires: $id('pa-expires').value || '', note: $id('pa-note').value.trim(), active: true, createdAt: Date.now(), createdBy: window.auth.currentUser.uid };
+            if (paKind === 'ticket') {
+                const id = $id('pa-listing').value;
+                const l = (publicRacesState.list || []).find(x => x.id === id);
+                if (!l) return alert('Choose a live public race first.');
+                rec.listingId = l.id; rec.listingTitle = l.title || l.id;
+            } else {
+                const dv = $id('pa-duration').value;
+                if (dv === 'perpetual') { rec.perpetual = true; rec.days = 0; }
+                else {
+                    const days = dv === 'custom' ? Math.floor(Number($id('pa-days').value)) : Number(dv);
+                    if (!Number.isFinite(days) || days < 1 || days > 3650) return alert('Enter a number of days from 1 to 3650.');
+                    rec.perpetual = false; rec.days = days;
+                }
+            }
+            btn.disabled = true;
+            try {
+                const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                const gen = () => (paKind === 'ticket' ? 'TKT-' : 'HST-') + Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+                let code = window.normalizePromo($id('pa-custom').value);
+                if (code && code.length < 4) return alert('Custom codes need at least 4 letters or numbers.');
+                if (code) { if ((await getDoc(doc(window.db, 'promoCodes', code))).exists()) return alert('That code already exists. Choose another.'); }
+                else { do { code = gen(); } while ((await getDoc(doc(window.db, 'promoCodes', code))).exists()); }
+                rec.code = code;
+                await setDoc(doc(window.db, 'promoCodes', code), rec);
+                const res = $id('pa-result');
+                res.classList.remove('hidden');
+                res.innerHTML = `<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Code created</p><p class="font-mono font-bold text-2xl tracking-widest text-fuchsia-300 break-all">${escHtml(code)}</p><p class="text-[11px] text-slate-400">${paDescribe(rec)} · ${uses ? uses + ' use' + (uses === 1 ? '' : 's') : 'unlimited uses'}</p><button type="button" onclick="paCopy('${escHtml(code)}')" class="px-4 py-2 rounded-xl bg-fuchsia-600 text-white text-xs font-bold"><i class="fa-solid fa-copy mr-1"></i>Copy code</button>`;
+                $id('pa-custom').value = ''; $id('pa-note').value = '';
+                window.paLoadList();
+            } catch (e) { alert('Could not create code: ' + e.message); }
+            finally { btn.disabled = false; }
+        };
 
         // ---------- Host side (platform admin only) ----------
         function publicListingSectionHtml(race, code, teamList) {
@@ -7713,11 +8202,19 @@
             try {
                 const q = query(collection(window.db, "races"), where("organizerId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
+                const supportDocs = [];   // races whose hosts have connected this platform admin for support
+                if (window.isPlatformAdmin) {
+                    try {
+                        const sq = await getDocs(query(collection(window.db, "races"), where("support.adminUid", "==", currentUser.uid)));
+                        sq.forEach(d => { const x = d.data(); if (x.organizerId !== currentUser.uid && x.support && x.support.status === 'connected') supportDocs.push(d); });
+                    } catch (e) { console.warn('Support sessions could not be loaded', e); }
+                }
                 const listEl = document.getElementById('admin-race-list');
                 
-                if (querySnapshot.empty) {
+                if (querySnapshot.empty && !supportDocs.length) {
                     listEl.className = 'text-xs text-slate-400';
                     listEl.innerHTML = "You haven't created any races yet.";
+                    if (window.renderSupportSessions) window.renderSupportSessions();
                     window.__hostRaceData = {};
                     if (window.refreshHostRacePanel) window.refreshHostRacePanel();
                     document.getElementById('nav-pending-badge').classList.add('hidden');
@@ -7728,6 +8225,7 @@
                 querySnapshot.forEach(docSnap => {
                     races.push({ id: docSnap.id, ...docSnap.data() });
                 });
+                supportDocs.forEach(docSnap => { if (!races.some(r => r.id === docSnap.id)) races.push({ id: docSnap.id, ...docSnap.data() }); });
                 races.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
                 // Public listings (platform admin only)
@@ -7775,13 +8273,16 @@
                     const challengeCount = teamList.reduce((n, t) => n + Object.values(t.checkinChallenges || {}).filter(c => c && c.status === 'pending').length, 0);
                     const tilePending = racePendingCount + challengeCount;
                     window.__hostRaceData[race.code] = { race, teamList, raceBaseDiff, cps };
+                    const supportBadge = window.isSupportView(race)
+                        ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-200 text-[9px] font-black uppercase">🛟 Support session</span>'
+                        : ((race.support && race.support.status === 'connected') ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-200 text-[9px] font-black uppercase">🛟 Support connected</span>' : '');
                     const isScav = race.gameMode === 'scavenger';
                     html += `
                         <button type="button" onclick="openHostRacePanel('${race.code}')" class="relative aspect-square rounded-3xl border border-slate-700/80 bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-left flex flex-col justify-between active:scale-[0.97] hover:border-disneyGold/50 transition shadow-lg overflow-hidden">
                             ${tilePending > 0 ? `<span class="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/25 border border-rose-400/50 text-rose-200 text-[11px] font-black animate-pulse" title="${tilePending} waiting for approval"><i class="fa-solid fa-bell"></i>${tilePending}</span>` : ''}
                             <span class="w-10 h-10 rounded-2xl flex items-center justify-center text-base ${isScav ? 'bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'}"><i class="fa-solid ${isScav ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i></span>
                             <span class="block min-w-0">
-                                <span class="block font-bold text-white text-sm leading-tight line-clamp-2 break-words">${escHtml(race.title || race.code)}</span>
+                                <span class="block font-bold text-white text-sm leading-tight line-clamp-2 break-words">${escHtml(race.title || race.code)}</span>${supportBadge}
                                 <span class="block text-[11px] text-slate-400 mt-1">${modeLabel}</span>
                             </span>
                             <span class="flex items-end justify-between gap-2">
@@ -7802,6 +8303,7 @@
                 } else {
                     pendingBadge.classList.add('hidden');
                 }
+                if (window.renderSupportSessions) window.renderSupportSessions();
                 watchHostPendingTeams(races.map(r => r.code));
                 watchHostRaceDocs(races.map(r => r.code));
                 window.watchHostLocks(races.map(r => r.code));
@@ -7848,7 +8350,19 @@
                     if (first) { first = false; return; }   // loadAdminRaces just rendered this state
                     const d = window.__hostRaceData && window.__hostRaceData[code];
                     if (!d || !snap.exists()) return;
-                    d.race = { id: snap.id, ...snap.data() };
+                    const nd = snap.data();
+                    const prevS = d.race.support && d.race.support.status, newS = nd.support && nd.support.status;
+                    const me = window.auth && window.auth.currentUser && window.auth.currentUser.uid;
+                    d.race = { id: snap.id, ...nd };
+                    if (prevS !== newS && me) {
+                        if (nd.organizerId === me) {
+                            if (newS === 'connected') window.appToast('🛟 Support has connected to ' + (nd.title || code), 3500);
+                            else if (prevS === 'connected') window.appToast('Support has disconnected from ' + (nd.title || code), 3500);
+                        } else if (prevS === 'connected' && newS !== 'connected') {
+                            window.appToast('The host disconnected support from ' + (nd.title || code), 3500);
+                            loadAdminRaces();
+                        }
+                    }
                     if (window.refreshHostRacePanel) window.refreshHostRacePanel();
                 }, err => console.error('Host race watch failed:', err));
                 hostRaceDocWatch.unsubs.push(unsub);
@@ -8195,7 +8709,7 @@
             const currentUser = window.auth.currentUser;
             try {
                 const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-                if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+                if (!raceSnap.exists() || !window.canManageRace(raceSnap.data())) return;
 
                 if (window.isHostDemo && window.isHostDemo()) {
                     // Demo: the host's own team is free, plus ONE additional approved team
@@ -8203,6 +8717,7 @@
                     const approvedOthers = teamsSnap.docs.filter(d => d.id !== teamId && d.data().isApproved && !d.data().isHostTeam).length;
                     if (approvedOthers >= window.DEMO_CONFIG.maxExtraTeams) { window.demoUpgradePrompt('teams'); return; }
                 }
+                window.supportLog(raceCode, 'Approved a team', teamId);
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
                 alert("Team approved successfully!");
                 loadAdminRaces();
@@ -8214,9 +8729,10 @@
         window.deleteTeam = async function(raceCode, teamId) {
             const currentUser = window.auth.currentUser;
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+            if (!raceSnap.exists() || !window.canManageRace(raceSnap.data())) return;
 
             if (!(await appConfirm("Remove this team from the race?", { title: "Remove team", confirmText: "Remove", danger: true }))) return;
+            window.supportLog(raceCode, 'Removed a team', teamId);
             await deleteDoc(doc(window.db, "races", raceCode, "teams", teamId));
             loadAdminRaces();
         };
@@ -8224,7 +8740,8 @@
         window.deleteEntireRace = async function(raceCode) {
             const currentUser = window.auth.currentUser;
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
-            if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
+            if (!raceSnap.exists() || !window.canManageRace(raceSnap.data())) return;
+            if (raceSnap.data().organizerId !== currentUser.uid) { alert('Support sessions cannot delete a race. Ask the host to delete it.'); return; }
 
             if (!(await appConfirm(`This permanently deletes race ${raceCode}, all registered teams and their logs.`, { title: "Delete race?", confirmText: "Delete race", danger: true }))) return;
             
@@ -11293,7 +11810,7 @@
             const user = window.auth && window.auth.currentUser;
             if (!user) { alert("Please sign in as the race host."); return null; }
             const ref = doc(window.db, "races", raceCode); const snap = await safeGetDoc(ref);
-            if (!snap.exists() || snap.data().organizerId !== user.uid) { alert("Only this race's host can change race controls."); return null; }
+            if (!snap.exists() || !window.canManageRace(snap.data())) { alert("Only this race's host can change race controls."); return null; }
             return { ref, data: snap.data() };
         }
         window.hostSaveScavengerLimit = async function(code) {
