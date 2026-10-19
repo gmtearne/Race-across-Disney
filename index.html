@@ -653,6 +653,23 @@
     </style>
 
     <style>
+        /* ===== Demo mode (unpaid hosts) ===== */
+        .demo-lock { position: relative; }
+        .demo-lock > *:not(.demo-shield) { opacity: .4; filter: grayscale(.55); }
+        .demo-shield { position: absolute; inset: 0; z-index: 5; width: 100%; display: flex; align-items: flex-start; justify-content: flex-end;
+            padding: 8px 10px; border: 0; border-radius: inherit; background: transparent; cursor: not-allowed; -webkit-tap-highlight-color: transparent; }
+        .demo-shield .demo-pill { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fde68a;
+            background: rgba(120,53,15,.75); border: 1px solid rgba(251,191,36,.45); border-radius: 999px; padding: 2px 8px; }
+        .demo-tab-locked { opacity: .42; position: relative; }
+        .demo-tab-locked::after { content: '\1F512'; position: absolute; top: 1px; right: 4px; font-size: 9px; }
+        .demo-step-note { display: flex; align-items: center; gap: .65rem; padding: .65rem .8rem; border-radius: 1rem;
+            background: rgba(120,53,15,.28); border: 1px solid rgba(251,191,36,.35); color: #fde68a; font-size: 11px; line-height: 1.35; }
+        .demo-step-note button { flex-shrink: 0; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #0f172a;
+            background: var(--theme-accent, #FFB800); border-radius: 999px; padding: .35rem .7rem; }
+        #demo-mode-screen.dm-open { animation: dmIn .3s ease both; }
+        @keyframes dmIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        #demo-mode-screen .dm-view { animation: dmIn .3s ease both; }
+
         /* ===== New Race wizard ===== */
         #race-wizard { position: fixed; inset: 0; z-index: 120; display: none; flex-direction: column;
             background: #020617; opacity: 0; transition: opacity .35s ease; }
@@ -1784,6 +1801,9 @@
                             </button>
                         </div>
 
+                        <!-- 1b. Access banner: demo mode (with Upgrade) or active pass (with expiry) -->
+                        <div id="host-access-banner" class="hidden"></div>
+
                         <!-- 2. New Race / Hunt launcher (opens the full-screen wizard) -->
                         <div id="create-race-card">
                             <button onclick="openRaceWizard()" class="w-full flex items-center gap-4 text-left px-5 py-5 rounded-2xl bg-disneyGold text-slate-950 shadow-xl active:scale-[0.98] transition focus:outline-none">
@@ -1847,6 +1867,68 @@
 
 
     </main>
+    <!-- ===== DEMO MODE SCREEN (unpaid hosts: shown on login, and from every Upgrade button) ===== -->
+    <div id="demo-mode-screen" class="fixed inset-0 z-[180] hidden flex flex-col" style="background: radial-gradient(120% 60% at 50% 0%, rgba(255,184,0,.16), rgba(2,6,23,0) 62%), #020617;" role="dialog" aria-modal="true" aria-label="Demo mode">
+        <div class="flex-1 overflow-y-auto custom-scrollbar" style="padding-top: calc(env(safe-area-inset-top, 0px) + 20px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);">
+            <div class="max-w-md mx-auto w-full px-5">
+
+                <!-- View 1: what demo mode is -->
+                <div id="dm-view-intro" class="dm-view space-y-5">
+                    <div class="text-center space-y-2 pt-6">
+                        <div class="text-6xl">🎟️</div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-disneyGold">Demo mode</p>
+                        <h1 class="font-disney font-bold text-3xl text-white leading-tight">You're in demo mode</h1>
+                        <p class="text-sm text-slate-300 leading-relaxed">Build and run a real race to try it out. Certain features are disabled in demo mode.</p>
+                    </div>
+                    <div class="bg-slate-900/80 border border-emerald-500/30 rounded-3xl p-4 space-y-2.5">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-300">Included in demo mode</h3>
+                        <ul class="text-sm text-slate-200 space-y-2">
+                            <li class="flex gap-2.5"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i><span>Speed Race or Scavenger Hunt</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i><span>6 random stops in Magic Kingdom, on Easy difficulty</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i><span>Bonus photos, trivia and a wildcard</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i><span>Your own team, plus one more team you approve</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i><span>Full control of your race rules</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-900/80 border border-amber-500/30 rounded-3xl p-4 space-y-2.5">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Unlocked with a pass</h3>
+                        <ul class="text-sm text-slate-300 space-y-2">
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Medium and Hard difficulty</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Choosing your own stops, other parks and more than 6 stops</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>A mandatory final location</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Hidden Mickey Bingo and Checkpoint Frenzy</span></li>
+                            <li class="flex gap-2.5"><i class="fa-solid fa-lock text-amber-400 mt-1 text-xs"></i><span>Approving more than one extra team</span></li>
+                        </ul>
+                    </div>
+                    <div class="space-y-3 pt-1">
+                        <button type="button" onclick="dmShowPlans()" class="w-full py-4 bg-disneyGold text-slate-950 font-bold text-sm rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-ticket"></i> Upgrade to a 1 or 2 week pass</button>
+                        <button type="button" onclick="dmClose()" class="w-full py-3.5 bg-slate-900 border border-slate-700 text-slate-200 font-bold text-sm rounded-2xl active:scale-[0.98] transition">Continue in demo mode</button>
+                    </div>
+                </div>
+
+                <!-- View 2: the two passes -->
+                <div id="dm-view-plans" class="dm-view hidden space-y-5">
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="button" onclick="dmBack()" aria-label="Back" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h2 class="font-disney font-bold text-xl text-white">Choose your pass</h2>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">Everything is unlocked for the length of your pass. It starts the moment you buy it.</p>
+                    <div id="dm-plan-list" class="space-y-3"></div>
+                    <p id="dm-test-note" class="text-[11px] text-slate-500 text-center">Test mode: no real payment is taken.</p>
+                </div>
+
+                <!-- View 3: purchase complete -->
+                <div id="dm-view-done" class="dm-view hidden space-y-5 text-center pt-10">
+                    <div class="text-6xl">🎉</div>
+                    <h2 class="font-disney font-bold text-3xl text-white">Pass activated!</h2>
+                    <p id="dm-done-text" class="text-sm text-slate-300 leading-relaxed"></p>
+                    <button type="button" onclick="dmClose()" class="w-full py-4 bg-disneyGold text-slate-950 font-bold text-sm rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-flag-checkered"></i> Start hosting</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- ===== NEW RACE / HUNT WIZARD (full screen) ===== -->
     <div id="race-wizard" role="dialog" aria-modal="true" aria-label="Create a new race or hunt">
         <div class="rw-top px-5 pb-3 border-b border-slate-800 shrink-0">
@@ -3411,7 +3493,7 @@
             if (!container) return;
             const query = (document.getElementById('bonus-search-input')?.value || "").toLowerCase();
             const items = (window.DISNEY_PRESETS || []).map((p, idx) => ({ ...p, originalIndex: idx }))
-                .filter(p => p.type === 'BONUS_PHOTO' && (p.name.toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query)));
+                .filter(p => p.type === 'BONUS_PHOTO' && (!(window.isHostDemo && window.isHostDemo()) || window.bonusAppliesToAreas(p, new Set([window.DEMO_CONFIG.park]))) && (p.name.toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query)));
             const ticked = new Set(Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => cb.value));
             container.innerHTML = items.map(p => `
                 <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/25 bg-amber-950/20 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/40">
@@ -4069,9 +4151,18 @@
                     if (adminDashboard) adminDashboard.classList.remove('hidden');
                     if (orgCog) orgCog.classList.remove('hidden');
                     if (window.checkPlatformAdmin) await window.checkPlatformAdmin(user);
+                    if (window.loadHostAccess) {
+                        await window.loadHostAccess(user);
+                        window.renderHostAccessBanner();
+                        // Unpaid hosts get the full-screen demo page once per login session
+                        if (window.isHostDemo() && sessionStorage.getItem('mmr_demo_seen') !== user.uid) window.showDemoScreen('intro');
+                    }
                     loadAdminRaces();
                 } else {
                     window.isPlatformAdmin = false;
+                    window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
+                    if (window.renderHostAccessBanner) window.renderHostAccessBanner();
+                    document.getElementById('demo-mode-screen')?.classList.add('hidden');
                     window.__publicListings = {};
                     stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
@@ -4974,6 +5065,7 @@
             if (!email || !pass) return alert("Please enter email and password.");
 
             try {
+                sessionStorage.removeItem('mmr_demo_seen');   // a fresh login always shows the demo page
                 if (isRegisterMode) {
                     await createUserWithEmailAndPassword(window.auth, email, pass);
                     alert("Host account created successfully!");
@@ -4990,10 +5082,12 @@
         };
 
         window.createNewRace = async function() {
+            const demo = !!(window.isHostDemo && window.isHostDemo());   // unpaid host: limits are enforced here, not just in the UI
+            const DEMO = window.DEMO_CONFIG || {};
             const title = document.getElementById('new-race-title').value.trim();
             let code = document.getElementById('new-race-code').value.trim().toUpperCase();
             const gameMode = document.querySelector('input[name="create_game_mode"]:checked')?.value || 'race';
-            const difficulty = document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy';
+            const difficulty = demo ? 'easy' : (document.querySelector('input[name="create_difficulty"]:checked')?.value || 'easy');
             const advanced = !!document.getElementById('create-advanced-switch')?.checked;
             // Default checkpoint scoring is configurable only for Scavenger Hunts.
             const defaultPoints = gameMode === 'scavenger'
@@ -5022,7 +5116,7 @@
                 reward: defaultWildcardReward
             };
             const frenzyAuto = {
-                enabled: !!document.getElementById('create-frenzy-switch')?.checked,
+                enabled: !demo && !!document.getElementById('create-frenzy-switch')?.checked,
                 durationMin: Number(document.getElementById('create-frenzy-duration')?.value) || 15,
                 reward: defaultFrenzyReward
             };
@@ -5042,9 +5136,10 @@
                     code = document.getElementById('new-race-code').value.trim().toUpperCase();
                 }
 
+                if (demo) creationPopMethod = 'random';   // demo: random stops only
                 let initialCps = [];
 
-                const finalSelectEarly = gameMode === 'race' ? document.getElementById('create-final-stop-select').value : '';
+                const finalSelectEarly = (gameMode === 'race' && !demo) ? document.getElementById('create-final-stop-select').value : '';
                 const finalPreset = (finalSelectEarly && finalSelectEarly.startsWith('stop_')) ? presets[parseInt(finalSelectEarly.split('_')[1])] : null;
                 const toCheckpoint = (p, idx, prefix) => ({
                     id: prefix + Date.now() + '_' + idx,
@@ -5062,8 +5157,8 @@
                 let spreadRelaxed = 0, spreadShort = 0;
                 const spreadRadius = ((window.CHECKIN_RADIUS_BY_DIFFICULTY || {})[difficulty] || window.CHECKIN_RADIUS_METERS || 50) + ((window.CHECKIN_BUFFER_BY_DIFFICULTY || {})[difficulty] ?? 15);   // radius + accuracy buffer
                 if (creationPopMethod === 'random') {
-                    const gpsReq = parseInt(document.getElementById('rand-gps-count').value) || 10;
-                    const gpsOnly = presets.filter(p => p.type === 'GPS');
+                    const gpsReq = demo ? DEMO.maxStops : (parseInt(document.getElementById('rand-gps-count').value) || 10);
+                    const gpsOnly = presets.filter(p => p.type === 'GPS' && (!demo || p.park === DEMO.park));
                     const spread = window.selectSpreadStops(gpsOnly, gpsReq, { radiusM: spreadRadius, seed: (finalPreset && gpsOnly.includes(finalPreset)) ? finalPreset : null });
                     spreadRelaxed += spread.relaxed.length; spreadShort += spread.short;
                     const shuffledGps = spread.picked;
@@ -5148,7 +5243,7 @@
 
                 // Hidden Mickey Bingo: a fixed 2x2 card of four photo squares (no preset challenges).
                 let bingoInfo = null, bingoCps = [];
-                if (document.getElementById('create-bingo-switch')?.checked) {
+                if (!demo && document.getElementById('create-bingo-switch')?.checked) {
                     const reward = Math.max(1, parseInt(document.getElementById('create-bingo-reward')?.value) || 20);
                     bingoInfo = { enabled: true, cardId: window.HIDDEN_MICKEY_ID, name: window.HIDDEN_MICKEY_META.name, emoji: window.HIDDEN_MICKEY_META.emoji, reward, onlyOneWinner: document.getElementById('create-bingo-rule-one-winner')?.checked === true };
                     bingoCps = window.hiddenMickeyCheckpoints('cp_bingo_');
@@ -5160,12 +5255,12 @@
                 if (!document.getElementById('create-bonus-switch')?.checked) {
                     bonusPicked = [];   // bonus photos switched off
                 } else if (creationBonusMethod === 'manual') {
-                    bonusPicked = Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => presets[parseInt(cb.value)]).filter(p => p && !bingoNames.has(p.name));
+                    bonusPicked = Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => presets[parseInt(cb.value)]).filter(p => p && !bingoNames.has(p.name) && (!demo || window.bonusAppliesToAreas(p, new Set([DEMO.park]))));
                 } else {
                     const raw = parseInt(document.getElementById('bonus-rand-count').value);
                     const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
                     const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
-                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && window.bonusAppliesToAreas(p, stopAreas));
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && window.bonusAppliesToAreas(p, stopAreas) && (!demo || window.bonusAppliesToAreas(p, new Set([DEMO.park]))));
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
                 // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
@@ -5174,7 +5269,7 @@
 
                 let finalCheckpointId = null;
                 if (gameMode === 'race') {
-                    const finalSelectVal = document.getElementById('create-final-stop-select').value;
+                    const finalSelectVal = demo ? '' : document.getElementById('create-final-stop-select').value;
                     if (finalSelectVal && finalSelectVal.startsWith('stop_')) {
                         const stopIdx = parseInt(finalSelectVal.split('_')[1]);
                         const targetPreset = presets[stopIdx];
@@ -5233,7 +5328,7 @@
                     createdHostTeamId = hostTeamId;
                     await setDoc(doc(window.db, "races", code, "teams", hostTeamId), {
                         teamName: hostTeamName, pin: hostTeamPin, photoUrl: DEFAULT_AVATAR,
-                        isApproved: true, completedCheckpoints: [], customRouteOrder: [],
+                        isApproved: true, isHostTeam: true, completedCheckpoints: [], customRouteOrder: [],
                         checkinDetails: {}, claimedBonus: [], bonusPhotos: {}, triviaBonus: 0,
                         triviaLogs: [], startTime: null, endTime: null
                     });
@@ -5422,6 +5517,7 @@
                 const label = rwEl('rw-step-label'); if (label) label.textContent = 'Step 1 of 7';
                 const heading = rwEl('rw-step-title'); if (heading) heading.textContent = 'Name your race';
             }
+            try { if (window.applyWizardDemoLimits) window.applyWizardDemoLimits(); } catch (err) { console.error('Demo limits could not be applied:', err); }
             setTimeout(() => { if (rwStep === 1 && !rwDone) rwEl('new-race-title')?.focus(); }, 380);
         };
 
@@ -5555,6 +5651,197 @@
             copyBtn.setAttribute('onclick', `copyRaceCode('${safeCode}')`);
             rwRender();
         };
+
+        // ================= DEMO MODE (unpaid hosts) =================
+        // Everything an unpaid host sees is still on screen, but locked items are unclickable. These limits are applied in the UI AND
+        // enforced in createNewRace / approveTeam / the host panel handlers. Real enforcement still belongs in Firestore rules (see notes).
+        (function () {
+            const CFG = window.DEMO_CONFIG = {
+                maxStops: 6,                 // stops in a demo race
+                park: 'Magic Kingdom',       // demo stops (and bonuses) must come from this park
+                maxExtraTeams: 1,            // approved teams besides the host's own team
+                simulatedPayments: true,     // true = the Purchase button fakes the sale; set false when real payments exist
+                plans: [
+                    { id: 'week1', name: '1 Week Pass', days: 7,  price: '$19', tag: 'Perfect for one trip' },
+                    { id: 'week2', name: '2 Week Pass', days: 14, price: '$29', tag: 'Best value · a long stay or two trips', best: true }
+                ]
+            };
+            window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
+            window.isHostPassActive = () => !!window.hostAccess && window.hostAccess.expiresAt > Date.now();
+            // Fails closed: a logged-in host with no confirmed pass is in demo mode (platform admins are never limited)
+            window.isHostDemo = () => !!(window.auth && window.auth.currentUser) && !window.isPlatformAdmin && !window.isHostPassActive();
+            window.demoTeamCapReached = (teamList) => window.isHostDemo() &&
+                (teamList || []).filter(t => t.isApproved && !t.isHostTeam).length >= CFG.maxExtraTeams;
+
+            const $ = (id) => document.getElementById(id);
+            const fmt = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+            window.loadHostAccess = async function (user) {
+                const acc = { loaded: true, expiresAt: 0, plan: null };
+                try {
+                    const snap = await getDoc(doc(window.db, 'hostAccess', user.uid));
+                    if (snap.exists()) { const d = snap.data(); acc.expiresAt = Number(d.expiresAt) || 0; acc.plan = d.plan || null; }
+                } catch (e) { console.warn('Host access lookup failed, treating as demo:', e); }
+                try {   // fallback written only when the Firestore write was refused (e.g. rules not set up yet during testing)
+                    const loc = JSON.parse(localStorage.getItem('mmr_sim_pass_' + user.uid) || 'null');
+                    if (loc && Number(loc.expiresAt) > acc.expiresAt) { acc.expiresAt = Number(loc.expiresAt); acc.plan = loc.plan || null; }
+                } catch (e) {}
+                window.hostAccess = acc;
+            };
+
+            // ---- Host dashboard banner ----
+            window.renderHostAccessBanner = function () {
+                const b = $('host-access-banner');
+                if (!b) return;
+                if (!(window.auth && window.auth.currentUser) || window.isPlatformAdmin) { b.className = 'hidden'; b.innerHTML = ''; return; }
+                if (window.isHostPassActive()) {
+                    const plan = CFG.plans.find(p => p.id === window.hostAccess.plan);
+                    b.className = 'bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
+                    b.innerHTML = `<span class="text-2xl">🎟️</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">${plan ? plan.name : 'Host pass'} active</p><p class="text-[11px] text-slate-400">Everything unlocked until ${fmt(window.hostAccess.expiresAt)}</p></div><button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-100 text-[11px] font-bold">Extend</button>`;
+                } else {
+                    b.className = 'bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
+                    b.innerHTML = `<span class="text-2xl">🔒</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-amber-300">Demo mode</p><p class="text-[11px] text-slate-400">${CFG.maxStops} stops · ${CFG.park} only · 1 extra team</p></div><button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-disneyGold text-slate-950 text-[11px] font-black uppercase">Upgrade</button>`;
+                }
+            };
+
+            // ---- Locking helpers (used by the wizard) ----
+            function lockEl(el, tip) {
+                if (!el || el.classList.contains('demo-lock')) return;
+                el.classList.add('demo-lock');
+                Array.from(el.children).forEach(ch => { ch.setAttribute('inert', ''); ch.dataset.demoInert = '1'; });
+                const s = document.createElement('button');
+                s.type = 'button'; s.className = 'demo-shield'; s.setAttribute('aria-label', tip || 'Locked in demo mode');
+                s.innerHTML = '<span class="demo-pill">🔒 Upgrade</span>';
+                s.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); window.demoLockedTap(tip); });
+                el.appendChild(s);
+            }
+            window.demoLockedTap = function (tip) { window.appToast('🔒 ' + (tip || 'Locked in demo mode') + ' · upgrade to unlock', 2600); };
+
+            const PROMPTS = {
+                teams:      'In demo mode you can approve one extra team besides your own. Upgrade to approve more.',
+                difficulty: 'Medium and Hard difficulty need a pass. Demo races run on Easy.',
+                bonus:      'Hidden Mickey Bingo and Checkpoint Frenzy need a pass.',
+                stops:      'Demo races are limited to ' + CFG.maxStops + ' stops from ' + CFG.park + '. Upgrade to choose your own stops.'
+            };
+            window.demoUpgradePrompt = async function (kind) {
+                const ok = await window.appConfirm(PROMPTS[kind] || 'This feature is locked in demo mode.', { title: 'Demo mode', confirmText: 'See passes', cancelText: 'Not now' });
+                if (ok) window.showDemoScreen('plans');
+            };
+
+            window.clearWizardDemoLimits = function () {
+                const wz = $('race-wizard'); if (!wz) return;
+                wz.querySelectorAll('.demo-shield').forEach(n => n.remove());
+                wz.querySelectorAll('.demo-lock').forEach(n => n.classList.remove('demo-lock'));
+                wz.querySelectorAll('[data-demo-inert]').forEach(n => { n.removeAttribute('inert'); delete n.dataset.demoInert; });
+                wz.querySelectorAll('.demo-tab-locked').forEach(n => n.classList.remove('demo-tab-locked'));
+                wz.querySelectorAll('[data-demo-note]').forEach(n => n.remove());
+            };
+
+            window.applyWizardDemoLimits = function () {
+                window.clearWizardDemoLimits();
+                if (!window.isHostDemo()) return;
+                const note = (step, text) => {
+                    const sec = document.querySelector(`#race-wizard [data-rw-step="${step}"]`);
+                    if (sec) sec.insertAdjacentHTML('afterbegin', `<div data-demo-note class="demo-step-note"><span class="text-base">🔒</span><span class="flex-1">${text}</span><button type="button" onclick="showDemoScreen('plans')">Upgrade</button></div>`);
+                };
+                // Step 3: Easy only
+                const easy = document.querySelector('input[name="create_difficulty"][value="easy"]'); if (easy) easy.checked = true;
+                ['medium', 'hard'].forEach(v => lockEl(document.querySelector(`input[name="create_difficulty"][value="${v}"]`)?.closest('label'), 'Medium and Hard need a pass'));
+                note(3, 'Demo mode: races run on Easy difficulty.');
+                // Step 4: random only, fixed at 6 stops, Magic Kingdom only, no final location
+                window.switchPopMethod('random');
+                ['area', 'manual', 'preset'].forEach(m => $('pop-tab-' + m)?.classList.add('demo-tab-locked'));
+                const cnt = $('rand-gps-count');
+                if (cnt) { cnt.value = CFG.maxStops; lockEl(cnt.parentElement && cnt.parentElement.parentElement, 'Demo races have ' + CFG.maxStops + ' stops'); }
+                const fin = $('create-final-stop-select');
+                if (fin) { fin.value = ''; fin.dispatchEvent(new Event('change', { bubbles: true })); }
+                lockEl($('speed-final-stop-container'), 'A final location needs a pass');
+                note(4, `Demo mode: ${CFG.maxStops} random stops, all from ${CFG.park}.`);
+                // Step 5: bonus photo, trivia and wildcard stay open; Bingo and Frenzy are locked off
+                ['create-bingo-switch', 'create-frenzy-switch'].forEach(id => {
+                    const sw = $(id); if (!sw) return;
+                    sw.checked = false;
+                    lockEl(sw.closest('.bg-slate-900'), 'Bingo and Frenzy need a pass');
+                });
+                window.toggleBingoCreateSettings(); window.toggleFrenzyCreateSettings();
+                note(5, 'Demo mode: bonus photos, trivia and wildcard are included. Bingo and Frenzy need a pass.');
+                // Step 7: team limit reminder
+                note(7, 'Demo mode: your own team is free, and you can approve one extra team.');
+            };
+
+            // Choosing stops yourself is locked in demo mode (tabs stay visible, tapping them just explains why)
+            const origSwitchPop = window.switchPopMethod;
+            window.switchPopMethod = function (method) {
+                if (method !== 'random' && window.isHostDemo()) { window.demoLockedTap('Choosing your own stops needs a pass'); return; }
+                return origSwitchPop(method);
+            };
+
+            // ---- Full-screen demo page ----
+            let dmEntry = 'intro', dmBusy = false;
+            const views = ['intro', 'plans', 'done'];
+            function showView(v) { views.forEach(n => $('dm-view-' + n)?.classList.toggle('hidden', n !== v)); $('demo-mode-screen').scrollTop = 0; const sc = $('demo-mode-screen').firstElementChild; if (sc) sc.scrollTop = 0; }
+            function renderPlans() {
+                $('dm-plan-list').innerHTML = CFG.plans.map(p => `
+                    <div class="rounded-3xl border ${p.best ? 'border-disneyGold/60 bg-disneyGold/5' : 'border-slate-700 bg-slate-900'} p-5 space-y-3 relative">
+                        ${p.best ? '<span class="absolute -top-2.5 left-5 text-[10px] font-black uppercase tracking-wider bg-disneyGold text-slate-950 rounded-full px-2.5 py-0.5">Best value</span>' : ''}
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0"><h3 class="font-disney font-bold text-lg text-white">${p.name}</h3><p class="text-xs text-slate-400 mt-0.5">${p.tag}</p></div>
+                            <div class="text-right shrink-0"><p class="font-mono font-bold text-2xl text-disneyGold leading-none">${p.price}</p><p class="text-[10px] text-slate-500 mt-1">${p.days} days</p></div>
+                        </div>
+                        <p class="text-xs text-slate-300">Every feature unlocked for ${p.days} days: all difficulties, any stops and parks, Bingo, Frenzy and unlimited teams.</p>
+                        <button type="button" data-plan="${p.id}" onclick="dmBuy('${p.id}')" class="w-full py-3.5 ${p.best ? 'bg-disneyGold text-slate-950' : 'bg-indigo-600 text-white'} font-bold text-sm rounded-2xl active:scale-[0.98] transition flex items-center justify-center gap-2">Purchase</button>
+                    </div>`).join('');
+                $('dm-test-note')?.classList.toggle('hidden', !CFG.simulatedPayments);
+            }
+            window.showDemoScreen = function (view) {
+                const scr = $('demo-mode-screen'); if (!scr) return;
+                if (scr.classList.contains('hidden')) dmEntry = view || 'intro';
+                if ((view || 'intro') === 'plans') renderPlans();
+                showView(view || 'intro');
+                scr.classList.remove('hidden'); scr.classList.add('dm-open');
+            };
+            window.dmShowPlans = function () { window.showDemoScreen('plans'); };
+            window.dmClose = function () {
+                const u = window.auth && window.auth.currentUser;
+                if (u) sessionStorage.setItem('mmr_demo_seen', u.uid);
+                const scr = $('demo-mode-screen'); if (scr) { scr.classList.add('hidden'); scr.classList.remove('dm-open'); }
+            };
+            window.dmBack = function () {
+                if (dmBusy) return;
+                const onPlans = !$('dm-view-plans').classList.contains('hidden');
+                if (onPlans && dmEntry === 'intro') showView('intro'); else window.dmClose();
+            };
+
+            // ---- Fake purchase: unlocks the account for the plan's length (stacks on any pass still running) ----
+            window.dmBuy = async function (planId) {
+                const plan = CFG.plans.find(p => p.id === planId);
+                const user = window.auth && window.auth.currentUser;
+                if (!plan || !user || dmBusy) return;
+                dmBusy = true;
+                document.querySelectorAll('#dm-plan-list button[data-plan]').forEach(b => { b.disabled = true; b.classList.add('opacity-60'); if (b.dataset.plan === planId) b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; });
+                try {
+                    await new Promise(r => setTimeout(r, 900));   // stands in for the payment provider
+                    const now = Date.now();
+                    const base = Math.max(now, (window.hostAccess && window.hostAccess.expiresAt) || 0);
+                    const expiresAt = base + plan.days * 86400000;
+                    let toDevice = false;
+                    try {
+                        await setDoc(doc(window.db, 'hostAccess', user.uid), { plan: plan.id, days: plan.days, expiresAt, purchasedAt: now, simulated: true, email: user.email || '' });
+                    } catch (e) {
+                        console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
+                        localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify({ plan: plan.id, expiresAt }));
+                        toDevice = true;
+                    }
+                    window.hostAccess = { loaded: true, expiresAt, plan: plan.id };
+                    window.renderHostAccessBanner();
+                    window.applyWizardDemoLimits();   // unlocks an open wizard
+                    if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
+                    if (window.loadAdminRaces) { try { window.loadAdminRaces(); } catch (e) {} }
+                    $('dm-done-text').textContent = `Your ${plan.name} is active until ${fmt(expiresAt)}. All features are unlocked.` + (toDevice ? ' (Saved on this device only.)' : '');
+                    showView('done');
+                } finally { dmBusy = false; }
+            };
+        })();
 
         // ================= HOST EDIT MODAL LOGIC =================
         let editingRaceActiveCheckpoints = [];
@@ -5877,7 +6164,7 @@
             const presets = window.DISNEY_PRESETS || [];
 
             const activeIds = new Set(editingRaceActiveCheckpoints.map(c => c.name));
-            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))].filter(pk => !(window.isHostDemo && window.isHostDemo()) || pk === window.DEMO_CONFIG.park);
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
                 "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
@@ -5947,6 +6234,12 @@
             }
 
             const presets = window.DISNEY_PRESETS || [];
+            if (window.isHostDemo && window.isHostDemo()) {
+                const D = window.DEMO_CONFIG;
+                const outside = Array.from(checkedBoxes).some(cb => (presets[parseInt(cb.value)] || {}).park !== D.park);
+                const gpsNow = editingRaceActiveCheckpoints.filter(c => c.type !== 'BONUS_PHOTO' && !c.bingoId).length;
+                if (outside || gpsNow + checkedBoxes.length > D.maxStops) { window.demoUpgradePrompt('stops'); return; }
+            }
             checkedBoxes.forEach(cb => {
                 const p = presets[parseInt(cb.value)];
                 editingRaceActiveCheckpoints.push({
@@ -6765,7 +7058,7 @@
                             <span class="px-2 py-0.5 rounded-full font-bold ${badge}">${text}</span>
                             ${flags ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">🚩 ${flags}</span>` : ''}
                         </div>
-                        ${!t.isApproved ? `<button onclick="event.stopPropagation(); approveTeam('${code}', '${t.id}')" class="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]">Approve</button>` : ''}
+                        ${!t.isApproved ? ((window.demoTeamCapReached && window.demoTeamCapReached(teamList)) ? `<button onclick="event.stopPropagation(); demoUpgradePrompt('teams')" class="w-full px-2.5 py-1.5 bg-slate-800 border border-amber-500/40 text-amber-200 font-bold rounded-lg text-[11px]"><i class="fa-solid fa-lock mr-1"></i>Upgrade to approve</button>` : `<button onclick="event.stopPropagation(); approveTeam('${code}', '${t.id}')" class="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]">Approve</button>`) : ''}
                     </div>`;
             }).join('');
             const teamsOpen = Object.prototype.hasOwnProperty.call(window.__hrpSectionOpen, 'teams') ? !!window.__hrpSectionOpen.teams : true;
@@ -6835,6 +7128,7 @@
         };
 
         window.toggleHostBonusOptions = function(code, kind, checkbox) {
+            if (window.isHostDemo && window.isHostDemo() && (kind === 'bingo' || kind === 'frenzy') && checkbox.checked) { checkbox.checked = false; window.demoUpgradePrompt('bonus'); return; }
             const id = kind === 'wildcard' ? 'hrp-wildcard-options' : kind === 'frenzy' ? 'hrp-frenzy-options' : 'hrp-bingo-options';
             document.getElementById(id)?.classList.toggle('hidden', !checkbox.checked);
             window.saveHostBonusSettings(code);
@@ -7143,6 +7437,7 @@
             window.appToast('Trivia reward saved');
         };
         window.setRaceBaseDifficulty = async function(raceCode, value) {
+            if (window.isHostDemo && window.isHostDemo() && value !== 'easy') { window.demoUpgradePrompt('difficulty'); return; }
             const owned = await getOwnedRaceForHost(raceCode);
             if (!owned) return;
             await fastUpdate(owned.ref, { difficulty: value });
@@ -7664,6 +7959,12 @@
                 const raceSnap = await getDoc(doc(window.db, "races", raceCode));
                 if (!raceSnap.exists() || raceSnap.data().organizerId !== currentUser.uid) return;
 
+                if (window.isHostDemo && window.isHostDemo()) {
+                    // Demo: the host's own team is free, plus ONE additional approved team
+                    const teamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
+                    const approvedOthers = teamsSnap.docs.filter(d => d.id !== teamId && d.data().isApproved && !d.data().isHostTeam).length;
+                    if (approvedOthers >= window.DEMO_CONFIG.maxExtraTeams) { window.demoUpgradePrompt('teams'); return; }
+                }
                 await updateDoc(doc(window.db, "races", raceCode, "teams", teamId), { isApproved: true });
                 alert("Team approved successfully!");
                 loadAdminRaces();
@@ -11795,6 +12096,7 @@
             { key: 'hostpanel', isOpen: () => shown(el('host-race-panel')), close: () => window.closeHostRacePanel && window.closeHostRacePanel() },
             { key: 'appmenu', isOpen: () => !!window.isAppMenuOpen && window.isAppMenuOpen(), close: () => window.closeAppMenu && window.closeAppMenu() },
             { key: 'utilpage', isOpen: () => !!window.isUtilPageOpen && window.isUtilPageOpen(), close: () => window.closeUtilPage && window.closeUtilPage() },
+            { key: 'demoscreen', isOpen: () => shown(el('demo-mode-screen')), close: () => window.dmBack && window.dmBack() },
             modal('checkpoint-info-modal', () => window.closeCheckpointInfoModal && window.closeCheckpointInfoModal()),
             modal('team-verify-modal', () => window.closeTeamVerifyModal && window.closeTeamVerifyModal()),
             modal('organizer-edit-modal', () => window.closeOrganizerEditModal && window.closeOrganizerEditModal()),
