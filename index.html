@@ -1379,6 +1379,24 @@
                         </div>
                     </div>
 
+                    <!-- Collapsible Public Races Box (host-curated races anyone can buy into) -->
+                    <div id="public-races-card" class="bg-slate-800/90 border border-emerald-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+                        <button onclick="togglePublicRacesCard()" class="w-full flex items-center justify-between text-left focus:outline-none group">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                                    <i class="fa-solid fa-ticket text-xs"></i>
+                                </div>
+                                <span class="font-bold text-sm text-white group-hover:text-disneyGold transition truncate">Join a Public Race</span>
+                                <span id="public-races-count" class="hidden px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[10px] font-black"></span>
+                            </div>
+                            <span id="public-races-icon" class="text-xs text-slate-400 font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700 shrink-0">Expand <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                        </button>
+                        <div id="public-races-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80">
+                            <p class="text-slate-300 text-xs text-center max-w-md mx-auto">No team? No problem. Grab a ticket to a hosted race and compete against other players.</p>
+                            <div id="public-races-list" class="space-y-3"><p class="text-center text-xs text-slate-500 py-4">Loading races…</p></div>
+                        </div>
+                    </div>
+
                     <!-- Collapsible Host Event Box (Collapsed by default when not logged in) -->
                     <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
                         <button onclick="toggleRacePortalCard('host-event-box', 'host-event-icon')" class="w-full flex items-center justify-between text-left focus:outline-none group">
@@ -2269,6 +2287,7 @@
                         <button type="button" id="rw-share-btn" class="py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-sm rounded-2xl transition shadow flex items-center justify-center gap-2"><i class="fa-solid fa-share-nodes"></i> Invite players</button>
                         <button type="button" id="rw-copy-btn" class="py-3.5 bg-slate-800 border border-slate-600 hover:bg-slate-700 active:scale-95 text-white font-bold text-sm rounded-2xl transition flex items-center justify-center gap-2"><i class="fa-solid fa-copy"></i> Copy code</button>
                     </div>
+                    <button type="button" id="rw-list-public-btn" onclick="rwListPublic()" class="hidden w-full py-3.5 bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-200 font-bold text-sm rounded-2xl transition active:scale-95 flex items-center justify-center gap-2"><i class="fa-solid fa-ticket"></i> List as a public race</button>
                     <div id="rw-success-details" class="bg-slate-900 border border-slate-700 rounded-3xl divide-y divide-slate-800 text-sm"></div>
                 </section>
             </div>
@@ -2281,6 +2300,23 @@
             </div>
         </div>
     </div>
+    <!-- Public race details modal -->
+    <div id="public-race-modal" class="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pr-title" onclick="if(event.target===this)closePublicRace()">
+        <div class="bg-slate-900 border border-slate-700 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[90vh] shadow-2xl">
+            <div class="shrink-0 flex items-start gap-3 px-5 pt-5 pb-3 border-b border-slate-800">
+                <div class="min-w-0 flex-1">
+                    <div id="pr-badges" class="flex flex-wrap gap-1.5 mb-1.5"></div>
+                    <h3 id="pr-title" class="font-disney font-bold text-white text-xl leading-tight break-words"></h3>
+                </div>
+                <button type="button" onclick="closePublicRace()" class="shrink-0 w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="pr-body" class="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4 text-sm text-slate-300"></div>
+            <div class="shrink-0 px-5 pt-3 border-t border-slate-800" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px)">
+                <button type="button" id="pr-buy" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-sm uppercase tracking-wide shadow-lg active:scale-[0.98] transition"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global JS Functions -->
     <script>
         const DEFAULT_AVATAR = "data:image/svg+xml;utf8," + encodeURIComponent(`
@@ -4021,7 +4057,7 @@
                 window.db = getFirestore(app);
             }
 
-            onAuthStateChanged(window.auth, (user) => {
+            onAuthStateChanged(window.auth, async (user) => {
                 const authCard = document.getElementById('admin-auth-card');
                 const adminDashboard = document.getElementById('admin-dashboard-card');
                 const orgEmailDisplay = document.getElementById('org-email-display');
@@ -4032,8 +4068,11 @@
                     if (authCard) authCard.classList.add('hidden');
                     if (adminDashboard) adminDashboard.classList.remove('hidden');
                     if (orgCog) orgCog.classList.remove('hidden');
+                    if (window.checkPlatformAdmin) await window.checkPlatformAdmin(user);
                     loadAdminRaces();
                 } else {
+                    window.isPlatformAdmin = false;
+                    window.__publicListings = {};
                     stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
                     if (adminDashboard) adminDashboard.classList.add('hidden');
@@ -4049,6 +4088,7 @@
                 updateLeaderboardLoginNotice();
                 hideSplashScreen();
             }
+            setTimeout(() => { if (window.loadPublicRaces) window.loadPublicRaces(); }, 0);
         } catch (err) {
             console.error("Firebase Initialization Error:", err);
             hideSplashScreen();
@@ -5509,6 +5549,7 @@
             rwEl('rw-success-details').innerHTML = rows.join('');
 
             const safeCode = String(info.code).replace(/[^A-Z0-9]/gi, '');
+            rwEl('rw-list-public-btn')?.classList.toggle('hidden', !window.isPlatformAdmin);
             rwEl('rw-share-btn').onclick = () => window.shareRaceCode(info.code, info.title);
             const copyBtn = rwEl('rw-copy-btn');
             copyBtn.setAttribute('onclick', `copyRaceCode('${safeCode}')`);
@@ -6747,7 +6788,7 @@
                     </div>
                     <button type="button" onclick="scrollToPendingTeam('${pendingTeams[0].id}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase transition active:scale-95">Review now</button>
                 </div>` : '';
-            return pendingBanner + controls + portal + options + teams;
+            return pendingBanner + controls + portal + options + (window.isPlatformAdmin ? publicListingSectionHtml(race, code, teamList) : '') + teams;
         }
 
         function hostPanelRender(keepScroll) {
@@ -6827,6 +6868,236 @@
                 });
                 // Saved automatically in the background; no interrupting confirmation popup.
             } catch (e) { window.appToast('Could not save bonus settings'); console.error(e); }
+        };
+
+
+        // ===================== PUBLIC RACES (ticketed races the platform owner hosts) =====================
+        // Data: publicRaces/{raceCode} = listing snapshot (title, price, dates, rules...) + organizerId + active.
+        // Only accounts with a platformAdmins/{uid} document may create/edit/delete listings (enforced by Firestore rules).
+        window.isPlatformAdmin = false;
+        window.__publicListings = {};
+        window.checkPlatformAdmin = async function(user) {
+            window.isPlatformAdmin = false;
+            if (!user) return false;
+            try {
+                const snap = await getDoc(doc(window.db, "platformAdmins", user.uid));
+                window.isPlatformAdmin = snap.exists();
+            } catch (e) { window.isPlatformAdmin = false; }   // rules deny everyone else, so a failure simply means "not admin"
+            return window.isPlatformAdmin;
+        };
+
+        const publicRacesState = { list: [], loaded: false };
+        const prMoney = (cents) => (Number(cents) > 0 ? '$' + (Number(cents) / 100).toFixed(Number(cents) % 100 ? 2 : 0) : 'Free');
+        const prDate = (iso) => { if (!iso) return ''; const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+        function prDurationText(l) {
+            if (l.durationLabel) return l.durationLabel;
+            if (l.ticketType === 'monthlong' && l.startsAt && l.endsAt) return `${prDate(l.startsAt)} – ${prDate(l.endsAt)}`;
+            if (l.timeLimitMinutes > 0) return `${l.timeLimitMinutes} min time limit`;
+            return 'Go at your own pace';
+        }
+
+        window.loadPublicRaces = async function() {
+            try {
+                const snap = await getDocs(query(collection(window.db, "publicRaces"), where("active", "==", true)));
+                const today = new Date().toISOString().slice(0, 10);
+                const list = [];
+                snap.forEach(d => { const l = { id: d.id, ...d.data() }; if (!l.endsAt || l.endsAt >= today) list.push(l); });
+                list.sort((a, b) => (a.ticketType === b.ticketType ? 0 : a.ticketType === 'monthlong' ? -1 : 1) || String(b.listedAt || '').localeCompare(String(a.listedAt || '')));
+                publicRacesState.list = list; publicRacesState.loaded = true;
+            } catch (e) {
+                console.warn("Public races unavailable", e);
+                publicRacesState.loaded = true; publicRacesState.error = true;
+            }
+            renderPublicRaces();
+        };
+
+        function renderPublicRaces() {
+            const listEl = document.getElementById('public-races-list');
+            const countEl = document.getElementById('public-races-count');
+            if (!listEl) return;
+            const list = publicRacesState.list;
+            if (countEl) { countEl.textContent = list.length + ' live'; countEl.classList.toggle('hidden', !list.length); }
+            if (!list.length) {
+                listEl.innerHTML = `<p class="text-center text-xs text-slate-500 py-4">${publicRacesState.error ? 'Public races could not be loaded. Check your connection and try again.' : 'No public races are open right now. Check back soon!'}</p>`;
+                return;
+            }
+            listEl.innerHTML = list.map(l => {
+                const isHunt = l.gameMode === 'scavenger';
+                const monthly = l.ticketType === 'monthlong';
+                return `<button type="button" onclick="openPublicRace('${escHtml(l.id)}')" class="w-full text-left bg-slate-900 hover:border-emerald-400/50 border border-slate-700 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition">
+                    <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isHunt ? 'bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'}"><i class="fa-solid ${isHunt ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i></span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-bold text-white text-sm leading-tight truncate">${escHtml(l.title || l.id)}</span>
+                        <span class="block text-[11px] text-slate-400 mt-0.5 truncate">${monthly ? 'Month-long' : 'Single race'} · ${isHunt ? 'Scavenger Hunt' : 'Speed Race'} · ${escHtml(prDurationText(l))}</span>
+                    </span>
+                    <span class="shrink-0 text-right"><span class="block font-black text-emerald-300 text-sm">${prMoney(l.priceCents)}</span><i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i></span>
+                </button>`;
+            }).join('');
+        }
+
+        window.togglePublicRacesCard = function() {
+            window.toggleRacePortalCard('public-races-box', 'public-races-icon');
+            if (!document.getElementById('public-races-box').classList.contains('hidden')) window.loadPublicRaces();
+        };
+
+        window.openPublicRace = function(id) {
+            const l = publicRacesState.list.find(x => x.id === id);
+            if (!l) return;
+            const isHunt = l.gameMode === 'scavenger';
+            const monthly = l.ticketType === 'monthlong';
+            const row = (k, v) => v ? `<div class="flex justify-between gap-4 py-2"><span class="text-slate-500">${k}</span><span class="text-white font-semibold text-right">${v}</span></div>` : '';
+            const r = l.rules;
+            const transport = (r && window.RULE_TRANSPORT_HTML[r.transport]) || window.RULE_LEGACY_TRANSPORT_HTML;
+            const internet = (r && window.RULE_INTERNET_HTML[r.internet]) || window.RULE_LEGACY_INTERNET_HTML;
+            let penalty;
+            if (isHunt) penalty = 'Scavenger Hunts have <strong>no time penalties</strong>. Checkpoints you skip simply earn no points.';
+            else { const n = Number(l.missedPenaltyMin); penalty = n > 0 ? `Each <strong>missed checkpoint</strong> adds a <strong>${n}-minute penalty</strong> to your final time.` : 'There is <strong>no time penalty</strong> for missed checkpoints.'; }
+            const extra = r && String(r.extra || '').trim();
+            document.getElementById('pr-title').textContent = l.title || l.id;
+            document.getElementById('pr-badges').innerHTML =
+                `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${monthly ? 'Month-long' : 'Single race'}</span>` +
+                `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${isHunt ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}">${isHunt ? 'Scavenger Hunt' : 'Speed Race'}</span>`;
+            document.getElementById('pr-body').innerHTML = `
+                ${l.description ? `<p class="leading-relaxed whitespace-pre-line">${escHtml(l.description)}</p>` : ''}
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl px-4 divide-y divide-slate-800 text-xs">
+                    ${row('Price', prMoney(l.priceCents) + ' per team')}
+                    ${row('Duration', escHtml(prDurationText(l)))}
+                    ${monthly ? row('Window', l.startsAt || l.endsAt ? `${prDate(l.startsAt) || 'Now'} – ${prDate(l.endsAt) || 'Open'}` : '') : ''}
+                    ${row('Difficulty', l.difficulty ? escHtml(l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)) : '')}
+                    ${row('Checkpoints', l.checkpointCount ? String(l.checkpointCount) : '')}
+                    ${row('Team limit', l.maxTeams ? String(l.maxTeams) : '')}
+                </div>
+                <div class="space-y-2.5">
+                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-scale-balanced text-disneyGold mr-1.5"></i>Race rules${r && r.preset ? ' · ' + escHtml(window.RULE_PRESET_NAMES[r.preset] || 'Custom') : ''}</h4>
+                    <div class="text-xs leading-relaxed space-y-2.5">
+                        <p><span class="text-slate-500 font-bold uppercase text-[10px] block">Transport</span>${transport}</p>
+                        <p><span class="text-slate-500 font-bold uppercase text-[10px] block">Internet</span>${internet}</p>
+                        <p><span class="text-slate-500 font-bold uppercase text-[10px] block">Penalties</span>${penalty}</p>
+                        ${extra ? `<p><span class="text-slate-500 font-bold uppercase text-[10px] block">Host notes</span>${escHtml(extra)}</p>` : ''}
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500">Buying a ticket gives you the race code. Then pick a team name and PIN to register.</p>`;
+            const buy = document.getElementById('pr-buy');
+            buy.innerHTML = `<i class="fa-solid fa-ticket mr-1.5"></i> Buy now · ${prMoney(l.priceCents)}`;
+            buy.onclick = () => window.buyPublicRaceTicket(l.id);
+            document.getElementById('pr-body').scrollTop = 0;
+            document.getElementById('public-race-modal').classList.remove('hidden');
+        };
+        window.closePublicRace = function() { document.getElementById('public-race-modal')?.classList.add('hidden'); };
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closePublicRace(); });
+
+        // PLACEHOLDER CHECKOUT: for now "Buy now" just hands over the race code.
+        // When payments are added, replace this with: start checkout -> on success the server returns the code.
+        // (Ideally the code should then NOT be stored in the publicly readable listing.)
+        async function getTicketCode(listing) { return listing.raceCode || listing.id; }
+
+        window.buyPublicRaceTicket = async function(id) {
+            const l = publicRacesState.list.find(x => x.id === id);
+            if (!l) return;
+            const code = String(await getTicketCode(l)).trim().toUpperCase();
+            await window.copyHostRaceCode(code);
+            window.closePublicRace();
+            // Drop the player on the join form with the code ready to go
+            const input = document.getElementById('input-race-code');
+            if (input) { input.value = code; input.dispatchEvent(new Event('change')); }
+            const box = document.getElementById('join-race-box');
+            if (box && box.classList.contains('hidden')) window.toggleRacePortalCard('join-race-box', 'join-race-icon');
+            setTimeout(() => { document.getElementById('input-team-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('input-team-name')?.focus({ preventScroll: true }); }, 250);
+        };
+
+        // ---------- Host side (platform admin only) ----------
+        function publicListingSectionHtml(race, code, teamList) {
+            const l = (window.__publicListings || {})[code];
+            const live = !!(l && l.active);
+            const inp = 'w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400';
+            const lbl = 'block text-[10px] text-slate-400 mb-1';
+            const v = (x) => escHtml(x == null ? '' : String(x));
+            const price = l && l.priceCents != null ? (l.priceCents / 100) : '';
+            const status = live
+                ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live on Public Races</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-700/50 text-slate-400 border border-slate-600">Not listed</span>';
+            return hrpSection('fa-solid fa-ticket', 'Public Race Listing', `
+                <div>${status}</div>
+                <div><label class="${lbl}">Ticket type</label>
+                    <select id="hrp-pub-type" class="${inp}">
+                        <option value="single" ${l && l.ticketType === 'monthlong' ? '' : 'selected'}>Single race ticket</option>
+                        <option value="monthlong" ${l && l.ticketType === 'monthlong' ? 'selected' : ''}>Month-long race / hunt</option>
+                    </select></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="${lbl}">Price per team ($)</label><input id="hrp-pub-price" type="number" min="0" step="0.01" inputmode="decimal" value="${v(price)}" placeholder="0 = free" class="${inp}"></div>
+                    <div><label class="${lbl}">Max teams (optional)</label><input id="hrp-pub-max" type="number" min="0" inputmode="numeric" value="${v(l && l.maxTeams || '')}" class="${inp}"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="${lbl}">Opens (optional)</label><input id="hrp-pub-start" type="date" value="${v(l && l.startsAt)}" class="${inp}"></div>
+                    <div><label class="${lbl}">Closes (hides after)</label><input id="hrp-pub-end" type="date" value="${v(l && l.endsAt)}" class="${inp}"></div>
+                </div>
+                <div><label class="${lbl}">Duration text (optional)</label><input id="hrp-pub-duration" type="text" maxlength="60" value="${v(l && l.durationLabel)}" placeholder="e.g. About 3 hours" class="${inp}"></div>
+                <div><label class="${lbl}">Description shown to players</label><textarea id="hrp-pub-desc" rows="4" maxlength="800" class="${inp}">${v(l && l.description)}</textarea></div>
+                <button type="button" onclick="savePublicListing('${code}')" class="w-full px-3 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow">${live ? 'Save listing changes' : 'List on Public Races'}</button>
+                ${live ? `<button type="button" onclick="removePublicListing('${code}')" class="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold">Remove from Public Races</button>` : ''}
+                <p class="text-[10px] text-slate-500">Rules, difficulty and checkpoint count are copied when you save. Save again after editing the race.</p>`, 'public', false);
+        }
+
+        window.savePublicListing = async function(code) {
+            if (!window.isPlatformAdmin) return;
+            const owned = await getOwnedRaceForHost(code);
+            if (!owned) return;
+            const race = owned.data;
+            const g = (id) => document.getElementById(id);
+            const prev = (window.__publicListings || {})[code];
+            const priceNum = Number(g('hrp-pub-price')?.value);
+            const startsAt = g('hrp-pub-start')?.value || '', endsAt = g('hrp-pub-end')?.value || '';
+            if (startsAt && endsAt && endsAt < startsAt) return window.appToast('Closing date is before the opening date');
+            const data = {
+                raceCode: code,
+                title: race.title || code,
+                gameMode: race.gameMode || 'race',
+                difficulty: race.difficulty || 'easy',
+                ticketType: g('hrp-pub-type')?.value === 'monthlong' ? 'monthlong' : 'single',
+                priceCents: Number.isFinite(priceNum) && priceNum > 0 ? Math.round(priceNum * 100) : 0,
+                maxTeams: Math.max(0, Math.floor(Number(g('hrp-pub-max')?.value) || 0)),
+                startsAt, endsAt,
+                durationLabel: (g('hrp-pub-duration')?.value || '').trim(),
+                description: (g('hrp-pub-desc')?.value || '').trim(),
+                rules: race.rules || null,
+                missedPenaltyMin: race.gameMode === 'scavenger' ? 0 : window.missedPenaltyMin(race),
+                timeLimitMinutes: Number(race.timeLimitMinutes) || 0,
+                checkpointCount: (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length,
+                active: true,
+                organizerId: window.auth.currentUser.uid,
+                listedAt: (prev && prev.listedAt) || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            try {
+                await setDoc(doc(window.db, "publicRaces", code), data);
+                window.__publicListings[code] = data;
+                window.appToast(prev && prev.active ? 'Listing updated' : 'Listed on Public Races!');
+                window.loadPublicRaces();
+                hostPanelRender(true);
+            } catch (e) { alert('Could not save listing: ' + e.message); }
+        };
+
+        window.removePublicListing = async function(code) {
+            if (!window.isPlatformAdmin) return;
+            if (!(await appConfirm('Players will no longer see this race on the Public Races card. Teams already registered are not affected.', { title: 'Remove from Public Races?', confirmText: 'Remove' }))) return;
+            try {
+                await deleteDoc(doc(window.db, "publicRaces", code));
+                delete window.__publicListings[code];
+                window.appToast('Removed from Public Races');
+                window.loadPublicRaces();
+                hostPanelRender(true);
+            } catch (e) { alert('Could not remove listing: ' + e.message); }
+        };
+
+        // Wizard success screen shortcut -> opens the host panel straight onto the listing form
+        window.rwListPublic = async function() {
+            const code = rwInfo && rwInfo.code;
+            if (!code || !window.isPlatformAdmin) return;
+            await window.closeRaceWizard();
+            if (!window.__hostRaceData[code]) await loadAdminRaces();
+            window.openHostRacePanel(code);
+            window.__hrpSectionOpen.public = true;
+            hostPanelRender(false);
         };
 
         window.openHostRacePanel = function(code) {
@@ -6925,6 +7196,15 @@
                     races.push({ id: docSnap.id, ...docSnap.data() });
                 });
                 races.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+                // Public listings (platform admin only)
+                window.__publicListings = {};
+                if (window.isPlatformAdmin) {
+                    try {
+                        const lSnap = await getDocs(query(collection(window.db, "publicRaces"), where("organizerId", "==", currentUser.uid)));
+                        lSnap.forEach(d => { window.__publicListings[d.id] = d.data(); });
+                    } catch (e) { console.warn("Could not load public listings", e); }
+                }
 
                 let totalPendingTeams = 0;
                 let html = '';
@@ -7416,6 +7696,9 @@
                 }
 
                 await deleteDoc(doc(window.db, "races", raceCode));
+                if (window.isPlatformAdmin && window.__publicListings && window.__publicListings[raceCode]) {
+                    try { await deleteDoc(doc(window.db, "publicRaces", raceCode)); } catch (e) { console.warn(e); }
+                }
                 alert(`Race ${raceCode} has been completely deleted.`);
                 loadAdminRaces();
             } catch (e) {
