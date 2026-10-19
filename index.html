@@ -7639,13 +7639,17 @@
             listEl.innerHTML = resume + list.map(l => {
                 const isHunt = l.gameMode === 'scavenger';
                 const monthly = l.ticketType === 'monthlong';
-                return `<button type="button" onclick="openPublicRace('${escHtml(l.id)}')" class="w-full text-left bg-slate-900 hover:border-emerald-400/50 border border-slate-700 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition">
-                    <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isHunt ? 'bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'}"><i class="fa-solid ${isHunt ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i></span>
+                const bg = l.bannerUrl ? `<span class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image:url('${escHtml(l.bannerUrl)}')"></span><span class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/30"></span>` : '';
+                return `<button type="button" onclick="openPublicRace('${escHtml(l.id)}')" class="relative overflow-hidden w-full text-left bg-slate-900 hover:border-emerald-400/50 border border-slate-700 rounded-2xl p-4 min-h-[84px] active:scale-[0.98] transition">
+                    ${bg}
+                    <span class="relative flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 backdrop-blur-sm ${isHunt ? 'bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-500/40' : 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40'}"><i class="fa-solid ${isHunt ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i></span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-bold text-white text-sm leading-tight truncate">${escHtml(l.title || l.id)}</span>
-                        <span class="block text-[11px] text-slate-400 mt-0.5 truncate">${monthly ? 'Month-long' : 'Single race'} · ${isHunt ? 'Scavenger Hunt' : 'Speed Race'} · ${escHtml(prDurationText(l))}</span>
+                        <span class="block font-bold text-white text-sm leading-tight truncate drop-shadow">${escHtml(l.title || l.id)}</span>
+                        <span class="block text-[11px] text-slate-300 mt-0.5 truncate drop-shadow">${monthly ? 'Month-long' : 'Single race'} · ${isHunt ? 'Scavenger Hunt' : 'Speed Race'} · ${escHtml(prDurationText(l))}</span>
                     </span>
-                    <span class="shrink-0 text-right"><span class="block font-black text-emerald-300 text-sm">${prMoney(l.priceCents)}</span><i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i></span>
+                    <span class="shrink-0 text-right"><span class="block font-black text-emerald-300 text-sm drop-shadow">${prMoney(l.priceCents)}</span><i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i></span>
+                    </span>
                 </button>`;
             }).join('');
         }
@@ -8067,11 +8071,16 @@
             const lbl = 'block text-[10px] text-slate-400 mb-1';
             const v = (x) => escHtml(x == null ? '' : String(x));
             const price = l && l.priceCents != null ? (l.priceCents / 100) : '';
+            const bannerNow = (window.__pubBannerDraft && window.__pubBannerDraft[code]) || (l && l.bannerUrl) || '';
             const status = live
                 ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live on Public Races</span>'
                 : '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-700/50 text-slate-400 border border-slate-600">Not listed</span>';
             return hrpSection('fa-solid fa-ticket', 'Public Race Listing', `
                 <div>${status}</div>
+                <div><label class="${lbl}">Banner image <span class="text-rose-300">(required)</span></label>
+                    <div id="hrp-pub-banner-prev" class="relative h-24 rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 bg-cover bg-center flex items-center justify-center text-[11px] text-slate-500" style="${bannerNow ? `background-image:url('${bannerNow}')` : ''}">${bannerNow ? '' : 'No banner yet'}</div>
+                    <label class="mt-2 block w-full text-center px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold cursor-pointer"><i class="fa-solid fa-image mr-1"></i> ${bannerNow ? 'Replace banner' : 'Choose banner'}<input type="file" accept="image/*" class="hidden" onchange="pubBannerChosen('${code}', this)"></label>
+                    <p class="text-[10px] text-slate-500 mt-1">Shown faded behind the race on the Public Races card. Wide photos work best.</p></div>
                 <div><label class="${lbl}">Ticket type</label>
                     <select id="hrp-pub-type" class="${inp}">
                         <option value="single" ${l && l.ticketType === 'monthlong' ? '' : 'selected'}>Single race ticket</option>
@@ -8092,6 +8101,18 @@
                 <p class="text-[10px] text-slate-500">Rules, difficulty and checkpoint count are copied when you save. Save again after editing the race.</p>`, 'public', false);
         }
 
+        window.__pubBannerDraft = window.__pubBannerDraft || {};
+        window.pubBannerChosen = async function(code, input) {
+            const f = input.files && input.files[0]; if (!f) return;
+            try {
+                const url = await compressImage(f, 900, 500, 0.72);
+                window.__pubBannerDraft[code] = url;
+                const prev = document.getElementById('hrp-pub-banner-prev');
+                if (prev) { prev.style.backgroundImage = `url('${url}')`; prev.textContent = ''; }
+            } catch (e) { window.appToast('Could not read that image'); }
+            input.value = '';
+        };
+
         window.savePublicListing = async function(code) {
             if (!window.isPlatformAdmin) return;
             const owned = await getOwnedRaceForHost(code);
@@ -8099,11 +8120,14 @@
             const race = owned.data;
             const g = (id) => document.getElementById(id);
             const prev = (window.__publicListings || {})[code];
+            const bannerUrl = (window.__pubBannerDraft && window.__pubBannerDraft[code]) || (prev && prev.bannerUrl) || '';
+            if (!bannerUrl) return window.appToast('Add a banner image before listing');
             const priceNum = Number(g('hrp-pub-price')?.value);
             const startsAt = g('hrp-pub-start')?.value || '', endsAt = g('hrp-pub-end')?.value || '';
             if (startsAt && endsAt && endsAt < startsAt) return window.appToast('Closing date is before the opening date');
             const data = {
                 raceCode: code,
+                bannerUrl,
                 title: race.title || code,
                 gameMode: race.gameMode || 'race',
                 difficulty: race.difficulty || 'easy',
@@ -8125,6 +8149,7 @@
             try {
                 await setDoc(doc(window.db, "publicRaces", code), data);
                 window.__publicListings[code] = data;
+                if (window.__pubBannerDraft) delete window.__pubBannerDraft[code];
                 window.appToast(prev && prev.active ? 'Listing updated' : 'Listed on Public Races!');
                 window.loadPublicRaces();
                 hostPanelRender(true);
