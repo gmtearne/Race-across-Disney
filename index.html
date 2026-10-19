@@ -7639,7 +7639,7 @@
             listEl.innerHTML = resume + list.map(l => {
                 const isHunt = l.gameMode === 'scavenger';
                 const monthly = l.ticketType === 'monthlong';
-                const bg = l.bannerUrl ? `<span class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image:url('${escHtml(l.bannerUrl)}')"></span><span class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/30"></span>` : '';
+                const bg = l.bannerUrl ? `<span class="absolute inset-0 bg-cover opacity-40" style="background-image:url('${escHtml(l.bannerUrl)}');background-position:${escHtml(/^[\d.]+% [\d.]+%$/.test(l.bannerPos || '') ? l.bannerPos : '50% 50%')}"></span><span class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/30"></span>` : '';
                 return `<button type="button" onclick="openPublicRace('${escHtml(l.id)}')" class="relative overflow-hidden w-full text-left bg-slate-900 hover:border-emerald-400/50 border border-slate-700 rounded-2xl p-4 min-h-[84px] active:scale-[0.98] transition">
                     ${bg}
                     <span class="relative flex items-center gap-3">
@@ -8072,13 +8072,14 @@
             const v = (x) => escHtml(x == null ? '' : String(x));
             const price = l && l.priceCents != null ? (l.priceCents / 100) : '';
             const bannerNow = (window.__pubBannerDraft && window.__pubBannerDraft[code]) || (l && l.bannerUrl) || '';
+            const bannerPosNow = (window.__pubBannerPos && window.__pubBannerPos[code]) || (l && l.bannerPos) || '50% 50%';
             const status = live
                 ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live on Public Races</span>'
                 : '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-700/50 text-slate-400 border border-slate-600">Not listed</span>';
             return hrpSection('fa-solid fa-ticket', 'Public Race Listing', `
                 <div>${status}</div>
                 <div><label class="${lbl}">Banner image <span class="text-rose-300">(required)</span></label>
-                    <div id="hrp-pub-banner-prev" class="relative h-24 rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 bg-cover bg-center flex items-center justify-center text-[11px] text-slate-500" style="${bannerNow ? `background-image:url('${bannerNow}')` : ''}">${bannerNow ? '' : 'No banner yet'}</div>
+                    <div id="hrp-pub-banner-prev" data-code="${code}" class="relative h-24 rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 bg-cover flex items-center justify-center text-[11px] text-slate-500 ${bannerNow ? 'cursor-grab touch-none select-none' : ''}" style="${bannerNow ? `background-image:url('${bannerNow}');background-position:${bannerPosNow}` : ''}">${bannerNow ? '<span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-full bg-black/60 text-[9px] text-white pointer-events-none"><i class="fa-solid fa-up-down-left-right"></i> Drag to reposition</span>' : 'No banner yet'}</div>
                     <label class="mt-2 block w-full text-center px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold cursor-pointer"><i class="fa-solid fa-image mr-1"></i> ${bannerNow ? 'Replace banner' : 'Choose banner'}<input type="file" accept="image/*" class="hidden" onchange="pubBannerChosen('${code}', this)"></label>
                     <p class="text-[10px] text-slate-500 mt-1">Shown faded behind the race on the Public Races card. Wide photos work best.</p></div>
                 <div><label class="${lbl}">Ticket type</label>
@@ -8102,16 +8103,61 @@
         }
 
         window.__pubBannerDraft = window.__pubBannerDraft || {};
+        window.__pubBannerPos = window.__pubBannerPos || {};
         window.pubBannerChosen = async function(code, input) {
             const f = input.files && input.files[0]; if (!f) return;
             try {
-                const url = await compressImage(f, 900, 500, 0.72);
+                const url = await compressImage(f, 1200, 1200, 0.72);
                 window.__pubBannerDraft[code] = url;
+                window.__pubBannerPos[code] = '50% 50%';
                 const prev = document.getElementById('hrp-pub-banner-prev');
-                if (prev) { prev.style.backgroundImage = `url('${url}')`; prev.textContent = ''; }
+                if (prev) {
+                    prev.style.backgroundImage = `url('${url}')`; prev.style.backgroundPosition = '50% 50%';
+                    prev.classList.add('cursor-grab', 'touch-none', 'select-none');
+                    prev.innerHTML = '<span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-full bg-black/60 text-[9px] text-white pointer-events-none"><i class="fa-solid fa-up-down-left-right"></i> Drag to reposition</span>';
+                }
             } catch (e) { window.appToast('Could not read that image'); }
             input.value = '';
         };
+        // Drag the banner inside the crop window. Works on whichever axis overflows (background-size: cover).
+        (function () {
+            let drag = null;
+            const dimsCache = {};
+            function getDims(url) {
+                return new Promise(res => {
+                    if (dimsCache[url]) return res(dimsCache[url]);
+                    const im = new Image();
+                    im.onload = () => { dimsCache[url] = { w: im.naturalWidth, h: im.naturalHeight }; res(dimsCache[url]); };
+                    im.onerror = () => res(null);
+                    im.src = url;
+                });
+            }
+            document.addEventListener('pointerdown', async (e) => {
+                const el = e.target.closest && e.target.closest('#hrp-pub-banner-prev');
+                if (!el || !el.style.backgroundImage) return;
+                const m = el.style.backgroundImage.match(/url\(["']?(.*?)["']?\)$/); if (!m) return;
+                const code = el.dataset.code;
+                const cur = (window.__pubBannerPos[code] || (window.__publicListings[code] && window.__publicListings[code].bannerPos) || '50% 50%').split(' ').map(parseFloat);
+                drag = { el, code, x0: e.clientX, y0: e.clientY, px: isNaN(cur[0]) ? 50 : cur[0], py: isNaN(cur[1]) ? 50 : cur[1], dims: null, pid: e.pointerId };
+                try { el.setPointerCapture(e.pointerId); } catch (_) {}
+                const d = drag; d.dims = await getDims(m[1]);
+            });
+            document.addEventListener('pointermove', (e) => {
+                if (!drag || !drag.dims || e.pointerId !== drag.pid) return;
+                const { el, dims } = drag;
+                const cw = el.clientWidth, ch = el.clientHeight;
+                const sc = Math.max(cw / dims.w, ch / dims.h);
+                const ox = dims.w * sc - cw, oy = dims.h * sc - ch;
+                let nx = drag.px, ny = drag.py;
+                if (ox > 1) nx = Math.min(100, Math.max(0, drag.px - ((e.clientX - drag.x0) / ox) * 100));
+                if (oy > 1) ny = Math.min(100, Math.max(0, drag.py - ((e.clientY - drag.y0) / oy) * 100));
+                const pos = nx.toFixed(1) + '% ' + ny.toFixed(1) + '%';
+                el.style.backgroundPosition = pos;
+                window.__pubBannerPos[drag.code] = pos;
+            });
+            const end = () => { drag = null; };
+            document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+        })();
 
         window.savePublicListing = async function(code) {
             if (!window.isPlatformAdmin) return;
@@ -8122,12 +8168,13 @@
             const prev = (window.__publicListings || {})[code];
             const bannerUrl = (window.__pubBannerDraft && window.__pubBannerDraft[code]) || (prev && prev.bannerUrl) || '';
             if (!bannerUrl) return window.appToast('Add a banner image before listing');
+            const bannerPos = (window.__pubBannerPos && window.__pubBannerPos[code]) || (prev && prev.bannerPos) || '50% 50%';
             const priceNum = Number(g('hrp-pub-price')?.value);
             const startsAt = g('hrp-pub-start')?.value || '', endsAt = g('hrp-pub-end')?.value || '';
             if (startsAt && endsAt && endsAt < startsAt) return window.appToast('Closing date is before the opening date');
             const data = {
                 raceCode: code,
-                bannerUrl,
+                bannerUrl, bannerPos,
                 title: race.title || code,
                 gameMode: race.gameMode || 'race',
                 difficulty: race.difficulty || 'easy',
@@ -8150,6 +8197,7 @@
                 await setDoc(doc(window.db, "publicRaces", code), data);
                 window.__publicListings[code] = data;
                 if (window.__pubBannerDraft) delete window.__pubBannerDraft[code];
+                if (window.__pubBannerPos) delete window.__pubBannerPos[code];
                 window.appToast(prev && prev.active ? 'Listing updated' : 'Listed on Public Races!');
                 window.loadPublicRaces();
                 hostPanelRender(true);
@@ -8336,12 +8384,15 @@
                         ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-200 text-[9px] font-black uppercase">🛟 Support session</span>'
                         : ((race.support && race.support.status === 'connected') ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-200 text-[9px] font-black uppercase">🛟 Support connected</span>' : '');
                     const isScav = race.gameMode === 'scavenger';
+                    const pubL = (window.__publicListings || {})[race.code];
+                    const isPublic = !!(pubL && pubL.active);
+                    const publicPill = isPublic ? '<span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-[9px] font-black uppercase"><i class="fa-solid fa-earth-europe"></i> Public</span>' : '';
                     html += `
-                        <button type="button" onclick="openHostRacePanel('${race.code}')" class="relative aspect-square rounded-3xl border border-slate-700/80 bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-left flex flex-col justify-between active:scale-[0.97] hover:border-disneyGold/50 transition shadow-lg overflow-hidden">
+                        <button type="button" onclick="openHostRacePanel('${race.code}')" class="relative aspect-square rounded-3xl border ${isPublic ? 'border-emerald-400/70 ring-1 ring-emerald-400/30 shadow-emerald-900/40 hover:border-emerald-300' : 'border-slate-700/80 hover:border-disneyGold/50'} bg-gradient-to-br ${isPublic ? 'from-slate-900 to-emerald-950/60' : 'from-slate-900 to-slate-800'} p-4 text-left flex flex-col justify-between active:scale-[0.97] transition shadow-lg overflow-hidden">
                             ${tilePending > 0 ? `<span class="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/25 border border-rose-400/50 text-rose-200 text-[11px] font-black animate-pulse" title="${tilePending} waiting for approval"><i class="fa-solid fa-bell"></i>${tilePending}</span>` : ''}
-                            <span class="w-10 h-10 rounded-2xl flex items-center justify-center text-base ${isScav ? 'bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'}"><i class="fa-solid ${isScav ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i></span>
+                            <span class="relative w-10 h-10 rounded-2xl flex items-center justify-center text-base ${isScav ? 'bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'}"><i class="fa-solid ${isScav ? 'fa-magnifying-glass-location' : 'fa-flag-checkered'}"></i>${isPublic ? '<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[8px] flex items-center justify-center border border-slate-900"><i class="fa-solid fa-earth-europe"></i></span>' : ''}</span>
                             <span class="block min-w-0">
-                                <span class="block font-bold text-white text-sm leading-tight line-clamp-2 break-words">${escHtml(race.title || race.code)}</span>${supportBadge}
+                                <span class="block font-bold text-white text-sm leading-tight line-clamp-2 break-words">${escHtml(race.title || race.code)}</span>${publicPill}${supportBadge}
                                 <span class="block text-[11px] text-slate-400 mt-1">${modeLabel}</span>
                             </span>
                             <span class="flex items-end justify-between gap-2">
