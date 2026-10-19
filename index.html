@@ -653,6 +653,11 @@
     </style>
 
     <style>
+        /* ===== Ticket checkout + new team wizard ===== */
+        .tw-seg { flex: 1; height: 5px; border-radius: 999px; background: #1e293b; transition: background .3s; }
+        .tw-seg.on { background: var(--theme-accent, #FFB800); }
+        #team-wizard .tw-step, #checkout-screen .co-body { animation: dmIn .3s ease both; }
+        #team-wizard .tw-shake { animation: rwShake .35s; }
         /* ===== Demo mode (unpaid hosts) ===== */
         .demo-lock { position: relative; }
         .demo-lock > *:not(.demo-shield) { opacity: .4; filter: grayscale(.55); }
@@ -1867,6 +1872,92 @@
 
 
     </main>
+    <!-- ===== TICKET CHECKOUT (full screen, simulated payment) ===== -->
+    <div id="checkout-screen" class="fixed inset-0 z-[185] hidden flex flex-col" style="background: radial-gradient(120% 50% at 50% 0%, rgba(16,185,129,.14), rgba(2,6,23,0) 60%), #020617;" role="dialog" aria-modal="true" aria-label="Checkout">
+        <div class="shrink-0 px-5 pb-3 border-b border-slate-800" style="padding-top: calc(env(safe-area-inset-top, 0px) + 12px);">
+            <div class="flex items-center gap-3 max-w-md mx-auto w-full">
+                <button type="button" onclick="closeCheckout()" aria-label="Back" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="font-disney font-bold text-lg text-white">Checkout</h2>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <div class="co-body max-w-md mx-auto w-full px-5 py-6 space-y-5">
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 space-y-3">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Your ticket</p>
+                    <h3 id="co-title" class="font-disney font-bold text-xl text-white leading-tight break-words"></h3>
+                    <p id="co-sub" class="text-xs text-slate-400"></p>
+                    <div class="border-t border-slate-800 pt-3 space-y-1.5 text-sm">
+                        <div class="flex justify-between text-slate-300"><span>1 team entry</span><span id="co-price"></span></div>
+                        <div class="flex justify-between font-bold text-white text-base pt-1.5 border-t border-slate-800"><span>Total</span><span id="co-total" class="text-emerald-300"></span></div>
+                    </div>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 flex gap-3 items-start text-xs text-slate-400 leading-relaxed">
+                    <i class="fa-solid fa-circle-info text-disneyGold mt-0.5"></i>
+                    <span>After paying you will choose your team name and PIN. Your team joins the race straight away, with no host approval needed.</span>
+                </div>
+                <button type="button" id="co-pay" onclick="completeCheckout()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-sm rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2"></button>
+                <p id="co-test-note" class="text-[11px] text-slate-500 text-center">Test mode: no real payment is taken.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NEW TEAM WIZARD (full screen, runs after a completed built-in checkout) ===== -->
+    <div id="team-wizard" class="fixed inset-0 z-[186] hidden flex flex-col bg-slate-950" role="dialog" aria-modal="true" aria-label="Join the race">
+        <div class="shrink-0 px-5 pb-3 border-b border-slate-800" style="padding-top: calc(env(safe-area-inset-top, 0px) + 12px);">
+            <div class="flex items-center justify-between gap-3 max-w-lg mx-auto w-full">
+                <div class="min-w-0">
+                    <p id="tw-step-label" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step 1 of 3</p>
+                    <h2 id="tw-step-title" class="font-disney font-bold text-lg text-white leading-tight truncate">Name your team</h2>
+                </div>
+                <button type="button" onclick="closeTeamWizard()" aria-label="Close" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex gap-1.5 mt-3 max-w-lg mx-auto w-full"><span class="tw-seg"></span><span class="tw-seg"></span><span class="tw-seg"></span></div>
+        </div>
+        <div id="tw-scroll" class="flex-1 overflow-y-auto custom-scrollbar">
+            <div class="max-w-lg mx-auto w-full px-5 py-6">
+                <section data-tw-step="1" class="tw-step space-y-5">
+                    <div class="text-center space-y-2 pt-4">
+                        <div class="text-5xl">🐭</div>
+                        <h3 class="font-disney font-bold text-2xl text-white">Payment complete!</h3>
+                        <p class="text-sm text-slate-400">What's your team called? <span id="tw-race-name" class="block text-slate-300 font-semibold mt-1"></span></p>
+                    </div>
+                    <input type="text" id="tw-name" maxlength="40" autocomplete="off" placeholder="e.g. The Mouse Trappers" onkeydown="if(event.key==='Enter'){event.preventDefault();twNext();}" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-4 text-base text-white text-center placeholder-slate-500 focus:outline-none focus:border-disneyGold transition">
+                </section>
+                <section data-tw-step="2" class="tw-step hidden space-y-5">
+                    <div class="text-center space-y-2 pt-4">
+                        <div class="text-5xl">🔐</div>
+                        <h3 class="font-disney font-bold text-2xl text-white">Secure your team</h3>
+                        <p class="text-sm text-slate-400">Choose a 4-digit PIN. Your whole team uses it to sign back in on any phone.</p>
+                    </div>
+                    <input id="tw-pin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="4-digit PIN" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-4 text-base text-white text-center tracking-[0.5em] placeholder-slate-500 placeholder:tracking-normal focus:outline-none focus:border-disneyGold transition">
+                    <input id="tw-pin2" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="Confirm PIN" onkeydown="if(event.key==='Enter'){event.preventDefault();twNext();}" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-4 py-4 text-base text-white text-center tracking-[0.5em] placeholder-slate-500 placeholder:tracking-normal focus:outline-none focus:border-disneyGold transition">
+                    <p class="text-[11px] text-slate-500 text-center">Write it down. There is no way to reset it yourself.</p>
+                </section>
+                <section data-tw-step="3" class="tw-step hidden space-y-5">
+                    <div class="text-center space-y-2 pt-4">
+                        <h3 class="font-disney font-bold text-2xl text-white">Add a team photo</h3>
+                        <p class="text-sm text-slate-400">Optional. It shows on the leaderboard and your team page.</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-4">
+                        <img id="tw-avatar-preview" alt="" class="w-32 h-32 rounded-full object-cover border-4 border-disneyGold bg-slate-900">
+                        <input type="file" id="tw-avatar-file" accept="image/*" class="hidden" onchange="twAvatarChosen(this)">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="document.getElementById('tw-avatar-file').click()" class="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-xs font-bold active:scale-95 transition"><i class="fa-solid fa-camera mr-1.5"></i>Choose photo</button>
+                            <button type="button" id="tw-avatar-clear" onclick="twAvatarClear()" class="hidden px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold active:scale-95 transition">Remove</button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 text-center">Location access is needed to check in at each stop. You will be asked when you tap Join race.</p>
+                </section>
+            </div>
+        </div>
+        <div class="shrink-0 px-5 pt-3 border-t border-slate-800 bg-slate-950" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);">
+            <div class="max-w-lg mx-auto w-full flex gap-3">
+                <button type="button" id="tw-back" onclick="twBack()" class="hidden px-5 py-4 bg-slate-900 border border-slate-700 text-slate-200 font-bold text-sm rounded-2xl active:scale-95 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <button type="button" id="tw-next" onclick="twNext()" class="flex-1 py-4 bg-disneyGold text-slate-950 font-bold text-sm tracking-wide rounded-2xl active:scale-[0.98] transition shadow-lg flex items-center justify-center gap-2">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== DEMO MODE SCREEN (unpaid hosts: shown on login, and from every Upgrade button) ===== -->
     <div id="demo-mode-screen" class="fixed inset-0 z-[180] hidden flex flex-col" style="background: radial-gradient(120% 60% at 50% 0%, rgba(255,184,0,.16), rgba(2,6,23,0) 62%), #020617;" role="dialog" aria-modal="true" aria-label="Demo mode">
         <div class="flex-1 overflow-y-auto custom-scrollbar" style="padding-top: calc(env(safe-area-inset-top, 0px) + 20px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);">
@@ -5662,8 +5753,8 @@
                 maxExtraTeams: 1,            // approved teams besides the host's own team
                 simulatedPayments: true,     // true = the Purchase button fakes the sale; set false when real payments exist
                 plans: [
-                    { id: 'week1', name: '1 Week Pass', days: 7,  price: '$19', tag: 'Perfect for one trip' },
-                    { id: 'week2', name: '2 Week Pass', days: 14, price: '$29', tag: 'Best value · a long stay or two trips', best: true }
+                    { id: 'week1', name: '1 Week Pass', days: 7,  price: '$4.99', tag: 'Perfect for one trip' },
+                    { id: 'week2', name: '2 Week Pass', days: 14, price: '$7.99', tag: 'Best value · a long stay or two trips', best: true }
                 ]
             };
             window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
@@ -7056,6 +7147,7 @@
                         </div>
                         <div class="flex items-center justify-center gap-1.5 flex-wrap text-[10px]">
                             <span class="px-2 py-0.5 rounded-full font-bold ${badge}">${text}</span>
+                            ${t.ticket && t.ticket.paid ? '<span class="px-2 py-0.5 rounded-full font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🎟️ Paid</span>' : ''}
                             ${flags ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">🚩 ${flags}</span>` : ''}
                         </div>
                         ${!t.isApproved ? ((window.demoTeamCapReached && window.demoTeamCapReached(teamList)) ? `<button onclick="event.stopPropagation(); demoUpgradePrompt('teams')" class="w-full px-2.5 py-1.5 bg-slate-800 border border-amber-500/40 text-amber-200 font-bold rounded-lg text-[11px]"><i class="fa-solid fa-lock mr-1"></i>Upgrade to approve</button>` : `<button onclick="event.stopPropagation(); approveTeam('${code}', '${t.id}')" class="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px]">Approve</button>`) : ''}
@@ -7215,7 +7307,9 @@
                 listEl.innerHTML = `<p class="text-center text-xs text-slate-500 py-4">${publicRacesState.error ? 'Public races could not be loaded. Check your connection and try again.' : 'No public races are open right now. Check back soon!'}</p>`;
                 return;
             }
-            listEl.innerHTML = list.map(l => {
+            let resume = '';
+            try { const pt = JSON.parse(localStorage.getItem('mmr_pending_ticket') || 'null'); if (pt && pt.code) resume = `<button type="button" onclick="resumePendingTicket()" class="w-full text-left bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition"><span class="text-2xl">🎟️</span><span class="min-w-0 flex-1"><span class="block font-bold text-emerald-300 text-sm">Finish joining</span><span class="block text-[11px] text-slate-400 truncate">${escHtml(pt.title || pt.code)} · ticket paid</span></span><i class="fa-solid fa-chevron-right text-emerald-400 text-xs"></i></button>`; } catch (e) {}
+            listEl.innerHTML = resume + list.map(l => {
                 const isHunt = l.gameMode === 'scavenger';
                 const monthly = l.ticketType === 'monthlong';
                 return `<button type="button" onclick="openPublicRace('${escHtml(l.id)}')" class="w-full text-left bg-slate-900 hover:border-emerald-400/50 border border-slate-700 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition">
@@ -7270,7 +7364,7 @@
                         ${extra ? `<p><span class="text-slate-500 font-bold uppercase text-[10px] block">Host notes</span>${escHtml(extra)}</p>` : ''}
                     </div>
                 </div>
-                <p class="text-[10px] text-slate-500">Buying a ticket gives you the race code. Then pick a team name and PIN to register.</p>`;
+                <p class="text-[10px] text-slate-500">Buy a ticket, then pick a team name and PIN. You join straight away with no host approval.</p>`;
             const buy = document.getElementById('pr-buy');
             buy.innerHTML = `<i class="fa-solid fa-ticket mr-1.5"></i> Buy now · ${prMoney(l.priceCents)}`;
             buy.onclick = () => window.buyPublicRaceTicket(l.id);
@@ -7280,24 +7374,168 @@
         window.closePublicRace = function() { document.getElementById('public-race-modal')?.classList.add('hidden'); };
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closePublicRace(); });
 
-        // PLACEHOLDER CHECKOUT: for now "Buy now" just hands over the race code.
-        // When payments are added, replace this with: start checkout -> on success the server returns the code.
-        // (Ideally the code should then NOT be stored in the publicly readable listing.)
+        // ---------- Ticket checkout + new team wizard ----------
+        // Flow: Buy now -> full-screen checkout (simulated payment) -> full-screen new team wizard -> team is created
+        // already APPROVED (the host never reviews it). Tickets sold elsewhere skip all this: those players use the normal
+        // Join form, land as pending, and the host verifies payment and approves them by hand.
+        // PAYMENTS: swap completeCheckout's simulated wait for the real provider; on success the SERVER should record the purchase
+        // and release the race code (ideally it is not stored in the publicly readable listing).
+        window.TICKET_CONFIG = { simulatedPayments: true };
         async function getTicketCode(listing) { return listing.raceCode || listing.id; }
+        const PENDING_KEY = 'mmr_pending_ticket';
+        const loadPending = () => { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch (e) { return null; } };
+        const savePending = (t) => { try { if (t) localStorage.setItem(PENDING_KEY, JSON.stringify(t)); else localStorage.removeItem(PENDING_KEY); } catch (e) {} };
+        let coListing = null, coBusy = false;
+        const $id = (x) => document.getElementById(x);
 
         window.buyPublicRaceTicket = async function(id) {
             const l = publicRacesState.list.find(x => x.id === id);
             if (!l) return;
             const code = String(await getTicketCode(l)).trim().toUpperCase();
-            await window.copyHostRaceCode(code);
-            window.closePublicRace();
-            // Drop the player on the join form with the code ready to go
-            const input = document.getElementById('input-race-code');
-            if (input) { input.value = code; input.dispatchEvent(new Event('change')); }
-            const box = document.getElementById('join-race-box');
-            if (box && box.classList.contains('hidden')) window.toggleRacePortalCard('join-race-box', 'join-race-icon');
-            setTimeout(() => { document.getElementById('input-team-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('input-team-name')?.focus({ preventScroll: true }); }, 250);
+            try {   // refuse to sell a ticket for a race that is gone or full
+                const rs = await getDoc(doc(window.db, "races", code));
+                if (!rs.exists()) return alert('This race is no longer available.');
+                if (Number(l.maxTeams) > 0) {
+                    const ts = await getDocs(collection(window.db, "races", code, "teams"));
+                    if (ts.size >= Number(l.maxTeams)) return alert('Sorry, this race is full.');
+                }
+            } catch (e) { console.warn('Pre-checkout checks skipped', e); }
+            coListing = { ...l, _code: code };
+            const monthly = l.ticketType === 'monthlong';
+            $id('co-title').textContent = l.title || l.id;
+            $id('co-sub').textContent = `${monthly ? 'Month-long' : 'Single race'} · ${l.gameMode === 'scavenger' ? 'Scavenger Hunt' : 'Speed Race'} · ${prDurationText(l)}`;
+            $id('co-price').textContent = $id('co-total').textContent = prMoney(l.priceCents);
+            $id('co-pay').disabled = false; $id('co-pay').classList.remove('opacity-60');
+            $id('co-pay').innerHTML = `<i class="fa-solid fa-lock"></i> ${Number(l.priceCents) > 0 ? 'Pay ' + prMoney(l.priceCents) : 'Get free ticket'}`;
+            $id('co-test-note').classList.toggle('hidden', !window.TICKET_CONFIG.simulatedPayments);
+            $id('checkout-screen').classList.remove('hidden');
         };
+        window.closeCheckout = function() { if (coBusy) return; $id('checkout-screen')?.classList.add('hidden'); };
+
+        window.completeCheckout = async function() {
+            if (coBusy || !coListing) return;
+            coBusy = true;
+            const btn = $id('co-pay'); btn.disabled = true; btn.classList.add('opacity-60');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            try {
+                await new Promise(r => setTimeout(r, 1100));   // stands in for the payment provider
+                const l = coListing;
+                const ticket = { code: l._code, listingId: l.id, title: l.title || l.id, priceCents: Number(l.priceCents) || 0, paidAt: Date.now(), simulated: !!window.TICKET_CONFIG.simulatedPayments };
+                savePending(ticket);
+                $id('checkout-screen').classList.add('hidden');
+                window.closePublicRace();
+                openTeamWizard(ticket);
+            } finally { coBusy = false; }
+        };
+
+        // ---- New team wizard ----
+        let twStep = 1, twTicket = null, twAvatar = null, twBusy = false;
+        const TW_TITLES = ['Name your team', 'Secure your team', 'Team photo'];
+        function twRender() {
+            document.querySelectorAll('#team-wizard [data-tw-step]').forEach(sec => {
+                const on = Number(sec.dataset.twStep) === twStep;
+                sec.classList.toggle('hidden', !on);
+                if (on) { sec.style.animation = 'none'; void sec.offsetWidth; sec.style.animation = ''; }
+            });
+            [...document.querySelectorAll('#team-wizard .tw-seg')].forEach((seg, i) => seg.classList.toggle('on', i < twStep));
+            $id('tw-step-label').textContent = `Step ${twStep} of 3`;
+            $id('tw-step-title').textContent = TW_TITLES[twStep - 1];
+            $id('tw-back').classList.toggle('hidden', twStep === 1);
+            $id('tw-next').innerHTML = twStep === 3 ? '<i class="fa-solid fa-flag-checkered"></i> Join race' : 'Next <i class="fa-solid fa-arrow-right"></i>';
+            $id('tw-scroll').scrollTop = 0;
+        }
+        function openTeamWizard(ticket) {
+            twTicket = ticket; twStep = 1; twAvatar = null; twBusy = false;
+            ['tw-name', 'tw-pin', 'tw-pin2'].forEach(x => { $id(x).value = ''; });
+            $id('tw-avatar-file').value = '';
+            $id('tw-avatar-preview').src = DEFAULT_AVATAR;
+            $id('tw-avatar-clear').classList.add('hidden');
+            $id('tw-race-name').textContent = ticket.title || '';
+            $id('team-wizard').classList.remove('hidden');
+            twRender();
+            setTimeout(() => { if (twStep === 1) $id('tw-name')?.focus(); }, 350);
+        }
+        window.openTeamWizard = openTeamWizard;
+        window.closeTeamWizard = function() {
+            if (twBusy) return;
+            $id('team-wizard')?.classList.add('hidden');
+            window.appToast('Your ticket is saved. Finish joining from Join a Public Race.', 3200);
+            renderPublicRaces();
+        };
+        window.twBack = function() { if (twBusy || twStep <= 1) return; twStep--; twRender(); };
+        window.twBackOrClose = function() { if (twStep > 1) window.twBack(); else window.closeTeamWizard(); };
+        const twShake = (el) => { el.classList.remove('tw-shake'); void el.offsetWidth; el.classList.add('tw-shake'); el.focus(); };
+
+        window.twAvatarChosen = async function(input) {
+            const f = input.files && input.files[0];
+            if (!f) return;
+            try { twAvatar = await compressImage(f, 250, 250, 0.7); $id('tw-avatar-preview').src = twAvatar; $id('tw-avatar-clear').classList.remove('hidden'); }
+            catch (e) { window.appToast('Could not read that photo'); }
+        };
+        window.twAvatarClear = function() { twAvatar = null; $id('tw-avatar-file').value = ''; $id('tw-avatar-preview').src = DEFAULT_AVATAR; $id('tw-avatar-clear').classList.add('hidden'); };
+
+        window.twNext = async function() {
+            if (twBusy || !twTicket) return;
+            const nextBtn = $id('tw-next');
+            if (twStep === 1) {
+                const name = $id('tw-name').value.trim();
+                if (!name) return twShake($id('tw-name'));
+                const teamId = name.toLowerCase().replace(/\s+/g, '_');
+                twBusy = true;
+                try {
+                    const snap = await getDoc(doc(window.db, "races", twTicket.code, "teams", teamId));
+                    if (snap.exists()) { twBusy = false; alert('That team name is already taken in this race. Please choose another.'); return twShake($id('tw-name')); }
+                } catch (e) { console.warn('Name check skipped', e); }
+                twBusy = false;
+            }
+            if (twStep === 2) {
+                const pin = $id('tw-pin').value.trim(), pin2 = $id('tw-pin2').value.trim();
+                if (!/^\d{4}$/.test(pin)) { alert('Please choose a 4-digit PIN using numbers only.'); return twShake($id('tw-pin')); }
+                if (pin !== pin2) { alert('The PINs do not match. Please re-enter them.'); return twShake($id('tw-pin2')); }
+            }
+            if (twStep < 3) { twStep++; twRender(); return; }
+
+            // Final step: location access (same requirement as the normal join), then create the team already approved
+            twBusy = true; nextBtn.disabled = true;
+            nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Joining...';
+            try {
+                const locAccess = await window.requestLocationAccess();
+                if (!locAccess.ok) { alert('Location access is required to enter the race. It is used to check you in at each stop. Please allow location for this site in your browser or phone settings, then tap Join race again.'); return; }
+                const code = twTicket.code;
+                const teamName = $id('tw-name').value.trim();
+                const pin = $id('tw-pin').value.trim();
+                const teamId = teamName.toLowerCase().replace(/\s+/g, '_');
+                const raceSnap = await getDoc(doc(window.db, "races", code));
+                if (!raceSnap.exists()) { alert('This race is no longer available.'); return; }
+                const teamRef = doc(window.db, "races", code, "teams", teamId);
+                if ((await getDoc(teamRef)).exists()) { alert('That team name has just been taken. Please choose another.'); twStep = 1; twRender(); return; }
+                await setDoc(teamRef, {
+                    teamName, pin, photoUrl: twAvatar || DEFAULT_AVATAR,
+                    isApproved: true,   // paid through the built-in checkout, so the host does not need to approve
+                    ticket: { paid: true, via: 'checkout', listingId: twTicket.listingId, amountCents: twTicket.priceCents, paidAt: twTicket.paidAt, simulated: !!twTicket.simulated },
+                    completedCheckpoints: [], customRouteOrder: [], checkinDetails: {}, claimedBonus: [], bonusPhotos: {},
+                    triviaBonus: 0, triviaLogs: [], startTime: null, endTime: null
+                });
+                savePending(null);
+                try { if (window.activeRaceCode && window.logoutTeam) window.logoutTeam(); } catch (e) {}
+                localStorage.setItem('rad_race_code', code);
+                localStorage.setItem('rad_team_id', teamId);
+                $id('team-wizard').classList.add('hidden');
+                await restoreSession(code, teamId);
+                if (window.switchTab) window.switchTab('race');
+                window.appToast("You're in! Good luck 🏁", 3000);
+                renderPublicRaces();
+            } catch (e) {
+                alert('Could not join the race: ' + e.message);
+            } finally {
+                twBusy = false; nextBtn.disabled = false;
+                if (!$id('team-wizard').classList.contains('hidden')) twRender();
+            }
+        };
+
+        // A paid ticket that has not been turned into a team yet is never lost: resume it after a reload
+        window.resumePendingTicket = function() { const t = loadPending(); if (t && t.code) openTeamWizard(t); };
+        setTimeout(() => { if (!window.activeTeamId && loadPending()) window.resumePendingTicket(); }, 2500);
 
         // ---------- Host side (platform admin only) ----------
         function publicListingSectionHtml(race, code, teamList) {
@@ -12096,6 +12334,8 @@
             { key: 'hostpanel', isOpen: () => shown(el('host-race-panel')), close: () => window.closeHostRacePanel && window.closeHostRacePanel() },
             { key: 'appmenu', isOpen: () => !!window.isAppMenuOpen && window.isAppMenuOpen(), close: () => window.closeAppMenu && window.closeAppMenu() },
             { key: 'utilpage', isOpen: () => !!window.isUtilPageOpen && window.isUtilPageOpen(), close: () => window.closeUtilPage && window.closeUtilPage() },
+            { key: 'teamwizard', isOpen: () => shown(el('team-wizard')), close: () => window.twBackOrClose && window.twBackOrClose() },
+            { key: 'checkout', isOpen: () => shown(el('checkout-screen')), close: () => window.closeCheckout && window.closeCheckout() },
             { key: 'demoscreen', isOpen: () => shown(el('demo-mode-screen')), close: () => window.dmBack && window.dmBack() },
             modal('checkpoint-info-modal', () => window.closeCheckpointInfoModal && window.closeCheckpointInfoModal()),
             modal('team-verify-modal', () => window.closeTeamVerifyModal && window.closeTeamVerifyModal()),
