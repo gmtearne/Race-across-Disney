@@ -2084,7 +2084,12 @@
                         <button type="button" onclick="dmBack()" aria-label="Back" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-arrow-left"></i></button>
                         <h2 class="font-disney font-bold text-xl text-white">Choose your pass</h2>
                     </div>
-                    <p class="text-sm text-slate-400 leading-relaxed">Everything is unlocked for the length of your pass. It starts the moment you buy it.</p>
+                    <p class="text-sm text-slate-400 leading-relaxed">Everything is unlocked for building as soon as you buy. Choose the day racing opens; the pass then runs for its full length from that day.</p>
+                    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 space-y-2">
+                        <label for="dm-start-date" class="block text-xs font-bold text-slate-200"><i class="fa-regular fa-calendar mr-1.5 text-sky-300"></i> When should racing open?</label>
+                        <input id="dm-start-date" type="date" oninput="dmStartChanged()" onchange="dmStartChanged()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                        <p id="dm-start-note" class="text-[11px] text-slate-400 leading-snug"></p>
+                    </div>
                     <div id="dm-plan-list" class="space-y-3"></div>
                     <div class="pt-1 space-y-2">
                         <button type="button" onclick="dmTogglePromo()" class="w-full py-3 bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs rounded-2xl active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-gift text-disneyGold"></i> Have a promo code?</button>
@@ -2102,9 +2107,25 @@
                 <!-- View 3: purchase complete -->
                 <div id="dm-view-done" class="dm-view hidden space-y-5 text-center pt-10">
                     <div class="text-6xl">🎉</div>
-                    <h2 class="font-disney font-bold text-3xl text-white">Pass activated!</h2>
+                    <h2 id="dm-done-title" class="font-disney font-bold text-3xl text-white">Pass activated!</h2>
                     <p id="dm-done-text" class="text-sm text-slate-300 leading-relaxed"></p>
                     <button type="button" onclick="dmClose()" class="w-full py-4 bg-disneyGold text-slate-950 font-bold text-sm rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2"><i class="fa-solid fa-flag-checkered"></i> Start hosting</button>
+                </div>
+
+                <!-- View 4: change the start date of a booked pass -->
+                <div id="dm-view-edit" class="dm-view hidden space-y-5">
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="button" onclick="dmClose()" aria-label="Back" class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 active:scale-95 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h2 class="font-disney font-bold text-xl text-white">Change start date</h2>
+                    </div>
+                    <p id="dm-edit-intro" class="text-sm text-slate-400 leading-relaxed"></p>
+                    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 space-y-2">
+                        <label for="dm-edit-date" class="block text-xs font-bold text-slate-200">New start date</label>
+                        <input id="dm-edit-date" type="date" oninput="dmEditChanged()" onchange="dmEditChanged()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
+                        <p id="dm-edit-note" class="text-[11px] font-semibold text-sky-300"></p>
+                    </div>
+                    <button type="button" id="dm-edit-save" onclick="dmSaveEdit()" class="w-full py-4 bg-disneyGold text-slate-950 font-bold text-sm rounded-2xl shadow-lg active:scale-[0.98] transition">Save new date</button>
+                    <p class="text-[11px] text-slate-500 text-center">A pass can only be moved before it has started.</p>
                 </div>
 
             </div>
@@ -4345,7 +4366,7 @@
                     loadAdminRaces();
                 } else {
                     window.isPlatformAdmin = false;
-                    window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
+                    window.hostAccess = { loaded: false, perpetual: false, passes: [] };
                     if (window.renderHostAccessBanner) window.renderHostAccessBanner();
                     document.getElementById('demo-mode-screen')?.classList.add('hidden');
                     document.getElementById('promo-admin-card')?.classList.add('hidden');
@@ -5853,10 +5874,61 @@
                     { id: 'week2', name: '2 Week Pass', days: 14, price: '$7.99', tag: 'Best value · a long stay or two trips', best: true }
                 ]
             };
-            window.hostAccess = { loaded: false, expiresAt: 0, plan: null };
-            window.isHostPassActive = () => !!window.hostAccess && window.hostAccess.expiresAt > Date.now();
+            // ---- Pass model ----
+            // hostAccess/{uid} = { perpetual, passes: [ { id, plan, days, startsAt, endsAt, purchasedAt } ] }
+            // A pass only lets teams START racing between startsAt and endsAt. Hosts can build and invite players before then.
+            const DAY = 86400000, MAX_PASSES = 5;
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const toInput = (ms) => { const d = new Date(ms); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+            const fromInput = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : NaN; };
+            const addDays = (ms, n) => { const d = new Date(ms); d.setDate(d.getDate() + n); return d.getTime(); };   // calendar days, safe across clock changes
+            const fmtDay = (ms) => new Date(ms).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+            const fmtEnd = (ms) => { const d = new Date(ms); return (d.getHours() === 0 && d.getMinutes() === 0) ? 'end of ' + fmtDay(ms - 1) : fmtDay(ms) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); };
+            const normPass = (p) => ({ id: String(p.id || ('p' + (p.startsAt || Date.now()))), plan: p.plan || null, days: Number(p.days) || 0, startsAt: Number(p.startsAt) || 0, endsAt: Number(p.endsAt) || 0, purchasedAt: Number(p.purchasedAt) || 0 });
+            window.hostAccess = { loaded: false, perpetual: false, passes: [] };
+            window.hostPassInfo = function () {
+                const ha = window.hostAccess || {}, now = Date.now();
+                const passes = (ha.passes || []).slice().sort((a, b) => a.startsAt - b.startsAt);
+                const active = passes.find(p => p.startsAt <= now && now < p.endsAt) || null;
+                const upcoming = passes.filter(p => p.startsAt > now);
+                return { perpetual: !!ha.perpetual, active, upcoming, next: upcoming[0] || null, lastEnd: passes.reduce((m, p) => Math.max(m, p.endsAt), 0), passes };
+            };
+            // Racing is open: a team may start right now
+            window.isHostPassActive = () => { const i = window.hostPassInfo(); return i.perpetual || !!i.active; };
+            // Builder unlocked: a pass is running, booked for later, or perpetual
+            window.hasHostPass = () => { const i = window.hostPassInfo(); return i.perpetual || !!i.active || i.upcoming.length > 0; };
             // Fails closed: a logged-in host with no confirmed pass is in demo mode (platform admins are never limited)
-            window.isHostDemo = () => !!(window.auth && window.auth.currentUser) && !window.isPlatformAdmin && !window.isHostPassActive();
+            window.isHostDemo = () => !!(window.auth && window.auth.currentUser) && !window.isPlatformAdmin && !window.hasHostPass();
+            window.hostRacingClosedMessage = function () {
+                const i = window.hostPassInfo();
+                if (i.next) return 'Racing opens on ' + fmtDay(i.next.startsAt) + ' when your pass starts. You can keep building and inviting players until then.';
+                return 'Your host pass is not running, so new teams cannot start. Add a pass from the dashboard banner to start racing.';
+            };
+            // Shown to a player whose start was refused by the server because the host has no running pass
+            window.alertRacingClosed = async function (race) {
+                let msg = 'Racing is not open for this race right now. Please check with your host.';
+                try {
+                    const snap = await getDoc(doc(window.db, 'hostAccess', race.organizerId));
+                    if (snap.exists()) {
+                        const acc = fromDoc(snap.data()), now = Date.now();
+                        const next = acc.passes.filter(p => p.startsAt > now).sort((a, b) => a.startsAt - b.startsAt)[0];
+                        msg = next ? 'Racing for this event opens on ' + fmtDay(next.startsAt) + '. Please come back then.'
+                                   : 'Racing for this event has closed because the host pass has ended, so no new teams can start.';
+                    }
+                } catch (e) {}
+                alert(msg);
+            };
+            function fromDoc(d) {
+                const acc = { loaded: true, perpetual: !!d.perpetual, passes: [] };
+                if (Array.isArray(d.passes)) acc.passes = d.passes.map(normPass);
+                else if (Number(d.expiresAt) > 0 && !d.perpetual) {   // pass saved by the earlier build: one running window
+                    const end = Number(d.expiresAt), days = Number(d.days) || 7;
+                    acc.passes = [normPass({ id: 'legacy', plan: d.plan, days, startsAt: Number(d.purchasedAt) || (end - days * DAY), endsAt: end })];
+                }
+                return acc;
+            }
+            const reach = (a) => a.perpetual ? Infinity : a.passes.reduce((m, p) => Math.max(m, p.endsAt), 0);
+
             window.demoTeamCapReached = (teamList) => window.isHostDemo() &&
                 (teamList || []).filter(t => t.isApproved && !t.isHostTeam).length >= CFG.maxExtraTeams;
 
@@ -5864,35 +5936,66 @@
             const fmt = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
             window.loadHostAccess = async function (user) {
-                const acc = { loaded: true, expiresAt: 0, plan: null, days: 0, perpetual: false, promoCode: null };
+                let acc = { loaded: true, perpetual: false, passes: [] };
                 try {
                     const snap = await getDoc(doc(window.db, 'hostAccess', user.uid));
-                    if (snap.exists()) { const d = snap.data(); acc.expiresAt = Number(d.expiresAt) || 0; acc.plan = d.plan || null; acc.days = Number(d.days) || 0; acc.perpetual = !!d.perpetual; acc.promoCode = d.promoCode || null; }
+                    if (snap.exists()) acc = fromDoc(snap.data());
                 } catch (e) { console.warn('Host access lookup failed, treating as demo:', e); }
                 try {   // fallback written only when the Firestore write was refused (e.g. rules not set up yet during testing)
                     const loc = JSON.parse(localStorage.getItem('mmr_sim_pass_' + user.uid) || 'null');
-                    if (loc && Number(loc.expiresAt) > acc.expiresAt) { acc.expiresAt = Number(loc.expiresAt); acc.plan = loc.plan || null; acc.days = Number(loc.days) || 0; acc.perpetual = !!loc.perpetual; acc.promoCode = loc.promoCode || null; }
+                    if (loc) { const la = fromDoc(loc); if (reach(la) > reach(acc)) acc = la; }
                 } catch (e) {}
                 window.hostAccess = acc;
             };
+            // Saves the whole pass list. Returns true when it could only be kept on this device.
+            async function savePasses(user) {
+                const acc = window.hostAccess;
+                acc.passes = acc.passes.filter(p => p.endsAt > Date.now() - DAY).sort((a, b) => a.startsAt - b.startsAt);
+                const rec = { perpetual: !!acc.perpetual, passes: acc.passes, updatedAt: Date.now() };
+                try { await setDoc(doc(window.db, 'hostAccess', user.uid), rec); try { localStorage.removeItem('mmr_sim_pass_' + user.uid); } catch (e) {} return false; }
+                catch (e) {
+                    console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
+                    try { localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify(rec)); } catch (e2) {}
+                    return true;
+                }
+            }
+            // Works out when a new pass of `days` runs, never overlapping a pass the host already has
+            function planWindow(days, dateStr) {
+                const i = window.hostPassInfo(), now = Date.now();
+                const floor = Math.max(now, i.lastEnd);
+                let start = fromInput(dateStr);
+                if (isNaN(start) || start <= fromInput(toInput(now))) start = now;   // today = starts straight away
+                if (start < floor) start = floor;
+                return { startsAt: start, endsAt: addDays(start, days) };
+            }
+            const planName = (p) => { const pl = CFG.plans.find(x => x.id === p.plan); return pl ? pl.name : (p.plan === 'promo' ? 'Promo pass' + (p.days ? ' · ' + p.days + ' day' + (p.days === 1 ? '' : 's') : '') : 'Host pass'); };
+            function refreshAfterPassChange() {
+                window.renderHostAccessBanner();
+                if (window.applyWizardDemoLimits) window.applyWizardDemoLimits();
+                if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
+                if (window.loadAdminRaces) { try { window.loadAdminRaces(); } catch (e) {} }
+            }
+            setInterval(() => { if (window.auth && window.auth.currentUser && window.hostAccess && window.hostAccess.loaded) window.renderHostAccessBanner(); }, 60000);
 
             // ---- Host dashboard banner ----
             window.renderHostAccessBanner = function () {
                 const b = $('host-access-banner');
                 if (!b) return;
                 if (!(window.auth && window.auth.currentUser) || window.isPlatformAdmin) { b.className = 'hidden'; b.innerHTML = ''; return; }
-                if (window.isHostPassActive()) {
-                    const ha = window.hostAccess;
-                    const plan = CFG.plans.find(p => p.id === ha.plan);
-                    const left = Math.max(1, Math.ceil((ha.expiresAt - Date.now()) / 86400000));
-                    let title, sub, icon = '🎟️';
-                    if (ha.perpetual) { icon = '♾️'; title = 'Promo access · perpetual'; sub = 'Everything unlocked, no expiry date'; }
-                    else {
-                        title = plan ? plan.name + ' active' : (ha.plan === 'promo' ? `Promo pass${ha.days ? ' · ' + ha.days + ' day' + (ha.days === 1 ? '' : 's') : ''} active` : 'Host pass active');
-                        sub = `Everything unlocked until ${fmt(ha.expiresAt)} · ${left} day${left === 1 ? '' : 's'} left`;
-                    }
+                const i = window.hostPassInfo();
+                const btn = 'shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-100 text-[11px] font-bold whitespace-nowrap';
+                if (i.perpetual) {
                     b.className = 'bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
-                    b.innerHTML = `<span class="text-2xl">${icon}</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">${title}</p><p class="text-[11px] text-slate-400">${sub}</p></div>${ha.perpetual ? '' : `<button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-100 text-[11px] font-bold">Extend</button>`}`;
+                    b.innerHTML = '<span class="text-2xl">♾️</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">Promo access · perpetual</p><p class="text-[11px] text-slate-400">Everything unlocked, no expiry date</p></div>';
+                } else if (i.active) {
+                    const left = Math.max(1, Math.ceil((i.active.endsAt - Date.now()) / DAY));
+                    let sub = `Racing open until ${fmtEnd(i.active.endsAt)} · ${left} day${left === 1 ? '' : 's'} left`;
+                    if (i.next) sub += ` · next pass starts ${fmtDay(i.next.startsAt)}`;
+                    b.className = 'bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
+                    b.innerHTML = `<span class="text-2xl">🎟️</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-emerald-300">${planName(i.active)} active</p><p class="text-[11px] text-slate-400">${sub}</p></div><div class="flex flex-col gap-1.5">${i.next ? `<button type="button" onclick="dmEditStart('${i.next.id}')" class="${btn}">Change next date</button>` : ''}<button type="button" onclick="showDemoScreen('plans')" class="${btn}">Add a pass</button></div>`;
+                } else if (i.next) {
+                    b.className = 'bg-sky-950/50 border border-sky-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
+                    b.innerHTML = `<span class="text-2xl">📅</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-sky-300">${planName(i.next)} starts ${fmtDay(i.next.startsAt)}</p><p class="text-[11px] text-slate-400">Everything is unlocked for building now. Teams can start racing from ${fmtDay(i.next.startsAt)} until ${fmtEnd(i.next.endsAt)}.</p></div><div class="flex flex-col gap-1.5"><button type="button" onclick="dmEditStart('${i.next.id}')" class="${btn}">Change date</button><button type="button" onclick="showDemoScreen('plans')" class="${btn}">Add a pass</button></div>`;
                 } else {
                     b.className = 'bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 shadow-xl flex items-center gap-3';
                     b.innerHTML = `<span class="text-2xl">🔒</span><div class="min-w-0 flex-1"><p class="text-xs font-bold text-amber-300">Demo mode</p><p class="text-[11px] text-slate-400">${CFG.maxStops} stops · ${CFG.park} only · 1 extra team</p></div><button type="button" onclick="showDemoScreen('plans')" class="shrink-0 px-3 py-2 rounded-xl bg-disneyGold text-slate-950 text-[11px] font-black uppercase">Upgrade</button>`;
@@ -5973,9 +6076,11 @@
 
             // ---- Full-screen demo page ----
             let dmEntry = 'intro', dmBusy = false;
-            const views = ['intro', 'plans', 'done'];
+            const views = ['intro', 'plans', 'done', 'edit'];
             function showView(v) { views.forEach(n => $('dm-view-' + n)?.classList.toggle('hidden', n !== v)); $('demo-mode-screen').scrollTop = 0; const sc = $('demo-mode-screen').firstElementChild; if (sc) sc.scrollTop = 0; }
             function renderPlans() {
+                const inp = $('dm-start-date');
+                if (inp) { const i = window.hostPassInfo(), d = toInput(i.lastEnd > Date.now() ? i.lastEnd : Date.now()); inp.min = d; inp.value = d; }
                 $('dm-plan-list').innerHTML = CFG.plans.map(p => `
                     <div class="rounded-3xl border ${p.best ? 'border-disneyGold/60 bg-disneyGold/5' : 'border-slate-700 bg-slate-900'} p-5 space-y-3 relative">
                         ${p.best ? '<span class="absolute -top-2.5 left-5 text-[10px] font-black uppercase tracking-wider bg-disneyGold text-slate-950 rounded-full px-2.5 py-0.5">Best value</span>' : ''}
@@ -5983,11 +6088,20 @@
                             <div class="min-w-0"><h3 class="font-disney font-bold text-lg text-white">${p.name}</h3><p class="text-xs text-slate-400 mt-0.5">${p.tag}</p></div>
                             <div class="text-right shrink-0"><p class="font-mono font-bold text-2xl text-disneyGold leading-none">${p.price}</p><p class="text-[10px] text-slate-500 mt-1">${p.days} days</p></div>
                         </div>
+                        <p id="dm-run-${p.id}" class="text-[11px] font-semibold text-sky-300"></p>
                         <p class="text-xs text-slate-300">Every feature unlocked for ${p.days} days: all difficulties, any stops and parks, Bingo, Frenzy and unlimited teams.</p>
                         <button type="button" data-plan="${p.id}" onclick="dmBuy('${p.id}')" class="w-full py-3.5 ${p.best ? 'bg-disneyGold text-slate-950' : 'bg-indigo-600 text-white'} font-bold text-sm rounded-2xl active:scale-[0.98] transition flex items-center justify-center gap-2">Purchase</button>
                     </div>`).join('');
                 $('dm-test-note')?.classList.toggle('hidden', !CFG.simulatedPayments);
+                window.dmStartChanged();
             }
+            window.dmStartChanged = function () {
+                const inp = $('dm-start-date'); if (!inp) return;
+                const i = window.hostPassInfo();
+                $('dm-start-note').innerHTML = (i.lastEnd > Date.now() ? `You already have a pass until <b class="text-slate-200">${fmtEnd(i.lastEnd)}</b>. A new pass can start from then, so you never lose days. ` : '')
+                    + 'Build races and invite players any time. Teams can only start racing while your pass is running.';
+                CFG.plans.forEach(p => { const w = planWindow(p.days, inp.value), el = $('dm-run-' + p.id); if (el) el.textContent = `Runs ${fmtDay(w.startsAt)} → ${fmtEnd(w.endsAt)}`; });
+            };
             window.showDemoScreen = function (view) {
                 const scr = $('demo-mode-screen'); if (!scr) return;
                 if (scr.classList.contains('hidden')) dmEntry = view || 'intro';
@@ -6007,39 +6121,42 @@
                 if (onPlans && dmEntry === 'intro') showView('intro'); else window.dmClose();
             };
 
-            // ---- Fake purchase: unlocks the account for the plan's length (stacks on any pass still running) ----
+            // ---- Fake purchase: books a pass window. A new pass never overlaps an existing one; it queues behind it ----
+            function passLimitReached() {
+                const open = (window.hostAccess.passes || []).filter(p => p.endsAt > Date.now()).length;
+                if (open >= MAX_PASSES) { window.appToast('You already have ' + MAX_PASSES + ' passes booked. Wait for one to finish before adding more.', 3200); return true; }
+                return false;
+            }
+            function doneText(planLabel, w, toDevice) {
+                const later = w.startsAt > Date.now() + 60000;
+                return (later
+                    ? `Your ${planLabel} is booked. Racing opens on ${fmtDay(w.startsAt)} and runs until ${fmtEnd(w.endsAt)}. Every feature is unlocked for building right now, so you can create races and invite players before then.`
+                    : `Your ${planLabel} is running until ${fmtEnd(w.endsAt)}. All features are unlocked.`) + (toDevice ? ' (Saved on this device only.)' : '');
+            }
             window.dmBuy = async function (planId) {
                 const plan = CFG.plans.find(p => p.id === planId);
                 const user = window.auth && window.auth.currentUser;
                 if (!plan || !user || dmBusy) return;
                 if (window.hostAccess && window.hostAccess.perpetual) { window.appToast('Your account already has perpetual access.', 2600); return; }
+                if (passLimitReached()) return;
                 dmBusy = true;
                 document.querySelectorAll('#dm-plan-list button[data-plan]').forEach(b => { b.disabled = true; b.classList.add('opacity-60'); if (b.dataset.plan === planId) b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; });
                 try {
                     await new Promise(r => setTimeout(r, 900));   // stands in for the payment provider
-                    const now = Date.now();
-                    const base = Math.max(now, (window.hostAccess && window.hostAccess.expiresAt) || 0);
-                    const expiresAt = base + plan.days * 86400000;
-                    let toDevice = false;
-                    try {
-                        await setDoc(doc(window.db, 'hostAccess', user.uid), { plan: plan.id, days: plan.days, perpetual: false, expiresAt, purchasedAt: now, simulated: true, email: user.email || '' });
-                    } catch (e) {
-                        console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
-                        localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify({ plan: plan.id, expiresAt }));
-                        toDevice = true;
-                    }
-                    window.hostAccess = { loaded: true, expiresAt, plan: plan.id, days: plan.days, perpetual: false, promoCode: null };
-                    window.renderHostAccessBanner();
-                    window.applyWizardDemoLimits();   // unlocks an open wizard
-                    if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
-                    if (window.loadAdminRaces) { try { window.loadAdminRaces(); } catch (e) {} }
-                    $('dm-done-text').textContent = `Your ${plan.name} is active until ${fmt(expiresAt)}. All features are unlocked.` + (toDevice ? ' (Saved on this device only.)' : '');
+                    const w = planWindow(plan.days, $('dm-start-date').value);
+                    window.hostAccess.passes.push(normPass({ id: 'p' + Date.now(), plan: plan.id, days: plan.days, startsAt: w.startsAt, endsAt: w.endsAt, purchasedAt: Date.now() }));
+                    const toDevice = await savePasses(user);
+                    refreshAfterPassChange();
+                    $('dm-done-title').textContent = w.startsAt > Date.now() + 60000 ? 'Pass booked!' : 'Pass activated!';
+                    $('dm-done-text').textContent = doneText(plan.name, w, toDevice);
                     showView('done');
-                } finally { dmBusy = false; }
+                } finally {
+                    dmBusy = false;
+                    renderPlans();   // restore the Purchase buttons for the next visit
+                }
             };
 
             // ---- Promo code redemption (host pass codes only; race ticket codes are rejected by lookupPromo) ----
-            const PERPETUAL_TS = 32503680000000;   // year 3000: "never expires" without special-casing every check
             window.dmTogglePromo = function () { const b = $('dm-promo-box'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')) setTimeout(() => $('dm-promo-input')?.focus(), 50); };
             function dmPromoMsg(text, bad) { const m = $('dm-promo-msg'); m.textContent = text || ''; m.className = 'text-[11px] leading-snug ' + (text ? '' : 'hidden ') + (bad ? 'text-rose-300' : 'text-emerald-300'); }
             window.dmRedeemPromo = async function () {
@@ -6050,30 +6167,68 @@
                 try {
                     const r = await window.lookupPromo($('dm-promo-input').value, 'host', { uid: user.uid });
                     if (!r.ok) { dmPromoMsg(r.error, true); return; }
-                    const d = r.data, now = Date.now(), cur = window.hostAccess || {};
+                    const d = r.data, cur = window.hostAccess || {};
                     const perpetual = !!d.perpetual, days = perpetual ? 0 : Number(d.days) || 0;
                     if (cur.perpetual && !perpetual) { dmPromoMsg('Your account already has perpetual access, so this code was not used.', true); return; }
-                    const expiresAt = perpetual ? PERPETUAL_TS : Math.max(now, cur.expiresAt || 0) + days * 86400000;
+                    if (!perpetual && (cur.passes || []).filter(p => p.endsAt > Date.now()).length >= MAX_PASSES) { dmPromoMsg('You already have ' + MAX_PASSES + ' passes booked. Wait for one to finish first.', true); return; }
                     const c = await window.consumePromo(r.code, user.uid);
                     if (!c.ok) { dmPromoMsg(c.error, true); return; }
-                    const rec = { plan: 'promo', days, perpetual, expiresAt, promoCode: r.code, purchasedAt: now, simulated: false, email: user.email || '' };
-                    let toDevice = false;
-                    try { await setDoc(doc(window.db, 'hostAccess', user.uid), rec); }
-                    catch (e) {
-                        console.warn('hostAccess write refused (add a Firestore rule for hostAccess/{uid}); keeping the pass on this device only:', e);
-                        localStorage.setItem('mmr_sim_pass_' + user.uid, JSON.stringify({ plan: 'promo', days, perpetual, expiresAt, promoCode: r.code }));
-                        toDevice = true;
-                    }
-                    window.hostAccess = { loaded: true, expiresAt, plan: 'promo', days, perpetual, promoCode: r.code };
-                    window.renderHostAccessBanner();
-                    window.applyWizardDemoLimits();
-                    if (window.refreshHostRacePanel) { try { window.refreshHostRacePanel(); } catch (e) {} }
+                    let w = null;
+                    if (perpetual) window.hostAccess.perpetual = true;
+                    else { w = planWindow(days, $('dm-start-date').value); window.hostAccess.passes.push(normPass({ id: 'p' + Date.now(), plan: 'promo', days, startsAt: w.startsAt, endsAt: w.endsAt, purchasedAt: Date.now() })); }
+                    const toDevice = await savePasses(user);
+                    refreshAfterPassChange();
                     $('dm-promo-input').value = ''; dmPromoMsg('');
-                    $('dm-done-text').textContent = (perpetual
-                        ? 'Perpetual host access is now active on this account. All features are unlocked and it never expires.'
-                        : `${days} day${days === 1 ? '' : 's'} of host access added. Active until ${fmt(expiresAt)}. All features are unlocked.`) + (toDevice ? ' (Saved on this device only.)' : '');
+                    $('dm-done-title').textContent = (w && w.startsAt > Date.now() + 60000) ? 'Pass booked!' : 'Pass activated!';
+                    $('dm-done-text').textContent = perpetual
+                        ? 'Perpetual host access is now active on this account. All features are unlocked and it never expires.' + (toDevice ? ' (Saved on this device only.)' : '')
+                        : doneText(`${days}-day promo pass`, w, toDevice);
                     showView('done');
                 } finally { dmBusy = false; btn.disabled = false; }
+            };
+
+            // ---- Change the start date of a pass that has not started yet ----
+            let editPassId = null;
+            function editBounds() {
+                const i = window.hostPassInfo(), idx = i.passes.findIndex(p => p.id === editPassId);
+                const prevEnd = idx > 0 ? i.passes[idx - 1].endsAt : 0;
+                return { i, idx, pass: i.passes[idx], floor: Math.max(Date.now(), prevEnd) };
+            }
+            function editWindow(pass, dateStr, floor) {
+                let start = fromInput(dateStr);
+                if (isNaN(start) || start <= fromInput(toInput(Date.now()))) start = Date.now();
+                if (start < floor) start = floor;
+                return { startsAt: start, endsAt: pass.days > 0 ? addDays(start, pass.days) : start + (pass.endsAt - pass.startsAt) };
+            }
+            window.dmEditStart = function (id) {
+                editPassId = id;
+                const { pass, floor } = editBounds();
+                if (!pass || pass.startsAt <= Date.now()) { window.appToast('That pass has already started, so its date can no longer be changed.', 3000); return; }
+                $('dm-edit-intro').textContent = `${planName(pass)} · ${pass.days || Math.round((pass.endsAt - pass.startsAt) / DAY)} days. Pick a new day for racing to open. Races you have built and teams you have invited stay as they are.`;
+                const inp = $('dm-edit-date'); inp.min = toInput(floor); inp.value = toInput(pass.startsAt);
+                window.dmEditChanged();
+                window.showDemoScreen('edit');
+            };
+            window.dmEditChanged = function () {
+                const { pass, floor } = editBounds(); if (!pass) return;
+                const w = editWindow(pass, $('dm-edit-date').value, floor);
+                $('dm-edit-note').textContent = `Runs ${fmtDay(w.startsAt)} → ${fmtEnd(w.endsAt)}`;
+            };
+            window.dmSaveEdit = async function () {
+                const user = window.auth && window.auth.currentUser;
+                const { i, idx, pass, floor } = editBounds();
+                if (!user || !pass) return;
+                if (pass.startsAt <= Date.now()) { window.appToast('That pass has already started, so its date can no longer be changed.', 3000); window.dmClose(); return; }
+                const w = editWindow(pass, $('dm-edit-date').value, floor);
+                pass.startsAt = w.startsAt; pass.endsAt = w.endsAt;
+                for (let j = idx + 1; j < i.passes.length; j++) {   // later queued passes slide along if they would now overlap
+                    const q = i.passes[j], prev = i.passes[j - 1];
+                    if (q.startsAt < prev.endsAt) { const dur = q.endsAt - q.startsAt; q.startsAt = prev.endsAt; q.endsAt = q.days > 0 ? addDays(q.startsAt, q.days) : q.startsAt + dur; }
+                }
+                const toDevice = await savePasses(user);
+                refreshAfterPassChange();
+                window.dmClose();
+                window.appToast('Pass now starts ' + fmtDay(pass.startsAt) + (toDevice ? ' (saved on this device only)' : ''), 3000);
             };
         })();
 
@@ -11937,6 +12092,7 @@
             if (raceConfig.gameMode !== 'scavenger' && raceConfig.enforceHostStart !== true) return alert('This race was created for individual team starts.');
             if ((raceConfig.startMode || 'global') !== 'global' || raceConfig.gameMode === 'race' && raceConfig.startMode === 'staggered') return alert('This race is configured for staggered start.');
             if (raceConfig.raceStartedAt || raceConfig.staggerSchedule?.length) return alert('This race has already started. Use pause/resume instead.');
+            if (!window.isPlatformAdmin && !window.isHostPassActive()) return alert(window.hostRacingClosedMessage());
             if (!await appConfirm("Start every currently approved, unfinished team's timer at the same time? Teams approved later can start individually.", {title:"Global start", confirmText:"Start all teams"})) return;
             const teams = await getDocs(collection(window.db, "races", code, "teams"));
             const startTime = new Date().toISOString();
@@ -12000,6 +12156,7 @@
             if (owned.data.gameMode==='scavenger') return alert("Staggered starts are available for Speed Races only.");
             if (owned.data.enforceHostStart !== true || (owned.data.startMode || 'global') !== 'staggered') return alert("This race was not configured for a host-controlled staggered start.");
             if (owned.data.raceStartedAt || owned.data.staggerSchedule?.length) return alert("This race has already started. Use pause/resume instead.");
+            if (!window.isPlatformAdmin && !window.isHostPassActive()) return alert(window.hostRacingClosedMessage());
             const teams=await getDocs(collection(window.db,"races",code,"teams"));
             const eligible=teams.docs.filter(d=>d.data().isApproved&&!d.data().endTime&&!d.data().startTime);
             if (!eligible.length) return alert("There are no approved, not-yet-started teams to schedule.");
@@ -12077,14 +12234,17 @@
                 });
                 const earliestStart = Math.max(now, earliestAllowedStart || now);
                 if (earliestStart > now) {
-                    await fastUpdate(teamRef, { startTime:null, scheduledTeamStartAt:earliestStart, lateJoinPending:true, joinedLate:true });
+                    try { await fastUpdate(teamRef, { startTime:null, scheduledTeamStartAt:earliestStart, lateJoinPending:true, joinedLate:true }); }
+                    catch (e) { if (e && e.code === 'permission-denied') { await window.alertRacingClosed(race); return; } throw e; }
                     window.appToast(`Your race starts in ${Math.ceil((earliestStart-now)/60000)} minute(s).`);
                     loadTeamDashboardData(race);
                     return;
                 }
-                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:true,lateJoinPending:false,lateJoinStartAt:now});
+                try { await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:true,lateJoinPending:false,lateJoinStartAt:now}); }
+                catch (e) { if (e && e.code === 'permission-denied') { await window.alertRacingClosed(race); return; } throw e; }
             } else {
-                await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})});
+                try { await fastUpdate(teamRef,{startTime:new Date(now).toISOString(),startPauseAccumulatedMs:Number(latestRace.pauseAccumulatedMs || 0),scheduledTeamStartAt:null,joinedLate:!!lateJoin,lateJoinPending:false, ...(race.startMode === 'staggered' ? {lateJoinStartAt:now} : {})}); }
+                catch (e) { if (e && e.code === 'permission-denied') { await window.alertRacingClosed(race); return; } throw e; }
             }
             window.recordStartLocation(teamRef, true);    // manual Start tap = a user action, so a prompt is fine here
             if (!race.raceStartedAt) {
