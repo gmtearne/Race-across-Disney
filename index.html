@@ -1823,16 +1823,23 @@
 
                         <!-- 3. Active Races & Teams Management -->
                         <div id="admin-active-races-container" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Races</h4>
-                            <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
+                            <button type="button" id="races-toggle" onclick="toggleAdminCard('races')" aria-expanded="true" aria-controls="races-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
+                                <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-slate-300 uppercase tracking-wider"><i class="fa-solid fa-flag"></i> Active Races<span id="races-count" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-bold text-slate-300"></span><span id="races-pending" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-[10px] font-black text-rose-200"></span></span>
+                                <i id="races-chevron" class="fa-solid fa-chevron-up text-slate-500 text-xs shrink-0"></i>
+                            </button>
+                            <div id="races-body" class="pt-1">
+                                <div id="admin-race-list" class="space-y-3 text-xs text-slate-400">Loading active races...</div>
+                            </div>
                         </div>
 
                         <!-- 3b. Promo codes (platform admin only) -->
                         <div id="promo-admin-card" class="hidden bg-slate-800 border border-fuchsia-500/40 rounded-2xl p-5 shadow-xl space-y-4">
-                            <div>
-                                <h4 class="text-xs font-bold text-fuchsia-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-gift"></i> Promo codes</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Free race tickets and host passes. Players and hosts enter them on the payment screens.</p>
-                            </div>
+                            <button type="button" id="promo-toggle" onclick="toggleAdminCard('promo')" aria-expanded="false" aria-controls="promo-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
+                                <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-fuchsia-300 uppercase tracking-wider"><i class="fa-solid fa-gift"></i> Promo codes<span id="promo-count" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-bold text-slate-300"></span></span>
+                                <i id="promo-chevron" class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0"></i>
+                            </button>
+                            <div id="promo-body" class="hidden space-y-4 pt-1">
+                            <p class="text-[11px] text-slate-400">Free race tickets and host passes. Players and hosts enter them on the payment screens.</p>
                             <div class="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
                                 <button type="button" id="pa-kind-ticket" onclick="paSetKind('ticket')" class="py-2 rounded-xl text-[11px] font-bold transition">🎟️ Race ticket</button>
                                 <button type="button" id="pa-kind-host" onclick="paSetKind('host')" class="py-2 rounded-xl text-[11px] font-bold transition">🔑 Host pass</button>
@@ -1864,14 +1871,17 @@
                                 <div class="flex items-center justify-between"><h5 class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Your codes</h5><button type="button" onclick="paLoadList()" class="text-[11px] text-slate-400 underline">Refresh</button></div>
                                 <div id="pa-list" class="space-y-2 text-xs text-slate-400">Loading...</div>
                             </div>
+                            </div>
                         </div>
 
                         <!-- 3c. Support access (platform admin only) -->
                         <div id="support-admin-card" class="hidden bg-slate-800 border border-sky-500/40 rounded-2xl p-5 shadow-xl space-y-4">
-                            <div>
-                                <h4 class="text-xs font-bold text-sky-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-life-ring"></i> Support access</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Help a host with their race. They allow support from their race panel and give you their race code and a support code.</p>
-                            </div>
+                            <button type="button" id="support-toggle" onclick="toggleAdminCard('support')" aria-expanded="false" aria-controls="support-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
+                                <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-sky-300 uppercase tracking-wider"><i class="fa-solid fa-life-ring"></i> Support access<span id="support-count" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-bold text-slate-300"></span></span>
+                                <i id="support-chevron" class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0"></i>
+                            </button>
+                            <div id="support-body" class="hidden space-y-4 pt-1">
+                            <p class="text-[11px] text-slate-400">Help a host with their race. They allow support from their race panel and give you their race code and a support code.</p>
                             <div class="grid grid-cols-2 gap-2">
                                 <div><label class="block text-[10px] text-slate-400 mb-1">Race code</label><input id="sa-race" type="text" autocapitalize="characters" autocomplete="off" maxlength="16" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white font-mono uppercase"></div>
                                 <div><label class="block text-[10px] text-slate-400 mb-1">Support code</label><input id="sa-code" type="text" autocapitalize="characters" autocomplete="off" maxlength="16" placeholder="SUP-XXXXXX" onkeydown="if(event.key==='Enter'){event.preventDefault();adminConnectSupport();}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-xs text-white font-mono uppercase placeholder:normal-case"></div>
@@ -1879,6 +1889,7 @@
                             <button type="button" id="sa-connect" onclick="adminConnectSupport()" class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-xl text-xs uppercase shadow active:scale-[0.98] transition">Connect</button>
                             <p id="sa-msg" class="hidden text-[11px] text-rose-300"></p>
                             <div id="sa-sessions" class="space-y-2"></div>
+                            </div>
                         </div>
 
                         <!-- 4. Fair Play Dashboard Lock (a nominated team holds the PIN) -->
@@ -6066,6 +6077,26 @@
             };
         })();
 
+        // ================= COLLAPSIBLE DASHBOARD CARDS =================
+        // Active Races starts open; Promo codes and Support access start collapsed. State lives for the page session only.
+        window.toggleAdminCard = function (key) {
+            const body = document.getElementById(key + '-body'), btn = document.getElementById(key + '-toggle'), chev = document.getElementById(key + '-chevron');
+            if (!body) return;
+            const open = body.classList.contains('hidden');   // hidden now => about to open
+            body.classList.toggle('hidden', !open);
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (chev) chev.className = 'fa-solid fa-chevron-' + (open ? 'up' : 'down') + ' text-slate-500 text-xs shrink-0';
+        };
+        window.setAdminCardCount = function (key, text) {
+            const el = document.getElementById(key + '-count'); if (!el) return;
+            el.textContent = text || ''; el.classList.toggle('hidden', !text);
+        };
+        window.setAdminRacesCount = function (n, pending) {
+            window.setAdminCardCount('races', n ? n + (n === 1 ? ' race' : ' races') : '');
+            const b = document.getElementById('races-pending'); if (!b) return;
+            b.textContent = pending > 0 ? '🔔 ' + pending : ''; b.classList.toggle('hidden', !(pending > 0));
+        };
+
         // ================= SUPPORT ACCESS (host consent) =================
         // Host taps "Allow support access" -> races/{code}.support = { code:'SUP-XXXXXX', status:'open' } and gives support BOTH the race code
         // and that support code. A platform admin who enters the pair flips it to status:'connected' (adminUid recorded). The host sees a
@@ -6184,6 +6215,7 @@
         window.renderSupportSessions = function () {
             const box = $s('sa-sessions'); if (!box) return;
             const list = Object.values(window.__hostRaceData || {}).filter(d => window.isSupportView(d.race));
+            window.setAdminCardCount('support', list.length ? list.length + ' active' : '');
             box.innerHTML = list.length ? '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">Active sessions</p>' + list.map(d => `
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center gap-2">
                     <span class="min-w-0 flex-1"><span class="block text-sm font-bold text-white truncate">${escHtml(d.race.title || d.race.code)}</span><span class="block text-[11px] text-slate-500 font-mono">${escHtml(d.race.code)}</span></span>
@@ -7960,6 +7992,7 @@
                 paCodes = []; snap.forEach(d => paCodes.push({ id: d.id, ...d.data() }));
                 paCodes.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
             } catch (e) { box.textContent = 'Could not load codes: ' + e.message; return; }
+            window.setAdminCardCount('promo', paCodes.length ? paCodes.length + (paCodes.length === 1 ? ' code' : ' codes') : '');
             if (!paCodes.length) { box.textContent = 'No codes yet.'; return; }
             box.innerHTML = paCodes.map(c => {
                 const used = Number(c.usedCount || 0), max = Number(c.maxUses) || 0;
@@ -8214,6 +8247,7 @@
                 if (querySnapshot.empty && !supportDocs.length) {
                     listEl.className = 'text-xs text-slate-400';
                     listEl.innerHTML = "You haven't created any races yet.";
+                    if (window.setAdminRacesCount) window.setAdminRacesCount(0, 0);
                     if (window.renderSupportSessions) window.renderSupportSessions();
                     window.__hostRaceData = {};
                     if (window.refreshHostRacePanel) window.refreshHostRacePanel();
@@ -8294,6 +8328,7 @@
                 }
                 listEl.className = 'grid grid-cols-2 gap-3';
                 listEl.innerHTML = html;
+                if (window.setAdminRacesCount) window.setAdminRacesCount(races.length, totalPendingTeams);
                 if (window.refreshHostRacePanel) window.refreshHostRacePanel();
 
                 const pendingBadge = document.getElementById('nav-pending-badge');
