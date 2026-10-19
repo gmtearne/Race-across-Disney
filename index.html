@@ -1363,6 +1363,8 @@
                 <div id="wildcard-banner" class="hidden"></div>
                 <!-- Checkpoint Frenzy notification (filled by renderFrenzyBanner) -->
                 <div id="frenzy-banner" class="hidden"></div>
+                <!-- Poison apple: watch the team that walked into yours (filled by renderAppleBanner) -->
+                <div id="apple-banner" class="hidden"></div>
                 <div id="login-prompt-card" class="space-y-4">
                     <!-- Collapsible Join/Resume Box (Expanded by default when not logged in) -->
                     <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
@@ -5203,13 +5205,14 @@
                     seen[a.id] = a.status;
                     if (prev && a.ownerTeamId === teamId && prev[a.id] && prev[a.id] !== a.status) {
                         const u = window.poisonUnit(window.liveTeamRaceData || {}), t = a.terms || {};
-                        if (a.status === 'active') window.appToast(`🍎 ${a.victimTeamName || 'A team'} just walked into your poison apple at ${a.cpName}!`, 4500);
-                        else if (a.status === 'won') window.appToast(`😬 ${a.victimTeamName || 'A team'} beat your poison apple at ${a.cpName}. You take ${t.penalty || 5}${u} penalty.`, 5000);
-                        else if (a.status === 'lost') window.appToast(`😈 ${a.victimTeamName || 'A team'} failed your poison apple at ${a.cpName}! You earn ${t.fail || 10}${u}.`, 5000);
+                        if (a.status === 'active') window.appToast(`🍎 A team has consumed your poison apple at ${a.cpName}!`, 4500);
+                        else if (a.status === 'won') window.appToast(`😬 A team beat your poison apple at ${a.cpName}. You take a ${t.penalty || 5}${u} penalty.`, 5000);
+                        else if (a.status === 'lost') window.appToast(`😈 A team failed your poison apple at ${a.cpName}! You earn ${t.fail || 10}${u}.`, 5000);
                     }
                 });
                 window.__appleSeen = { team: teamId, map: seen };
                 window.liveApples = list;
+                if (window.renderAppleBanner) window.renderAppleBanner();
                 if (!window.liveTeamRaceData || window.activeRaceCode !== code) return;
                 const active = document.getElementById('team-dashboard-active');
                 if (active && !active.classList.contains('hidden')) loadTeamDashboardData(window.liveTeamRaceData).catch(() => {});
@@ -10061,7 +10064,7 @@
                 const won = ui.result === 'won';
                 return `<div class="cp-apple" onclick="event.stopPropagation()"><div class="cp-trivia-inner"><div class="mt-2 p-3 rounded-2xl border ${won ? 'border-emerald-400/50 bg-emerald-950/60' : 'border-rose-400/50 bg-rose-950/50'} shadow-lg">
                     <p class="text-sm font-black ${won ? 'text-emerald-300' : 'text-rose-300'}">${won ? '✅ You survived the poison apple!' : '☠️ The poison apple got you!'}</p>
-                    <p class="text-[11px] text-slate-300 mt-1">${won ? `You earn ${terms.hit}${unit} ${hunt ? 'bonus' : 'off your time'}. ${paEsc(a && a.ownerTeamName)} takes a ${terms.penalty}${unit} ${hunt ? 'loss' : 'penalty'}.` : `No extra penalty for you. ${paEsc(a && a.ownerTeamName)} earns ${terms.fail}${unit} ${hunt ? 'bonus' : 'off their time'}.`}</p>
+                    <p class="text-[11px] text-slate-300 mt-1">${won ? `You earn ${terms.hit}${unit} ${hunt ? 'bonus' : 'off your time'}. Another team takes a ${terms.penalty}${unit} ${hunt ? 'loss' : 'penalty'}.` : `No extra penalty for you. Another team earns ${terms.fail}${unit} ${hunt ? 'bonus' : 'off their time'}.`}</p>
                 </div></div></div>`;
             }
             // 2. A challenge waiting to be done / in progress
@@ -10077,7 +10080,7 @@
                 return `<div class="cp-apple ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()"><div class="cp-trivia-inner"><div class="mt-2 p-3 rounded-2xl border-2 border-lime-400/70 bg-gradient-to-br from-slate-900 to-lime-950/70 shadow-lg pa-pulse">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0"><p class="text-[10px] font-black uppercase tracking-widest text-lime-300">🍎☠️ Poison apple!</p>
-                        <p class="text-[11px] text-slate-400">Left here by <b class="text-white">${paEsc(a.ownerTeamName)}</b></p></div>
+                        <p class="text-[11px] text-slate-400">Left here by <b class="text-white">another team</b></p></div>
                         <span data-apple-deadline="${Number(a.deadline) || 0}" data-cp="${paEsc(cpId)}" class="font-mono font-black text-xl text-lime-300 shrink-0">--:--</span>
                     </div>
                     <p class="text-sm font-bold text-white mt-2">${paEsc(ch.title || 'Challenge')}</p>
@@ -10106,6 +10109,68 @@
             const html = window.buildApplePanel(cpId, window.liveTeamData || {}, window.liveTeamRaceData || {}, Date.now());
             if (html) card.insertAdjacentHTML('beforeend', html);
         };
+        // The apple this team has out there right now (null if none, or if it is spent / expired). One apple per team per race.
+        window.myOutApple = function () {
+            const me = window.activeTeamId;
+            const mine = (window.liveApples || []).filter(a => a.ownerTeamId === me)
+                .map(a => ({ a, st: window.appleStatus(a) })).filter(x => x.st !== 'expired');
+            mine.sort((x, y) => Number(y.a.createdAt) - Number(x.a.createdAt));
+            return mine[0] || null;
+        };
+        // Which of my checkpoints carry my unspent apple: { cpId: 'armed' | 'active' }
+        window.myAppleMarks = function () {
+            const race = window.liveTeamRaceData;
+            if (!window.poisonOn(race) || !window.activeTeamId) return {};
+            const o = window.myOutApple();
+            return (o && (o.st === 'armed' || o.st === 'active')) ? { [o.a.cpId]: o.st } : {};
+        };
+
+        // ---- Banner at the top of the team portal (modelled on the wildcard banner). Never names either team. ----
+        let appleBannerKey = '';
+        window.renderAppleBanner = function () {
+            const el = document.getElementById('apple-banner'); if (!el) return;
+            const hide = () => { if (!el.classList.contains('hidden')) { el.classList.add('hidden'); el.innerHTML = ''; } appleBannerKey = ''; };
+            const race = window.liveTeamRaceData, td = window.liveTeamData;
+            if (!window.activeTeamId || !window.poisonOn(race) || !window.liveApples || (td && td.endTime)) return hide();
+            const o = window.myOutApple(); if (!o) return hide();
+            const a = o.a, st = o.st, now = Date.now(), u = window.poisonUnit(race), t = a.terms || {};
+            const started = !!a.startedAt;
+            const mmss = (ms) => { const sec = Math.max(0, Math.ceil(ms / 1000)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); };
+            let key = null, html = '';
+            if (st === 'active') {
+                key = 'active:' + a.id + ':' + (started ? 'go' : 'wait');
+                if (key === appleBannerKey) {   // same state: only tick the clock
+                    const c = document.getElementById('apple-countdown'); if (c && started) c.textContent = mmss(Number(a.deadline) - now);
+                    return;
+                }
+                html = `<div class="pa-pulse rounded-2xl p-3.5 border-2 border-lime-400/70 bg-gradient-to-r from-lime-500/20 via-emerald-500/15 to-slate-900/60 backdrop-blur-md">
+                    <div class="flex items-start gap-3">
+                        <div class="text-3xl leading-none">🍎</div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-lime-300">Your poison apple</p>
+                            <p class="font-bold text-white text-sm leading-snug">A team has consumed your poison apple at ${paEsc(a.cpName)}!</p>
+                            <p class="text-[11px] text-lime-100/90 mt-0.5">${started ? 'They are working on the challenge right now. You will find out how it goes.' : 'They are getting their challenge ready...'}</p>
+                        </div>
+                        ${started ? `<div class="text-right shrink-0"><p class="text-[10px] text-slate-300">Time left</p><p id="apple-countdown" class="font-mono font-bold text-lg text-white">${mmss(Number(a.deadline) - now)}</p></div>` : ''}
+                    </div></div>`;
+            } else if (st === 'won' || st === 'lost') {
+                const at = Number(a.resolvedAt) || Number(a.deadline) || now;
+                if (now - at > 5 * 60000) return hide();   // clears 5 minutes after the result, like the wildcard banner
+                key = st + ':' + a.id;
+                if (key === appleBannerKey) return;
+                const won = st === 'won';
+                html = `<div class="rounded-2xl p-3.5 border ${won ? 'border-rose-400/50 bg-rose-950/40' : 'border-emerald-400/50 bg-emerald-950/40'} backdrop-blur-md flex items-center gap-3">
+                    <div class="text-2xl leading-none">${won ? '😬' : '😈'}</div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-widest ${won ? 'text-rose-300' : 'text-emerald-300'}">Your poison apple</p>
+                        <p class="text-[12px] text-white leading-snug">${won ? `A team survived your apple at ${paEsc(a.cpName)}. You take a ${t.penalty || 5}${u} penalty.` : `A team failed your apple at ${paEsc(a.cpName)}! You earn ${t.fail || 10}${u} ${race.gameMode === 'scavenger' ? 'bonus' : 'off your time'}.`}</p>
+                    </div></div>`;
+            } else return hide();   // armed and waiting: the checkpoint card carries the reminder instead
+            appleBannerKey = key;
+            el.innerHTML = html; el.classList.remove('hidden');
+        };
+        setInterval(() => { try { window.renderAppleBanner(); } catch (e) {} }, 1000);
+
         window.hasActiveApple = function () {
             const me = window.activeTeamId;
             return (window.liveApples || []).some(a => a.victimTeamId === me && window.appleStatus(a) === 'active' && a.startedAt);
@@ -11472,11 +11537,13 @@
             if (!fill || !count || !timeline || !nextLabel || !timer) return;
             fill.style.width = pct + '%';
             count.textContent = pct + '%';
+            const appleMarks = (window.myAppleMarks && window.myAppleMarks()) || {};
             timeline.innerHTML = orderedStops.map((cp, i) => {
                 const done = completedIds.includes(cp.id);
                 const next = !done && orderedStops.slice(0, i).every(item => completedIds.includes(item.id));
+                const am = done ? appleMarks[cp.id] : '';
                 return `<div class="flex flex-col items-center gap-1 min-w-[3.25rem] max-w-[4rem]">
-                    <span class="race-stop-dot ${done ? 'done' : (next ? 'next' : '')}">${done ? '<i class="fa-solid fa-check"></i>' : (i + 1)}</span>
+                    <span class="race-stop-dot ${done ? 'done' : (next ? 'next' : '')}" ${am ? 'title="Your poison apple is here"' : ''}>${am ? (am === 'active' ? '☠️' : '🍎') : (done ? '<i class="fa-solid fa-check"></i>' : (i + 1))}</span>
                     <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${cp.name}</span>
                 </div>`;
             }).join('<div class="h-[2px] min-w-[.75rem] flex-1 bg-slate-700 mt-3"></div>');
@@ -11799,6 +11866,7 @@
                     const triviaHtml = isDone ? window.buildTriviaPanel(cp.id, tData, raceData, nowMs) : '';
                     const transitHtml = isDone ? window.buildTransitPanel(cp.id, tData, raceData, nowMs) : '';
                     const appleHtml = isDone ? window.buildApplePanel(cp.id, tData, raceData, nowMs) : '';
+                    const appleMark = (window.myAppleMarks()[cp.id]) || '';
                     const legTxt = isDone ? window.formatTransitLeg((tData.transitLegs || {})[cp.id]) : '';
 
                     const handle = (cls) => `<div class="cursor-grab ${cls} px-1 py-3 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>`;
@@ -11819,15 +11887,17 @@
                                         </div>
                                         ${frontAction}
                                     </div>
-                                    <div class="cp-face cp-back ${isRejected ? 'cp-back-rejected' : ''} p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
+                                    <div class="cp-face cp-back ${isRejected ? 'cp-back-rejected' : ''} ${appleMark ? 'ring-2 ring-lime-400 ring-offset-1 ring-offset-slate-900' : ''} p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
                                         ${handle('text-slate-700 hover:text-slate-900')}
                                         <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
                                             <span class="checkpoint-number font-mono font-extrabold text-slate-800 text-sm">#${idx + 1}</span>
+                                            ${appleMark ? `<span title="Your poison apple is ${appleMark === 'active' ? 'being eaten here' : 'waiting here'}" class="w-6 h-6 rounded-full bg-lime-500/30 border border-lime-600/60 flex items-center justify-center text-xs">${appleMark === 'active' ? '☠️' : '🍎'}</span>` : ''}
                                             ${isFinal ? '<span title="Final destination stop" class="w-6 h-6 rounded-full bg-slate-900/10 flex items-center justify-center text-xs">🏁</span>' : ''}
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <p class="font-extrabold text-[13px] leading-snug text-slate-900">${cp.name}</p>
                                             <p class="text-[11px] font-semibold text-slate-800 leading-snug mt-0.5">Checked in${doneTime ? ' at ' + doneTime : ''}</p>
+                                            ${appleMark ? `<p class="text-[10px] font-black text-lime-900 mt-0.5">${appleMark === 'active' ? '☠️ Your apple has been eaten here' : '🍎 Your poison apple is waiting here'}</p>` : ''}
                                             ${legTxt ? `<p class="text-[10px] font-semibold text-slate-800 mt-0.5">${legTxt}</p>` : ''}
                                             ${isRejected ? '<p class="text-[10px] font-bold text-rose-800 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-ban"></i> Rejected by the host</p>' : (isManualOverride ? '<p class="text-[10px] font-bold text-amber-900 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Manual check-in</p>' : '')}
                                             ${offlineNote}
