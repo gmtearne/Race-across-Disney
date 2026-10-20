@@ -1954,6 +1954,11 @@
                             </button>
                             <div id="apple-body" class="hidden space-y-3 pt-1">
                                 <p class="text-[11px] text-slate-400">Play any poison apple game straight away, without setting traps. Tests run on this device only: nothing is saved and no team is affected.</p>
+                                <div id="apple-test-levels" class="flex gap-1.5">
+                                    <button type="button" data-l="easy" onclick="setAppleTestLevel('easy')" class="flex-1 py-2 rounded-xl border text-[11px] font-bold bg-slate-900 border-slate-700 text-slate-300">Easy</button>
+                                    <button type="button" data-l="medium" onclick="setAppleTestLevel('medium')" class="flex-1 py-2 rounded-xl border text-[11px] font-bold bg-lime-500/20 border-lime-400/70 text-lime-200">Medium</button>
+                                    <button type="button" data-l="hard" onclick="setAppleTestLevel('hard')" class="flex-1 py-2 rounded-xl border text-[11px] font-bold bg-slate-900 border-slate-700 text-slate-300">Hard</button>
+                                </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <button type="button" onclick="openAppleGameTest('catch')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🧺 Orchard Catch</button>
                                     <button type="button" onclick="openAppleGameTest('scramble')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🔤 Word Scramble</button>
@@ -10043,11 +10048,17 @@
             return list.length ? list : [window.DEFAULT_POISON_CHALLENGE];
         };
         // The mini-games. Each time a team falls into a trap, one is picked at random.
+        // Every game scales with the team's difficulty (easy / medium / hard): rule text and time limit are functions of the level.
+        window.appleLevel = function () {
+            const td = window.liveTeamData || {}, rc = window.liveTeamRaceData || {};
+            const d = String((td.difficultyOverride || rc.difficulty) || 'easy').toLowerCase();
+            return ['easy', 'medium', 'hard'].includes(d) ? d : 'easy';
+        };
         window.APPLE_GAMES = {
-            catch:    { title: 'Orchard Catch',     rule: 'Drag to glide the basket and catch 20 green apples. Dodge the red ones: catch one and it is over!', sec: 85 },
-            scramble: { title: 'Word Scramble',     rule: 'Unscramble 3 fairy-tale words by tapping the letters in order.', sec: 75 },
-            spot:     { title: 'Spot the Difference', rule: 'Find 5 differences between the two orchards. Tap them on either picture. 4 wrong taps and you lose.', sec: 90 },
-            potion:   { title: 'The Antidote',      rule: 'You have been poisoned! Solve the witch\'s riddle and the sums, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: 100 }
+            catch:    { title: 'Orchard Catch',       rule: (lv) => `Drag along the strip at the bottom to glide the basket and catch ${AG_CATCH_LV[lv].target} green apples before time runs out. Dodge the red ones: catch one and it is over!`, sec: (lv) => ({ easy: 55, medium: 45, hard: 38 })[lv] || 45 },
+            scramble: { title: 'Word Scramble',       rule: (lv) => `Unscramble ${AG_SCRAMBLE_LV[lv].words} fairy-tale words by tapping the letters in order. Stuck? Reshuffle the letters.`, sec: (lv) => ({ easy: 60, medium: 75, hard: 90 })[lv] || 75 },
+            spot:     { title: 'Spot the Difference', rule: (lv) => `Find ${AG_SPOT_LV[lv].n} differences between the two pictures. Tap them on either one. ${AG_SPOT_LV[lv].wrong} wrong taps and you lose.`, sec: (lv) => ({ easy: 90, medium: 90, hard: 100 })[lv] || 90 },
+            potion:   { title: 'The Antidote',        rule: (lv) => 'You have been poisoned! Solve the witch\'s riddle and the sums, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: (lv) => ({ easy: 80, medium: 100, hard: 110 })[lv] || 100 }
         };
         // A location can still supply its own challenges (poisonChallenges in locations-data.js); otherwise a mini-game is picked.
         window.pickAppleChallenge = function (cpName, apples, teamId) {
@@ -10055,8 +10066,8 @@
             const custom = (preset && Array.isArray(preset.poisonChallenges) && preset.poisonChallenges.length) ? preset.poisonChallenges : (window.POISON_APPLE_CHALLENGES[cpName] || []);
             if (custom.length) return custom[Math.floor(Math.random() * custom.length)];
             const pool = Object.keys(window.APPLE_GAMES);   // any game can come up each time
-            const g = pool[Math.floor(Math.random() * pool.length)], def = window.APPLE_GAMES[g];
-            return { id: 'game_' + g, type: 'game', game: g, title: def.title, prompt: def.rule, timeLimitSec: def.sec, seed: 1 + Math.floor(Math.random() * 2147483000) };
+            const g = pool[Math.floor(Math.random() * pool.length)], def = window.APPLE_GAMES[g], level = window.appleLevel();
+            return { id: 'game_' + g, type: 'game', game: g, level, title: def.title, prompt: def.rule(level), timeLimitSec: def.sec(level), seed: 1 + Math.floor(Math.random() * 2147483000) };
         };
 
         // armed (waiting) | expired | active (being attempted) | won | lost.  An abandoned challenge counts as failed.
@@ -10347,7 +10358,9 @@
         setInterval(() => { try { window.renderAppleBanner(); } catch (e) {} }, 1000);
 
         // ===================== POISON APPLE MINI-GAMES =====================
-        const AG = { apple: null, cpId: null, game: null, stop: null, done: false, resultShown: false, finished: {}, giveUpArm: 0 };
+        const AG = { apple: null, cpId: null, game: null, stop: null, done: false, resultShown: false, finished: {}, giveUpArm: 0, onFail: null, level: 'medium' };
+        const agRuleText = (def, lv) => (typeof def.rule === 'function' ? def.rule(lv) : def.rule);
+        const AG_LEVEL_NAME = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
         const agEl = (id) => document.getElementById(id);
         const agRng = (seed) => { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; }; };
         const agShuffle = (arr, rnd) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -10359,9 +10372,10 @@
             const ov = agEl('apple-game-overlay'); if (!ov) return;
             if (AG.apple === a.id && !ov.classList.contains('hidden')) return;   // already playing
             if (AG.stop) { try { AG.stop(); } catch (e) {} }
-            AG.apple = a.id; AG.cpId = cpId; AG.game = a.challenge.game; AG.done = false; AG.resultShown = false; AG.stop = null;
+            AG.apple = a.id; AG.cpId = cpId; AG.game = a.challenge.game; AG.done = false; AG.resultShown = false; AG.stop = null; AG.onFail = null;
+            AG.level = ['easy', 'medium', 'hard'].includes(a.challenge.level) ? a.challenge.level : window.appleLevel();
             const def = window.APPLE_GAMES[AG.game] || { title: a.challenge.title, rule: a.challenge.prompt };
-            agEl('ag-title').textContent = def.title; agEl('ag-rule').textContent = def.rule;
+            agEl('ag-title').textContent = def.title + ' · ' + AG_LEVEL_NAME[AG.level]; agEl('ag-rule').textContent = agRuleText(def, AG.level);
             const tm = agEl('ag-timer'); tm.dataset.appleDeadline = String(Number(a.deadline) || 0); tm.dataset.cp = cpId; delete tm.dataset.fired;
             tm.classList.remove('text-rose-400'); tm.classList.add('text-lime-300');
             agEl('ag-hud').textContent = ''; agEl('ag-body').innerHTML = '';
@@ -10370,28 +10384,46 @@
             const body = agEl('ag-body'), rnd = agRng(Number(a.challenge.seed) || 7);
             const start = { catch: agCatch, scramble: agScramble, spot: agSpot, potion: agPotion }[AG.game];
             if (!start) { window.closeAppleGame(true); return; }
-            AG.stop = start(body, rnd, (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; });
+            AG.stop = start(body, rnd, (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; }, AG.level);
         };
         // Admin-only: play a game with no apple, no database writes and no effect on any team
+        window.__appleTestLevel = 'medium';
+        window.setAppleTestLevel = function (lv) {
+            window.__appleTestLevel = lv;
+            document.querySelectorAll('#apple-test-levels button').forEach(b => {
+                const on = b.dataset.l === lv;
+                b.classList.toggle('bg-lime-500/20', on); b.classList.toggle('border-lime-400/70', on); b.classList.toggle('text-lime-200', on);
+                b.classList.toggle('bg-slate-900', !on); b.classList.toggle('border-slate-700', !on); b.classList.toggle('text-slate-300', !on);
+            });
+        };
         window.openAppleGameTest = function (game) {
             if (!window.isPlatformAdmin) return;
             const def = window.APPLE_GAMES[game], ov = agEl('apple-game-overlay'); if (!def || !ov) return;
             const start = { catch: agCatch, scramble: agScramble, spot: agSpot, potion: agPotion }[game]; if (!start) return;
             if (AG.stop) { try { AG.stop(); } catch (e) {} }
             clearTimeout(AG.testTimer);
-            AG.apple = 'test_' + Date.now(); AG.cpId = 'test'; AG.game = game; AG.done = false; AG.resultShown = false; AG.stop = null; AG.test = true;
-            agEl('ag-title').textContent = def.title; agEl('ag-rule').textContent = def.rule;
-            const tm = agEl('ag-timer'); tm.dataset.appleDeadline = String(Date.now() + def.sec * 1000); tm.dataset.cp = 'test'; tm.dataset.fired = '1';
+            AG.apple = 'test_' + Date.now(); AG.cpId = 'test'; AG.game = game; AG.done = false; AG.resultShown = false; AG.stop = null; AG.test = true; AG.onFail = null;
+            AG.level = window.__appleTestLevel || 'medium';
+            const secs = def.sec(AG.level);
+            agEl('ag-title').textContent = def.title + ' · ' + AG_LEVEL_NAME[AG.level]; agEl('ag-rule').textContent = agRuleText(def, AG.level);
+            const tm = agEl('ag-timer'); tm.dataset.appleDeadline = String(Date.now() + secs * 1000); tm.dataset.cp = 'test'; tm.dataset.fired = '1';
             tm.classList.remove('text-rose-400'); tm.classList.add('text-lime-300');
             agEl('ag-hud').textContent = ''; agEl('ag-body').innerHTML = '';
             agEl('ag-giveup').textContent = '✖ Exit test';
             ov.classList.remove('hidden');
-            AG.testTimer = setTimeout(() => { if (AG.test && !AG.done) agFinish(false, null, { icon: '⌛', title: 'Time is up!' }); }, def.sec * 1000 + 300);
-            AG.stop = start(agEl('ag-body'), agRng(1 + Math.floor(Math.random() * 2147483000)), (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; });
+            AG.testTimer = setTimeout(() => { if (AG.test && !AG.done) agFinish(false, null, { icon: '⌛', title: 'Time is up!' }); }, secs * 1000 + 300);
+            AG.stop = start(agEl('ag-body'), agRng(1 + Math.floor(Math.random() * 2147483000)), (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; }, AG.level);
         };
         window.testAppleLock = function () { if (window.isPlatformAdmin) { window.__testLockUntil = Date.now() + 60000; window.checkAppleLock(); } };
         window.closeAppleGame = function (force) {
             if (!force && AG.resultShown) return;   // the result splash closes itself
+            if (!force && !AG.done && AG.onFail && !AG.test) {   // time ran out: show the answer (e.g. the scramble word) before closing
+                AG.done = true; AG.finished[AG.apple] = true; AG.resultShown = true;
+                if (AG.stop) { try { AG.stop(); } catch (e) {} AG.stop = null; }
+                let dur = 1500; try { dur = AG.onFail() || 1500; } catch (e) {}
+                setTimeout(() => { AG.resultShown = false; window.closeAppleGame(true); }, dur + 1500);
+                return;
+            }
             if (AG.test) { clearTimeout(AG.testTimer); AG.test = false; }
             if (AG.stop) { try { AG.stop(); } catch (e) {} AG.stop = null; }
             const ov = agEl('apple-game-overlay'); if (ov) ov.classList.add('hidden');
@@ -10404,15 +10436,18 @@
             if (AG.stop) { try { AG.stop(); } catch (e) {} AG.stop = null; }
             AG.resultShown = true;
             const body = agEl('ag-body');
-            body.insertAdjacentHTML('beforeend', `<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style="background:rgba(2,6,23,.88)">
+            let revealMs = 0;
+            if (!ok && AG.onFail) { try { revealMs = AG.onFail() || 0; } catch (e) {} }   // e.g. the scramble letters slide into the right word
+            const splashHtml = () => body.insertAdjacentHTML('beforeend', `<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style="background:rgba(2,6,23,.88)">
                 <div class="text-7xl mb-3">${(splash && splash.icon) || (ok ? '🎉' : '☠️')}</div>
                 <p class="font-disney font-bold text-3xl ${ok ? 'text-emerald-300' : 'text-rose-300'}">${(splash && splash.title) || (ok ? 'You survived!' : 'The apple got you!')}</p>
                 ${splash && splash.sub ? `<p class="text-sm text-slate-300 mt-2 max-w-xs">${splash.sub}</p>` : ''}</div>`);
+            if (revealMs) setTimeout(splashHtml, revealMs); else splashHtml();
             if (AG.test) {
                 window.appToast('Test result: ' + (ok ? 'PASSED ✅' : 'FAILED ❌') + (extra && extra.potion ? ' (' + extra.potion + ' potion)' : ''), 3500);
                 if (extra && extra.lockUntil) window.__testLockUntil = Date.now() + 60000 + 1800;
             } else window.resolveApple(AG.cpId, ok, extra);
-            setTimeout(() => { AG.resultShown = false; window.closeAppleGame(true); }, 1800);
+            setTimeout(() => { AG.resultShown = false; window.closeAppleGame(true); }, 1800 + revealMs);
         }
         window.appleGameGiveUp = function () {
             const btn = agEl('ag-giveup'), now = Date.now();
@@ -10432,14 +10467,20 @@
         }, 2000);
 
         // ---- Game 1: Orchard Catch ----
-        // The basket glides towards your finger (it never jumps), and apples come in mixed sizes of trouble: some slow, some fast, plenty of red ones.
-        function agCatch(body, rnd, finish, hud) {
-            const TARGET = 20;
+        // The bottom of the screen is a dead zone for your thumb: swipe there and the basket glides, so your finger never covers the apples.
+        // Shorter time limits make you go for the risky apples. Harder levels: more apples to catch, more red ones, faster drops.
+        const AG_CATCH_LV = {
+            easy:   { target: 15, red: 0.26, speed: 0.85, gapMin: 0.50, gapRange: 0.50 },
+            medium: { target: 20, red: 0.34, speed: 1.00, gapMin: 0.40, gapRange: 0.55 },
+            hard:   { target: 22, red: 0.42, speed: 1.20, gapMin: 0.32, gapRange: 0.48 }
+        };
+        function agCatch(body, rnd, finish, hud, level) {
+            const LV = AG_CATCH_LV[level] || AG_CATCH_LV.medium, TARGET = LV.target;
             const cvs = document.createElement('canvas'); cvs.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;';
             body.appendChild(cvs);
             const ctx = cvs.getContext('2d');
-            let W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1), raf = 0, last = 0, alive = true, elapsed = 0;
-            const fit = () => { W = body.clientWidth; H = body.clientHeight; cvs.width = W * dpr; cvs.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+            let W = 0, H = 0, PH = 0, DEAD = 0, dpr = Math.min(2, window.devicePixelRatio || 1), raf = 0, last = 0, alive = true, elapsed = 0;
+            const fit = () => { W = body.clientWidth; H = body.clientHeight; DEAD = Math.max(110, Math.round(H * 0.27)); PH = H - DEAD; cvs.width = W * dpr; cvs.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
             fit(); window.addEventListener('resize', fit);
             let bx = W / 2, tx = W / 2, caught = 0, spawn = 0.4, items = [];
             const aim = (e) => { const r = cvs.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; tx = Math.max(30, Math.min(W - 30, t.clientX - r.left)); if (e.cancelable) e.preventDefault(); };
@@ -10447,27 +10488,20 @@
             cvs.addEventListener('touchmove', aim, { passive: false });
             hud('🍏 0 / ' + TARGET);
             const newApple = () => {
-                // red apples become more common as the game goes on; speeds vary from lazy drifters to fast drops
-                const redChance = Math.min(0.5, 0.34 + elapsed * 0.003);
-                const speedMix = Math.random();
-                const vy = H * (speedMix < 0.3 ? 0.26 + Math.random() * 0.1 : speedMix < 0.75 ? 0.4 + Math.random() * 0.2 : 0.7 + Math.random() * 0.25);
+                const redChance = Math.min(0.55, LV.red + elapsed * 0.003);   // red apples get more common as the game goes on
+                const mix = Math.random();
+                const vy = PH * LV.speed * (mix < 0.3 ? 0.30 + Math.random() * 0.1 : mix < 0.75 ? 0.45 + Math.random() * 0.2 : 0.75 + Math.random() * 0.25);
                 items.push({ x: 24 + Math.random() * (W - 48), y: -20, vy, red: Math.random() < redChance, sway: Math.random() < 0.25 ? (Math.random() - 0.5) * 60 : 0, ph: Math.random() * 6 });
             };
             const frame = (ts) => {
                 if (!alive) return;
                 const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts; elapsed += dt;
-                // glide: ease towards the target, with a top speed so a tap on the far side means a real slide across
-                const maxStep = W * 1.1 * dt;
-                const step = (tx - bx) * (1 - Math.exp(-7 * dt));
-                bx += Math.max(-maxStep, Math.min(maxStep, step));
+                const maxStep = W * 1.1 * dt;                                  // glide: ease towards the finger, with a top speed
+                bx += Math.max(-maxStep, Math.min(maxStep, (tx - bx) * (1 - Math.exp(-7 * dt))));
                 spawn -= dt;
-                if (spawn <= 0) {
-                    newApple();
-                    if (Math.random() < 0.18) newApple();                 // now and then two arrive together
-                    spawn = 0.4 + Math.random() * 0.55;
-                }
+                if (spawn <= 0) { newApple(); if (Math.random() < 0.18) newApple(); spawn = LV.gapMin + Math.random() * LV.gapRange; }
                 ctx.clearRect(0, 0, W, H);
-                const by = H - 46;
+                const by = PH - 34;
                 for (const it of items) {
                     it.y += it.vy * dt;
                     if (it.sway) it.x = Math.max(16, Math.min(W - 16, it.x + Math.sin(elapsed * 3 + it.ph) * it.sway * dt));
@@ -10478,11 +10512,19 @@
                         if (caught >= TARGET) { alive = false; finish(true); return; }
                     }
                 }
-                items = items.filter(it => !it.gone && it.y < H + 30);
+                items = items.filter(it => !it.gone && it.y < PH + 10);
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.font = '34px serif';
                 for (const it of items) ctx.fillText(it.red ? '🍎' : '🍏', it.x, it.y);
                 ctx.font = '60px serif'; ctx.fillText('🧺', bx, by);
+                // the thumb strip
+                const g = ctx.createLinearGradient(0, PH, 0, H); g.addColorStop(0, 'rgba(132,204,22,0.16)'); g.addColorStop(1, 'rgba(132,204,22,0.04)');
+                ctx.fillStyle = g; ctx.fillRect(0, PH, W, DEAD);
+                ctx.fillStyle = 'rgba(163,230,53,0.45)'; ctx.fillRect(0, PH, W, 2);
+                ctx.fillStyle = 'rgba(226,232,240,' + Math.max(0.35, 1 - elapsed / 6) + ')'; ctx.font = '700 13px sans-serif';
+                ctx.fillText('◀   swipe here to move the basket   ▶', W / 2, PH + DEAD * 0.28);
+                ctx.fillStyle = 'rgba(163,230,53,0.5)'; ctx.beginPath(); ctx.arc(bx, PH + DEAD * 0.66, 16, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(236,252,203,0.9)'; ctx.lineWidth = 2; ctx.stroke();
                 raf = requestAnimationFrame(frame);
             };
             raf = requestAnimationFrame(frame);
@@ -10490,21 +10532,37 @@
         }
 
         // ---- Game 2: Word Scramble ----
-        const AG_WORDS = ['ORCHARD', 'CAULDRON', 'POTION', 'MIRROR', 'FOREST', 'BASKET', 'HARVEST', 'WITCH', 'CURSE', 'ENCHANT', 'CRIMSON', 'SLUMBER', 'COTTAGE', 'THORNS'];
-        function agScramble(body, rnd, finish, hud) {
-            const words = agShuffle(AG_WORDS, rnd).slice(0, 3);
+        const AG_WORDS = {
+            short: ['WITCH', 'CURSE', 'SPELL', 'POTION', 'MIRROR', 'FOREST', 'BASKET', 'THORNS', 'RAVEN', 'GOBLIN'],
+            mid:   ['ORCHARD', 'CAULDRON', 'HARVEST', 'ENCHANT', 'CRIMSON', 'SLUMBER', 'COTTAGE', 'MIDNIGHT', 'WANDERER', 'FAIRYTALE'],
+            long:  ['ENCHANTED', 'BEWITCHED', 'POISONOUS', 'SPELLBOUND', 'ENCHANTRESS', 'WOODCUTTER', 'WILDERNESS', 'MOONLIGHT']
+        };
+        const AG_SCRAMBLE_LV = { easy: { words: 2 }, medium: { words: 3 }, hard: { words: 3 } };
+        function agScramble(body, rnd, finish, hud, level) {
+            const lv = level in AG_SCRAMBLE_LV ? level : 'medium', N = AG_SCRAMBLE_LV[lv].words;
+            const pickFrom = (list, n) => agShuffle(list, rnd).slice(0, n);
+            const words = lv === 'easy' ? pickFrom(AG_WORDS.short, 2)
+                : lv === 'medium' ? [...pickFrom(AG_WORDS.short, 1), ...pickFrom(AG_WORDS.mid, 2)]
+                : [...pickFrom(AG_WORDS.mid, 1), ...pickFrom(AG_WORDS.long, 2)];
             let wi = 0, picked = [], tiles = [], alive = true, locked = false;
             const scr = (w) => { let t, n = 0; do { t = agShuffle(w.split(''), rnd); n++; } while (t.join('') === w && n < 20); return t; };
             const render = () => {
-                const w = words[wi];
-                body.innerHTML = `<div class="h-full flex flex-col items-center justify-center gap-6 px-4">
-                    <p class="text-[11px] font-black uppercase tracking-widest text-lime-300">Word ${wi + 1} of 3</p>
-                    <div id="ag-slots" class="flex flex-wrap justify-center gap-1.5">${w.split('').map((_, i) => `<span class="w-9 h-11 rounded-lg border-2 ${picked[i] ? 'border-lime-400 bg-lime-500/15 text-white' : 'border-slate-600 text-slate-600'} flex items-center justify-center font-mono font-black text-xl">${picked[i] ? tiles[picked[i].t] : ''}</span>`).join('')}</div>
-                    <div class="flex flex-wrap justify-center gap-2">${tiles.map((l, i) => `<button type="button" data-t="${i}" ${picked.some(p => p.t === i) ? 'disabled' : ''} class="ag-tile w-12 h-12 rounded-xl bg-slate-800 border border-slate-600 text-white font-mono font-black text-xl active:scale-90 transition ${picked.some(p => p.t === i) ? 'opacity-25' : ''}">${l}</button>`).join('')}</div>
-                    <button type="button" id="ag-undo" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-xs font-bold">⌫ Undo</button>
+                const w = words[wi], tileSize = w.length > 8 ? 'w-10 h-10 text-lg' : 'w-12 h-12 text-xl', slotSize = w.length > 8 ? 'w-7 h-10 text-lg' : 'w-9 h-11 text-xl';
+                body.innerHTML = `<div id="ag-scr" class="h-full flex flex-col items-center justify-center gap-5 px-4">
+                    <p class="text-[11px] font-black uppercase tracking-widest text-lime-300">Word ${wi + 1} of ${N}</p>
+                    <div id="ag-slots" class="flex flex-wrap justify-center gap-1.5">${w.split('').map((_, i) => `<span class="${slotSize} rounded-lg border-2 ${picked[i] ? 'border-lime-400 bg-lime-500/15 text-white' : 'border-slate-600 text-slate-600'} flex items-center justify-center font-mono font-black">${picked[i] ? tiles[picked[i].t] : ''}</span>`).join('')}</div>
+                    <div class="flex flex-wrap justify-center gap-2">${tiles.map((l, i) => `<button type="button" data-t="${i}" ${picked.some(p => p.t === i) ? 'disabled' : ''} class="ag-tile ${tileSize} rounded-xl bg-slate-800 border border-slate-600 text-white font-mono font-black active:scale-90 transition ${picked.some(p => p.t === i) ? 'opacity-25' : ''}">${l}</button>`).join('')}</div>
+                    <div class="flex gap-2"><button type="button" id="ag-undo" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-xs font-bold">⌫ Undo</button>
+                    <button type="button" id="ag-reshuffle" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-xs font-bold">🔀 Reshuffle</button></div>
                 </div>`;
                 body.querySelectorAll('.ag-tile').forEach(b => b.addEventListener('click', () => tap(Number(b.dataset.t))));
                 body.querySelector('#ag-undo').addEventListener('click', () => { if (locked) return; picked.pop(); render(); });
+                body.querySelector('#ag-reshuffle').addEventListener('click', () => {
+                    if (locked) return;
+                    const before = tiles.join(''); let n = 0;
+                    do { tiles = agShuffle(tiles, Math.random); n++; } while (tiles.join('') === before && n < 10);
+                    picked = []; render();
+                });
             };
             const tap = (t) => {
                 if (locked || !alive || picked.some(p => p.t === t)) return;
@@ -10517,61 +10575,169 @@
                     const slots = body.querySelector('#ag-slots');
                     if (attempt === w) {
                         if (slots) slots.querySelectorAll('span').forEach(x => x.classList.add('border-emerald-400', 'text-emerald-300'));
-                        setTimeout(() => { if (!alive) return; wi++; if (wi >= 3) { alive = false; finish(true); return; } picked = []; tiles = scr(words[wi]); locked = false; hud('Solved ' + wi + ' / 3'); render(); }, 550);
+                        setTimeout(() => { if (!alive) return; wi++; if (wi >= N) { alive = false; finish(true); return; } picked = []; tiles = scr(words[wi]); locked = false; hud('Solved ' + wi + ' / ' + N); render(); }, 550);
                     } else {
                         if (slots) slots.querySelectorAll('span').forEach(x => x.classList.add('border-rose-400', 'text-rose-300'));
                         setTimeout(() => { if (!alive) return; picked = []; locked = false; render(); }, 600);
                     }
                 }
             };
-            tiles = scr(words[0]); hud('Solved 0 / 3'); render();
+            // Shown when the game is lost: the letters slide into the right word. Returns how long the animation takes (ms).
+            AG.onFail = () => {
+                const w = words[wi]; alive = false; locked = true; picked = []; render();
+                body.querySelectorAll('button').forEach(b => { b.disabled = true; });
+                const und = body.querySelector('#ag-undo'), rs = body.querySelector('#ag-reshuffle'); if (und) und.remove(); if (rs) rs.remove();
+                const slots = [...body.querySelectorAll('#ag-slots span')], tl = [...body.querySelectorAll('.ag-tile')], used = new Set();
+                w.split('').forEach((ch, i) => {
+                    const ti = tl.findIndex((b, k) => !used.has(k) && b.textContent === ch); if (ti < 0) return; used.add(ti);
+                    const t = tl[ti], sl = slots[i], tr = t.getBoundingClientRect(), sr = sl.getBoundingClientRect();
+                    const dx = sr.left + sr.width / 2 - (tr.left + tr.width / 2), dy = sr.top + sr.height / 2 - (tr.top + tr.height / 2);
+                    t.style.position = 'relative'; t.style.zIndex = '5'; t.style.opacity = '1';
+                    t.style.transition = `transform .7s cubic-bezier(.3,.9,.3,1) ${i * 130}ms, background-color .4s ${i * 130 + 500}ms`;
+                    requestAnimationFrame(() => requestAnimationFrame(() => { t.style.transform = `translate(${dx}px, ${dy}px) scale(.82)`; t.style.backgroundColor = '#365314'; }));
+                });
+                const cap = document.createElement('p'); cap.className = 'text-sm text-slate-200 mt-1'; cap.innerHTML = `The word was <b class="text-lime-300 tracking-widest">${w}</b>`;
+                const wrap = body.querySelector('#ag-scr'); if (wrap) wrap.appendChild(cap);
+                return w.length * 130 + 1100;
+            };
+            tiles = scr(words[0]); hud('Solved 0 / ' + N); render();
             return () => { alive = false; };
         }
 
-        // ---- Game 3: Spot the Difference (an orchard at night, drawn in SVG, so no images are needed) ----
-        const AG_DIFFS = [
-            { k: 'moon', x: 240, y: 38, r: 20 }, { k: 'cloud', x: 110, y: 32, r: 26 }, { k: 'appleColor', x: 150, y: 56, r: 11 },
-            { k: 'appleMissing', x: 128, y: 100, r: 11 }, { k: 'bird', x: 62, y: 56, r: 15 }, { k: 'shroom', x: 210, y: 168, r: 15 },
-            { k: 'fence', x: 52, y: 162, r: 15 }, { k: 'flower', x: 95, y: 176, r: 11 }, { k: 'basketApple', x: 258, y: 160, r: 11 }
+        // ---- Game 3: Spot the Difference (five little scenes drawn in SVG, so no images are needed) ----
+        // lv 1 = obvious change, lv 2 = subtle. Easy only uses the obvious ones; Hard picks the subtle ones first.
+        const AG_SPOT_LV = { easy: { n: 4, wrong: 6 }, medium: { n: 5, wrong: 4 }, hard: { n: 6, wrong: 3 } };
+        const AG_SCENES = [
+            { id: 'orchard', diffs: [
+                { k: 'moon', x: 240, y: 38, r: 20, lv: 1 }, { k: 'cloud', x: 110, y: 32, r: 26, lv: 1 }, { k: 'appleColor', x: 150, y: 56, r: 11, lv: 2 },
+                { k: 'appleMissing', x: 128, y: 100, r: 11, lv: 1 }, { k: 'bird', x: 62, y: 56, r: 15, lv: 1 }, { k: 'shroom', x: 210, y: 168, r: 15, lv: 1 },
+                { k: 'fence', x: 52, y: 162, r: 15, lv: 2 }, { k: 'flower', x: 95, y: 176, r: 11, lv: 2 }, { k: 'basketApple', x: 258, y: 160, r: 11, lv: 2 }],
+              draw: (has) => {
+                const apples = [[120, 70], [150, 56], [172, 86], [128, 100], [158, 98]];
+                let g = '<rect width="300" height="200" fill="#1e1b4b"/>';
+                [[30, 20], [70, 38], [180, 16], [275, 78], [20, 80]].forEach(p => { g += `<circle cx="${p[0]}" cy="${p[1]}" r="1.4" fill="#e2e8f0"/>`; });
+                g += '<circle cx="240" cy="38" r="16" fill="#fde68a"/>' + (has('moon') ? '<circle cx="247" cy="33" r="14" fill="#1e1b4b"/>' : '');
+                if (!has('cloud')) g += '<ellipse cx="110" cy="32" rx="24" ry="8" fill="#4338ca" opacity=".75"/><ellipse cx="124" cy="28" rx="14" ry="7" fill="#4338ca" opacity=".75"/>';
+                g += '<path d="M0 150 Q80 118 150 145 T300 138 V200 H0Z" fill="#14532d"/><rect y="165" width="300" height="35" fill="#166534"/>';
+                g += '<rect x="135" y="95" width="16" height="72" fill="#78350f"/><circle cx="143" cy="80" r="38" fill="#15803d"/><circle cx="115" cy="96" r="24" fill="#166534"/><circle cx="172" cy="96" r="24" fill="#166534"/>';
+                apples.forEach((a, i) => {
+                    if (i === 3 && has('appleMissing')) return;
+                    const col = (i === 1 && has('appleColor')) ? '#a3e635' : '#dc2626';
+                    g += `<circle cx="${a[0]}" cy="${a[1]}" r="6" fill="${col}"/><rect x="${a[0] - 0.5}" y="${a[1] - 9}" width="1.4" height="4" fill="#422006"/>`;
+                });
+                if (!has('bird')) g += '<path d="M54 56 q5 -7 8 0 q3 -7 8 0" stroke="#e2e8f0" stroke-width="1.6" fill="none"/>';
+                g += `<rect x="209" y="170" width="4" height="9" fill="#e2e8f0"/><ellipse cx="211" cy="170" rx="10" ry="6" fill="${has('shroom') ? '#a855f7' : '#ef4444'}"/><circle cx="208" cy="168" r="1.4" fill="#fff"/><circle cx="214" cy="171" r="1.4" fill="#fff"/>`;
+                [20, 34, 48, 62, 76].forEach((x, i) => { if (i === 2 && has('fence')) return; g += `<rect x="${x}" y="148" width="8" height="28" rx="1.5" fill="#a16207"/>`; });
+                g += `<rect x="94" y="178" width="1.6" height="12" fill="#15803d"/><circle cx="95" cy="176" r="4.5" fill="${has('flower') ? '#38bdf8' : '#f472b6'}"/>`;
+                g += '<path d="M240 168 L276 168 L270 188 L246 188Z" fill="#92400e"/>' + (has('basketApple') ? '' : '<circle cx="258" cy="164" r="6" fill="#dc2626"/>');
+                return g;
+              } },
+            { id: 'cottage', diffs: [
+                { k: 'sunrays', x: 250, y: 36, r: 28, lv: 2 }, { k: 'cloud', x: 85, y: 33, r: 26, lv: 1 }, { k: 'roof', x: 145, y: 88, r: 26, lv: 1 }, { k: 'smoke', x: 172, y: 52, r: 16, lv: 1 },
+                { k: 'door', x: 145, y: 150, r: 14, lv: 1 }, { k: 'window', x: 118, y: 129, r: 12, lv: 2 }, { k: 'flower', x: 82, y: 174, r: 10, lv: 2 },
+                { k: 'fence', x: 38, y: 162, r: 14, lv: 2 }, { k: 'bird', x: 230, y: 70, r: 14, lv: 1 }, { k: 'mailbox', x: 219, y: 138, r: 12, lv: 2 }],
+              draw: (has) => {
+                let g = '<rect width="300" height="200" fill="#7dd3fc"/><circle cx="250" cy="36" r="14" fill="#fde047"/>';
+                if (!has('sunrays')) for (let a = 0; a < 360; a += 45) { const r = a * Math.PI / 180; g += `<line x1="${250 + Math.cos(r) * 19}" y1="${36 + Math.sin(r) * 19}" x2="${250 + Math.cos(r) * 26}" y2="${36 + Math.sin(r) * 26}" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>`; }
+                if (!has('cloud')) g += '<ellipse cx="80" cy="34" rx="26" ry="9" fill="#fff"/><ellipse cx="96" cy="29" rx="14" ry="8" fill="#fff"/>';
+                g += '<path d="M0 150 Q70 118 140 146 T300 140 V200 H0Z" fill="#4ade80"/><rect y="165" width="300" height="35" fill="#86efac"/><path d="M134 167 L156 167 L170 200 L120 200Z" fill="#fde68a"/>';
+                g += '<rect x="26" y="125" width="8" height="42" fill="#78350f"/><circle cx="30" cy="115" r="22" fill="#16a34a"/>';
+                g += '<rect x="100" y="105" width="90" height="62" fill="#fcd9b6"/>';
+                g += `<rect x="165" y="70" width="12" height="24" fill="#78350f"/>`;
+                if (!has('smoke')) g += '<circle cx="171" cy="62" r="5" fill="#e2e8f0" opacity=".85"/><circle cx="176" cy="52" r="6" fill="#e2e8f0" opacity=".8"/><circle cx="172" cy="42" r="7" fill="#e2e8f0" opacity=".75"/>';
+                g += `<polygon points="92,108 145,68 198,108" fill="${has('roof') ? '#7c3aed' : '#b45309'}"/>`;
+                g += `<rect x="134" y="130" width="22" height="37" rx="3" fill="${has('door') ? '#1d4ed8' : '#7c2d12'}"/><circle cx="152" cy="150" r="1.6" fill="#fde047"/>`;
+                g += '<rect x="108" y="120" width="20" height="18" fill="#bae6fd" stroke="#78350f" stroke-width="2"/>' + (has('window') ? '' : '<line x1="118" y1="120" x2="118" y2="138" stroke="#78350f"/><line x1="108" y1="129" x2="128" y2="129" stroke="#78350f"/>');
+                g += '<rect x="162" y="120" width="20" height="18" fill="#bae6fd" stroke="#78350f" stroke-width="2"/><line x1="172" y1="120" x2="172" y2="138" stroke="#78350f"/><line x1="162" y1="129" x2="182" y2="129" stroke="#78350f"/>';
+                [[70, 172, '#f472b6'], [82, 176, has('flower') ? '#facc15' : '#f472b6'], [96, 172, '#c084fc']].forEach(f => { g += `<rect x="${f[0] - 0.7}" y="${f[1]}" width="1.4" height="12" fill="#15803d"/><circle cx="${f[0]}" cy="${f[1]}" r="4.5" fill="${f[2]}"/>`; });
+                [10, 22, 34, 46].forEach((x, i) => { if (i === 2 && has('fence')) return; g += `<rect x="${x}" y="150" width="8" height="24" rx="1.5" fill="#fff"/>`; });
+                if (!has('bird')) g += '<path d="M222 70 q5 -6 8 0 q3 -6 8 0" stroke="#334155" stroke-width="1.6" fill="none"/>';
+                g += '<rect x="210" y="150" width="3" height="22" fill="#78350f"/><rect x="204" y="140" width="16" height="10" rx="2" fill="#ef4444"/>' + (has('mailbox') ? '' : '<rect x="219" y="132" width="2" height="10" fill="#facc15"/>');
+                return g;
+              } },
+            { id: 'kitchen', diffs: [
+                { k: 'bottleColour', x: 62, y: 56, r: 10, lv: 2 }, { k: 'bottleMissing', x: 118, y: 56, r: 10, lv: 1 }, { k: 'liquid', x: 170, y: 126, r: 26, lv: 1 },
+                { k: 'bubble', x: 175, y: 108, r: 10, lv: 2 }, { k: 'flame', x: 170, y: 184, r: 12, lv: 2 }, { k: 'candle', x: 245, y: 106, r: 10, lv: 2 },
+                { k: 'spider', x: 60, y: 42, r: 12, lv: 1 }, { k: 'bat', x: 220, y: 40, r: 14, lv: 1 }, { k: 'toad', x: 90, y: 168, r: 14, lv: 1 }],
+              draw: (has) => {
+                let g = '<rect width="300" height="200" fill="#1c1917"/>';
+                [50, 100, 150, 200, 250].forEach(x => { g += `<line x1="${x}" y1="0" x2="${x}" y2="168" stroke="#292524" stroke-width="2"/>`; });
+                g += '<rect y="168" width="300" height="32" fill="#44403c"/><rect x="20" y="62" width="130" height="6" fill="#78350f"/>';
+                [[34, '#22c55e'], [62, has('bottleColour') ? '#f97316' : '#a855f7'], [90, '#3b82f6'], [118, '#ef4444']].forEach((b, i) => { if (i === 3 && has('bottleMissing')) return; g += `<rect x="${b[0] - 4}" y="44" width="8" height="8" fill="#cbd5e1"/><rect x="${b[0] - 8}" y="52" width="16" height="10" rx="3" fill="${b[1]}"/>`; });
+                g += `<line x1="60" y1="0" x2="60" y2="36" stroke="#94a3b8"/>` + (has('spider') ? '' : '<circle cx="60" cy="42" r="5" fill="#0f172a"/><path d="M55 40 l-6 -4 M55 43 l-7 2 M65 40 l6 -4 M65 43 l7 2" stroke="#0f172a" stroke-width="1.4"/>');
+                if (!has('bat')) g += '<path d="M210 40 q5 -8 10 0 q5 -8 10 0 q-5 5 -10 4 q-5 1 -10 -4Z" fill="#0f172a" stroke="#475569"/>';
+                g += '<line x1="275" y1="50" x2="255" y2="172" stroke="#92400e" stroke-width="3"/><polygon points="245,172 265,172 270,192 240,192" fill="#ca8a04"/>';
+                [152, 170, 188].forEach((x, i) => { if (i === 1 && has('flame')) return; g += `<path d="M${x - 6} 194 Q${x} 168 ${x + 6} 194Z" fill="#fb923c"/>`; });
+                g += '<ellipse cx="170" cy="150" rx="42" ry="30" fill="#111827"/><ellipse cx="170" cy="126" rx="40" ry="9" fill="#374151"/>' + `<ellipse cx="170" cy="126" rx="34" ry="6" fill="${has('liquid') ? '#a855f7' : '#84cc16'}"/>`;
+                [[155, 116, 5], [175, 108, 4], [190, 118, 6]].forEach((b, i) => { if (i === 1 && has('bubble')) return; g += `<circle cx="${b[0]}" cy="${b[1]}" r="${b[2]}" fill="#d9f99d" opacity=".85"/>`; });
+                g += '<rect x="240" y="112" width="10" height="40" fill="#fde68a"/>' + (has('candle') ? '' : '<ellipse cx="245" cy="106" rx="4" ry="7" fill="#fb923c"/>');
+                if (!has('toad')) g += '<ellipse cx="90" cy="170" rx="12" ry="8" fill="#4d7c0f"/><circle cx="84" cy="163" r="3" fill="#a3e635"/><circle cx="96" cy="163" r="3" fill="#a3e635"/>';
+                return g;
+              } },
+            { id: 'castle', diffs: [
+                { k: 'moon', x: 60, y: 36, r: 18, lv: 1 }, { k: 'roofColour', x: 197, y: 56, r: 18, lv: 1 }, { k: 'flag', x: 205, y: 31, r: 10, lv: 2 },
+                { k: 'windowLit', x: 163, y: 115, r: 10, lv: 1 }, { k: 'gate', x: 150, y: 157, r: 14, lv: 2 }, { k: 'bat', x: 250, y: 60, r: 13, lv: 1 }, { k: 'star', x: 270, y: 25, r: 8, lv: 2 }],
+              draw: (has) => {
+                let g = '<rect width="300" height="200" fill="#0f172a"/>';
+                [[30, 20], [110, 14], [200, 24], [270, 25], [160, 50], [20, 60]].forEach((p, i) => { if (i === 3 && has('star')) return; g += `<circle cx="${p[0]}" cy="${p[1]}" r="1.4" fill="#e2e8f0"/>`; });
+                g += '<circle cx="60" cy="36" r="14" fill="#e2e8f0"/>' + (has('moon') ? '<circle cx="66" cy="32" r="12" fill="#0f172a"/>' : '');
+                g += '<path d="M0 160 Q60 130 120 158 T300 150 V200 H0Z" fill="#064e3b"/><rect y="170" width="300" height="30" fill="#14532d"/>';
+                g += '<rect x="110" y="90" width="80" height="80" fill="#475569"/><rect x="90" y="70" width="26" height="100" fill="#64748b"/><rect x="184" y="70" width="26" height="100" fill="#64748b"/>';
+                g += '<polygon points="88,72 103,40 118,72" fill="#7c3aed"/>' + `<polygon points="182,72 197,40 212,72" fill="${has('roofColour') ? '#dc2626' : '#7c3aed'}"/>`;
+                g += '<line x1="103" y1="40" x2="103" y2="24" stroke="#94a3b8"/><polygon points="103,24 116,29 103,34" fill="#f43f5e"/>';
+                if (!has('flag')) g += '<line x1="197" y1="40" x2="197" y2="24" stroke="#94a3b8"/><polygon points="197,26 210,31 197,36" fill="#f43f5e"/>';
+                else g += '<line x1="197" y1="40" x2="197" y2="24" stroke="#94a3b8"/>';
+                [[100, 95], [197, 95], [130, 110], [160, 110]].forEach((w, i) => { g += `<rect x="${w[0] - 3.5}" y="${w[1]}" width="7" height="11" fill="${(i === 3 && has('windowLit')) ? '#1e293b' : '#fde047'}"/>`; });
+                g += '<path d="M135 170 V150 Q150 132 165 150 V170Z" fill="#1e293b"/>';
+                if (!has('gate')) [140, 145, 150, 155, 160].forEach(x => { g += `<line x1="${x}" y1="142" x2="${x}" y2="170" stroke="#94a3b8"/>`; });
+                [[40, 80], [250, 60]].forEach((b, i) => { if (i === 1 && has('bat')) return; g += `<path d="M${b[0] - 10} ${b[1]} q5 -8 10 0 q5 -8 10 0 q-5 5 -10 4 q-5 1 -10 -4Z" fill="#94a3b8"/>`; });
+                return g;
+              } },
+            { id: 'pond', diffs: [
+                { k: 'lily', x: 165, y: 160, r: 12, lv: 2 }, { k: 'frog', x: 120, y: 146, r: 10, lv: 1 }, { k: 'lotus', x: 192, y: 146, r: 8, lv: 2 }, { k: 'firefly', x: 250, y: 100, r: 9, lv: 2 },
+                { k: 'shroom', x: 35, y: 168, r: 12, lv: 1 }, { k: 'moon', x: 230, y: 35, r: 18, lv: 1 }, { k: 'reed', x: 240, y: 142, r: 10, lv: 2 },
+                { k: 'fish', x: 108, y: 138, r: 10, lv: 2 }, { k: 'owl', x: 62, y: 84, r: 13, lv: 1 }],
+              draw: (has) => {
+                let g = '<rect width="300" height="200" fill="#312e81"/><circle cx="230" cy="35" r="13" fill="#fef3c7"/>' + (has('moon') ? '<circle cx="236" cy="31" r="11" fill="#312e81"/>' : '');
+                g += '<rect y="165" width="300" height="35" fill="#14532d"/><rect x="40" y="70" width="10" height="100" fill="#422006"/><circle cx="45" cy="62" r="30" fill="#166534"/><circle cx="25" cy="80" r="20" fill="#15803d"/>';
+                g += '<rect x="262" y="90" width="9" height="80" fill="#422006"/><circle cx="266" cy="84" r="26" fill="#166534"/>';
+                if (!has('owl')) g += '<ellipse cx="62" cy="86" rx="5" ry="7" fill="#a16207"/><circle cx="60" cy="83" r="2" fill="#fef08a"/><circle cx="65" cy="83" r="2" fill="#fef08a"/>';
+                g += '<ellipse cx="150" cy="155" rx="70" ry="22" fill="#0ea5e9" opacity=".85"/>';
+                [[120, 152], [165, 160], [192, 150]].forEach((l, i) => { if (i === 1 && has('lily')) return; g += `<ellipse cx="${l[0]}" cy="${l[1]}" rx="11" ry="4.5" fill="#22c55e"/>`; });
+                if (!has('frog')) g += '<circle cx="120" cy="147" r="5" fill="#84cc16"/><circle cx="118" cy="144" r="1.6" fill="#fff"/><circle cx="122" cy="144" r="1.6" fill="#fff"/>';
+                g += `<circle cx="192" cy="146" r="4" fill="${has('lotus') ? '#fde047' : '#f9a8d4'}"/>`;
+                [[40, 110], [85, 100], [250, 100], [210, 120]].forEach((f, i) => { if (i === 2 && has('firefly')) return; g += `<circle cx="${f[0]}" cy="${f[1]}" r="2" fill="#fde047" opacity=".9"/>`; });
+                g += `<rect x="33" y="170" width="4" height="8" fill="#e2e8f0"/><ellipse cx="35" cy="170" rx="9" ry="5.5" fill="${has('shroom') ? '#fb923c' : '#ef4444'}"/><circle cx="32" cy="168" r="1.3" fill="#fff"/><circle cx="38" cy="170" r="1.3" fill="#fff"/>`;
+                [228, 234, 240].forEach((x, i) => { if (i === 2 && has('reed')) return; g += `<line x1="${x}" y1="160" x2="${x + 1}" y2="132" stroke="#4d7c0f" stroke-width="2"/>`; });
+                if (!has('fish')) g += '<path d="M100 140 q8 -10 16 0 q-8 4 -16 0Z" fill="#fbbf24"/>';
+                return g;
+              } }
         ];
-        function agScene(v) {
+        function agSceneSvg(scene, v) {
             const has = (k) => v.has(k);
-            const apples = [[120, 70], [150, 56], [172, 86], [128, 100], [158, 98]];
-            let g = '<rect width="300" height="200" fill="#1e1b4b"/>';
-            [[30, 20], [70, 38], [180, 16], [275, 78], [20, 80]].forEach(p => { g += `<circle cx="${p[0]}" cy="${p[1]}" r="1.4" fill="#e2e8f0"/>`; });
-            g += '<circle cx="240" cy="38" r="16" fill="#fde68a"/>' + (has('moon') ? '<circle cx="247" cy="33" r="14" fill="#1e1b4b"/>' : '');
-            if (!has('cloud')) g += '<ellipse cx="110" cy="32" rx="24" ry="8" fill="#4338ca" opacity=".75"/><ellipse cx="124" cy="28" rx="14" ry="7" fill="#4338ca" opacity=".75"/>';
-            g += '<path d="M0 150 Q80 118 150 145 T300 138 V200 H0Z" fill="#14532d"/><rect y="165" width="300" height="35" fill="#166534"/>';
-            g += '<rect x="135" y="95" width="16" height="72" fill="#78350f"/><circle cx="143" cy="80" r="38" fill="#15803d"/><circle cx="115" cy="96" r="24" fill="#166534"/><circle cx="172" cy="96" r="24" fill="#166534"/>';
-            apples.forEach((a, i) => {
-                if (i === 3 && has('appleMissing')) return;
-                const col = (i === 1 && has('appleColor')) ? '#a3e635' : '#dc2626';
-                g += `<circle cx="${a[0]}" cy="${a[1]}" r="6" fill="${col}"/><rect x="${a[0] - 0.5}" y="${a[1] - 9}" width="1.4" height="4" fill="#422006"/>`;
-            });
-            if (!has('bird')) g += '<path d="M54 56 q5 -7 8 0 q3 -7 8 0" stroke="#e2e8f0" stroke-width="1.6" fill="none"/>';
-            g += `<rect x="209" y="170" width="4" height="9" fill="#e2e8f0"/><ellipse cx="211" cy="170" rx="10" ry="6" fill="${has('shroom') ? '#a855f7' : '#ef4444'}"/><circle cx="208" cy="168" r="1.4" fill="#fff"/><circle cx="214" cy="171" r="1.4" fill="#fff"/>`;
-            [20, 34, 48, 62, 76].forEach((x, i) => { if (i === 2 && has('fence')) return; g += `<rect x="${x}" y="148" width="8" height="28" rx="1.5" fill="#a16207"/>`; });
-            g += `<rect x="94" y="178" width="1.6" height="12" fill="#15803d"/><circle cx="95" cy="176" r="4.5" fill="${has('flower') ? '#38bdf8' : '#f472b6'}"/>`;
-            g += '<path d="M240 168 L276 168 L270 188 L246 188Z" fill="#92400e"/>' + (has('basketApple') ? '' : '<circle cx="258" cy="164" r="6" fill="#dc2626"/>');
-            return `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="aspect-ratio:3/2;max-height:36vh;max-width:100%;width:auto;display:block;border-radius:14px;border:1px solid #334155;touch-action:manipulation;">${g}<g class="ag-marks"></g></svg>`;
+            return `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="aspect-ratio:3/2;max-height:36vh;max-width:100%;width:auto;display:block;border-radius:14px;border:1px solid #334155;touch-action:manipulation;">${scene.draw(has)}<g class="ag-marks"></g></svg>`;
         }
-        function agSpot(body, rnd, finish, hud) {
-            const chosen = agShuffle(AG_DIFFS, rnd).slice(0, 5);
-            const keys = new Set(chosen.map(d => d.k));
+        function agSpot(body, rnd, finish, hud, level) {
+            const LV = AG_SPOT_LV[level] || AG_SPOT_LV.medium;
+            const scene = AG_SCENES[Math.floor(rnd() * AG_SCENES.length)];
+            let pool = agShuffle(scene.diffs, rnd);
+            if (level === 'easy') pool = pool.filter(d => d.lv === 1).concat(pool.filter(d => d.lv !== 1));
+            else if (level === 'hard') pool = pool.filter(d => d.lv === 2).concat(pool.filter(d => d.lv !== 2));
+            const chosen = pool.slice(0, LV.n), keys = new Set(chosen.map(d => d.k));
             const found = new Set(); let wrong = 0, alive = true;
             body.innerHTML = `<div class="h-full flex flex-col items-center justify-center gap-3 px-3">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Original</p>${agScene(new Set())}
-                <p class="text-[10px] font-black uppercase tracking-widest text-lime-300">Find the differences here (or tap above)</p>${agScene(keys)}</div>`;
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Original</p>${agSceneSvg(scene, new Set())}
+                <p class="text-[10px] font-black uppercase tracking-widest text-lime-300">Find the differences here (or tap above)</p>${agSceneSvg(scene, keys)}</div>`;
             const svgs = body.querySelectorAll('svg');
-            const update = () => hud('Found ' + found.size + ' / 5 · Wrong ' + wrong + ' / 4');
+            const update = () => hud('Found ' + found.size + ' / ' + LV.n + ' · Wrong ' + wrong + ' / ' + LV.wrong);
             const mark = (d) => svgs.forEach(sv => sv.querySelector('.ag-marks').insertAdjacentHTML('beforeend', `<circle cx="${d.x}" cy="${d.y}" r="${d.r}" fill="none" stroke="#a3e635" stroke-width="2.5"/>`));
             const flash = (sv) => { sv.style.borderColor = '#f43f5e'; setTimeout(() => { sv.style.borderColor = '#334155'; }, 250); };
             svgs.forEach(sv => sv.addEventListener('pointerdown', (e) => {
                 if (!alive) return;
                 const r = sv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 300, y = (e.clientY - r.top) / r.height * 200;
                 const hit = chosen.find(d => !found.has(d.k) && Math.hypot(x - d.x, y - d.y) <= d.r * 1.35);
-                if (hit) { found.add(hit.k); mark(hit); update(); if (found.size >= 5) { alive = false; finish(true); } }
-                else if (!chosen.some(d => found.has(d.k) && Math.hypot(x - d.x, y - d.y) <= d.r * 1.35)) { wrong++; flash(sv); update(); if (wrong >= 4) { alive = false; finish(false); } }
+                if (hit) { found.add(hit.k); mark(hit); update(); if (found.size >= LV.n) { alive = false; finish(true); } }
+                else if (!chosen.some(d => found.has(d.k) && Math.hypot(x - d.x, y - d.y) <= d.r * 1.35)) { wrong++; flash(sv); update(); if (wrong >= LV.wrong) { alive = false; finish(false); } }
             }));
             update();
             return () => { alive = false; };
@@ -10602,10 +10768,16 @@
             ['the number of wheels on a tricycle', 3], ['the number of seasons in a year', 4], ['the number of colours on a traffic light', 3], ['the number of vowels in the word APPLE', 2]
         ];
         const AG_POTION_COLOURS = [['Red', '#ef4444'], ['Blue', '#3b82f6'], ['Green', '#22c55e'], ['Purple', '#a855f7'], ['Orange', '#f97316'], ['Pink', '#ec4899']];
-        function agPotionBuild(rnd) {
+        const AG_POTION_LV = {
+            easy:   { n: () => 2,                    kinds: ['add', 'sub', 'addc', 'subc'],                 kmax: 13, lo: 6,  hi: 60,  riddleMax: 15, mid: 100 },
+            medium: { n: (r) => (r() < 0.45 ? 3 : 2), kinds: ['add', 'sub', 'double', 'mul', 'addc', 'subc'], kmax: 28, lo: 11, hi: 99,  riddleMax: 99, mid: 150 },
+            hard:   { n: () => 3,                    kinds: ['add', 'sub', 'double', 'mul', 'addc', 'subc'], kmax: 40, lo: 15, hi: 140, riddleMax: 99, mid: 220, needBig: true }
+        };
+        function agPotionBuild(rnd, level) {
+            const C = AG_POTION_LV[level] || AG_POTION_LV.medium;
             const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
             const mk = (kind) => {
-                const K = 3 + Math.floor(rnd() * 28), S = pick(AG_SMALL);
+                const K = 3 + Math.floor(rnd() * C.kmax), S = pick(AG_SMALL);
                 switch (kind) {
                     case 'add':    return { kind, text: 'add ' + K, f: v => v + K, inv: v => v - K };
                     case 'sub':    return { kind, text: 'take away ' + K, f: v => v - K, inv: v => v + K };
@@ -10615,17 +10787,18 @@
                     default:       return { kind: 'subc', text: 'take away ' + S[0], f: v => v - S[1], inv: v => v + S[1] };
                 }
             };
-            const kinds = ['add', 'sub', 'double', 'mul', 'addc', 'subc'];
+            const riddles = AG_RIDDLES.filter(r => r[1] <= C.riddleMax);
             const fold = (v, steps) => steps.reduce((x, st) => st.f(x), v);
             let R, steps, ans = 0, tries = 0, ok;
             do {
-                R = pick(AG_RIDDLES);
-                const n = rnd() < 0.45 ? 3 : 2, ks = agShuffle(kinds, rnd).slice(0, n);   // two or three steps, never the same kind twice
+                R = pick(riddles);
+                const n = C.n(rnd), ks = agShuffle(C.kinds, rnd).slice(0, n);   // never the same kind of step twice
                 steps = ks.map(mk);
                 let v = R[1]; ok = true;
-                for (const st of steps) { v = st.f(v); if (v < 2 || v > 150) ok = false; }
+                for (const st of steps) { v = st.f(v); if (v < 2 || v > C.mid) ok = false; }
+                if (C.needBig && !steps.some(st => st.kind === 'double' || st.kind === 'mul')) ok = false;
                 ans = v; tries++;
-            } while ((!ok || ans < 11 || ans > 99) && tries < 600);
+            } while ((!ok || ans < C.lo || ans > C.hi) && tries < 900);
             // wrong potions carry the numbers people get from honest slips: skipping a step, swapping two, reversing one, being one out at the start
             const slips = [];
             steps.forEach((st, i) => {
@@ -10634,19 +10807,18 @@
                 if (i + 1 < steps.length) { const sw = steps.slice(); sw[i] = steps[i + 1]; sw[i + 1] = steps[i]; slips.push(fold(R[1], sw)); }
             });
             slips.push(fold(R[1] + 1, steps), fold(R[1] - 1, steps), ans + 10, ans - 10, ans + 1, ans - 1);
-            const bad = []; agShuffle(slips, rnd).forEach(n => { if (Number.isFinite(n) && Number.isInteger(n) && n >= 1 && n <= 199 && n !== ans && !bad.includes(n) && bad.length < 2) bad.push(n); });
+            const bad = []; agShuffle(slips, rnd).forEach(n => { if (Number.isFinite(n) && Number.isInteger(n) && n >= 1 && n <= 299 && n !== ans && !bad.includes(n) && bad.length < 2) bad.push(n); });
             for (let k = 7; bad.length < 2; k += 5) { const n = ans + k; if (n !== ans && !bad.includes(n)) bad.push(n); }
             const cols = agShuffle(AG_POTION_COLOURS, rnd).slice(0, 3);
             const potions = agShuffle([{ role: 'antidote', n: ans }, { role: 'weak', n: bad[0] }, { role: 'deadly', n: bad[1] }], rnd).map((p, i) => Object.assign(p, { c: cols[i] }));
-            const lead = ['Now', 'Then', 'Finally,'];
             const lines = steps.map((st, i) => `${i === steps.length - 1 ? 'Finally,' : (i === 0 ? 'Now' : 'Then')} <b>${st.text}</b>.`).join('<br>');
             const html = `<span class="block text-[11px] text-slate-400 mb-1.5">The witch whispers a riddle. Its answer is your starting number:</span>
                 <span class="block italic text-white text-[15px] mb-2.5">&ldquo;${R[0]}.&rdquo;</span>
                 <span class="block text-[14px] leading-snug text-slate-100">${lines}</span>`;
             return { html, ans, potions, start: R[1], steps: steps.length };
         }
-        function agPotion(body, rnd, finish, hud) {
-            const { html, potions } = agPotionBuild(rnd);
+        function agPotion(body, rnd, finish, hud, level) {
+            const { html, potions } = agPotionBuild(rnd, level);
             let alive = true;
             const bottle = (p) => `<svg viewBox="0 0 80 110" style="width:100%;max-width:92px;display:block;margin:0 auto" aria-hidden="true">
                 <rect x="30" y="4" width="20" height="14" rx="3" fill="#92400e"/><rect x="33" y="16" width="14" height="14" fill="#cbd5e1" opacity=".9"/>
