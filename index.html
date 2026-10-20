@@ -1945,6 +1945,24 @@
                             <p id="hostlock-overlay-note" class="hidden text-[11px] text-amber-300"></p>
                         </div>
 
+                        <!-- 5. Poison apple game tester (platform admin only) -->
+                        <div id="apple-test-card" class="hidden bg-slate-800 border border-lime-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+                            <button type="button" id="apple-toggle" onclick="toggleAdminCard('apple')" aria-expanded="false" aria-controls="apple-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
+                                <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-lime-300 uppercase tracking-wider"><span aria-hidden="true">🍎</span> Poison apple game tester</span>
+                                <i id="apple-chevron" class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0"></i>
+                            </button>
+                            <div id="apple-body" class="hidden space-y-3 pt-1">
+                                <p class="text-[11px] text-slate-400">Play any poison apple game straight away, without setting traps. Tests run on this device only: nothing is saved and no team is affected.</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button type="button" onclick="openAppleGameTest('catch')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🧺 Orchard Catch</button>
+                                    <button type="button" onclick="openAppleGameTest('scramble')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🔤 Word Scramble</button>
+                                    <button type="button" onclick="openAppleGameTest('spot')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🔍 Spot the Difference</button>
+                                    <button type="button" onclick="openAppleGameTest('potion')" class="py-3 px-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-lime-400/60 text-white text-xs font-bold active:scale-95 transition">🧪 The Antidote</button>
+                                </div>
+                                <button type="button" onclick="testAppleLock()" class="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-rose-400/60 text-slate-200 text-xs font-bold active:scale-95 transition">🤢 Test the 60 second poisoned screen</button>
+                            </div>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -2075,6 +2093,16 @@
                 <button type="button" id="ag-giveup" onclick="appleGameGiveUp()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-[11px] font-bold">🏳️ Give up</button>
             </div>
         </div>
+    </div>
+
+    <!-- ===== POISONED: the screen is locked for 60 seconds after drinking the deadly potion ===== -->
+    <div id="apple-lock-overlay" class="fixed inset-0 z-[210] hidden flex flex-col items-center justify-center text-center p-8" style="background: radial-gradient(90% 60% at 50% 40%, rgba(132,204,22,.28), rgba(2,6,23,0) 70%), #020617; touch-action: none;" role="alertdialog" aria-modal="true" aria-label="You have been poisoned">
+        <div class="text-7xl mb-3">🤢</div>
+        <h2 class="font-disney font-bold text-3xl text-lime-300">You've been poisoned!</h2>
+        <p class="text-sm text-slate-300 mt-2 max-w-xs">The deadly potion has locked your screen. It clears in</p>
+        <p id="al-timer" class="font-mono font-black text-6xl text-white my-4">1:00</p>
+        <p class="text-[12px] text-slate-400 max-w-xs">Your race clock is still running. Use the time to plan your next stop.</p>
+        <button type="button" id="al-endtest" onclick="window.__testLockUntil = 0; checkAppleLock();" class="hidden mt-6 px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-xs font-bold">End test</button>
     </div>
 
     <div id="demo-mode-screen" class="fixed inset-0 z-[180] hidden flex flex-col" style="background: radial-gradient(120% 60% at 50% 0%, rgba(255,184,0,.16), rgba(2,6,23,0) 62%), #020617;" role="dialog" aria-modal="true" aria-label="Demo mode">
@@ -2529,7 +2557,7 @@
                             <select id="create-poison-expiry" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white">
                                 <option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>60 minutes</option><option value="90">90 minutes</option><option value="120">2 hours</option><option value="0">Never (until the race ends)</option>
                             </select>
-                            <p class="text-[10px] text-slate-500 leading-relaxed">After a check-in a team can leave its apple there. The next team to check in at that stop must beat a quick mini-game (catch apples, unscramble words or spot the differences). Beat it: they get a 5 minute deduction and the team that left it takes a 5 minute penalty. Fail it: the team that left it gets a 10 minute deduction, and the failing team is not penalised again. (Scavenger Hunts use points instead of minutes.) A team can fall for at most 2 apples, and a stop holds at most 2 waiting apples. An apple nobody triggers in time expires and goes back to its owner to play again.</p>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">After a check-in a team can leave its apple there. The next team to check in at that stop must beat a quick mini-game (catch apples, unscramble words, spot the differences or pick the right antidote). Beat it: they get a 5 minute deduction and the team that left it takes a 5 minute penalty. Fail it: the team that left it gets a 10 minute deduction, and the failing team is not penalised again. (Scavenger Hunts use points instead of minutes.) A team can fall for at most 2 apples, and a stop holds at most 2 waiting apples. An apple nobody triggers in time expires and goes back to its owner to play again.</p>
                         </div>
                     </div>
                     <input type="number" id="create-default-points" value="0" class="hidden">
@@ -2825,7 +2853,7 @@
                     const hunt = race.gameMode === 'scavenger', u = hunt ? ' points' : ' minute';
                     const hit = Number(pa.hitMin) || 5, pen = Number(pa.penaltyMin) || 5, fail = Number(pa.failMin) || 10;
                     const exp = Number(pa.expiryMin) > 0 ? ` An apple nobody triggers within <strong>${pa.expiryMin} minutes</strong> expires and comes back to you to play again.` : '';
-                    $('rules-poison-text').innerHTML = `Every team has <strong>one poison apple</strong>. After you check in you can leave it at that stop. The next team to check in there must beat a quick mini-game (catch apples, unscramble words or spot the differences). If they beat it, they earn <strong>${hit}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and you take a <strong>${pen}${u}${hunt ? '' : ''} ${hunt ? 'loss' : 'penalty'}</strong>. If they fail, you earn <strong>${fail}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and they are not penalised again. A team can fall for at most <strong>${Number(pa.perTeam) || 2} apples</strong> per race, and a stop holds at most ${Number(pa.perLocation) || 2} waiting apples.${exp} Apples still waiting when the race ends do nothing.`;
+                    $('rules-poison-text').innerHTML = `Every team has <strong>one poison apple</strong>. After you check in you can leave it at that stop. The next team to check in there must beat a quick mini-game (catch apples, unscramble words, spot the differences or pick the right antidote). If they beat it, they earn <strong>${hit}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and you take a <strong>${pen}${u}${hunt ? '' : ''} ${hunt ? 'loss' : 'penalty'}</strong>. If they fail, you earn <strong>${fail}${u}${hunt ? '' : ''} ${hunt ? 'bonus' : 'deduction'}</strong> and they are not penalised again. A team can fall for at most <strong>${Number(pa.perTeam) || 2} apples</strong> per race, and a stop holds at most ${Number(pa.perLocation) || 2} waiting apples.${exp} Apples still waiting when the race ends do nothing.`;
                     poisonCard.classList.remove('hidden');
                 } else poisonCard.classList.add('hidden');
             }
@@ -4442,6 +4470,7 @@
                     document.getElementById('demo-mode-screen')?.classList.add('hidden');
                     document.getElementById('promo-admin-card')?.classList.add('hidden');
                     document.getElementById('support-admin-card')?.classList.add('hidden');
+                    document.getElementById('apple-test-card')?.classList.add('hidden');
                     window.__publicListings = {};
                     stopHostPendingWatch();
                     if (authCard) authCard.classList.remove('hidden');
@@ -8274,6 +8303,7 @@
             if (prev && list.some(l => l.id === prev)) sel.value = prev;
         }
         window.renderPromoAdmin = async function() {
+            const tester = $id('apple-test-card'); if (tester) tester.classList.toggle('hidden', !window.isPlatformAdmin);
             const card = $id('promo-admin-card'); if (!card) return;
             card.classList.toggle('hidden', !window.isPlatformAdmin);
             if (!window.isPlatformAdmin) return;
@@ -9908,20 +9938,19 @@
             const list = (preset && Array.isArray(preset.poisonChallenges) && preset.poisonChallenges.length) ? preset.poisonChallenges : (window.POISON_APPLE_CHALLENGES[cpName] || []);
             return list.length ? list : [window.DEFAULT_POISON_CHALLENGE];
         };
-        // The three mini-games. A team that falls for two apples in one race never gets the same game twice.
+        // The mini-games. Each time a team falls into a trap, one is picked at random.
         window.APPLE_GAMES = {
             catch:    { title: 'Orchard Catch',     rule: 'Slide the basket and catch 20 green apples. Catch a red apple and it is over!', sec: 75 },
             scramble: { title: 'Word Scramble',     rule: 'Unscramble 3 fairy-tale words by tapping the letters in order.', sec: 75 },
-            spot:     { title: 'Spot the Difference', rule: 'Find 5 differences between the two orchards. Tap them on either picture. 4 wrong taps and you lose.', sec: 90 }
+            spot:     { title: 'Spot the Difference', rule: 'Find 5 differences between the two orchards. Tap them on either picture. 4 wrong taps and you lose.', sec: 90 },
+            potion:   { title: 'The Antidote',      rule: 'You have been poisoned! Solve the riddle, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: 90 }
         };
         // A location can still supply its own challenges (poisonChallenges in locations-data.js); otherwise a mini-game is picked.
         window.pickAppleChallenge = function (cpName, apples, teamId) {
             const preset = (window.DISNEY_PRESETS || []).find(p => p.name === cpName);
             const custom = (preset && Array.isArray(preset.poisonChallenges) && preset.poisonChallenges.length) ? preset.poisonChallenges : (window.POISON_APPLE_CHALLENGES[cpName] || []);
             if (custom.length) return custom[Math.floor(Math.random() * custom.length)];
-            const played = (apples || []).filter(a => a.victimTeamId === teamId && a.challenge && a.challenge.game).map(a => a.challenge.game);
-            let pool = Object.keys(window.APPLE_GAMES).filter(g => !played.includes(g));
-            if (!pool.length) pool = Object.keys(window.APPLE_GAMES);
+            const pool = Object.keys(window.APPLE_GAMES);   // any game can come up each time
             const g = pool[Math.floor(Math.random() * pool.length)], def = window.APPLE_GAMES[g];
             return { id: 'game_' + g, type: 'game', game: g, title: def.title, prompt: def.rule, timeLimitSec: def.sec, seed: 1 + Math.floor(Math.random() * 2147483000) };
         };
@@ -10009,7 +10038,7 @@
         };
 
         const appleResolving = {};
-        window.resolveApple = async function (cpId, success) {
+        window.resolveApple = async function (cpId, success, extra) {
             const a = window.appleFor(window.activeTeamId, cpId);
             if (!a || appleResolving[a.id] || window.appleStatus(a) === 'won' || a.status === 'won' || a.status === 'lost') return;
             appleResolving[a.id] = true;
@@ -10020,10 +10049,11 @@
                     if (!d) return;
                     if (d.status !== 'active') { final = d.status; return; }
                     final = success ? 'won' : 'lost';
-                    tx.update(ref, { status: final, resolvedAt: Date.now() });
+                    tx.update(ref, Object.assign({ status: final, resolvedAt: Date.now() }, extra || {}));
                 });
             } catch (e) { console.warn('Could not save poison apple result', e); window.appToast('Could not save the result. Check your connection and try again.'); delete appleResolving[a.id]; return; }
             a.status = final || a.status; a.resolvedAt = Date.now();
+            if (extra) Object.assign(a, extra);
             window.cpAppleUi[cpId] = { resultAt: Date.now(), result: final };
             if (window.closeAppleGame) window.closeAppleGame(false);
             window.refreshApplePanel(cpId);
@@ -10234,32 +10264,56 @@
             const gu = agEl('ag-giveup'); gu.textContent = '🏳️ Give up';
             ov.classList.remove('hidden');
             const body = agEl('ag-body'), rnd = agRng(Number(a.challenge.seed) || 7);
-            const start = { catch: agCatch, scramble: agScramble, spot: agSpot }[AG.game];
+            const start = { catch: agCatch, scramble: agScramble, spot: agSpot, potion: agPotion }[AG.game];
             if (!start) { window.closeAppleGame(true); return; }
-            AG.stop = start(body, rnd, (ok) => agFinish(ok), (txt) => { agEl('ag-hud').textContent = txt; });
+            AG.stop = start(body, rnd, (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; });
         };
+        // Admin-only: play a game with no apple, no database writes and no effect on any team
+        window.openAppleGameTest = function (game) {
+            if (!window.isPlatformAdmin) return;
+            const def = window.APPLE_GAMES[game], ov = agEl('apple-game-overlay'); if (!def || !ov) return;
+            const start = { catch: agCatch, scramble: agScramble, spot: agSpot, potion: agPotion }[game]; if (!start) return;
+            if (AG.stop) { try { AG.stop(); } catch (e) {} }
+            clearTimeout(AG.testTimer);
+            AG.apple = 'test_' + Date.now(); AG.cpId = 'test'; AG.game = game; AG.done = false; AG.resultShown = false; AG.stop = null; AG.test = true;
+            agEl('ag-title').textContent = def.title; agEl('ag-rule').textContent = def.rule;
+            const tm = agEl('ag-timer'); tm.dataset.appleDeadline = String(Date.now() + def.sec * 1000); tm.dataset.cp = 'test'; tm.dataset.fired = '1';
+            tm.classList.remove('text-rose-400'); tm.classList.add('text-lime-300');
+            agEl('ag-hud').textContent = ''; agEl('ag-body').innerHTML = '';
+            agEl('ag-giveup').textContent = '✖ Exit test';
+            ov.classList.remove('hidden');
+            AG.testTimer = setTimeout(() => { if (AG.test && !AG.done) agFinish(false, null, { icon: '⌛', title: 'Time is up!' }); }, def.sec * 1000 + 300);
+            AG.stop = start(agEl('ag-body'), agRng(1 + Math.floor(Math.random() * 2147483000)), (ok, extra, splash) => agFinish(ok, extra, splash), (txt) => { agEl('ag-hud').textContent = txt; });
+        };
+        window.testAppleLock = function () { if (window.isPlatformAdmin) { window.__testLockUntil = Date.now() + 60000; window.checkAppleLock(); } };
         window.closeAppleGame = function (force) {
             if (!force && AG.resultShown) return;   // the result splash closes itself
+            if (AG.test) { clearTimeout(AG.testTimer); AG.test = false; }
             if (AG.stop) { try { AG.stop(); } catch (e) {} AG.stop = null; }
             const ov = agEl('apple-game-overlay'); if (ov) ov.classList.add('hidden');
             const body = agEl('ag-body'); if (body) body.innerHTML = '';
             AG.resultShown = false;
         };
-        function agFinish(ok) {
+        function agFinish(ok, extra, splash) {
             if (AG.done) return;
             AG.done = true; AG.finished[AG.apple] = true;
             if (AG.stop) { try { AG.stop(); } catch (e) {} AG.stop = null; }
             AG.resultShown = true;
             const body = agEl('ag-body');
             body.insertAdjacentHTML('beforeend', `<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style="background:rgba(2,6,23,.88)">
-                <div class="text-7xl mb-3">${ok ? '🎉' : '☠️'}</div>
-                <p class="font-disney font-bold text-3xl ${ok ? 'text-emerald-300' : 'text-rose-300'}">${ok ? 'You survived!' : 'The apple got you!'}</p></div>`);
-            window.resolveApple(AG.cpId, ok);
+                <div class="text-7xl mb-3">${(splash && splash.icon) || (ok ? '🎉' : '☠️')}</div>
+                <p class="font-disney font-bold text-3xl ${ok ? 'text-emerald-300' : 'text-rose-300'}">${(splash && splash.title) || (ok ? 'You survived!' : 'The apple got you!')}</p>
+                ${splash && splash.sub ? `<p class="text-sm text-slate-300 mt-2 max-w-xs">${splash.sub}</p>` : ''}</div>`);
+            if (AG.test) {
+                window.appToast('Test result: ' + (ok ? 'PASSED ✅' : 'FAILED ❌') + (extra && extra.potion ? ' (' + extra.potion + ' potion)' : ''), 3500);
+                if (extra && extra.lockUntil) window.__testLockUntil = Date.now() + 60000 + 1800;
+            } else window.resolveApple(AG.cpId, ok, extra);
             setTimeout(() => { AG.resultShown = false; window.closeAppleGame(true); }, 1800);
         }
         window.appleGameGiveUp = function () {
             const btn = agEl('ag-giveup'), now = Date.now();
-            if (now - AG.giveUpArm < 3000) { agFinish(false); return; }
+            if (AG.test) { window.closeAppleGame(true); return; }
+            if (now - AG.giveUpArm < 3000) { agFinish(false, null, null); return; }
             AG.giveUpArm = now; btn.textContent = 'Tap again to give up';
             setTimeout(() => { if (Date.now() - AG.giveUpArm >= 2900 && btn) btn.textContent = '🏳️ Give up'; }, 3100);
         };
@@ -10404,6 +10458,70 @@
             update();
             return () => { alive = false; };
         }
+
+        // ---- Game 4: The Antidote (riddle + sums). One potion cures you, one is too weak, one is deadly ----
+        const AG_CLUES = [
+            ['the number of days in a week', 7], ['the number of colours in a rainbow', 7], ['the number of legs on a spider', 8], ['the number of wheels on a bicycle', 2],
+            ['the number of fingers on one hand', 5], ['the number of months in a year', 12], ['the number of players in a football team', 11], ['the number of sides on a hexagon', 6],
+            ['the number of lives a cat is said to have', 9], ['the number of wishes a genie grants', 3], ['the number of little pigs in the fairy tale', 3],
+            ['the number of bears in the Goldilocks story', 3], ['the number of legs on a horse', 4], ['the number of letters in the word APPLE', 5],
+            ['the number of seasons in a year', 4], ['the number of sides on a stop sign', 8], ['the number of strings on a guitar', 6], ['the number of hours in a day', 24],
+            ['the number of minutes in an hour', 60], ['the number of days in a leap-year February', 29], ['the number of cards in a pack (without jokers)', 52], ['the number of sides on a triangle', 3]
+        ];
+        const AG_POTION_COLOURS = [['Red', '#ef4444'], ['Blue', '#3b82f6'], ['Green', '#22c55e'], ['Purple', '#a855f7'], ['Orange', '#f97316'], ['Pink', '#ec4899']];
+        function agPotion(body, rnd, finish, hud) {
+            let A, C, B, op1, op2, ans = 0, tries = 0;
+            do {
+                A = AG_CLUES[Math.floor(rnd() * AG_CLUES.length)]; C = AG_CLUES[Math.floor(rnd() * AG_CLUES.length)];
+                B = 10 + Math.floor(rnd() * 31); op1 = rnd() < 0.7 ? 1 : -1; op2 = rnd() < 0.5 ? 1 : -1;
+                ans = A[1] + op1 * B + op2 * C[1]; tries++;
+            } while ((A === C || ans < 3 || ans > 99) && tries < 80);
+            const text = `Start with <b>${A[0]}</b>. ${op1 > 0 ? 'Add' : 'Take away'} <b>${B}</b>. Then ${op2 > 0 ? 'add' : 'take away'} <b>${C[0]}</b>.`;
+            // wrong numbers look like honest mistakes: adding when you should take away, and so on
+            const mistakes = [A[1] + B + C[1], A[1] - op1 * B + op2 * C[1], A[1] + op1 * B - op2 * C[1], Math.abs(A[1] - B) + C[1], ans + 10, ans - 10, ans + 2, ans - 3];
+            const bad = []; agShuffle(mistakes, rnd).forEach(n => { if (n >= 1 && n <= 120 && n !== ans && !bad.includes(n) && bad.length < 2) bad.push(n); });
+            for (let k = 5; bad.length < 2; k += 4) { const n = ans + k; if (n !== ans && !bad.includes(n)) bad.push(n); }
+            const cols = agShuffle(AG_POTION_COLOURS, rnd).slice(0, 3);
+            const potions = agShuffle([{ role: 'antidote', n: ans }, { role: 'weak', n: bad[0] }, { role: 'deadly', n: bad[1] }], rnd).map((p, i) => Object.assign(p, { c: cols[i] }));
+            let alive = true;
+            const bottle = (p) => `<svg viewBox="0 0 80 110" style="width:100%;max-width:92px;display:block;margin:0 auto" aria-hidden="true">
+                <rect x="30" y="4" width="20" height="14" rx="3" fill="#92400e"/><rect x="33" y="16" width="14" height="14" fill="#cbd5e1" opacity=".9"/>
+                <path d="M33 30 Q8 46 8 78 Q8 104 40 104 Q72 104 72 78 Q72 46 47 30Z" fill="#e2e8f0" opacity=".28" stroke="#cbd5e1" stroke-width="2"/>
+                <path d="M12 70 Q12 100 40 100 Q68 100 68 70 Q40 62 12 70Z" fill="${p.c[1]}"/>
+                <circle cx="40" cy="78" r="15" fill="#fff" opacity=".92"/><text x="40" y="84" text-anchor="middle" font-family="monospace" font-weight="900" font-size="17" fill="#0f172a">${p.n}</text></svg>`;
+            body.innerHTML = `<div class="h-full flex flex-col items-center justify-center gap-5 px-4">
+                <div class="max-w-sm w-full rounded-2xl border border-lime-500/40 bg-slate-900/80 p-4 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-lime-300 mb-1">The riddle</p>
+                    <p class="text-[15px] leading-snug text-white">${text}</p>
+                    <p class="text-[11px] text-slate-400 mt-2">Work out the number, then pick the potion that shows it.</p>
+                </div>
+                <div class="grid grid-cols-3 gap-3 w-full max-w-sm">${potions.map((p, i) => `<button type="button" data-i="${i}" class="ag-potion rounded-2xl border-2 border-slate-700 bg-slate-900/70 p-2 pb-3 active:scale-95 transition">${bottle(p)}<span class="block text-[11px] font-bold mt-1" style="color:${p.c[1]}">${p.c[0]} potion</span></button>`).join('')}</div></div>`;
+            hud('Choose wisely...');
+            body.querySelectorAll('.ag-potion').forEach(b => b.addEventListener('click', () => {
+                if (!alive) return; alive = false;
+                const p = potions[Number(b.dataset.i)];
+                if (p.role === 'antidote') finish(true, { potion: 'antidote' }, { icon: '🧪', title: 'The antidote!', sub: 'You are cured. Well done.' });
+                else if (p.role === 'weak') finish(false, { potion: 'weak' }, { icon: '😵', title: 'Too weak!', sub: 'The poison is still stronger than your potion.' });
+                else finish(false, { potion: 'deadly', lockUntil: Date.now() + 60000 }, { icon: '☠️', title: 'Deadly!', sub: 'You are poisoned for 60 seconds. Your screen will lock.' });
+            }));
+            return () => { alive = false; };
+        }
+
+        // The 60 second lock after the deadly potion. Stored on the apple, so reloading the page does not skip it.
+        window.checkAppleLock = function () {
+            const ov = agEl('apple-lock-overlay'); if (!ov) return;
+            const gameOpen = agEl('apple-game-overlay') && !agEl('apple-game-overlay').classList.contains('hidden');
+            const me = window.activeTeamId;
+            const real = (window.activeRaceCode && me) ? (window.liveApples || []).find(x => x.victimTeamId === me && Number(x.lockUntil) > Date.now()) : null;
+            const testUntil = window.isPlatformAdmin ? Number(window.__testLockUntil || 0) : 0;
+            const a = real ? { lockUntil: real.lockUntil } : (testUntil > Date.now() ? { lockUntil: testUntil } : null);
+            agEl('al-endtest').classList.toggle('hidden', !!real || !a);
+            if (!a || gameOpen) { if (!ov.classList.contains('hidden')) ov.classList.add('hidden'); return; }
+            const left = Math.max(0, Math.ceil((Number(a.lockUntil) - Date.now()) / 1000));
+            agEl('al-timer').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+            if (ov.classList.contains('hidden')) ov.classList.remove('hidden');
+        };
+        setInterval(() => { try { window.checkAppleLock(); } catch (e) {} }, 500);
 
         window.hasActiveApple = function () {
             const me = window.activeTeamId;
@@ -13833,6 +13951,7 @@
             modal('compass-modal', () => window.closeCompass && window.closeCompass()),
             blocking('trivia-modal'),
             blocking('apple-game-overlay'),
+            blocking('apple-lock-overlay'),
             blocking('hostlock-team-modal'),
             dynamic('host-gallery-modal'),
             dynamic('team-report-card-modal'),
