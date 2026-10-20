@@ -1425,6 +1425,7 @@
                         </button>
                         <div id="public-races-box" class="hidden space-y-3 pt-4 border-t border-slate-700/80">
                             <p class="text-slate-300 text-xs text-center max-w-md mx-auto">No team? No problem. Grab a ticket to a hosted race and compete against other players.</p>
+                            <div id="public-races-filters" class="space-y-2.5"></div>
                             <div id="public-races-list" class="space-y-3"><p class="text-center text-xs text-slate-500 py-4">Loading races…</p></div>
                         </div>
                     </div>
@@ -7949,6 +7950,91 @@
             renderPublicRaces();
         };
 
+        // ---------- Filters ----------
+        // Location is the first filter and is built from the listings themselves (each listing stores the parks its checkpoints are in),
+        // so new parks appear automatically. Destinations group the parks: add a `destination` to a location in locations-data.js,
+        // or a pattern to PARK_DESTINATIONS below. A park that matches nothing becomes its own group.
+        window.PARK_DESTINATIONS = window.PARK_DESTINATIONS || [
+            { name: 'Walt Disney World', match: /magic kingdom|epcot|hollywood studios|animal kingdom|disney springs|blizzard beach|typhoon lagoon|boardwalk|fort wilderness|disney'?s .*resort|walt disney world/i },
+            { name: 'Disneyland Paris', match: /paris|walt disney studios park|disney village/i },
+            { name: 'Disneyland Resort', match: /disneyland park|california adventure|downtown disney|disneyland resort/i },
+            { name: 'Universal Orlando', match: /universal|islands of adventure|epic universe|volcano bay|citywalk/i },
+            { name: 'UK Theme Parks', match: /alton towers|thorpe park|chessington|legoland windsor|blackpool|drayton manor/i }
+        ];
+        window.destinationFor = function (park) {
+            const preset = (window.DISNEY_PRESETS || []).find(p => p.park === park && p.destination);
+            if (preset) return preset.destination;
+            const d = window.PARK_DESTINATIONS.find(x => x.match.test(String(park || '')));
+            return d ? d.name : String(park || 'Other');
+        };
+        const PR_CP_RANGES = { s: [0, 6, 'Up to 6'], m: [7, 10, '7 to 10'], l: [11, 15, '11 to 15'], x: [16, 999, '16 or more'] };
+        const prFilters = { parks: new Set(), mode: '', diff: '', cps: '', style: '' };
+        let prFiltersOpen = false;
+        try { const sv = JSON.parse(localStorage.getItem('mmr_pr_filters') || 'null'); if (sv) { (sv.parks || []).forEach(x => prFilters.parks.add(x)); ['mode', 'diff', 'cps', 'style'].forEach(k => { if (typeof sv[k] === 'string') prFilters[k] = sv[k]; }); } } catch (e) {}
+        const prSave = () => { try { localStorage.setItem('mmr_pr_filters', JSON.stringify({ parks: [...prFilters.parks], mode: prFilters.mode, diff: prFilters.diff, cps: prFilters.cps, style: prFilters.style })); } catch (e) {} };
+        function prMatches(l) {
+            const f = prFilters;
+            if (f.parks.size) {   // "can I do the whole race with the places my ticket covers?"
+                if (!Array.isArray(l.parks) || !l.parks.length) return false;
+                if (!l.parks.every(p => f.parks.has(p))) return false;
+            }
+            if (f.mode && (l.gameMode === 'scavenger' ? 'scavenger' : 'race') !== f.mode) return false;
+            if (f.diff && (l.difficulty || 'easy') !== f.diff) return false;
+            if (f.cps) { const r = PR_CP_RANGES[f.cps], n = Number(l.checkpointCount) || 0; if (!r || n < r[0] || n > r[1]) return false; }
+            if (f.style && ((l.rules && l.rules.preset) || 'custom') !== f.style) return false;
+            return true;
+        }
+        function prCardMeta(l) {
+            const bits = [];
+            bits.push(({ easy: 'Easy', medium: 'Medium', hard: 'Hard' })[l.difficulty || 'easy'] || 'Easy');
+            if (Number(l.checkpointCount) > 0) bits.push(l.checkpointCount + ' stops');
+            const pr = l.rules && l.rules.preset; if (pr === 'casual' || pr === 'competitive') bits.push(pr === 'casual' ? 'Casual' : 'Competitive');
+            if (Array.isArray(l.parks) && l.parks.length) bits.push('📍 ' + l.parks.join(', '));
+            return bits.join(' · ');
+        }
+        const prActiveCount = () => (prFilters.mode ? 1 : 0) + (prFilters.diff ? 1 : 0) + (prFilters.cps ? 1 : 0) + (prFilters.style ? 1 : 0);
+        function renderPublicRaceFilters() {
+            const box = document.getElementById('public-races-filters'); if (!box) return;
+            const list = publicRacesState.list || [];
+            if (!list.length) { box.innerHTML = ''; return; }
+            // parks that exist in the listings, grouped by destination
+            const parkSet = new Set(); list.forEach(l => (l.parks || []).forEach(p => parkSet.add(p)));
+            prFilters.parks.forEach(p => { if (!parkSet.has(p)) prFilters.parks.delete(p); });   // forget parks that no longer have a race
+            const groups = new Map(); [...parkSet].sort().forEach(p => { const d = window.destinationFor(p); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(p); });
+            const chip = (on, label, attrs) => `<button type="button" ${attrs} class="px-3 py-1.5 rounded-full border text-[11px] font-bold transition active:scale-95 ${on ? 'bg-emerald-500/20 border-emerald-400/70 text-emerald-200' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}">${label}</button>`;
+            const parkChips = [...groups.entries()].map(([dest, parks]) => `
+                ${groups.size > 1 ? `<p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2 mb-1">${escHtml(dest)}</p>` : ''}
+                <div class="flex flex-wrap gap-1.5">${parks.map(p => chip(prFilters.parks.has(p), `${window.areaIcon ? window.areaIcon(p) : '📍'} ${escHtml(p)}`, `data-p="${escHtml(p)}" onclick="prTogglePark(this.dataset.p)"`)).join('')}</div>`).join('');
+            const seg = (key, opts) => `<div class="flex flex-wrap gap-1.5">${opts.map(([v, label]) => chip(prFilters[key] === v, label, `onclick="prSetFilter('${key}','${v}')"`)).join('')}</div>`;
+            const lbl = (t) => `<p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">${t}</p>`;
+            const n = prActiveCount(), shownCount = list.filter(prMatches).length;
+            box.innerHTML = `
+                <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-bold text-white">📍 Where can you race?</p>
+                        ${prFilters.parks.size ? `<button type="button" onclick="prClearParks()" class="text-[10px] font-bold text-slate-400 underline">Any park</button>` : ''}
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-snug">${prFilters.parks.size ? 'Showing races you can do entirely within the places you picked.' : 'Showing every race (park hopper). Pick the places your ticket covers to narrow it down.'}</p>
+                    <div>${parkChips || '<p class="text-[11px] text-slate-500">Location details are not available for these races yet.</p>'}</div>
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                        <button type="button" onclick="prToggleFilterPanel()" class="px-3 py-2 rounded-xl bg-slate-800 border ${n ? 'border-emerald-400/60 text-emerald-200' : 'border-slate-600 text-slate-200'} text-[11px] font-bold flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i> Filters${n ? ` <span class="px-1.5 rounded-full bg-emerald-500/30 text-[10px]">${n}</span>` : ''}</button>
+                        <span class="text-[11px] text-slate-400">${shownCount} of ${list.length} race${list.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="${prFiltersOpen ? '' : 'hidden'} space-y-3 pt-2 border-t border-slate-700/80">
+                        <div>${lbl('Race type')}${seg('mode', [['', 'All'], ['race', 'Speed race'], ['scavenger', 'Scavenger hunt']])}</div>
+                        <div>${lbl('Difficulty')}${seg('diff', [['', 'All'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']])}</div>
+                        <div>${lbl('Checkpoints')}${seg('cps', [['', 'Any'], ...Object.entries(PR_CP_RANGES).map(([k, r]) => [k, r[2]])])}</div>
+                        <div>${lbl('Style')}${seg('style', [['', 'All'], ['casual', 'Casual'], ['competitive', 'Competitive']])}</div>
+                        ${(n || prFilters.parks.size) ? `<button type="button" onclick="prClearFilters()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-[11px] font-bold">Clear all filters</button>` : ''}
+                    </div>
+                </div>`;
+        }
+        window.prTogglePark = function (p) { if (prFilters.parks.has(p)) prFilters.parks.delete(p); else prFilters.parks.add(p); prSave(); renderPublicRaces(); };
+        window.prClearParks = function () { prFilters.parks.clear(); prSave(); renderPublicRaces(); };
+        window.prSetFilter = function (k, v) { prFilters[k] = prFilters[k] === v ? '' : v; prSave(); renderPublicRaces(); };
+        window.prToggleFilterPanel = function () { prFiltersOpen = !prFiltersOpen; renderPublicRaces(); };
+        window.prClearFilters = function () { prFilters.parks.clear(); prFilters.mode = prFilters.diff = prFilters.cps = prFilters.style = ''; prSave(); renderPublicRaces(); };
+
         function renderPublicRaces() {
             const listEl = document.getElementById('public-races-list');
             const countEl = document.getElementById('public-races-count');
@@ -7959,9 +8045,15 @@
                 listEl.innerHTML = `<p class="text-center text-xs text-slate-500 py-4">${publicRacesState.error ? 'Public races could not be loaded. Check your connection and try again.' : 'No public races are open right now. Check back soon!'}</p>`;
                 return;
             }
+            renderPublicRaceFilters();
+            const shown = list.filter(prMatches);
             let resume = '';
             try { const pt = JSON.parse(localStorage.getItem('mmr_pending_ticket') || 'null'); if (pt && pt.code) resume = `<button type="button" onclick="resumePendingTicket()" class="w-full text-left bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition"><span class="text-2xl">🎟️</span><span class="min-w-0 flex-1"><span class="block font-bold text-emerald-300 text-sm">Finish joining</span><span class="block text-[11px] text-slate-400 truncate">${escHtml(pt.title || pt.code)} · ticket paid</span></span><i class="fa-solid fa-chevron-right text-emerald-400 text-xs"></i></button>`; } catch (e) {}
-            listEl.innerHTML = resume + list.map(l => {
+            if (!shown.length) {
+                listEl.innerHTML = resume + `<div class="text-center py-5 space-y-2"><p class="text-xs text-slate-400">No public races match these filters.</p><button type="button" onclick="prClearFilters()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-slate-200 text-[11px] font-bold">Clear filters</button></div>`;
+                return;
+            }
+            listEl.innerHTML = resume + shown.map(l => {
                 const isHunt = l.gameMode === 'scavenger';
                 const monthly = l.ticketType === 'monthlong';
                 const bg = l.bannerUrl ? `<span class="absolute inset-0 bg-cover opacity-40" style="background-image:url('${escHtml(l.bannerUrl)}');background-position:${escHtml(/^[\d.]+% [\d.]+%$/.test(l.bannerPos || '') ? l.bannerPos : '50% 50%')}"></span><span class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/30"></span>` : '';
@@ -7972,6 +8064,7 @@
                     <span class="min-w-0 flex-1">
                         <span class="block font-bold text-white text-sm leading-tight truncate drop-shadow">${escHtml(l.title || l.id)}</span>
                         <span class="block text-[11px] text-slate-300 mt-0.5 truncate drop-shadow">${monthly ? 'Month-long' : 'Single race'} · ${isHunt ? 'Scavenger Hunt' : 'Speed Race'} · ${escHtml(prDurationText(l))}</span>
+                        <span class="block text-[10px] text-slate-400 mt-0.5 truncate drop-shadow">${escHtml(prCardMeta(l))}</span>
                     </span>
                     <span class="shrink-0 text-right"><span class="block font-black text-emerald-300 text-sm drop-shadow">${prMoney(l.priceCents)}</span><i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i></span>
                     </span>
@@ -8514,6 +8607,7 @@
                 missedPenaltyMin: race.gameMode === 'scavenger' ? 0 : window.missedPenaltyMin(race),
                 timeLimitMinutes: Number(race.timeLimitMinutes) || 0,
                 checkpointCount: (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length,
+                parks: [...new Set((race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean))],
                 active: true,
                 organizerId: window.auth.currentUser.uid,
                 listedAt: (prev && prev.listedAt) || new Date().toISOString(),
@@ -8668,6 +8762,16 @@
                         const lSnap = await getDocs(query(collection(window.db, "publicRaces"), where("organizerId", "==", currentUser.uid)));
                         lSnap.forEach(d => { window.__publicListings[d.id] = d.data(); });
                     } catch (e) { console.warn("Could not load public listings", e); }
+                }
+
+                if (window.isPlatformAdmin) {   // listings saved before the location filter existed get their parks filled in automatically
+                    for (const [lid, l] of Object.entries(window.__publicListings)) {
+                        if (!l || l.active === false || (Array.isArray(l.parks) && l.parks.length)) continue;
+                        const r = races.find(x => x.id === lid || x.code === lid); if (!r) continue;
+                        const parks = [...new Set((r.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean))];
+                        if (!parks.length) continue;
+                        try { await setDoc(doc(window.db, "publicRaces", lid), { parks }, { merge: true }); l.parks = parks; } catch (e) { console.warn('Could not add parks to listing', lid, e); }
+                    }
                 }
 
                 let totalPendingTeams = 0;
