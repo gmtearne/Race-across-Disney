@@ -1850,6 +1850,23 @@
                         </div>
 
                         <!-- 3b. Promo codes (platform admin only) -->
+                        <div id="stats-admin-card" class="hidden bg-slate-800 border border-amber-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+                            <button type="button" id="stats-toggle" onclick="toggleAdminCard('stats'); if (!document.getElementById('stats-body').classList.contains('hidden')) saLoad();" aria-expanded="false" aria-controls="stats-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
+                                <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-amber-300 uppercase tracking-wider"><i class="fa-solid fa-chart-line"></i> Sales &amp; activity<span id="stats-count" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-bold text-slate-300"></span></span>
+                                <i id="stats-chevron" class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0"></i>
+                            </button>
+                            <div id="stats-body" class="hidden space-y-4 pt-1">
+                                <div class="flex items-center gap-2">
+                                    <div id="sa-range" class="flex-1 grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                                        <button type="button" data-r="7" onclick="saSetRange(7)" class="py-2 rounded-xl text-[11px] font-bold">7 days</button>
+                                        <button type="button" data-r="30" onclick="saSetRange(30)" class="py-2 rounded-xl text-[11px] font-bold">30 days</button>
+                                        <button type="button" data-r="0" onclick="saSetRange(0)" class="py-2 rounded-xl text-[11px] font-bold">All time</button>
+                                    </div>
+                                    <button type="button" onclick="saLoad(true)" aria-label="Refresh" class="w-10 h-10 shrink-0 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"><i class="fa-solid fa-rotate"></i></button>
+                                </div>
+                                <div id="sa-out" class="space-y-4 text-sm text-slate-300">Open to load.</div>
+                            </div>
+                        </div>
                         <div id="promo-admin-card" class="hidden bg-slate-800 border border-fuchsia-500/40 rounded-2xl p-5 shadow-xl space-y-4">
                             <button type="button" id="promo-toggle" onclick="toggleAdminCard('promo')" aria-expanded="false" aria-controls="promo-body" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none">
                                 <span class="min-w-0 flex items-center gap-2 flex-wrap text-xs font-bold text-fuchsia-300 uppercase tracking-wider"><i class="fa-solid fa-gift"></i> Promo codes<span id="promo-count" class="hidden normal-case tracking-normal px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] font-bold text-slate-300"></span></span>
@@ -4341,7 +4358,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getDocFromCache, waitForPendingWrites, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, arrayRemove, runTransaction, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getDocFromCache, waitForPendingWrites, doc, setDoc, getDoc, collection, addDoc, deleteDoc, getDocs, updateDoc, arrayUnion, arrayRemove, runTransaction, query, where, onSnapshot, collectionGroup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQKO8t9AJd8jEDu2CPqT9_tFHlCNGq4oQ",
@@ -4474,7 +4491,7 @@
                     window.hostAccess = { loaded: false, perpetual: false, passes: [] };
                     if (window.renderHostAccessBanner) window.renderHostAccessBanner();
                     document.getElementById('demo-mode-screen')?.classList.add('hidden');
-                    document.getElementById('promo-admin-card')?.classList.add('hidden');
+                    document.getElementById('promo-admin-card')?.classList.add('hidden'); document.getElementById('stats-admin-card')?.classList.add('hidden');
                     document.getElementById('support-admin-card')?.classList.add('hidden');
                     document.getElementById('apple-test-card')?.classList.add('hidden');
                     window.__publicListings = {};
@@ -6284,6 +6301,7 @@
                     const w = planWindow(plan.days, $('dm-start-date').value);
                     window.hostAccess.passes.push(normPass({ id: 'p' + Date.now(), plan: plan.id, days: plan.days, startsAt: w.startsAt, endsAt: w.endsAt, purchasedAt: Date.now() }));
                     const toDevice = await savePasses(user);
+                    if (window.logSale) window.logSale({ kind: 'pass', productId: plan.id, productName: plan.name, amountCents: Math.round(parseFloat(String(plan.price).replace(/[^0-9.]/g, '')) * 100) || 0, via: 'checkout', startsAt: w.startsAt, endsAt: w.endsAt, uid: user.uid });
                     refreshAfterPassChange();
                     $('dm-done-title').textContent = w.startsAt > Date.now() + 60000 ? 'Pass booked!' : 'Pass activated!';
                     $('dm-done-text').textContent = doneText(plan.name, w, toDevice);
@@ -6315,6 +6333,7 @@
                     if (perpetual) window.hostAccess.perpetual = true;
                     else { w = planWindow(days, $('dm-start-date').value); window.hostAccess.passes.push(normPass({ id: 'p' + Date.now(), plan: 'promo', days, startsAt: w.startsAt, endsAt: w.endsAt, purchasedAt: Date.now() })); }
                     const toDevice = await savePasses(user);
+                    if (window.logSale) window.logSale({ kind: 'pass', productId: perpetual ? 'perpetual' : 'promo', productName: perpetual ? 'Perpetual access (promo)' : days + ' day pass (promo)', amountCents: 0, via: 'promo', startsAt: w ? w.startsAt : 0, endsAt: w ? w.endsAt : 0, perpetual: !!perpetual, uid: user.uid });
                     refreshAfterPassChange();
                     $('dm-promo-input').value = ''; dmPromoMsg('');
                     $('dm-done-title').textContent = (w && w.startsAt > Date.now() + 60000) ? 'Pass booked!' : 'Pass activated!';
@@ -8308,6 +8327,7 @@
                     triviaBonus: 0, triviaLogs: [], startTime: null, endTime: null
                 });
                 savePending(null);
+                if (window.logSale) window.logSale({ kind: 'ticket', productId: twTicket.listingId || code, productName: twTicket.title || twTicket.listingId || code, raceCode: code, amountCents: twTicket.promo ? 0 : (Number(twTicket.priceCents) || 0), via: twTicket.promo ? 'promo' : 'checkout', simulated: !!twTicket.simulated });
                 try { if (window.activeRaceCode && window.logoutTeam) window.logoutTeam(); } catch (e) {}
                 localStorage.setItem('rad_race_code', code);
                 localStorage.setItem('rad_team_id', teamId);
@@ -8402,6 +8422,7 @@
         }
         window.renderPromoAdmin = async function() {
             const tester = $id('apple-test-card'); if (tester) tester.classList.toggle('hidden', !window.isPlatformAdmin);
+            const sc = $id('stats-admin-card'); if (sc) sc.classList.toggle('hidden', !window.isPlatformAdmin);
             const card = $id('promo-admin-card'); if (!card) return;
             card.classList.toggle('hidden', !window.isPlatformAdmin);
             if (!window.isPlatformAdmin) return;
@@ -8410,6 +8431,87 @@
             paFillListings();
             window.paLoadList();
         };
+        // ================= SALES & ACTIVITY (platform admin) =================
+        // sales/{id} is an append-only ledger written at purchase time (host passes, race tickets, promo redemptions).
+        // INTERIM: written from the buyer's browser. When real payments arrive, have the payment webhook write these instead.
+        window.logSale = async function (rec) {
+            try { await addDoc(collection(window.db, 'sales'), Object.assign({ at: Date.now(), simulated: false }, rec)); } catch (e) { console.warn('sale not logged', e); }
+        };
+        let saRange = 30, saCache = null;
+        const saMoney = (c) => '$' + (c / 100).toFixed(2);
+        window.saSetRange = function (r) { saRange = r; saPaint(); saRender(); };
+        function saPaint() {
+            document.querySelectorAll('#sa-range button').forEach(b => {
+                const on = Number(b.dataset.r) === saRange;
+                b.className = 'py-2 rounded-xl text-[11px] font-bold ' + (on ? 'bg-amber-500/20 border border-amber-400/60 text-amber-200' : 'text-slate-400');
+            });
+        }
+        window.saResetHosted = async function () {
+            if (!(await appConfirm('Reset the private-hosted races counter to zero? Past races are not affected.', { title: 'Reset counter', confirmText: 'Reset' }))) return;
+            try { await setDoc(doc(window.db, 'adminStats', 'hostedRaces'), { resetAt: Date.now() }); window.saLoad(true); } catch (e) { alert('Could not reset: ' + e.message); }
+        };
+        window.saLoad = async function (force) {
+            const out = $id('sa-out'); if (!out || !window.isPlatformAdmin) return;
+            if (saCache && !force && Date.now() - saCache.at < 60000) { saPaint(); saRender(); return; }
+            saPaint(); out.textContent = 'Loading…';
+            const DAYMS = 86400000, now = Date.now();
+            try {
+                const sales = []; (await getDocs(collection(window.db, 'sales'))).forEach(d => sales.push(d.data()));
+                let resetAt = 0; try { const r = await getDoc(doc(window.db, 'adminStats', 'hostedRaces')); if (r.exists()) resetAt = Number(r.data().resetAt) || 0; } catch (e) {}
+                // teams that started recently (collection-group query: first run may ask you to create an index, the console error carries a link)
+                const since = Math.min(resetAt || now, now - 14 * DAYMS);
+                const teams = []; (await getDocs(query(collectionGroup(window.db, 'teams'), where('startTime', '>=', new Date(since).toISOString())))).forEach(d => teams.push({ code: d.ref.parent.parent.id, id: d.id, ...d.data() }));
+                const codes = [...new Set(teams.map(t => t.code))], races = {};
+                await Promise.all(codes.slice(0, 400).map(async c => { try { const r = await getDoc(doc(window.db, 'races', c)); if (r.exists()) races[c] = r.data(); } catch (e) {} }));
+                saCache = { at: now, sales, resetAt, teams, races };
+            } catch (e) { out.textContent = 'Could not load: ' + e.message + (/index/i.test(e.message) ? ' (create the index using the link in the browser console, then refresh)' : ''); return; }
+            saRender();
+        };
+        function saRender() {
+            const out = $id('sa-out'); if (!out || !saCache) return;
+            const { sales, resetAt, teams, races } = saCache, now = Date.now(), DAYMS = 86400000, cutoff = saRange ? now - saRange * DAYMS : 0;
+            const inRange = sales.filter(x => Number(x.at) >= cutoff);
+            const paid = inRange.filter(x => x.via === 'checkout' && Number(x.amountCents) > 0), free = inRange.filter(x => x.via === 'promo');
+            const rev = paid.reduce((a, x) => a + Number(x.amountCents), 0);
+            const group = (kind) => {
+                const m = {}; inRange.filter(x => x.kind === kind).forEach(x => { const k = x.productId || '?'; const g = m[k] || (m[k] = { name: x.productName || k, paid: 0, free: 0, cents: 0 }); if (x.via === 'promo') g.free++; else { g.paid++; g.cents += Number(x.amountCents) || 0; } });
+                return Object.values(m).sort((a, b) => b.cents - a.cents || b.paid - a.paid);
+            };
+            const table = (rows, emptyTxt) => rows.length ? rows.map((g, i) => `<div class="flex items-center gap-2 bg-slate-950 border ${i === 0 && g.paid ? 'border-amber-500/40' : 'border-slate-800'} rounded-xl px-3 py-2">
+                    <span class="w-5 text-center text-[11px] ${i === 0 && g.paid ? 'text-amber-300' : 'text-slate-500'} font-black">${i === 0 && g.paid ? '🏆' : i + 1}</span>
+                    <span class="flex-1 min-w-0 text-[12px] text-white truncate">${escHtml(g.name)}</span>
+                    <span class="text-[11px] text-slate-400 shrink-0">${g.paid} sold${g.free ? ' · ' + g.free + ' promo' : ''}</span>
+                    <span class="text-[12px] font-bold text-emerald-300 shrink-0 w-16 text-right">${saMoney(g.cents)}</span></div>`).join('') : `<p class="text-[11px] text-slate-500">${emptyTxt}</p>`;
+            // active passes (right now, from the ledger)
+            const passes = sales.filter(x => x.kind === 'pass');
+            const activeP = passes.filter(x => Number(x.startsAt) <= now && now < Number(x.endsAt) && x.via).length;
+            const bookedP = passes.filter(x => Number(x.startsAt) > now).length;
+            // live play: started, not finished, last check-in (or start) in the last 24h
+            const live = teams.filter(t => t.startTime && !t.endTime).map(t => {
+                const cts = Object.values(t.checkinDetails || {}).map(d => Date.parse(d && d.timestamp)).filter(Number.isFinite);
+                return { t, last: cts.length ? Math.max(...cts) : 0 };
+            }).filter(x => x.last && now - x.last < DAYMS);
+            const liveRaces = {}; live.forEach(x => { (liveRaces[x.t.code] = liveRaces[x.t.code] || []).push(x); });
+            const raceRows = Object.entries(liveRaces).sort((a, b) => b[1].length - a[1].length).map(([c, arr]) => {
+                const r = races[c] || {}, last = Math.max(...arr.map(x => x.last)), ago = Math.round((now - last) / 60000);
+                return `<div class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2"><span class="flex-1 min-w-0 text-[12px] text-white truncate">${escHtml(r.title || c)} <span class="text-slate-500 font-mono text-[10px]">${escHtml(c)}</span></span><span class="text-[11px] text-sky-300 shrink-0">${arr.length} team${arr.length === 1 ? '' : 's'}</span><span class="text-[10px] text-slate-500 shrink-0">${ago < 60 ? ago + 'm' : Math.round(ago / 60) + 'h'} ago</span></div>`;
+            }).join('');
+            // private-host races: any race with a started team since the reset, not owned by this admin and not a public listing
+            const me = window.auth && window.auth.currentUser && window.auth.currentUser.uid, pub = window.__publicListings || {};
+            const hostedCodes = new Set();
+            teams.forEach(t => { const r = races[t.code]; if (!r || !t.startTime || Date.parse(t.startTime) < (resetAt || 0)) return; if (r.organizerId === me || pub[t.code]) return; hostedCodes.add(t.code); });
+            const stat = (v, l, c) => `<div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 text-center"><p class="text-xl font-black ${c || 'text-white'}">${v}</p><p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">${l}</p></div>`;
+            out.innerHTML = `
+                <div class="grid grid-cols-3 gap-2">${stat(saMoney(rev), 'Revenue', 'text-emerald-300')}${stat(paid.length, 'Paid sales', 'text-amber-300')}${stat(free.length, 'Promo redeemed', 'text-fuchsia-300')}</div>
+                <div class="grid grid-cols-2 gap-2">${stat(activeP, 'Active passes now', 'text-sky-300')}${stat(bookedP, 'Passes booked ahead')}</div>
+                <div class="space-y-1.5"><p class="text-[11px] font-black uppercase tracking-wider text-amber-300">Host passes</p>${table(group('pass'), 'No pass sales in this period.')}</div>
+                <div class="space-y-1.5"><p class="text-[11px] font-black uppercase tracking-wider text-amber-300">Race tickets</p>${table(group('ticket'), 'No ticket sales in this period.')}</div>
+                <div class="space-y-1.5"><p class="text-[11px] font-black uppercase tracking-wider text-sky-300">Playing now <span class="normal-case tracking-normal text-slate-500 font-normal">(racing, checked in within 24h)</span></p>
+                    <div class="grid grid-cols-2 gap-2">${stat(live.length, 'Active teams', 'text-sky-300')}${stat(Object.keys(liveRaces).length, 'Active races', 'text-sky-300')}</div>${raceRows}</div>
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center gap-3"><div class="flex-1"><p class="text-2xl font-black text-white">${hostedCodes.size}</p><p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Private-host races run${resetAt ? ' since ' + new Date(resetAt).toLocaleDateString() : ''}</p><p class="text-[10px] text-slate-600 mt-1">Counts races where a team has started (last 14 days or since reset), excluding yours and public listings.</p></div>
+                    <button type="button" onclick="saResetHosted()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-bold">Reset</button></div>`;
+            window.setAdminCardCount('stats', saMoney(rev));
+        }
         const paDescribe = (c) => c.kind === 'ticket'
             ? `🎟️ ${escHtml(c.listingTitle || c.listingId || 'Race')}`
             : (c.perpetual ? '🔑 Perpetual host access' : `🔑 ${Number(c.days)} day host pass`);
