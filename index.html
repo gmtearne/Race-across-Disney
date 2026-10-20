@@ -8464,7 +8464,11 @@
                 const codes = [...new Set(teams.map(t => t.code))], races = {};
                 await Promise.all(codes.slice(0, 400).map(async c => { try { const r = await getDoc(doc(window.db, 'races', c)); if (r.exists()) races[c] = r.data(); } catch (e) {} }));
                 saCache = { at: now, sales, resetAt, teams, races };
-            } catch (e) { out.textContent = 'Could not load: ' + e.message + (/index/i.test(e.message) ? ' (create the index using the link in the browser console, then refresh)' : ''); return; }
+            } catch (e) {
+                const m = /https:\/\/console\.firebase\.google\.com\/[^\s)]+/.exec(e.message || ''), msg = String(e.message || '').replace(/https:\/\/\S+/g, '').trim();
+                out.innerHTML = `<p class="text-rose-300 text-[12px] break-words">Could not load: ${escHtml(msg)}</p>` + (m ? `<a href="${escHtml(m[0])}" target="_blank" rel="noopener" class="block text-center mt-2 py-3 rounded-xl bg-amber-500/20 border border-amber-400/60 text-amber-200 text-sm font-bold">Create the missing index</a><p class="text-[10px] text-slate-500 mt-1 break-all">${escHtml(m[0])}</p>` : '');
+                return;
+            }
             saRender();
         };
         function saRender() {
