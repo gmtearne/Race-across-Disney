@@ -9940,10 +9940,10 @@
         };
         // The mini-games. Each time a team falls into a trap, one is picked at random.
         window.APPLE_GAMES = {
-            catch:    { title: 'Orchard Catch',     rule: 'Slide the basket and catch 20 green apples. Catch a red apple and it is over!', sec: 75 },
+            catch:    { title: 'Orchard Catch',     rule: 'Drag to glide the basket and catch 20 green apples. Dodge the red ones: catch one and it is over!', sec: 85 },
             scramble: { title: 'Word Scramble',     rule: 'Unscramble 3 fairy-tale words by tapping the letters in order.', sec: 75 },
             spot:     { title: 'Spot the Difference', rule: 'Find 5 differences between the two orchards. Tap them on either picture. 4 wrong taps and you lose.', sec: 90 },
-            potion:   { title: 'The Antidote',      rule: 'You have been poisoned! Solve the riddle, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: 90 }
+            potion:   { title: 'The Antidote',      rule: 'You have been poisoned! Solve the witch\'s riddle and the sums, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: 100 }
         };
         // A location can still supply its own challenges (poisonChallenges in locations-data.js); otherwise a mini-game is picked.
         window.pickAppleChallenge = function (cpName, apples, teamId) {
@@ -10328,31 +10328,45 @@
         }, 2000);
 
         // ---- Game 1: Orchard Catch ----
+        // The basket glides towards your finger (it never jumps), and apples come in mixed sizes of trouble: some slow, some fast, plenty of red ones.
         function agCatch(body, rnd, finish, hud) {
             const TARGET = 20;
             const cvs = document.createElement('canvas'); cvs.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;';
             body.appendChild(cvs);
             const ctx = cvs.getContext('2d');
-            let W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1), raf = 0, last = 0, alive = true;
+            let W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1), raf = 0, last = 0, alive = true, elapsed = 0;
             const fit = () => { W = body.clientWidth; H = body.clientHeight; cvs.width = W * dpr; cvs.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
             fit(); window.addEventListener('resize', fit);
-            let bx = W / 2, caught = 0, spawn = 0.4, items = [];
-            const move = (e) => { const r = cvs.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; bx = Math.max(30, Math.min(W - 30, t.clientX - r.left)); e.preventDefault && e.preventDefault(); };
-            cvs.addEventListener('pointerdown', move); cvs.addEventListener('pointermove', move);
-            cvs.addEventListener('touchmove', move, { passive: false });
+            let bx = W / 2, tx = W / 2, caught = 0, spawn = 0.4, items = [];
+            const aim = (e) => { const r = cvs.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; tx = Math.max(30, Math.min(W - 30, t.clientX - r.left)); if (e.cancelable) e.preventDefault(); };
+            cvs.addEventListener('pointerdown', aim); cvs.addEventListener('pointermove', aim);
+            cvs.addEventListener('touchmove', aim, { passive: false });
             hud('🍏 0 / ' + TARGET);
+            const newApple = () => {
+                // red apples become more common as the game goes on; speeds vary from lazy drifters to fast drops
+                const redChance = Math.min(0.5, 0.34 + elapsed * 0.003);
+                const speedMix = Math.random();
+                const vy = H * (speedMix < 0.3 ? 0.26 + Math.random() * 0.1 : speedMix < 0.75 ? 0.4 + Math.random() * 0.2 : 0.7 + Math.random() * 0.25);
+                items.push({ x: 24 + Math.random() * (W - 48), y: -20, vy, red: Math.random() < redChance, sway: Math.random() < 0.25 ? (Math.random() - 0.5) * 60 : 0, ph: Math.random() * 6 });
+            };
             const frame = (ts) => {
                 if (!alive) return;
-                const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts;
+                const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts; elapsed += dt;
+                // glide: ease towards the target, with a top speed so a tap on the far side means a real slide across
+                const maxStep = W * 1.1 * dt;
+                const step = (tx - bx) * (1 - Math.exp(-7 * dt));
+                bx += Math.max(-maxStep, Math.min(maxStep, step));
                 spawn -= dt;
                 if (spawn <= 0) {
-                    spawn = 0.55 + Math.random() * 0.4;
-                    items.push({ x: 24 + Math.random() * (W - 48), y: -20, vy: H * (0.34 + Math.random() * 0.16), red: Math.random() < 0.22 });
+                    newApple();
+                    if (Math.random() < 0.18) newApple();                 // now and then two arrive together
+                    spawn = 0.4 + Math.random() * 0.55;
                 }
                 ctx.clearRect(0, 0, W, H);
                 const by = H - 46;
                 for (const it of items) {
                     it.y += it.vy * dt;
+                    if (it.sway) it.x = Math.max(16, Math.min(W - 16, it.x + Math.sin(elapsed * 3 + it.ph) * it.sway * dt));
                     if (!it.gone && it.y > by - 22 && it.y < by + 22 && Math.abs(it.x - bx) < 40) {
                         it.gone = true;
                         if (it.red) { alive = false; finish(false); return; }
@@ -10459,30 +10473,76 @@
             return () => { alive = false; };
         }
 
-        // ---- Game 4: The Antidote (riddle + sums). One potion cures you, one is too weak, one is deadly ----
-        const AG_CLUES = [
-            ['the number of days in a week', 7], ['the number of colours in a rainbow', 7], ['the number of legs on a spider', 8], ['the number of wheels on a bicycle', 2],
-            ['the number of fingers on one hand', 5], ['the number of months in a year', 12], ['the number of players in a football team', 11], ['the number of sides on a hexagon', 6],
-            ['the number of lives a cat is said to have', 9], ['the number of wishes a genie grants', 3], ['the number of little pigs in the fairy tale', 3],
-            ['the number of bears in the Goldilocks story', 3], ['the number of legs on a horse', 4], ['the number of letters in the word APPLE', 5],
-            ['the number of seasons in a year', 4], ['the number of sides on a stop sign', 8], ['the number of strings on a guitar', 6], ['the number of hours in a day', 24],
-            ['the number of minutes in an hour', 60], ['the number of days in a leap-year February', 29], ['the number of cards in a pack (without jokers)', 52], ['the number of sides on a triangle', 3]
+        // ---- Game 4: The Antidote (a riddle gives your starting number, then two steps of sums). One potion cures you, one is too weak, one is deadly ----
+        const AG_RIDDLES = [
+            ['I am the only even prime number', 2],
+            ['Three little pigs, three wishes, three bears: I am the number they share', 3],
+            ['Take a pair of pairs. That is me', 4],
+            ['Count the rings on the Olympic flag, or the fingers on one hand', 5],
+            ['Every snowflake grows this many arms', 6],
+            ['The days of the week and the colours of the rainbow both agree on me', 7],
+            ['A spider has this many legs, and an octopus this many arms', 8],
+            ['A cat is said to have this many lives', 9],
+            ['Count the fingers and thumbs on both your hands', 10],
+            ['The hours on a clock face', 12],
+            ['A baker keeps one more than a dozen', 13],
+            ['A fortnight, counted in days', 14],
+            ['A quarter of an hour, counted in minutes', 15],
+            ['A score of years', 20],
+            ['The letters in the alphabet', 26],
+            ['February in a leap year, counted in days', 29]
+        ];
+        const AG_SMALL = [
+            ['the number of letters in WITCH', 5], ['the number of letters in POISON', 6], ['the number of letters in CAULDRON', 8], ['the number of letters in ORCHARD', 7],
+            ['the number of letters in MIRROR', 6], ['the number of legs on a horse', 4], ['the number of days in a weekend', 2], ['the number of sides on a triangle', 3],
+            ['the number of wheels on a tricycle', 3], ['the number of seasons in a year', 4], ['the number of colours on a traffic light', 3], ['the number of vowels in the word APPLE', 2]
         ];
         const AG_POTION_COLOURS = [['Red', '#ef4444'], ['Blue', '#3b82f6'], ['Green', '#22c55e'], ['Purple', '#a855f7'], ['Orange', '#f97316'], ['Pink', '#ec4899']];
-        function agPotion(body, rnd, finish, hud) {
-            let A, C, B, op1, op2, ans = 0, tries = 0;
+        function agPotionBuild(rnd) {
+            const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+            const mk = (kind) => {
+                const K = 3 + Math.floor(rnd() * 28), S = pick(AG_SMALL);
+                switch (kind) {
+                    case 'add':    return { kind, text: 'add ' + K, f: v => v + K, inv: v => v - K };
+                    case 'sub':    return { kind, text: 'take away ' + K, f: v => v - K, inv: v => v + K };
+                    case 'double': return { kind, text: 'double it', f: v => v * 2, inv: v => v + 2 };
+                    case 'mul':    return { kind, text: 'multiply it by ' + S[0], f: v => v * S[1], inv: v => v + S[1] };
+                    case 'addc':   return { kind, text: 'add ' + S[0], f: v => v + S[1], inv: v => v - S[1] };
+                    default:       return { kind: 'subc', text: 'take away ' + S[0], f: v => v - S[1], inv: v => v + S[1] };
+                }
+            };
+            const kinds = ['add', 'sub', 'double', 'mul', 'addc', 'subc'];
+            const fold = (v, steps) => steps.reduce((x, st) => st.f(x), v);
+            let R, steps, ans = 0, tries = 0, ok;
             do {
-                A = AG_CLUES[Math.floor(rnd() * AG_CLUES.length)]; C = AG_CLUES[Math.floor(rnd() * AG_CLUES.length)];
-                B = 10 + Math.floor(rnd() * 31); op1 = rnd() < 0.7 ? 1 : -1; op2 = rnd() < 0.5 ? 1 : -1;
-                ans = A[1] + op1 * B + op2 * C[1]; tries++;
-            } while ((A === C || ans < 3 || ans > 99) && tries < 80);
-            const text = `Start with <b>${A[0]}</b>. ${op1 > 0 ? 'Add' : 'Take away'} <b>${B}</b>. Then ${op2 > 0 ? 'add' : 'take away'} <b>${C[0]}</b>.`;
-            // wrong numbers look like honest mistakes: adding when you should take away, and so on
-            const mistakes = [A[1] + B + C[1], A[1] - op1 * B + op2 * C[1], A[1] + op1 * B - op2 * C[1], Math.abs(A[1] - B) + C[1], ans + 10, ans - 10, ans + 2, ans - 3];
-            const bad = []; agShuffle(mistakes, rnd).forEach(n => { if (n >= 1 && n <= 120 && n !== ans && !bad.includes(n) && bad.length < 2) bad.push(n); });
-            for (let k = 5; bad.length < 2; k += 4) { const n = ans + k; if (n !== ans && !bad.includes(n)) bad.push(n); }
+                R = pick(AG_RIDDLES);
+                const n = rnd() < 0.45 ? 3 : 2, ks = agShuffle(kinds, rnd).slice(0, n);   // two or three steps, never the same kind twice
+                steps = ks.map(mk);
+                let v = R[1]; ok = true;
+                for (const st of steps) { v = st.f(v); if (v < 2 || v > 150) ok = false; }
+                ans = v; tries++;
+            } while ((!ok || ans < 11 || ans > 99) && tries < 600);
+            // wrong potions carry the numbers people get from honest slips: skipping a step, swapping two, reversing one, being one out at the start
+            const slips = [];
+            steps.forEach((st, i) => {
+                slips.push(fold(R[1], steps.filter((_, j) => j !== i)));
+                const rev = steps.map((x, j) => j === i ? { f: x.inv } : x); slips.push(fold(R[1], rev));
+                if (i + 1 < steps.length) { const sw = steps.slice(); sw[i] = steps[i + 1]; sw[i + 1] = steps[i]; slips.push(fold(R[1], sw)); }
+            });
+            slips.push(fold(R[1] + 1, steps), fold(R[1] - 1, steps), ans + 10, ans - 10, ans + 1, ans - 1);
+            const bad = []; agShuffle(slips, rnd).forEach(n => { if (Number.isFinite(n) && Number.isInteger(n) && n >= 1 && n <= 199 && n !== ans && !bad.includes(n) && bad.length < 2) bad.push(n); });
+            for (let k = 7; bad.length < 2; k += 5) { const n = ans + k; if (n !== ans && !bad.includes(n)) bad.push(n); }
             const cols = agShuffle(AG_POTION_COLOURS, rnd).slice(0, 3);
             const potions = agShuffle([{ role: 'antidote', n: ans }, { role: 'weak', n: bad[0] }, { role: 'deadly', n: bad[1] }], rnd).map((p, i) => Object.assign(p, { c: cols[i] }));
+            const lead = ['Now', 'Then', 'Finally,'];
+            const lines = steps.map((st, i) => `${i === steps.length - 1 ? 'Finally,' : (i === 0 ? 'Now' : 'Then')} <b>${st.text}</b>.`).join('<br>');
+            const html = `<span class="block text-[11px] text-slate-400 mb-1.5">The witch whispers a riddle. Its answer is your starting number:</span>
+                <span class="block italic text-white text-[15px] mb-2.5">&ldquo;${R[0]}.&rdquo;</span>
+                <span class="block text-[14px] leading-snug text-slate-100">${lines}</span>`;
+            return { html, ans, potions, start: R[1], steps: steps.length };
+        }
+        function agPotion(body, rnd, finish, hud) {
+            const { html, potions } = agPotionBuild(rnd);
             let alive = true;
             const bottle = (p) => `<svg viewBox="0 0 80 110" style="width:100%;max-width:92px;display:block;margin:0 auto" aria-hidden="true">
                 <rect x="30" y="4" width="20" height="14" rx="3" fill="#92400e"/><rect x="33" y="16" width="14" height="14" fill="#cbd5e1" opacity=".9"/>
@@ -10491,9 +10551,9 @@
                 <circle cx="40" cy="78" r="15" fill="#fff" opacity=".92"/><text x="40" y="84" text-anchor="middle" font-family="monospace" font-weight="900" font-size="17" fill="#0f172a">${p.n}</text></svg>`;
             body.innerHTML = `<div class="h-full flex flex-col items-center justify-center gap-5 px-4">
                 <div class="max-w-sm w-full rounded-2xl border border-lime-500/40 bg-slate-900/80 p-4 text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-lime-300 mb-1">The riddle</p>
-                    <p class="text-[15px] leading-snug text-white">${text}</p>
-                    <p class="text-[11px] text-slate-400 mt-2">Work out the number, then pick the potion that shows it.</p>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-lime-300 mb-2">The riddle</p>
+                    <p class="leading-snug">${html}</p>
+                    <p class="text-[11px] text-slate-400 mt-2.5">Work out the final number, then pick the potion that shows it.</p>
                 </div>
                 <div class="grid grid-cols-3 gap-3 w-full max-w-sm">${potions.map((p, i) => `<button type="button" data-i="${i}" class="ag-potion rounded-2xl border-2 border-slate-700 bg-slate-900/70 p-2 pb-3 active:scale-95 transition">${bottle(p)}<span class="block text-[11px] font-bold mt-1" style="color:${p.c[1]}">${p.c[0]} potion</span></button>`).join('')}</div></div>`;
             hud('Choose wisely...');
