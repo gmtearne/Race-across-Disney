@@ -8077,16 +8077,15 @@
             return d ? d.name : String(park || 'Other');
         };
         const PR_CP_RANGES = { s: [0, 6, 'Up to 6'], m: [7, 10, '7 to 10'], l: [11, 15, '11 to 15'], x: [16, 999, '16 or more'] };
-        const prFilters = { parks: new Set(), mode: '', diff: '', cps: '', style: '' };
+        const prFilters = { loc: '', mode: '', diff: '', cps: '', style: '' };
         let prFiltersOpen = false;
-        try { const sv = JSON.parse(localStorage.getItem('mmr_pr_filters') || 'null'); if (sv) { (sv.parks || []).forEach(x => prFilters.parks.add(x)); ['mode', 'diff', 'cps', 'style'].forEach(k => { if (typeof sv[k] === 'string') prFilters[k] = sv[k]; }); } } catch (e) {}
-        const prSave = () => { try { localStorage.setItem('mmr_pr_filters', JSON.stringify({ parks: [...prFilters.parks], mode: prFilters.mode, diff: prFilters.diff, cps: prFilters.cps, style: prFilters.style })); } catch (e) {} };
+        try { const sv = JSON.parse(localStorage.getItem('mmr_pr_filters') || 'null'); if (sv) { if (typeof sv.loc === 'string') prFilters.loc = sv.loc; ['mode', 'diff', 'cps', 'style'].forEach(k => { if (typeof sv[k] === 'string') prFilters[k] = sv[k]; }); } } catch (e) {}
+        const prSave = () => { try { localStorage.setItem('mmr_pr_filters', JSON.stringify({ loc: prFilters.loc, mode: prFilters.mode, diff: prFilters.diff, cps: prFilters.cps, style: prFilters.style })); } catch (e) {} };
+        // Which location a listing belongs to: saved on the listing, else worked out from its parks
+        const prListingLoc = l => { if (l.locationId) return l.locationId; const i = Array.isArray(l.parks) && l.parks.length ? window.locAreaInfo(l.parks[0]) : null; return i ? i.loc.id : ''; };
         function prMatches(l) {
             const f = prFilters;
-            if (f.parks.size) {   // "can I do the whole race with the places my ticket covers?"
-                if (!Array.isArray(l.parks) || !l.parks.length) return false;
-                if (!l.parks.every(p => f.parks.has(p))) return false;
-            }
+            if (f.loc && prListingLoc(l) !== f.loc) return false;
             if (f.mode && (l.gameMode === 'scavenger' ? 'scavenger' : 'race') !== f.mode) return false;
             if (f.diff && (l.difficulty || 'easy') !== f.diff) return false;
             if (f.cps) { const r = PR_CP_RANGES[f.cps], n = Number(l.checkpointCount) || 0; if (!r || n < r[0] || n > r[1]) return false; }
@@ -8098,7 +8097,7 @@
             bits.push(({ easy: 'Easy', medium: 'Medium', hard: 'Hard' })[l.difficulty || 'easy'] || 'Easy');
             if (Number(l.checkpointCount) > 0) bits.push(l.checkpointCount + ' stops');
             const pr = l.rules && l.rules.preset; if (pr === 'casual' || pr === 'competitive') bits.push(pr === 'casual' ? 'Casual' : 'Competitive');
-            if (Array.isArray(l.parks) && l.parks.length) bits.push('📍 ' + l.parks.join(', '));
+            if (Array.isArray(l.parks) && l.parks.length) { const ai = window.locAccessInfo(l.parks, l.locationId); bits.push('📍 ' + (ai.label || l.parks.join(', '))); }
             return bits.join(' · ');
         }
         const prActiveCount = () => (prFilters.mode ? 1 : 0) + (prFilters.diff ? 1 : 0) + (prFilters.cps ? 1 : 0) + (prFilters.style ? 1 : 0);
@@ -8106,25 +8105,19 @@
             const box = document.getElementById('public-races-filters'); if (!box) return;
             const list = publicRacesState.list || [];
             if (!list.length) { box.innerHTML = ''; return; }
-            // parks that exist in the listings, grouped by destination
-            const parkSet = new Set(); list.forEach(l => (l.parks || []).forEach(p => parkSet.add(p)));
-            prFilters.parks.forEach(p => { if (!parkSet.has(p)) prFilters.parks.delete(p); });   // forget parks that no longer have a race
-            const groups = new Map(); [...parkSet].sort().forEach(p => { const d = window.destinationFor(p); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(p); });
+            if (prFilters.loc && !window.locById(prFilters.loc)) prFilters.loc = '';
             const chip = (on, label, attrs) => `<button type="button" ${attrs} class="px-3 py-1.5 rounded-full border text-[11px] font-bold transition active:scale-95 ${on ? 'bg-emerald-500/20 border-emerald-400/70 text-emerald-200' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}">${label}</button>`;
-            const parkChips = [...groups.entries()].map(([dest, parks]) => `
-                ${groups.size > 1 ? `<p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2 mb-1">${escHtml(dest)}</p>` : ''}
-                <div class="flex flex-wrap gap-1.5">${parks.map(p => chip(prFilters.parks.has(p), `${window.areaIcon ? window.areaIcon(p) : '📍'} ${escHtml(p)}`, `data-p="${escHtml(p)}" onclick="prTogglePark(this.dataset.p)"`)).join('')}</div>`).join('');
+            const counts = {}; list.forEach(l => { const k = prListingLoc(l); counts[k] = (counts[k] || 0) + 1; });
+            const locChips = chip(!prFilters.loc, 'All', `onclick="prSetLoc('')"`) + window.locList().map(l => chip(prFilters.loc === l.id, `${l.icon || '📍'} ${escHtml(l.name)}${counts[l.id] ? ` <span class="opacity-60">${counts[l.id]}</span>` : ''}`, `onclick="prSetLoc('${escHtml(l.id)}')"`)).join('');
             const seg = (key, opts) => `<div class="flex flex-wrap gap-1.5">${opts.map(([v, label]) => chip(prFilters[key] === v, label, `onclick="prSetFilter('${key}','${v}')"`)).join('')}</div>`;
             const lbl = (t) => `<p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">${t}</p>`;
             const n = prActiveCount(), shownCount = list.filter(prMatches).length;
             box.innerHTML = `
                 <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-3 space-y-2">
                     <div class="flex items-center justify-between gap-2">
-                        <p class="text-xs font-bold text-white">📍 Where can you race?</p>
-                        ${prFilters.parks.size ? `<button type="button" onclick="prClearParks()" class="text-[10px] font-bold text-slate-400 underline">Any park</button>` : ''}
+                        <p class="text-xs font-bold text-white">📍 Where do you want to race?</p>
                     </div>
-                    <p class="text-[10px] text-slate-400 leading-snug">${prFilters.parks.size ? 'Showing races you can do entirely within the places you picked.' : 'Showing every race (park hopper). Pick the places your ticket covers to narrow it down.'}</p>
-                    <div>${parkChips || '<p class="text-[11px] text-slate-500">Location details are not available for these races yet.</p>'}</div>
+                    <div class="flex flex-wrap gap-1.5">${locChips}</div>
                     <div class="flex items-center justify-between gap-2 pt-1">
                         <button type="button" onclick="prToggleFilterPanel()" class="px-3 py-2 rounded-xl bg-slate-800 border ${n ? 'border-emerald-400/60 text-emerald-200' : 'border-slate-600 text-slate-200'} text-[11px] font-bold flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i> Filters${n ? ` <span class="px-1.5 rounded-full bg-emerald-500/30 text-[10px]">${n}</span>` : ''}</button>
                         <span class="text-[11px] text-slate-400">${shownCount} of ${list.length} race${list.length === 1 ? '' : 's'}</span>
@@ -8134,15 +8127,14 @@
                         <div>${lbl('Difficulty')}${seg('diff', [['', 'All'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']])}</div>
                         <div>${lbl('Checkpoints')}${seg('cps', [['', 'Any'], ...Object.entries(PR_CP_RANGES).map(([k, r]) => [k, r[2]])])}</div>
                         <div>${lbl('Style')}${seg('style', [['', 'All'], ['casual', 'Casual'], ['competitive', 'Competitive']])}</div>
-                        ${(n || prFilters.parks.size) ? `<button type="button" onclick="prClearFilters()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-[11px] font-bold">Clear all filters</button>` : ''}
+                        ${(n || prFilters.loc) ? `<button type="button" onclick="prClearFilters()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 text-[11px] font-bold">Clear all filters</button>` : ''}
                     </div>
                 </div>`;
         }
-        window.prTogglePark = function (p) { if (prFilters.parks.has(p)) prFilters.parks.delete(p); else prFilters.parks.add(p); prSave(); renderPublicRaces(); };
-        window.prClearParks = function () { prFilters.parks.clear(); prSave(); renderPublicRaces(); };
+        window.prSetLoc = function (id) { prFilters.loc = id || ''; prSave(); renderPublicRaces(); };
         window.prSetFilter = function (k, v) { prFilters[k] = prFilters[k] === v ? '' : v; prSave(); renderPublicRaces(); };
         window.prToggleFilterPanel = function () { prFiltersOpen = !prFiltersOpen; renderPublicRaces(); };
-        window.prClearFilters = function () { prFilters.parks.clear(); prFilters.mode = prFilters.diff = prFilters.cps = prFilters.style = ''; prSave(); renderPublicRaces(); };
+        window.prClearFilters = function () { prFilters.loc = ''; prFilters.mode = prFilters.diff = prFilters.cps = prFilters.style = ''; prSave(); renderPublicRaces(); };
 
         function renderPublicRaces() {
             const listEl = document.getElementById('public-races-list');
@@ -8186,6 +8178,18 @@
             if (!document.getElementById('public-races-box').classList.contains('hidden')) window.loadPublicRaces();
         };
 
+        // "Where you'll race": the places a player must have access to (e.g. Animal Kingdom only, Park Hopper, City Centre only)
+        function prAccessHtml(l) {
+            if (!Array.isArray(l.parks) || !l.parks.length) return '';
+            const ai = window.locAccessInfo(l.parks, l.locationId);
+            const tone = ai.kind === 'hopper' ? 'border-amber-400/50 bg-amber-500/10 text-amber-200' : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200';
+            return `<div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-3 space-y-2">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-location-dot text-emerald-300 mr-1.5"></i>Where you'll race${ai.loc ? ' · ' + escHtml(ai.loc.name) : ''}</p>
+                <p class="text-sm font-black text-white">${escHtml(ai.label || l.parks.join(', '))}</p>
+                <div class="flex flex-wrap gap-1.5">${ai.areas.map(a => `<span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${tone}">${a.icon} ${escHtml(a.name)}</span>`).join('')}</div>
+                ${ai.detail ? `<p class="text-[11px] text-slate-400 leading-snug">${escHtml(ai.detail)}</p>` : ''}
+            </div>`;
+        }
         window.openPublicRace = function(id) {
             const l = publicRacesState.list.find(x => x.id === id);
             if (!l) return;
@@ -8205,6 +8209,7 @@
                 `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${isHunt ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}">${isHunt ? 'Scavenger Hunt' : 'Speed Race'}</span>`;
             document.getElementById('pr-body').innerHTML = `
                 ${l.description ? `<p class="leading-relaxed whitespace-pre-line">${escHtml(l.description)}</p>` : ''}
+                ${prAccessHtml(l)}
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl px-4 divide-y divide-slate-800 text-xs">
                     ${row('Price', prMoney(l.priceCents) + ' per team')}
                     ${row('Duration', escHtml(prDurationText(l)))}
@@ -8804,6 +8809,7 @@
                 timeLimitMinutes: Number(race.timeLimitMinutes) || 0,
                 checkpointCount: (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').length,
                 parks: [...new Set((race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean))],
+                locationId: window.locIdForRace ? window.locIdForRace(race) : '',
                 active: true,
                 organizerId: window.auth.currentUser.uid,
                 listedAt: (prev && prev.listedAt) || new Date().toISOString(),
