@@ -44,6 +44,9 @@ window.registerLocation({
 
     // Maps page + hints + replays. This is the only location with a vector map; every other location falls back to OpenStreetMap
     // until it gets its own `vector` entry here (build a data file, then add: vector: { data: "<file>.json?v=1", bounds: [[south, west], [north, east]] }).
+    // Wording for public-race access ("you need a Park Hopper"): only the four theme parks count towards "everything".
+    access: { noun: "park", hopperLabel: "Park Hopper", hopperAreas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"] },
+
     map: {
         vector: { data: "wdw-map.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
         areas: [
