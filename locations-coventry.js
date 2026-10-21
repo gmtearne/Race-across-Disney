@@ -14,6 +14,20 @@ window.registerLocation({
     center: { lat: 52.4082, lng: -1.5073 },
     features: { hiddenMickeyBingo: false },
 
+    // Local flavour for the report card. Anything missing falls back to the generic wording in locations-registry.js.
+    flavour: {
+        tagline: "Think your team can beat the Coventry loop? Play The Amazing Mouse Race! 🏁",
+        flawless: [
+            "Top marks! Coventry locals would be proud. 🏙️✨",
+            "Flawless. Not even the ring road could confuse you. 🔄😎"
+        ],
+        roasts: [
+            "{guess}? The answer to {question} was {answer}. Even the Coventry ring road makes more sense. 🔄🤦",
+            "Oof! You said {guess} for {question}. It was {answer}. Peeping Tom saw that and looked away. 🙈",
+            "{question} It was {answer}, not {guess}. Your mates would be ashamed. 🤦"
+        ]
+    },
+
     areas: [
         { name: "City Centre",           icon: "🏛️" },
         { name: "CV6 & Holbrooks",       icon: "🏘️" },
@@ -28,6 +42,8 @@ window.registerLocation({
             { id: "taxi",  label: "Taxi / car",    emoji: "🚕" },
             { id: "none",  label: "None (walked)", emoji: "🚶" }
         ],
+        advice: [],
+        adviceFallback: "Plan your route on foot, by bus or by train. Keep an eye on the time!",
         transferRules: [],
         transferNoun: "stop",
         transferOther: "Other / not listed",
