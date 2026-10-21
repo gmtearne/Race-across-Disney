@@ -23,7 +23,9 @@
     <!-- External Trivia Database -->
     <script src="trivia-data.js"></script>
     <!-- External Locations Database -->
-    <script src="locations-data.js"></script>
+    <script src="locations-registry.js"></script>
+    <script src="locations-wdw.js"></script>
+    <script src="locations-coventry.js"></script>
     <script src="fun-facts.js"></script>
     <script>
     // Optional card background photos for Easy / Medium modes.
@@ -2355,6 +2357,11 @@
                         <h4 class="font-bold text-violet-200">⚙️ Default checkpoint scoring</h4>
                         <div id="create-hunt-points-inline"><label class="block text-xs text-slate-300 mb-1">Scavenger Hunt checkpoint points</label><input id="create-hunt-default-points" type="number" min="0" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white"></div>
                     </div>
+                    <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-2">
+                        <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Location</label>
+                        <select id="create-location-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold"></select>
+                        <p id="create-location-note" class="text-[11px] text-slate-500">Stops, areas and bonus challenges below come from this location only.</p>
+                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-slate-700/80 space-y-3">
                                     <label class="block text-xs font-bold text-disneyGold uppercase tracking-wider">Checkpoints</label>
 
@@ -2404,7 +2411,7 @@
                                     <div id="pop-box-preset" class="hidden space-y-3 pt-2">
                                         <label class="block text-[11px] text-slate-300">Select pre-configured park group:</label>
                                         <select id="preset-park-select" class="app-select w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-disneyGold">
-                                            <option value="all">🌟 All Disney Locations</option>
+                                            <option value="all">🌟 All stops</option>
                                             <option value="Magic Kingdom">🏰 Magic Kingdom Park (All Stops)</option>
                                             <option value="Epcot">🌐 Epcot Park (All Stops)</option>
                                             <option value="Hollywood Studios">🎬 Disney's Hollywood Studios (All Stops)</option>
@@ -2468,7 +2475,7 @@
                                     </div>
                                     </div>
                                 </div>
-                    <div class="bg-slate-900 p-4 rounded-3xl border border-disneyGold/40 space-y-3">
+                    <div id="create-bingo-card" class="bg-slate-900 p-4 rounded-3xl border border-disneyGold/40 space-y-3">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
                                             <span class="block text-xs font-bold text-disneyGold uppercase tracking-wider">🐭 Hidden Mickey Bingo</span>
@@ -3632,11 +3639,66 @@
             if (idx === -1) picked.push(finalPreset); else picked[idx] = finalPreset;
         }
 
-        // Areas are built from the location list itself, so new areas (Disney Springs, Resorts...) appear automatically
+        // ================= LOCATION PICKER (wizard) =================
+        // Hosts pick a location first (data in locations-*.js, one file per destination). Random, By Area, Pre-set, Manual and the
+        // bonus challenges then use only that location's stops. The choice is saved on the race as races/{code}.locationId.
+        let wizLocId = '';
+        try { wizLocId = localStorage.getItem('mmr_wiz_loc') || ''; } catch (e) {}
+        window.wizLoc = function () {
+            const el = document.getElementById('create-location-select');
+            const v = (el && el.value) || wizLocId;
+            return window.LOCATIONS && window.LOCATIONS[v] ? v : (window.locDefaultId ? window.locDefaultId() : '');
+        };
+        window.populateLocationSelect = function () {
+            const sel = document.getElementById('create-location-select');
+            if (!sel || !window.locGrouped) return;
+            const keep = window.wizLoc();
+            sel.innerHTML = window.locGrouped().map(g => `<optgroup label="${escHtml(g.region.name.toUpperCase())}">${g.locations.map(l => `<option value="${escHtml(l.id)}" data-icon="${escHtml(l.icon || '📍')}" data-sub="${escHtml(l.blurb || '')}">${escHtml(l.name)}</option>`).join('')}</optgroup>`).join('');
+            sel.value = keep;
+        };
+        // Re-draw everything that depends on the chosen location
+        window.wizApplyLocation = function () {
+            const id = window.wizLoc(), loc = window.locById(id);
+            Object.keys(areaRandomState).forEach(k => delete areaRandomState[k]);
+            document.querySelectorAll('input[name="manual_cp_checkbox"]:checked, input[name="manual_bonus_checkbox"]:checked').forEach(cb => { cb.checked = false; });
+            const ps = document.getElementById('preset-park-select'); if (ps) ps.value = 'all';
+            renderAreaRandomList(); renderManualCheckboxList();
+            if (window.renderBonusCheckboxList) window.renderBonusCheckboxList();
+            if (window.populatePresetParkSelect) window.populatePresetParkSelect();
+            updateCreationFinalStopDropdown();
+            const note = document.getElementById('create-location-note');
+            if (note && loc) note.textContent = `${loc.areas.length} area${loc.areas.length === 1 ? '' : 's'} · ${loc.stops.length} stops · ${loc.bonuses.length} bonus challenges`;
+            // Features that only exist at some places
+            const bingoOk = !!(loc && loc.features && loc.features.hiddenMickeyBingo);
+            const bc = document.getElementById('create-bingo-card'); if (bc) bc.classList.toggle('hidden', !bingoOk);
+            if (!bingoOk) { const sw = document.getElementById('create-bingo-switch'); if (sw && sw.checked) { sw.checked = false; if (window.toggleBingoCreateSettings) window.toggleBingoCreateSettings(); } }
+        };
+        window.wizOnOpen = function () {
+            window.populateLocationSelect();
+            const demo = !!(window.isHostDemo && window.isHostDemo());
+            const sel = document.getElementById('create-location-select');
+            if (sel && demo && window.LOCATIONS && window.LOCATIONS.wdw) sel.value = 'wdw';   // demo hosts: Walt Disney World, Magic Kingdom only
+            const btn = sel && sel.nextElementSibling;
+            if (btn && btn.tagName === 'BUTTON') { btn.disabled = demo; btn.classList.toggle('opacity-60', demo); }
+            const note = document.getElementById('create-location-note');
+            window.wizApplyLocation();
+            if (demo && note) note.textContent = 'Demo mode is limited to Walt Disney World (Magic Kingdom). A host pass unlocks every location.';
+        };
+        window.onWizardLocationChange = async function () {
+            const sel = document.getElementById('create-location-select'); if (!sel) return;
+            const next = sel.value, prev = wizLocId || window.locDefaultId();
+            const ticked = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked, input[name="manual_bonus_checkbox"]:checked').length;
+            if (next !== prev && ticked && !(await appConfirm('Changing location clears the stops and bonus challenges you ticked.', { title: 'Change location?', confirmText: 'Change' }))) { sel.value = prev; return; }
+            wizLocId = next;
+            try { localStorage.setItem('mmr_wiz_loc', next); } catch (e) {}
+            window.wizApplyLocation();
+        };
+
+        // Areas are built from the chosen location, so each destination shows only its own parks and zones
         function getPresetAreas() {
             const counts = new Map();
             (window.DISNEY_PRESETS || []).forEach(p => {
-                if (p.type === 'BONUS_PHOTO') return;
+                if (p.type === 'BONUS_PHOTO' || p.loc !== window.wizLoc()) return;
                 counts.set(p.park, (counts.get(p.park) || 0) + 1);
             });
             return [...counts.entries()].map(([name, count]) => ({ name, count }));
@@ -3744,13 +3806,13 @@
             const toggle = (track) => `<span class="relative inline-flex items-center shrink-0"><input type="checkbox" name="manual_cp_checkbox" %ATTRS% onchange="updateCreationFinalStopDropdown()" class="sr-only peer"><span class="w-11 h-6 bg-slate-700 rounded-full ${track} after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 shadow-inner transition-colors"></span></span>`;
             const matches = (p) => p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query);
             const indexed = presets.map((p, idx) => ({ ...p, originalIndex: idx }));
-            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))];
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.loc === window.wizLoc()).map(p => p.park))];
 
             let html = '';
             parks.forEach(parkName => {
                 const theme = themeFor(parkName);
                 const icon = window.areaIcon ? window.areaIcon(parkName) : '📍';
-                const items = indexed.filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && matches(p));
+                const items = indexed.filter(p => p.type !== 'BONUS_PHOTO' && p.loc === window.wizLoc() && p.park === parkName && matches(p));
                 if (!items.length) return;
                 const safePark = String(parkName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 html += `
@@ -3818,7 +3880,7 @@
             if (!container) return;
             const query = (document.getElementById('bonus-search-input')?.value || "").toLowerCase();
             const items = (window.DISNEY_PRESETS || []).map((p, idx) => ({ ...p, originalIndex: idx }))
-                .filter(p => p.type === 'BONUS_PHOTO' && (!(window.isHostDemo && window.isHostDemo()) || window.bonusAppliesToAreas(p, new Set([window.DEMO_CONFIG.park]))) && (p.name.toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query)));
+                .filter(p => p.type === 'BONUS_PHOTO' && p.loc === window.wizLoc() && (!(window.isHostDemo && window.isHostDemo()) || window.bonusAppliesToAreas(p, new Set([window.DEMO_CONFIG.park]))) && (p.name.toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query)));
             const ticked = new Set(Array.from(document.querySelectorAll('input[name="manual_bonus_checkbox"]:checked')).map(cb => cb.value));
             container.innerHTML = items.map(p => `
                 <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/25 bg-amber-950/20 cursor-pointer active:scale-[0.98] transition has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/40">
@@ -3838,16 +3900,17 @@
             const selectEl = document.getElementById('create-final-stop-select');
             if (!selectEl) return;
             const presets = window.DISNEY_PRESETS || [];
+            const locPre = presets.filter(p => p.loc === window.wizLoc());   // only the chosen location's stops
 
             let candidateStops = [];
             if (creationPopMethod === 'preset') {
                 const parkVal = document.getElementById('preset-park-select').value;
                 if (parkVal === 'all') {
-                    candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
+                    candidateStops = locPre.filter(p => p.type !== 'BONUS_PHOTO');
                 } else if (parkVal === 'Bonus Challenge') {
                     candidateStops = [];
                 } else {
-                    candidateStops = presets.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
+                    candidateStops = locPre.filter(p => p.park === parkVal && p.type !== 'BONUS_PHOTO');
                 }
             } else if (creationPopMethod === 'manual') {
                 const checkedBoxes = document.querySelectorAll('input[name="manual_cp_checkbox"]:checked');
@@ -3857,9 +3920,9 @@
                 });
             } else if (creationPopMethod === 'area') {
                 const live = Object.keys(areaRandomState).filter(n => areaRandomState[n].enabled && areaRandomState[n].count > 0);
-                candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO' && live.includes(p.park));
+                candidateStops = locPre.filter(p => p.type !== 'BONUS_PHOTO' && live.includes(p.park));
             } else {
-                candidateStops = presets.filter(p => p.type !== 'BONUS_PHOTO');
+                candidateStops = locPre.filter(p => p.type !== 'BONUS_PHOTO');
             }
 
             const previous = selectEl.value;
@@ -4947,7 +5010,7 @@
         // else (banner, bonus cards, claim lock, awards) keeps working unchanged.
         // The random moment comes from a seed built from the race, so every phone agrees without talking.
         // ---------------------------------------------------------------------------------
-        // Bonuses have no GPS point. locations-data.js gives each one an "areas" list (parks it can physically be done in,
+        // Bonuses have no GPS point. the location files (locations-*.js) give each one an "areas" list (parks it can physically be done in,
         // or ["*"] for anywhere). A wildcard may only pick a bonus whose areas overlap a park the race already has stops in.
         // Bonuses without areas (e.g. ones a host typed in): a real park name must match; anything else counts as "anywhere".
         window.bonusAppliesToAreas = function(bonus, parks) {
@@ -4964,7 +5027,7 @@
             const cps = race.checkpoints || [];
             const parks = new Set(cps.filter(c => c.type !== 'BONUS_PHOTO').map(c => c.park).filter(Boolean));
             const have = new Set(cps.map(c => c.name));
-            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !have.has(p.name) && window.bonusAppliesToAreas(p, parks));
+            const pool = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && p.loc === window.locIdForRace(race) && !have.has(p.name) && window.bonusAppliesToAreas(p, parks));
             if (!pool.length) return null;
             const p = pool[Math.floor(Math.random() * pool.length)];
             const ded = Number(race.defaultWildcardReward ?? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10));
@@ -4972,8 +5035,8 @@
                 id: 'cp_wc_' + Date.now(),
                 name: p.name,
                 type: 'BONUS_PHOTO',
-                lat: p.lat || 28.4177,
-                lng: p.lng || -81.5812,
+                lat: p.lat || window.locCenter(p.loc).lat,
+                lng: p.lng || window.locCenter(p.loc).lng,
                 points: ded,
                 bonusMinDeduction: ded,
                 park: p.park || 'Bonus Challenge',
@@ -5459,6 +5522,8 @@
             if (isScavengerMode && (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0 || timeLimitMinutes > 1440)) return alert('Scavenger time limit must be a whole number from 0 to 1440 minutes.');
             if (!isScavengerMode && enforceHostStart && startMode === 'staggered' && (!Number.isFinite(staggerMinutes) || staggerMinutes < 1 || staggerMinutes > 120)) return alert('Late-team interval must be between 1 and 120 minutes.');
             const presets = window.DISNEY_PRESETS || [];
+            const wizLocNow = window.wizLoc();
+            const wizLocPack = window.locById(wizLocNow);
             
             const triviaToggle = document.getElementById('create-trivia-switch').checked ? 'on' : 'off';
             const triviaFreq = document.getElementById('trivia-frequency').value;
@@ -5503,8 +5568,8 @@
                     id: prefix + Date.now() + '_' + idx,
                     name: p.name,
                     type: p.type || "GPS",
-                    lat: p.lat || 28.4177,
-                    lng: p.lng || -81.5812,
+                    lat: p.lat || window.locCenter(p.loc).lat,
+                    lng: p.lng || window.locCenter(p.loc).lng,
                     points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : 10,
                     park: p.park || "Disney",
@@ -5516,7 +5581,7 @@
                 const spreadRadius = ((window.CHECKIN_RADIUS_BY_DIFFICULTY || {})[difficulty] || window.CHECKIN_RADIUS_METERS || 50) + ((window.CHECKIN_BUFFER_BY_DIFFICULTY || {})[difficulty] ?? 15);   // radius + accuracy buffer
                 if (creationPopMethod === 'random') {
                     const gpsReq = demo ? DEMO.maxStops : (parseInt(document.getElementById('rand-gps-count').value) || 10);
-                    const gpsOnly = presets.filter(p => p.type === 'GPS' && (!demo || p.park === DEMO.park));
+                    const gpsOnly = presets.filter(p => p.type === 'GPS' && p.loc === wizLocNow && (!demo || p.park === DEMO.park));
                     const spread = window.selectSpreadStops(gpsOnly, gpsReq, { radiusM: spreadRadius, seed: (finalPreset && gpsOnly.includes(finalPreset)) ? finalPreset : null });
                     spreadRelaxed += spread.relaxed.length; spreadShort += spread.short;
                     const shuffledGps = spread.picked;
@@ -5526,8 +5591,8 @@
                         id: 'cp_rand_' + Date.now() + '_' + idx,
                         name: p.name,
                         type: p.type || "GPS",
-                        lat: p.lat || 28.4177,
-                        lng: p.lng || -81.5812,
+                        lat: p.lat || window.locCenter(p.loc).lat,
+                        lng: p.lng || window.locCenter(p.loc).lng,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
                         bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints,
                         park: p.park || "Disney",
@@ -5542,7 +5607,7 @@
                         if (!st || !st.enabled) return;
                         switchedOn.push(a.name);
                         if (st.count <= 0) return;
-                        const spread = window.selectSpreadStops(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.park === a.name), st.count, { radiusM: spreadRadius, seed: (finalPreset && finalPreset.park === a.name && finalPreset.type !== 'BONUS_PHOTO') ? finalPreset : null });
+                        const spread = window.selectSpreadStops(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.loc === wizLocNow && p.park === a.name), st.count, { radiusM: spreadRadius, seed: (finalPreset && finalPreset.park === a.name && finalPreset.type !== 'BONUS_PHOTO') ? finalPreset : null });
                         spreadRelaxed += spread.relaxed.length; spreadShort += spread.short;
                         picked.push(...spread.picked);
                     });
@@ -5564,8 +5629,8 @@
                             id: 'cp_man_' + Date.now() + '_' + idx,
                             name: p.name,
                             type: p.type || "GPS",
-                            lat: p.lat || 28.4177,
-                            lng: p.lng || -81.5812,
+                            lat: p.lat || window.locCenter(p.loc).lat,
+                            lng: p.lng || window.locCenter(p.loc).lng,
                             points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
                             bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints,
                             park: p.park || "Disney",
@@ -5574,13 +5639,13 @@
                     });
                 } else if (creationPopMethod === 'preset') {
                     const parkVal = document.getElementById('preset-park-select').value;
-                    const filtered = presets.filter(p => p.type !== 'BONUS_PHOTO' && (parkVal === 'all' || p.park === parkVal));
+                    const filtered = presets.filter(p => p.type !== 'BONUS_PHOTO' && p.loc === wizLocNow && (parkVal === 'all' || p.park === parkVal));
                     initialCps = filtered.map((p, idx) => ({
                         id: 'cp_pre_' + Date.now() + '_' + idx,
                         name: p.name,
                         type: p.type || "GPS",
-                        lat: p.lat || 28.4177,
-                        lng: p.lng || -81.5812,
+                        lat: p.lat || window.locCenter(p.loc).lat,
+                        lng: p.lng || window.locCenter(p.loc).lng,
                         points: p.type === 'BONUS_PHOTO' ? (p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints) : defaultPoints,
                         bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints,
                         park: p.park || "Disney",
@@ -5618,7 +5683,7 @@
                     const raw = parseInt(document.getElementById('bonus-rand-count').value);
                     const bonusReq = Number.isFinite(raw) ? Math.max(0, raw) : 0;
                     const stopAreas = new Set(initialCps.map(c => c.park).filter(Boolean));
-                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && !bingoNames.has(p.name) && window.bonusAppliesToAreas(p, stopAreas) && (!demo || window.bonusAppliesToAreas(p, new Set([DEMO.park]))));
+                    const pool = presets.filter(p => p.type === 'BONUS_PHOTO' && p.loc === wizLocNow && !bingoNames.has(p.name) && window.bonusAppliesToAreas(p, stopAreas) && (!demo || window.bonusAppliesToAreas(p, new Set([DEMO.park]))));
                     bonusPicked = pickRandom(pool, bonusReq);
                 }
                 // The wildcard is always a NEW bonus (drawn from the bonus library when it fires), so nothing is reserved here.
@@ -5676,6 +5741,7 @@
                         randomCount: triviaCount
                     },
                     organizerId: currentUser.uid,
+                    locationId: wizLocNow,
                     checkpoints: initialCps,
                     finalCheckpointId: finalCheckpointId,
                     createdAt: new Date().toISOString()
@@ -5698,6 +5764,7 @@
                         gpsCount: initialCps.filter(c => c.type !== 'BONUS_PHOTO').length,
                         bonusCount: initialCps.filter(c => c.type === 'BONUS_PHOTO' && !c.bingoId).length,
                         bingoName: bingoInfo ? bingoInfo.name : '',
+                        locationName: wizLocPack ? wizLocPack.name : '',
                         timeLimitMinutes, enforceHostStart, startMode, staggerMinutes,
                         trivia: { enabled: triviaToggle === 'on', frequency: triviaFreq, randomCount: triviaCount },
                         wildcardAuto, rules: raceRules, missedPenaltyMin,
@@ -5879,6 +5946,7 @@
                 const label = rwEl('rw-step-label'); if (label) label.textContent = 'Step 1 of 7';
                 const heading = rwEl('rw-step-title'); if (heading) heading.textContent = 'Name your race';
             }
+            try { if (window.wizOnOpen) window.wizOnOpen(); } catch (err) { console.error('Location picker could not be set up:', err); }
             try { if (window.applyWizardDemoLimits) window.applyWizardDemoLimits(); } catch (err) { console.error('Demo limits could not be applied:', err); }
             setTimeout(() => { if (rwStep === 1 && !rwDone) rwEl('new-race-title')?.focus(); }, 380);
         };
@@ -5987,6 +6055,7 @@
             let trivia = 'Off';
             if (info.trivia.enabled) trivia = info.trivia.frequency === 'random' ? `${info.trivia.randomCount} random check-ins` : 'Every check-in';
             const rows = [
+                ...(info.locationName ? [rwRow('Location', info.locationName)] : []),
                 rwRow('Mode', isHunt ? 'Scavenger Hunt' : 'Speed Race'),
                 rwRow('Difficulty', diffNames[info.difficulty] || info.difficulty),
                 rwRow('Checkpoints', stops)
@@ -6571,6 +6640,7 @@
 
         // ================= HOST EDIT MODAL LOGIC =================
         let editingRaceActiveCheckpoints = [];
+        let editingRaceLocId = '';
         let editingRaceGameMode = 'race';
         let editingRaceFinalCheckpointId = null;
 
@@ -6586,6 +6656,7 @@
 
                 document.getElementById('edit-modal-race-code').value = raceCode;
                 editingRaceActiveCheckpoints = (race.checkpoints || []).filter(cp => cp.type !== 'BONUS_PHOTO');
+                editingRaceLocId = window.locIdForRace(race);
                 editingRaceGameMode = race.gameMode || 'race';
                 editingRaceFinalCheckpointId = race.finalCheckpointId || null;
 
@@ -6821,7 +6892,7 @@
             if (note) note.textContent = areas.size ? `Showing challenges applicable to this race’s GPS areas: ${areaText}.` : 'Add GPS checkpoints to the race first so matching photo challenges can be found.';
             const query = (document.getElementById('host-add-bonus-search')?.value || '').toLowerCase();
             const chosen = new Set(hostBonusDraft.map(cp => cp.name));
-            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && !chosen.has(p.name) && window.bonusAppliesToAreas(p, areas) && (String(p.name || '').toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query) || String(p.land || '').toLowerCase().includes(query)));
+            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && p.loc === window.locIdForRace(race) && !chosen.has(p.name) && window.bonusAppliesToAreas(p, areas) && (String(p.name || '').toLowerCase().includes(query) || String(p.park || '').toLowerCase().includes(query) || String(p.land || '').toLowerCase().includes(query)));
             el.innerHTML = presets.map(p => {
                 const key = String(p.name);
                 return `<label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700 bg-slate-950 cursor-pointer has-[:checked]:border-amber-500/60 has-[:checked]:bg-amber-950/20">
@@ -6834,11 +6905,11 @@
             const race = hostBonusRace();
             if (!race) return;
             const areas = hostBonusAreas(race);
-            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && hostBonusPendingAdd.has(String(p.name)) && window.bonusAppliesToAreas(p, areas));
+            const presets = (window.DISNEY_PRESETS || []).filter(p => p.type === 'BONUS_PHOTO' && p.loc === window.locIdForRace(race) && hostBonusPendingAdd.has(String(p.name)) && window.bonusAppliesToAreas(p, areas));
             presets.forEach(p => {
                 hostBonusDraft.push({
                     id: 'cp_bonus_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-                    name: p.name, type: 'BONUS_PHOTO', lat: p.lat || 28.4177, lng: p.lng || -81.5812,
+                    name: p.name, type: 'BONUS_PHOTO', lat: p.lat || window.locCenter(p.loc).lat, lng: p.lng || window.locCenter(p.loc).lng,
                     points: Number(p.bonusMinDeduction ?? 10), bonusMinDeduction: Number(p.bonusMinDeduction ?? 10),
                     park: p.park || 'Disney', land: p.land || 'Attraction Area'
                 });
@@ -6891,7 +6962,7 @@
             const presets = window.DISNEY_PRESETS || [];
 
             const activeIds = new Set(editingRaceActiveCheckpoints.map(c => c.name));
-            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO').map(p => p.park))].filter(pk => !(window.isHostDemo && window.isHostDemo()) || pk === window.DEMO_CONFIG.park);
+            const parks = [...new Set(presets.filter(p => p.type !== 'BONUS_PHOTO' && p.loc === editingRaceLocId).map(p => p.park))].filter(pk => !(window.isHostDemo && window.isHostDemo()) || pk === window.DEMO_CONFIG.park);
             const parkThemes = {
                 "Magic Kingdom": { bg: "bg-rose-950/20", border: "border-rose-500/30", text: "text-rose-300", icon: "🏰" },
                 "Epcot": { bg: "bg-blue-950/20", border: "border-blue-500/30", text: "text-blue-300", icon: "🌐" },
@@ -6902,7 +6973,7 @@
             let html = '';
             parks.forEach(parkName => {
                 const theme = parkThemes[parkName] || { bg: "bg-sky-950/20", border: "border-sky-500/30", text: "text-sky-300", icon: (window.areaIcon ? window.areaIcon(parkName) : "📍") };
-                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.park === parkName && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
+                const parkItems = presets.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.type !== 'BONUS_PHOTO' && p.loc === editingRaceLocId && p.park === parkName && !activeIds.has(p.name) && (p.name.toLowerCase().includes(query) || p.park.toLowerCase().includes(query)));
 
                 if (parkItems.length > 0) {
                     html += `
@@ -6973,8 +7044,8 @@
                     id: 'cp_add_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
                     name: p.name,
                     type: "GPS",
-                    lat: p.lat || 28.4177,
-                    lng: p.lng || -81.5812,
+                    lat: p.lat || window.locCenter(p.loc).lat,
+                    lng: p.lng || window.locCenter(p.loc).lng,
                     points: editingRaceGameMode === 'scavenger' ? 10 : 0,
                     bonusMinDeduction: p.bonusMinDeduction !== undefined ? p.bonusMinDeduction : defaultBonusPoints,
                     park: p.park || "Disney",
@@ -7754,7 +7825,7 @@
                     </div>
                 </div>
                 <div class="border-t border-slate-800 pt-3 space-y-3">
-                    ${hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Hidden Mickey Bingo', 'Photograph four hidden Mickeys on a 2×2 card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600')}
+                    ${(bi.enabled || ((window.locForRace(race) || {}).features || {}).hiddenMickeyBingo) ? hrpToggle('fa-solid fa-bullseye', 'text-yellow-300', 'Hidden Mickey Bingo', 'Photograph four hidden Mickeys on a 2×2 card', !!bi.enabled, `toggleHostBonusOptions('${code}','bingo',this)`, 'peer-checked:bg-yellow-600') : ''}
                     <div id="hrp-bingo-options" class="${bi.enabled ? '' : 'hidden'} border-t border-slate-800 pt-3 space-y-3">
                         <div><label class="block text-[10px] text-slate-400 mb-1">Completed-card reward</label><input id="hrp-bingo-reward" type="number" min="1" value="${Number(bi.reward)||20}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white"></div>
                         <div><label class="block text-[10px] text-slate-400 mb-1">Rules</label>${selectOpts('hrp-bingo-rule',[['casual','Every team can win'],['one','Only one winner']],bi.onlyOneWinner?'one':'casual')}</div>
@@ -7976,7 +8047,7 @@
 
         // ---------- Filters ----------
         // Location is the first filter and is built from the listings themselves (each listing stores the parks its checkpoints are in),
-        // so new parks appear automatically. Destinations group the parks: add a `destination` to a location in locations-data.js,
+        // so new parks appear automatically. Destinations group the parks: add a `destination` to a location in its locations-*.js file,
         // or a pattern to PARK_DESTINATIONS below. A park that matches nothing becomes its own group.
         window.PARK_DESTINATIONS = window.PARK_DESTINATIONS || [
             { name: 'Walt Disney World', match: /magic kingdom|epcot|hollywood studios|animal kingdom|disney springs|blizzard beach|typhoon lagoon|boardwalk|fort wilderness|disney'?s .*resort|walt disney world/i },
@@ -7988,6 +8059,8 @@
         window.destinationFor = function (park) {
             const preset = (window.DISNEY_PRESETS || []).find(p => p.park === park && p.destination);
             if (preset) return preset.destination;
+            const info = window.locAreaInfo && window.locAreaInfo(park);   // the location pack that owns this area
+            if (info) return info.loc.name;
             const d = window.PARK_DESTINATIONS.find(x => x.match.test(String(park || '')));
             return d ? d.name : String(park || 'Other');
         };
@@ -9730,32 +9803,28 @@
         // team.transitLegs[stopId] = { fromId, miles, modes:[...], at }   team.transitPending[stopId] = { fromId, miles }
         // The first stop is measured from team.startLocation (GPS when Start was pressed); if that is missing its distance is null.
         window.TRANSIT_SKIP_SAME_PARK = true;   // stop-to-stop inside one park is recorded as walking without asking
-        window.TRANSIT_MODES = [
-            { id: 'bus', label: 'Bus', emoji: '🚌' },
-            { id: 'boat', label: 'Boat', emoji: '⛴️' },
-            { id: 'skyliner', label: 'Skyliner', emoji: '🚡' },
-            { id: 'monorail', label: 'Monorail', emoji: '🚝' },
-            { id: 'none', label: 'None (walked)', emoji: '🚶' }
-        ];
+        // Modes, transfer rules and transfer points are set per location (the `transit` block in each locations-*.js file).
+        window.transitFor = function (race) { return window.locTransit(race || window.liveTeamRaceData || null); };
+        window.transitModes = function (race) { return window.transitFor(race).modes; };
         window.cpTransitUi = {};
 
         // ---- Transfers: some trips can't be made directly ----
-        // The rules and the resort list live in locations-data.js (window.TRANSIT_TRANSFER_RULES and window.DISNEY_RESORTS).
+        // The rules and the transfer points live in the location's own file (transit.transferRules / transit.transferPoints).
         // A leg that matches a rule asks "Which resort?" first, then records the transit TO the resort and FROM it.
-        window.TRANSIT_VIA_OTHER = 'Other resort / not listed';
-        window.transitRuleFor = function(a, b) {
+        window.transitRuleFor = function(a, b, race) {
             if (!a || !b) return null;
             const norm = v => String(v == null ? '' : v).toLowerCase();
             const hit = (list, c) => (list || []).some(n => norm(c.park).includes(norm(n)) && norm(n));
-            return (window.TRANSIT_TRANSFER_RULES || []).find(r =>
+            return (window.transitFor(race).transferRules || []).find(r =>
                 (hit(r.between, a) && hit(r.and, b)) || (hit(r.between, b) && hit(r.and, a))) || null;
         };
-        window.transitNeedsVia = function(a, b) { return !!window.transitRuleFor(a, b); };
+        window.transitNeedsVia = function(a, b, race) { return !!window.transitRuleFor(a, b, race); };
         // Where the replay should bend a leg: the resort a team transferred through, looked up by name in
-        // window.DISNEY_RESORTS. Resorts still marked dummy: true (or "Other"/unknown) are ignored, so the leg stays a straight line.
+        // the transferPoints in each location file. Points still marked dummy: true (or "Other"/unknown) are ignored, so the leg stays a straight line.
         window.transitViaPoint = function(leg) {
             if (!leg || !leg.via || !leg.via.resort) return null;
-            const r = (window.DISNEY_RESORTS || []).find(x => x && x.name === leg.via.resort);
+            let r = null;   // replays can be opened without a live race, so look through every location's transfer points
+            (window.locList ? window.locList() : []).some(l => { r = (l.transit.transferPoints || []).find(x => x && x.name === leg.via.resort) || null; return !!r; });
             if (!r || r.dummy || r.lat == null || r.lng == null || !isFinite(Number(r.lat)) || !isFinite(Number(r.lng))) return null;
             return { lat: Number(r.lat), lng: Number(r.lng), name: r.name };
         };
@@ -9788,7 +9857,7 @@
             // Resorts are many separate sites that share one "park" value, so a hop between two resort stops is never assumed to be a walk.
             const isResortArea = p => /resort/i.test(String(p || ''));
             const samePark = !!(prev && prev.park && cp.park && prev.park === cp.park && !isResortArea(cp.park) && !isResortArea(prev.park));
-            const needsVia = !!(prev && window.transitNeedsVia(prev, cp));
+            const needsVia = !!(prev && window.transitNeedsVia(prev, cp, race));
             return { fromId: prev ? prev.id : null, miles, samePark, needsVia, fromName: prev ? (prev.name || '') : '', fromPark: prev ? (prev.park || '') : '' };
         };
 
@@ -9839,24 +9908,25 @@
             const step = u.step || (p.needsVia ? 'via' : 'modes');
             const fromName = p.fromName || 'your last stop';
             let heading = '🚏 Transit used', question, body, canGo, goLabel = 'Confirm', back = '';
-            const modeBtns = () => window.TRANSIT_MODES.map(m => {
+            const modeBtns = () => window.transitModes(raceData).map(m => {
                 const on = sel.includes(m.id);
                 return `<button type="button" onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
             }).join('');
             if (step === 'via') {
                 heading = '🚏 Transfer needed';
-                const rule = window.transitRuleFor({ park: p.fromPark }, cp);
-                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which resort did you transfer through to get to ${cp.name}?`;
+                const rule = window.transitRuleFor({ park: p.fromPark }, cp, raceData);
+                const tr = window.transitFor(raceData), noun = tr.transferNoun || 'stop';
+                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which ${noun} did you transfer through to get to ${cp.name}?`;
                 const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const opt = o => `<option value="${q(o)}" ${u.via === o ? 'selected' : ''}>${q(o)}</option>`;
-                const groups = [];                                           // resorts grouped by area, in the order listed in locations-data.js
-                (window.DISNEY_RESORTS || []).forEach(r => {
-                    const area = r.area || 'Resorts';
+                const groups = [];                                           // transfer points grouped by area, in the order listed in the location file
+                (tr.transferPoints || []).forEach(r => {
+                    const area = r.area || 'Options';
                     let g = groups.find(x => x.area === area); if (!g) groups.push(g = { area, names: [] });
                     g.names.push(r.name);
                 });
                 const grouped = groups.map(g => `<optgroup label="${q(g.area)}">${g.names.map(opt).join('')}</optgroup>`).join('');
-                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${u.via ? '' : 'selected'} disabled>Select a resort…</option>${grouped}${opt(window.TRANSIT_VIA_OTHER)}</select>`;
+                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${u.via ? '' : 'selected'} disabled>Select a ${noun}…</option>${grouped}${opt(tr.transferOther || 'Other / not listed')}</select>`;
                 canGo = !!u.via; goLabel = 'Next';
             } else if (step === 'seg1') {
                 heading = '🚏 Transit · leg 1 of 2';
@@ -10143,7 +10213,7 @@
         window.cpAppleUi = {};
         const paEsc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-        // ---- Challenges. Add real ones per location here, or as `poisonChallenges: [...]` on a location in locations-data.js ----
+        // ---- Challenges. Add real ones per location here, or as `poisonChallenges: [...]` on a location in its locations-*.js file ----
         //   { id, title, type:'task'|'question', prompt, options:[...], answer:<index>, timeLimitSec }
         window.POISON_APPLE_CHALLENGES = window.POISON_APPLE_CHALLENGES || {};
         window.DEFAULT_POISON_CHALLENGE = { id: 'default', title: 'Test challenge', type: 'task', timeLimitSec: 120,
@@ -10166,7 +10236,7 @@
             spot:     { title: 'Spot the Difference', rule: (lv) => `Find ${AG_SPOT_LV[lv].n} differences between the two pictures. Tap them on either one. ${AG_SPOT_LV[lv].wrong} wrong taps and you lose.`, sec: (lv) => ({ easy: 90, medium: 90, hard: 100 })[lv] || 90 },
             potion:   { title: 'The Antidote',        rule: (lv) => 'You have been poisoned! Solve the witch\'s riddle and the sums, then pick the potion with the right number. One cures you, one is too weak, and one is deadly.', sec: (lv) => ({ easy: 80, medium: 100, hard: 110 })[lv] || 100 }
         };
-        // A location can still supply its own challenges (poisonChallenges in locations-data.js); otherwise a mini-game is picked.
+        // A location can still supply its own challenges (poisonChallenges in the location file); otherwise a mini-game is picked.
         window.pickAppleChallenge = function (cpName, apples, teamId) {
             const preset = (window.DISNEY_PRESETS || []).find(p => p.name === cpName);
             const custom = (preset && Array.isArray(preset.poisonChallenges) && preset.poisonChallenges.length) ? preset.poisonChallenges : (window.POISON_APPLE_CHALLENGES[cpName] || []);
@@ -12142,10 +12212,7 @@
             const dm = team.distanceMiles || {};
             const modeRows = [
                 { id: 'walk', emoji: '🚶', label: 'On foot' },
-                { id: 'bus', emoji: '🚌', label: 'Bus' },
-                { id: 'boat', emoji: '🚢', label: 'Boat' },
-                { id: 'monorail', emoji: '🚝', label: 'Monorail' },
-                { id: 'skyliner', emoji: '🚡', label: 'Skyliner' }
+                ...window.transitModes(race).filter(m => m.id !== 'none').map(m => ({ id: m.id, emoji: m.emoji, label: m.label }))
             ].map(r => ({ ...r, miles: Number(dm[r.id]) || 0 })).filter(r => r.miles > 0);
             const totalMiles = modeRows.reduce((a, r) => a + r.miles, 0);
             const fmtMi = (v) => v < 0.1 ? v.toFixed(2) : v.toFixed(1);
@@ -13840,6 +13907,8 @@
 
         // Icons for areas; unknown areas fall back to a sensible default
         window.areaIcon = function (name) {
+            const info = window.locAreaInfo && window.locAreaInfo(name);
+            if (info && info.area.icon) return info.area.icon;
             const n = String(name || '').toLowerCase();
             if (n.includes('whole')) return '🗺️';
             if (n.includes('magic kingdom')) return '🏰';
@@ -13864,9 +13933,12 @@
             if (!current) return;
             const q = searchInput.value.trim().toLowerCase();
             const rows = current.options.filter(o => !q || (o.label + ' ' + (o.sub || '')).toLowerCase().includes(q));
+            let lastGroup = '';
             listEl.innerHTML = rows.map(o => {
                 const sel = String(o.value) === String(current.selected);
-                return `
+                const heading = (o.group && o.group !== lastGroup) ? `<p class="px-1 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-500">${esc(o.group)}</p>` : '';
+                lastGroup = o.group || lastGroup;
+                return heading + `
                 <button type="button" data-value="${esc(o.value)}" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition active:scale-[0.98] ${sel ? 'border-disneyGold/70 bg-disneyGold/10' : 'border-slate-800 bg-slate-900/80'}">
                     ${o.icon ? `<span class="text-lg shrink-0">${esc(o.icon)}</span>` : ''}
                     <span class="min-w-0 flex-1">
@@ -13939,7 +14011,7 @@
         function readOptions(sel) {
             return Array.from(sel.options)
                 .filter(o => !o.disabled)
-                .map(o => ({ value: o.value, label: o.text.trim(), sub: o.dataset.sub || '', icon: o.dataset.icon || '' }));
+                .map(o => ({ value: o.value, label: o.text.trim(), sub: o.dataset.sub || '', icon: o.dataset.icon || '', group: (o.parentElement && o.parentElement.tagName === 'OPTGROUP') ? o.parentElement.label : '' }));
         }
 
         // Turn a <select> into a button that opens the bottom sheet. The <select> stays as the source of truth.
@@ -14024,12 +14096,13 @@
         window.populatePresetParkSelect = function () {
             const sel = document.getElementById('preset-park-select');
             if (!sel) return;
-            const presets = window.DISNEY_PRESETS || [];
+            const presets = (window.DISNEY_PRESETS || []).filter(p => p.loc === window.wizLoc());
             const counts = new Map();
             presets.forEach(p => { if (p.type !== 'BONUS_PHOTO') counts.set(p.park, (counts.get(p.park) || 0) + 1); });
             const previous = sel.value;
             const gpsTotal = Array.from(counts.values()).reduce((a, n) => a + n, 0);
-            let html = `<option value="all" data-icon="🌟" data-sub="${gpsTotal} locations">All locations</option>`;
+            const locName = (window.locById(window.wizLoc()) || {}).name || 'this location';
+            let html = `<option value="all" data-icon="🌟" data-sub="${gpsTotal} stops">All of ${esc(locName)}</option>`;
             counts.forEach((n, park) => {
                 html += `<option value="${esc(park)}" data-icon="${esc(window.areaIcon(park))}" data-sub="${n} stop${n === 1 ? '' : 's'}">${esc(park)}</option>`;
             });
@@ -14043,6 +14116,11 @@
 
         window.populatePresetParkSelect();
         window.enhanceSelect('preset-park-select', { title: 'Choose a park group', searchable: false });
+        if (window.populateLocationSelect) {
+            window.populateLocationSelect();
+            window.enhanceSelect('create-location-select', { title: 'Choose a location', searchable: false });
+            document.getElementById('create-location-select').addEventListener('change', () => window.onWizardLocationChange());
+        }
         window.enhanceSelect('create-final-stop-select', { title: 'Final location', searchable: true });
         window.enhanceSelect('hostlock-team-select', { title: 'Nominate a team', placeholder: 'Choose a team…', searchable: false });
         window.enhanceSelect('edit-final-stop-select', { title: 'Final location', searchable: true });
