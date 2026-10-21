@@ -9704,19 +9704,8 @@
         };
 
         function getDetailedTransitAdvice(parkName) {
-            const park = (parkName || "").toLowerCase();
-            if (park.includes("magic kingdom")) {
-                return "Magic Kingdom can be reached via Disney Resort Buses from any resort hotel. If arriving via Transportation and Ticket Center (TTC), take the Resort Monorail or the Ferryboat. From Epcot, take the Monorail transfer via the TTC.";
-            } else if (park.includes("epcot")) {
-                return "Epcot can be reached via bus from any resort, or by using the Disney Skyliner from eligible resorts (Caribbean Beach, Art of Animation, Pop Century, Riviera) and Hollywood Studios. You can also take the Monorail from Magic Kingdom/TTC or Friendship boats from the Epcot resort area (BoardWalk, Yacht & Beach Club).";
-            } else if (park.includes("hollywood studios")) {
-                return "Disney's Hollywood Studios can be reached via resort buses from any hotel, the Disney Skyliner network (transfer via Caribbean Beach), or Friendship water boats from Epcot resort hotels and the BoardWalk.";
-            } else if (park.includes("animal kingdom")) {
-                return "Disney's Animal Kingdom is accessible exclusively via complimentary Disney Resort Buses from any resort hotel or park transfer hub.";
-            } else if (park.includes("springs") || park.includes("bonus")) {
-                return "You can't travel straight between a theme park and Disney Springs. Go via a resort first, then a bus or boat on to Disney Springs. For example: Magic Kingdom to Contemporary by monorail; Epcot to BoardWalk on foot or by boat; Hollywood Studios to Pop Century by Skyliner; or Animal Kingdom to Old Key West by bus and then a boat.";
-            }
-            return "Use complimentary Disney Resort Buses, Monorails, Skyliner routes, or watercraft available across property. Remember: paid ride-shares and taxis are strictly prohibited!";
+            // The wording lives in each location file (transit.advice / transit.adviceFallback)
+            return window.locAdvice(parkName, window.liveTeamRaceData || null);
         }
 
         // ===================== CHECK-IN CARD: flip, celebration, trivia slide =====================
@@ -9862,7 +9851,8 @@
         };
 
         window.transitDistanceTotals = function(legs) {
-            const t = { walk: 0, bus: 0, boat: 0, monorail: 0, skyliner: 0 };
+            const t = { walk: 0 };   // plus every mode any location defines (bus, boat, train, taxi ...)
+            (window.locList ? window.locList() : []).forEach(loc => (loc.transit.modes || []).forEach(m => { if (m.id !== 'none') t[m.id] = 0; }));
             Object.values(legs || {}).forEach(l => {
                 if (!l || l.miles === null || l.miles === undefined || !l.modes || !l.modes.length) return;
                 // A transfer leg is two segments (to the resort, then from it): each gets half the distance.
@@ -9878,7 +9868,8 @@
 
         window.formatTransitLeg = function(leg) {
             if (!leg || !leg.modes || !leg.modes.length) return '';
-            const names = { walk: '🚶 On foot', bus: '🚌 Bus', boat: '⛴️ Boat', skyliner: '🚡 Skyliner', monorail: '🚝 Monorail' };
+            const names = { walk: '🚶 On foot', none: '🚶 On foot' };
+            (window.locList ? window.locList() : []).forEach(loc => (loc.transit.modes || []).forEach(m => { if (!names[m.id]) names[m.id] = m.emoji + ' ' + m.label; }));
             const one = ms => ms.map(m => names[m] || m).join(' + ');
             const txt = (leg.segments && leg.segments.length > 1)
                 ? `via ${(leg.via && leg.via.resort) || 'a resort'}: ` + leg.segments.map(sg => one(sg.modes || [])).join(' → ')
@@ -11803,7 +11794,7 @@
                     if (v) WdwMap.dot(map, [v.lat, v.lng], { color:'#94a3b8', r:4, weight:2, fill:.9, title:'Via ' + v.name });
                 });
                 // ---- Route drawing ----
-                const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', bonus:'#f472b6', other:'#94a3b8' };
+                const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', train:'#facc15', taxi:'#fb7185', bonus:'#f472b6', other:'#94a3b8' };
                 const lerp = (a, b, t) => [a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t];
                 const legModes = ev => {
                     if (ev.kind === 'bonus') return ['bonus'];
@@ -12123,6 +12114,56 @@
             }
         };
 
+        // ================= REPORT CARD =================
+        // Built for export: no scrolling areas, no blur, no clipped text. The route is a winding trail (SVG dashes + HTML pins), so
+        // html2canvas draws exactly what is on screen. Wording that belongs to a place (jokes, tagline) comes from the location file.
+        const rcEsc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const rcPick = (arr) => { const a = Array.isArray(arr) ? arr : [arr]; return a[Math.floor(Math.random() * a.length)]; };
+        window.transitModeInfo = function (id) {
+            if (id === 'walk' || id === 'none') return { id: 'walk', emoji: '🚶', label: 'On foot' };
+            for (const l of (window.locList ? window.locList() : [])) { const m = (l.transit.modes || []).find(x => x.id === id); if (m) return m; }
+            return { id, emoji: '➡️', label: String(id) };
+        };
+        // Emoji for the way a team got TO a stop (transfer legs: every segment, in order, no repeats)
+        function rcLegBadge(leg) {
+            if (!leg) return '';
+            const ids = (leg.segments && leg.segments.length ? leg.segments.flatMap(sg => sg.modes || []) : (leg.modes || []));
+            const em = []; ids.forEach(m => { const e = window.transitModeInfo(m).emoji; if (e && !em.includes(e)) em.push(e); });
+            return em.slice(0, 3).join('');
+        }
+        window.buildReportRouteMap = function (host, stops, finished) {
+            if (!host) return;
+            if (!stops.length) { host.innerHTML = '<p style="text-align:center;font-size:11px;color:#94a3b8;font-style:italic;padding:14px 0">No checkpoints visited yet.</p>'; return; }
+            const W = Math.max(260, Math.round(host.clientWidth || 316)), COLS = 3, RH = 114, TOP = 46, PIN = 38, OFF = 76, LW = 78;
+            const xs = [0.22, 0.5, 0.78].map(f => Math.round(f * W));
+            const n = stops.length, rows = Math.ceil(n / COLS), H = TOP + (rows - 1) * RH + 84;
+            const pt = (i) => { const r = Math.floor(i / COLS), c = i % COLS; return { x: xs[r % 2 ? COLS - 1 - c : c], y: TOP + r * RH, r }; };
+            let paths = '', badges = '', pins = '';
+            for (let i = 0; i < n - 1; i++) {
+                const a = pt(i), b = pt(i + 1);
+                let d, mx, my;
+                if (a.r === b.r) {
+                    const arc = -28;   // every hop arches upwards (below the pins would run into the stop names)
+                    d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2} ${a.y + arc * 2} ${b.x} ${b.y}`; mx = (a.x + b.x) / 2; my = a.y + arc;
+                } else {
+                    const side = a.x > W / 2 ? 1 : -1;
+                    d = `M${a.x} ${a.y} C${a.x + side * OFF} ${a.y + RH * 0.15} ${b.x + side * OFF} ${b.y - RH * 0.15} ${b.x} ${b.y}`; mx = (a.x + b.x) / 2 + side * OFF * 0.75; my = (a.y + b.y) / 2;
+                }
+                paths += `<path d="${d}" fill="none" stroke="rgba(255,184,0,.16)" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#ffd36b" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"/>`;
+                const bd = stops[i + 1].badge;
+                if (bd) badges += `<div style="position:absolute;left:${Math.round(mx)}px;top:${Math.round(my)}px;transform:translate(-50%,-50%);min-width:26px;height:26px;padding:0 6px;border-radius:13px;background:#0f172a;border:1.5px solid rgba(255,229,143,.6);box-shadow:0 2px 6px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;white-space:nowrap">${bd}</div>`;
+            }
+            stops.forEach((st, i) => {
+                const q = pt(i), last = i === n - 1, flag = last && finished;
+                const nm = st.name.length > 44 ? st.name.slice(0, 42).trim() + '…' : st.name;
+                pins += `<div style="position:absolute;left:${q.x - PIN / 2}px;top:${q.y - PIN / 2}px;width:${PIN}px;height:${PIN}px;border-radius:50%;background:${flag ? 'linear-gradient(145deg,#6ee7b7,#059669)' : 'linear-gradient(145deg,#ffe58f,#f0b429)'};border:3px solid #fff3b0;box-shadow:0 3px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${flag ? 17 : 15}px;color:#3b1f00;font-family:Fredoka,sans-serif">${flag ? '🏁' : i + 1}</div>
+                    <div style="position:absolute;left:${q.x - LW / 2}px;top:${q.y + PIN / 2 + 4}px;width:${LW}px;text-align:center;font-size:9.5px;line-height:1.2;color:#fff1cf;font-weight:600">${rcEsc(nm)}${st.time ? `<div style="font-family:ui-monospace,monospace;font-size:9px;color:#ffd36b;margin-top:2px;font-weight:700">${rcEsc(st.time)}</div>` : ''}</div>`;
+            });
+            let dots = ''; for (let gx = 12; gx < W; gx += 24) for (let gy = 12; gy < H; gy += 24) dots += `<circle cx="${gx}" cy="${gy}" r="1" fill="rgba(255,229,143,.10)"/>`;
+            host.style.height = H + 'px';
+            host.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0">${dots}${paths}</svg>${badges}${pins}`;
+        };
+
         window.openTeamReportCard = async function(raceCode, teamId) {
             const raceSnap = await getDoc(doc(window.db, "races", raceCode));
             const teamSnap = await getDoc(doc(window.db, "races", raceCode, "teams", teamId));
@@ -12130,6 +12171,7 @@
 
             const race = window.applyWildcardOffer(raceSnap.data(), await window.fetchWildcardOffer(raceCode));
             const team = teamSnap.data();
+            const loc = window.locForRace(race), flavour = window.locFlavour(race);
             const isScavenger = race.gameMode === 'scavenger';
             const checkpoints = race.checkpoints || [];
             const mandatory = checkpoints.filter(c => c.type !== 'BONUS_PHOTO');
@@ -12137,221 +12179,142 @@
             const claimedBonus = team.claimedBonus || [];
             const bonusPhotos = team.bonusPhotos || {};
             const triviaLogs = team.triviaLogs || [];
-
-            let scoreText = "";
-            if (isScavenger) {
-                scoreText = `${team.totalPoints || 0} Points`;
-            } else {
-                const diffMin = window.teamElapsedMs(team, race) / 60000;
-                const hrs = Math.floor(diffMin / 60);
-                const mins = Math.floor(diffMin % 60);
-                scoreText = `${hrs}h ${mins}m Elapsed Time`;
-            }
-
-            let randomBonusImg = "";
-            let randomBonusCaption = "No bonus photos claimed";
-            const reportBonuses = claimedBonus.filter(id => !(team.rejectedCheckins || {})[id]);
-            if (reportBonuses.length > 0) {
-                const randomId = reportBonuses[Math.floor(Math.random() * reportBonuses.length)];
-                const bonusObj = bonuses.find(b => b.id === randomId);
-                randomBonusImg = bonusPhotos[randomId] || "";
-                randomBonusCaption = bonusObj ? bonusObj.name : "Bonus Photo Challenge";
-            }
-
-            const correctTrivia = triviaLogs.filter(l => l.isCorrect).length;
-            const triviaScoreText = `${correctTrivia} / ${triviaLogs.length} Correct`;
-
-            const wrongTriviaList = triviaLogs.filter(l => !l.isCorrect);
-            let roastMessage = "No wrong trivia answers! Absolute Disney Geniuses! 🧠✨";
-            if (wrongTriviaList.length > 0) {
-                const randomWrong = wrongTriviaList[Math.floor(Math.random() * wrongTriviaList.length)];
-                roastMessage = `Oof! You guessed <span class="text-rose-400 font-bold">"${randomWrong.teamAnswer}"</span> for "${randomWrong.question}". The correct answer was <span class="text-disneyGold font-bold">"${randomWrong.correctAnswer}"</span>. Mickey is shaking his head! 🐭🤦‍♂️`;
-            }
-
             const checkinDetails = team.checkinDetails || {};
-            const completedIds = team.completedCheckpoints || [];
-            let longestLegText = "N/A";
-            if (completedIds.length >= 2) {
-                let maxLegTimeMs = 0;
-                let legName = "";
-                let sortedCheckins = completedIds.map(id => ({ id, time: new Date(checkinDetails[id]?.timestamp || 0).getTime() })).sort((a, b) => a.time - b.time);
-                
-                for (let i = 1; i < sortedCheckins.length; i++) {
-                    const duration = sortedCheckins[i].time - sortedCheckins[i-1].time;
-                    if (duration > maxLegTimeMs) {
-                        maxLegTimeMs = duration;
-                        const prevCp = checkpoints.find(c => c.id === sortedCheckins[i-1].id);
-                        const currCp = checkpoints.find(c => c.id === sortedCheckins[i].id);
-                        legName = `${prevCp ? prevCp.name : 'Start'} → ${currCp ? currCp.name : 'Stop'}`;
-                    }
-                }
-                if (maxLegTimeMs > 0) {
-                    const mins = Math.floor(maxLegTimeMs / 60000);
-                    longestLegText = `${mins} mins (${legName})`;
-                }
+            const legsData = team.transitLegs || {};
+            const finished = !!team.endTime;
+
+            // Score
+            let scoreBig, scoreSub;
+            if (isScavenger) { scoreBig = String(team.totalPoints || 0); scoreSub = 'points'; }
+            else {
+                const diffMin = window.teamElapsedMs(team, race) / 60000;
+                scoreBig = `${Math.floor(diffMin / 60)}h ${Math.floor(diffMin % 60)}m`; scoreSub = finished ? 'final time' : 'elapsed so far';
             }
 
-            let routeListHtml = "";
-            if (completedIds.length === 0) {
-                routeListHtml = `<p class="text-slate-500 italic text-center text-[11px]">No checkpoints visited.</p>`;
-            } else {
-                let sortedRoute = completedIds.map(id => {
-                    const cp = mandatory.find(m => m.id === id);
-                    const dt = checkinDetails[id]?.timestamp ? new Date(checkinDetails[id].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                    return { name: cp ? cp.name : 'Stop', time: dt };
-                });
-                routeListHtml = sortedRoute.map((stop, i) => `
-                    <div class="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800 text-[11px]">
-                        <span class="font-bold text-white"><span class="text-disneyGold mr-1">#${i+1}</span> ${stop.name}</span>
-                        <span class="text-slate-400 font-mono">${stop.time}</span>
-                    </div>
-                `).join('');
-            }
+            // Route, in the order the team actually reached the stops
+            const route = (team.completedCheckpoints || []).map(id => {
+                const cp = mandatory.find(m => m.id === id), d = checkinDetails[id] || {};
+                return cp ? { id, name: cp.name, ts: Date.parse(d.timestamp) || 0, time: d.timestamp ? new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '', badge: rcLegBadge(legsData[id]) } : null;
+            }).filter(Boolean).sort((x, y) => x.ts - y.ts);
+            route.forEach((st, i) => { if (i === 0 && !legsData[st.id]) st.badge = ''; });
 
-            // Distance travelled, by travel mode (team.distanceMiles = { walk, bus, boat, monorail, skyliner })
+            // Longest leg
+            let longestMin = 0, longestName = '';
+            for (let i = 1; i < route.length; i++) {
+                const dur = route[i].ts - route[i - 1].ts;
+                if (route[i].ts && route[i - 1].ts && dur / 60000 > longestMin) { longestMin = Math.floor(dur / 60000); longestName = `${route[i - 1].name} → ${route[i].name}`; }
+            }
+            const cut = (t, n) => t.length > n ? t.slice(0, n - 1).trim() + '…' : t;
+
+            // Distance by mode (modes come from this race's location)
             const dm = team.distanceMiles || {};
-            const modeRows = [
-                { id: 'walk', emoji: '🚶', label: 'On foot' },
-                ...window.transitModes(race).filter(m => m.id !== 'none').map(m => ({ id: m.id, emoji: m.emoji, label: m.label }))
-            ].map(r => ({ ...r, miles: Number(dm[r.id]) || 0 })).filter(r => r.miles > 0);
+            const modeRows = [{ id: 'walk', emoji: '🚶', label: 'On foot' }, ...window.transitModes(race).filter(m => m.id !== 'none').map(m => ({ id: m.id, emoji: m.emoji, label: m.label }))]
+                .map(r => ({ ...r, miles: Number(dm[r.id]) || 0 })).filter(r => r.miles > 0);
             const totalMiles = modeRows.reduce((a, r) => a + r.miles, 0);
             const fmtMi = (v) => v < 0.1 ? v.toFixed(2) : v.toFixed(1);
-            const distanceBlockHtml = totalMiles > 0 ? `
-                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
-                            <div class="flex justify-between items-center text-[11px]">
-                                <span class="text-blue-200 font-semibold"><i class="fa-solid fa-map-location-dot mr-1 text-disneyGold"></i> Distance Travelled:</span>
-                                <span class="font-bold text-sky-300 font-mono">${fmtMi(totalMiles)} mi</span>
-                            </div>
-                            ${modeRows.map(r => `
-                            <div class="flex items-center gap-2 text-[11px]">
-                                <span class="w-5 text-center text-base leading-none">${r.emoji}</span>
-                                <span class="w-16 text-slate-300 shrink-0">${r.label}</span>
-                                <div class="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden"><div class="h-full rounded-full bg-sky-400" style="width:${Math.max(4, Math.round(r.miles / totalMiles * 100))}%"></div></div>
-                                <span class="w-14 text-right font-mono font-bold text-white shrink-0">${fmtMi(r.miles)} mi</span>
-                            </div>`).join('')}
-                        </div>` : '';
+
+            // Trivia and the place-flavoured one-liner
+            const correct = triviaLogs.filter(l => l.isCorrect).length, wrong = triviaLogs.filter(l => !l.isCorrect);
+            let roastHtml = '';
+            if (triviaLogs.length) {
+                if (!wrong.length) roastHtml = rcEsc(rcPick(flavour.flawless));
+                else {
+                    const w = rcPick(wrong);
+                    roastHtml = rcEsc(rcPick(flavour.roasts)).replace(/\{guess\}/g, `<b style="color:#fda4af">“${rcEsc(w.teamAnswer)}”</b>`).replace(/\{question\}/g, `“${rcEsc(w.question)}”`).replace(/\{answer\}/g, `<b style="color:#ffd36b">“${rcEsc(w.correctAnswer)}”</b>`);
+                }
+            }
+
+            // Bonus photo highlight
+            let bonusImg = '', bonusCaption = '';
+            const okBonuses = claimedBonus.filter(id => !(team.rejectedCheckins || {})[id] && bonusPhotos[id]);
+            if (okBonuses.length) { const id = rcPick(okBonuses), b = bonuses.find(x => x.id === id); bonusImg = bonusPhotos[id]; bonusCaption = b ? b.name : 'Bonus Photo Challenge'; }
 
             // Awards (only once the whole race is final, so nothing is spoiled early)
-            let awardsBlockHtml = '';
+            let awards = [];
             try {
                 const allTeamsSnap = await getDocs(collection(window.db, "races", raceCode, "teams"));
-                const allTeams = [];
-                allTeamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
+                const allTeams = []; allTeamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
                 if (window.raceIsFinal(race, allTeams)) {
                     const awardOffer = await window.fetchWildcardOffer(raceCode);
-                    const won = (window.computeRaceAwards(window.applyWildcardOffer(race, awardOffer), allTeams).byTeam[teamId]) || [];
-                    if (won.length) {
-                        awardsBlockHtml = `
-                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
-                            <span class="text-blue-200 font-semibold block text-[11px]"><i class="fa-solid fa-award mr-1 text-disneyGold"></i> Awards Won:</span>
-                            ${won.map(a => `<div class="flex items-start gap-2 text-[11px]"><span class="text-lg leading-none">${a.emoji}</span><div><p class="font-bold text-amber-300">${a.name}</p><p class="text-slate-300">${a.detail}</p></div></div>`).join('')}
-                        </div>`;
-                    }
+                    awards = (window.computeRaceAwards(window.applyWildcardOffer(race, awardOffer), allTeams).byTeam[teamId]) || [];
                 }
             } catch (e) { console.warn('Could not work out awards for the report card', e); }
+
+            // ---- look: navy night sky, brass trim, cream type (same tokens as the rest of the app) ----
+            const PANEL = 'background:rgba(15,23,42,.62);border:1px solid rgba(255,229,143,.20);border-radius:16px;';
+            const LABEL = 'font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--theme-accent);';
+            const tile = (icon, label, value, sub) => `<div style="${PANEL}padding:10px 11px;min-width:0"><div style="${LABEL}">${icon} ${label}</div><div style="font-family:Fredoka,sans-serif;font-weight:700;font-size:21px;color:var(--theme-cream);line-height:1.15;margin-top:3px">${value}</div>${sub ? `<div style="font-size:9.5px;color:#a9b4d0;margin-top:1px;line-height:1.25">${sub}</div>` : ''}</div>`;
+            const tiles = [
+                tile('📍', 'Stops', `${route.length}<span style="font-size:13px;color:#a9b4d0"> / ${mandatory.length}</span>`, finished ? 'finished the route' : 'visited so far'),
+                tile('👣', 'Distance', totalMiles > 0 ? `${fmtMi(totalMiles)}<span style="font-size:13px;color:#a9b4d0"> mi</span>` : '–', modeRows.length ? modeRows.map(r => `${r.emoji} ${fmtMi(r.miles)}`).join('  ·  ') : 'not tracked'),
+                triviaLogs.length ? tile('🧠', 'Trivia', `${correct}<span style="font-size:13px;color:#a9b4d0"> / ${triviaLogs.length}</span>`, 'answers correct') : '',
+                longestMin > 0 ? tile('⏱️', 'Longest leg', `${longestMin}<span style="font-size:13px;color:#a9b4d0"> mins</span>`, rcEsc(cut(longestName, 34))) : ''
+            ].filter(Boolean).join('');
 
             let modalEl = document.getElementById('team-report-card-modal');
             if (!modalEl) {
                 modalEl = document.createElement('div');
                 modalEl.id = 'team-report-card-modal';
-                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4';
+                modalEl.className = 'fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-md overflow-y-auto';
                 document.body.appendChild(modalEl);
             }
-
             modalEl.innerHTML = `
-                <div class="report-glass bg-slate-900/70 backdrop-blur-md border border-amber-300/25 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-center text-xs overflow-y-auto max-h-[90vh] custom-scrollbar">
-                    <div class="absolute top-4 right-4 z-10">
-                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="text-slate-400 hover:text-white font-bold text-sm bg-slate-900/80 w-8 h-8 rounded-full flex items-center justify-center border border-slate-700">
-                            <i class="fa-solid fa-xmark text-lg"></i>
-                        </button>
+                <div class="min-h-full flex items-start sm:items-center justify-center p-3 py-5">
+                  <div class="w-full max-w-[400px] space-y-3">
+                    <div id="shareable-report-card-canvas" style="position:relative;overflow:hidden;border-radius:26px;padding:20px 16px 16px;color:var(--theme-cream);text-align:left;font-size:12px;background:linear-gradient(165deg,#241b5e 0%,#121a3f 38%,#0b1230 70%,#1d0f33 100%);border:2px solid rgba(255,229,143,.45);box-shadow:0 20px 50px rgba(0,0,0,.55),inset 0 0 0 5px rgba(12,10,42,.65),inset 0 0 0 6px rgba(255,229,143,.18)">
+                        <div style="position:absolute;right:-60px;top:-60px;width:190px;height:190px;border-radius:50%;background:rgba(232,31,118,.14)"></div>
+                        <div style="position:absolute;left:-70px;bottom:-70px;width:210px;height:210px;border-radius:50%;background:rgba(0,85,184,.20)"></div>
+
+                        <div style="position:relative;text-align:center;padding-bottom:12px">
+                            <div style="${LABEL}color:#ffd36b;letter-spacing:.22em">✦ Official Report Card ✦</div>
+                            <div style="font-family:Fredoka,sans-serif;font-weight:700;font-size:23px;line-height:1.1;color:var(--theme-title-top);margin-top:5px;text-shadow:0 2px 0 var(--theme-title-outline)">The Amazing Mouse Race</div>
+                            <div style="font-size:13px;font-weight:700;color:var(--theme-cream);margin-top:6px">${rcEsc(race.title)}</div>
+                            ${loc ? `<div style="display:inline-block;margin-top:6px;padding:2px 10px;border-radius:99px;background:rgba(255,229,143,.12);border:1px solid rgba(255,229,143,.35);font-size:10px;font-weight:700;color:#ffe58f">${rcEsc(loc.icon || '📍')} ${rcEsc(loc.name)}</div>` : ''}
+                        </div>
+
+                        <div style="position:relative;${PANEL}padding:12px;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(15,23,42,.62) 55%,rgba(16,185,129,.12))">
+                            <img src="${rcEsc(team.photoUrl || DEFAULT_AVATAR)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid var(--theme-accent);flex-shrink:0">
+                            <div style="min-width:0;flex:1">
+                                <div style="font-family:Fredoka,sans-serif;font-weight:700;font-size:17px;color:#fff;line-height:1.15;word-break:break-word">${rcEsc(team.teamName)}</div>
+                                <div style="font-size:10px;color:#a9b4d0;margin-top:1px">${isScavenger ? 'Scavenger Hunt' : 'Speed Race'}${finished ? ' · finished 🏁' : ''}</div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0">
+                                <div style="font-family:Fredoka,sans-serif;font-weight:700;font-size:25px;color:var(--theme-accent);line-height:1">${scoreBig}</div>
+                                <div style="font-size:9.5px;color:#a9b4d0;text-transform:uppercase;letter-spacing:.08em;margin-top:2px">${scoreSub}</div>
+                            </div>
+                        </div>
+
+                        <div style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">${tiles}</div>
+
+                        ${awards.length ? `<div style="position:relative;${PANEL}padding:11px 12px;margin-top:10px"><div style="${LABEL}margin-bottom:6px">🏆 Awards won</div>
+                            ${awards.map(a => `<div style="display:flex;gap:9px;align-items:flex-start;margin-top:5px"><span style="font-size:20px;line-height:1">${a.emoji}</span><div><div style="font-weight:800;color:#ffd36b;font-size:12px">${rcEsc(a.name)}</div><div style="color:#cbd5e1;font-size:10.5px;line-height:1.3">${rcEsc(a.detail)}</div></div></div>`).join('')}</div>` : ''}
+
+                        <div style="position:relative;${PANEL}padding:11px 10px 8px;margin-top:10px">
+                            <div style="${LABEL}margin:0 2px 2px">🗺️ Our route · ${route.length} stop${route.length === 1 ? '' : 's'}</div>
+                            <div id="rc-route-map" style="position:relative;width:100%"></div>
+                        </div>
+
+                        ${roastHtml ? `<div style="position:relative;${PANEL}padding:11px 12px;margin-top:10px"><div style="${LABEL}margin-bottom:4px">😂 Trivia verdict</div><div style="font-size:11.5px;line-height:1.4;color:#e8ecf8;font-style:italic">${roastHtml}</div></div>` : ''}
+
+                        ${bonusImg ? `<div style="position:relative;${PANEL}padding:9px;margin-top:10px;display:flex;align-items:center;gap:11px"><img src="${rcEsc(bonusImg)}" style="width:62px;height:62px;border-radius:12px;object-fit:cover;border:2px solid var(--theme-accent);flex-shrink:0"><div style="min-width:0"><div style="${LABEL}">⭐ Bonus highlight</div><div style="font-size:11.5px;color:#e8ecf8;margin-top:3px;line-height:1.3">${rcEsc(bonusCaption)}</div></div></div>` : ''}
+
+                        <div style="position:relative;text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,229,143,.22);font-size:10px;font-weight:700;letter-spacing:.05em;color:#ffe58f">${rcEsc(flavour.tagline)}</div>
                     </div>
 
-                    <div id="shareable-report-card-canvas" class="magical-gradient p-6 rounded-2xl border border-amber-300/30 shadow-xl space-y-4 text-left relative overflow-hidden text-slate-100">
-                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
-                        
-                        <div class="flex items-center justify-between border-b border-white/20 pb-3">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-bold text-xl shadow border border-amber-200">
-                                    <i class="fa-solid fa-compass"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-disney font-bold text-base text-white tracking-wide">The Amazing Mouse Race</h3>
-                                    <p class="text-[10px] text-blue-200 font-medium">${race.title}</p>
-                                </div>
-                            </div>
-                            <span class="bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow">Official Report Card</span>
-                        </div>
-
-                        <div class="flex items-center gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-white/10">
-                            <img src="${team.photoUrl || DEFAULT_AVATAR}" class="w-12 h-12 rounded-full object-cover border-2 border-disneyGold shadow shrink-0">
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-white text-sm truncate">${team.teamName}</h4>
-                                <p class="text-[11px] text-amber-300 font-mono font-bold">${scoreText}</p>
-                            </div>
-                        </div>
-
-                        ${awardsBlockHtml}
-
-                        ${distanceBlockHtml}
-
-                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2.5">
-                            <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
-                                <span class="text-blue-200 font-semibold">Trivia Accuracy:</span>
-                                <span class="font-bold text-emerald-400 font-mono">${triviaScoreText}</span>
-                            </div>
-                            <div class="flex justify-between items-center text-[11px] border-b border-white/10 pb-2">
-                                <span class="text-blue-200 font-semibold">Longest Leg Time:</span>
-                                <span class="font-bold text-indigo-300 font-mono">${longestLegText}</span>
-                            </div>
-                            <div class="text-[11px] space-y-1">
-                                <span class="text-blue-200 font-semibold block"><i class="fa-solid fa-face-laugh-squint mr-1 text-disneyGold"></i> Trivia Roast:</span>
-                                <p class="text-slate-200 italic bg-slate-900/80 p-2.5 rounded-lg border border-white/5">${roastMessage}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-white/10 space-y-2">
-                            <span class="text-blue-200 font-semibold block text-[11px]"><i class="fa-solid fa-route mr-1 text-disneyGold"></i> Complete Route Taken (${completedIds.length} Stops):</span>
-                            <div class="max-h-36 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
-                                ${routeListHtml}
-                            </div>
-                        </div>
-
-                        ${randomBonusImg ? `
-                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/10 flex items-center gap-3">
-                                <img src="${randomBonusImg}" class="w-16 h-16 rounded-xl object-cover border-2 border-disneyGold shadow shrink-0">
-                                <div class="min-w-0">
-                                    <p class="font-bold text-amber-300 text-[11px]"><i class="fa-solid fa-star mr-1"></i> Bonus Highlight</p>
-                                    <p class="text-slate-200 text-[10px] truncate">${randomBonusCaption}</p>
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        <div class="text-center pt-2 border-t border-white/10 text-[9px] text-blue-200 tracking-wider uppercase font-semibold">
-                            Can your team beat this time? Play The Amazing Mouse Race! 🏰✨
-                        </div>
+                    <div class="flex gap-2">
+                        ${window.canShareReportImage() ? `<button onclick="shareReportCardImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-2xl uppercase text-xs transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.98]"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <button onclick="downloadReportCardAsImage()" class="py-3 px-4 bg-slate-800/90 border border-slate-600 text-white font-bold rounded-2xl uppercase text-xs transition flex items-center justify-center gap-2 active:scale-[0.98]" aria-label="Save image"><i class="fa-solid fa-download"></i> Save</button>` : `<button onclick="downloadReportCardAsImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 text-slate-950 font-black rounded-2xl uppercase text-xs transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.98]"><i class="fa-solid fa-download"></i> Save image</button>`}
+                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="py-3 px-4 bg-slate-800/90 border border-slate-600 text-white font-bold rounded-2xl uppercase text-xs transition active:scale-[0.98]">Close</button>
                     </div>
-
-                    <div class="flex gap-2 pt-2">
-                        ${window.canShareReportImage() ? `<button onclick="shareReportCardImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-share-nodes"></i> Share
-                        </button>
-                        <button onclick="downloadReportCardAsImage()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl uppercase transition shadow flex items-center justify-center gap-2" aria-label="Save image">
-                            <i class="fa-solid fa-download"></i> Save
-                        </button>` : `<button onclick="downloadReportCardAsImage()" class="flex-1 py-3 bg-gradient-to-r from-disneyGold to-yellow-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl uppercase transition shadow-lg flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-download"></i> Save Image
-                        </button>`}
-                        <button onclick="document.getElementById('team-report-card-modal').remove()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl uppercase transition shadow">
-                            Close
-                        </button>
-                    </div>
-                </div>
-            `;
+                  </div>
+                </div>`;
+            window.buildReportRouteMap(document.getElementById('rc-route-map'), route, finished);
         };
 
         async function renderReportCardBlob() {
             const cardEl = document.getElementById('shareable-report-card-canvas');
             if (!cardEl) return null;
-            const canvas = await html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: null });
+            const canvas = await html2canvas(cardEl, { scale: 3, useCORS: true, backgroundColor: null, scrollX: 0, scrollY: -window.scrollY });
             return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
         }
         window.downloadReportCardAsImage = async function() {
