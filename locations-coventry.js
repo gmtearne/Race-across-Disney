@@ -28,6 +28,8 @@ window.registerLocation({
         ]
     },
 
+    access: { noun: "area", hopperLabel: "Whole of Coventry" },
+
     map: {
         // No vector map yet, so this location uses OpenStreetMap. Area zoom boxes are worked out from the stops.
         tips: [
