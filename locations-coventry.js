@@ -28,6 +28,13 @@ window.registerLocation({
         ]
     },
 
+    map: {
+        // No vector map yet, so this location uses OpenStreetMap. Area zoom boxes are worked out from the stops.
+        tips: [
+            { icon: "fa-compass", color: "text-disneyBlue", title: "Strategic Planning Tip", text: "Group your checkpoints into clusters (city centre first, then the outer areas) before you travel, to save time waiting for buses and trains." }
+        ]
+    },
+
     areas: [
         { name: "City Centre",           icon: "🏛️" },
         { name: "CV6 & Holbrooks",       icon: "🏘️" },
