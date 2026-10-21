@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" class="portal-locked on-portal">
 <head>
+    <script>
+    /* View mode: ?view=host (desktop host view) / ?view=mobile. Remembered on this device; only applies on wide screens. */
+    (function () {
+        try {
+            var q = new URLSearchParams(location.search).get('view');
+            if (q === 'host' || q === 'desktop') localStorage.setItem('mmr_view', 'desk');
+            else if (q === 'mobile') localStorage.removeItem('mmr_view');
+            window.__deskRequested = q === 'host' || q === 'desktop';
+            var want = localStorage.getItem('mmr_view') === 'desk';
+            var wide = function () { return window.innerWidth >= 900; };
+            var apply = function () { document.documentElement.classList.toggle('desk', want && wide()); };
+            window.__deskWanted = function () { return want; };
+            apply(); window.addEventListener('resize', apply);
+        } catch (e) {}
+    })();
+    </script>
     <!-- Self-Contained Web App Manifest Data URI (Base64-encoded to prevent quote leakage) -->
     <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"The Amazing Mouse Race","short_name":"Mouse Race","start_url":"./index.html","display":"standalone","background_color":"%230f172a","theme_color":"%230055B8","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwNTVCOCIvPjxjaXJjbGUgY3g9IjI1NiIgY3kyPSIyNTYiIHI9IjEyMCIgZmlsbD0iI0ZGQjgwMCIvPjwvc3ZnPg==","sizes":"any","type":"image/svg+xml"}]}'>
     <meta name="theme-color" content="#0055B8">
@@ -833,6 +849,53 @@
         .legal-card h4 { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: .95rem; color: var(--theme-cream); margin: 0 0 4px; }
         .legal-card p { font-size: .78rem; line-height: 1.6; color: #e2e8f0; margin: 0 0 16px; }
         .legal-card b { color: #fff; }
+    </style>
+
+    <style id="desktop-host-css">
+    /* =====================================================================
+       DESKTOP VIEW (html.desk): the same app and the same code, laid out for a big screen.
+       Turned on by index.html?view=host (host.html redirects there) and left on until ?view=mobile.
+       Nothing here changes behaviour: it only moves the dock to a side rail and widens/arranges the host screens.
+       ===================================================================== */
+    html.desk { --dock-clear: 0px; }
+    html.desk main { max-width: none !important; width: calc(100% - 96px) !important; margin: 0 0 0 96px !important; padding-left: 20px !important; padding-right: 28px !important; }
+    html.desk #app-dock { left: 14px; top: 50%; bottom: auto; width: 68px; height: auto; flex-direction: column; gap: 6px; padding: 10px 6px; border-radius: 34px; transform: translateY(-50%) !important; }
+    html.desk #app-dock .dock-btn { width: 52px; height: 52px; flex: 0 0 auto; }
+    html.desk #app-dock .dock-btn:hover { background: rgba(255,255,255,.08); }
+    html.desk #portal-viewport { overflow-x: hidden; }
+    html.desk #portal-track > section { scrollbar-width: thin; padding-bottom: 2rem; }
+    html.desk #portal-track > section::-webkit-scrollbar { display: block; width: 10px; }
+    html.desk #portal-track > section::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 8px; }
+    /* player pages stay readable: centred column */
+    html.desk #portal-track > section { padding-left: max(16px, calc(10% - 390px)); padding-right: max(16px, calc(10% - 390px)); }   /* % padding is of the 5-page track, so 10% = half a page */
+    html.desk #portal-track > #tab-organizer { padding-left: max(16px, calc(10% - 680px)); padding-right: max(16px, calc(10% - 680px)); }
+    /* host dashboard: a wide main column (races) beside a side column (admin tools) */
+    html.desk .desk-cols { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+    html.desk .desk-col { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
+    html.desk .desk-col > * { margin-top: 0 !important; }
+    html.desk .desk-col:empty, html.desk .desk-col:not(:has(> :not(.hidden))) { display: none; }
+    html.desk .desk-cols:not(:has(.desk-col-side > :not(.hidden))) { grid-template-columns: minmax(0, 1fr); }
+    .desk-cols { display: block; } .desk-col { display: block; } .desk-col > * + * { margin-top: 1.5rem; }
+    /* the wizard becomes a wide centred panel */
+    html.desk #race-wizard { align-items: center; background: rgba(2,6,23,.88); }
+    html.desk #race-wizard > * { width: min(980px, 100%); }
+    html.desk #race-wizard .max-w-lg { max-width: none !important; }
+    html.desk #race-wizard .rw-top { background: #0f172a; border-radius: 24px 24px 0 0; margin-top: 24px; border: 1px solid #1e293b; border-bottom: 0; }
+    html.desk #race-wizard #rw-scroll { background: #0b1220; border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; }
+    html.desk #race-wizard .rw-bottom { background: #0f172a; border: 1px solid #1e293b; border-top: 1px solid #1e293b; border-radius: 0 0 24px 24px; margin-bottom: 24px; }
+    html.desk #race-wizard .space-y-3:has(> .rw-choice) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+    html.desk #race-wizard .space-y-3:has(> .rw-choice) > * { margin-top: 0 !important; }
+    /* race editor: two columns of sections */
+    html.desk #host-race-panel { align-items: center; background: rgba(2,6,23,.92); }
+    html.desk #host-race-panel > * { width: min(1320px, 100%); }
+    html.desk #host-race-panel > div:first-child { border-radius: 0 0 20px 20px; }
+    html.desk #hrp-body { column-count: 2; column-gap: 1.5rem; padding-left: 24px; padding-right: 24px; }
+    html.desk #hrp-body > * { break-inside: avoid; margin: 0 0 1.5rem 0 !important; display: block; }
+    @media (max-width: 1100px) { html.desk #hrp-body { column-count: 1; } }
+    /* switch button */
+    .desk-switch { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .8rem; border-radius: .75rem; font-size: .72rem; font-weight: 700;
+                   background: rgba(99,102,241,.18); color: #c7d2fe; border: 1px solid rgba(129,140,248,.4); }
+    .desk-switch:hover { background: rgba(99,102,241,.3); }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-disneyGold selection:text-slate-900 flex flex-col">
@@ -1802,9 +1865,12 @@
                                 </h3>
                                 <p id="org-email-display" class="text-xs text-slate-400 mt-0.5">Logged in</p>
                             </div>
-                            <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
-                                Logout
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button" id="desk-switch-btn" onclick="toggleDeskView()" class="desk-switch"><i class="fa-solid fa-desktop"></i><span>Desktop view</span></button>
+                                <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition hover:bg-rose-500/30">
+                                    Logout
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 1b. Access banner: demo mode (with Upgrade) or active pass (with expiry) -->
@@ -14540,5 +14606,40 @@
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
     })();
     </script>
+
+<script>
+/* Desktop host view: same page, same code. This only (1) arranges the host dashboard cards into two columns and (2) switches the view. */
+(function () {
+    function layout() {
+        var dash = document.getElementById('admin-dashboard-card');
+        if (!dash || dash.querySelector(':scope > .desk-cols')) return;
+        var wrap = document.createElement('div'); wrap.className = 'desk-cols';
+        var main = document.createElement('div'); main.className = 'desk-col desk-col-main';
+        var side = document.createElement('div'); side.className = 'desk-col desk-col-side';
+        wrap.appendChild(main); wrap.appendChild(side);
+        var mainIds = ['org-locked-overlay-card', 'create-race-card', 'admin-active-races-container'];
+        var sideIds = ['stats-admin-card', 'promo-admin-card', 'support-admin-card', 'hostlock-card', 'apple-test-card'];
+        mainIds.forEach(function (id) { var el = document.getElementById(id); if (el) main.appendChild(el); });
+        sideIds.forEach(function (id) { var el = document.getElementById(id); if (el) side.appendChild(el); });
+        dash.appendChild(wrap);
+    }
+    function label() {
+        var b = document.getElementById('desk-switch-btn'); if (!b) return;
+        var on = document.documentElement.classList.contains('desk');
+        b.querySelector('span').textContent = on ? 'Mobile view' : 'Desktop view';
+        b.querySelector('i').className = 'fa-solid ' + (on ? 'fa-mobile-screen' : 'fa-desktop');
+    }
+    window.toggleDeskView = function () {
+        var on = document.documentElement.classList.contains('desk');
+        var base = location.pathname.replace(/[^\/]*$/, '') + 'index.html';
+        location.href = base + (on ? '?view=mobile' : '?view=host');
+    };
+    layout(); label();
+    new MutationObserver(label).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('load', function () {
+        if (window.__deskRequested && window.innerWidth >= 900 && window.switchTab) setTimeout(function () { window.switchTab('organizer'); }, 250);
+    });
+})();
+</script>
 </body>
 </html>
