@@ -42,6 +42,25 @@ window.registerLocation({
         ]
     },
 
+    // Maps page + hints + replays. This is the only location with a vector map; every other location falls back to OpenStreetMap
+    // until it gets its own `vector` entry here (build a data file, then add: vector: { data: "<file>.json?v=1", bounds: [[south, west], [north, east]] }).
+    map: {
+        vector: { data: "wdw-map.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
+        areas: [
+            { key: "all", name: "Whole Resort", icon: "🗺️", bounds: [[28.335,-81.625],[28.435,-81.500]], desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
+            { key: "mk", name: "Magic Kingdom", icon: "🏰", bounds: [[28.4140,-81.5900],[28.4250,-81.5720]], desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
+            { key: "epcot", name: "Epcot", icon: "🌐", bounds: [[28.3650,-81.5600],[28.3800,-81.5400]], desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
+            { key: "hs", name: "Hollywood Studios", icon: "🎬", bounds: [[28.3500,-81.5700],[28.3620,-81.5500]], desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
+            { key: "ak", name: "Animal Kingdom", icon: "🦁", bounds: [[28.3500,-81.6000],[28.3650,-81.5800]], desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
+            { key: "ds", name: "Disney Springs", icon: "🛍️", bounds: [[28.3700,-81.5300],[28.3820,-81.5150]], desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
+            { key: "resorts", name: "Resorts & Transit", icon: "🏨", bounds: [[28.3850,-81.5800],[28.4100,-81.5300]], desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+        ],
+        tips: [
+            { icon: "fa-train-subway", color: "text-disneyGold", title: "Free Transit Hubs", text: "Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network." },
+            { icon: "fa-compass", color: "text-disneyBlue", title: "Strategic Planning Tip", text: "Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times." }
+        ]
+    },
+
     areas: [
         { name: "Magic Kingdom",     icon: "🏰" },
         { name: "Epcot",             icon: "🌐" },
