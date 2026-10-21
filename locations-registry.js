@@ -55,6 +55,9 @@ window.registerLocation = function (pack) {
     // Map settings: `vector` = { data: "file.json?v=1", bounds: [[south, west], [north, east]] } when this location has its own
     // vector map (leave it out and the app shows OpenStreetMap instead). `areas` = optional hand-made list for the Maps page.
     pack.map = Object.assign({ vector: null, areas: null, tips: [] }, pack.map || {});
+    // Wording for "which places do you need access to": noun for an area (park / area), the label when a race uses every area
+    // (hopperAreas = the areas that count as "everything", e.g. only the theme parks), and singular/plural noun.
+    pack.access = Object.assign({ noun: "area", hopperLabel: "All areas", hopperAreas: null }, pack.access || {});
     window.LOCATIONS[pack.id] = pack;
     window.LOCATION_ORDER.push(pack.id);
     window.DISNEY_PRESETS.push.apply(window.DISNEY_PRESETS, pack.presets);
@@ -139,4 +142,22 @@ window.locMapAreas = function (id) {
         if (b) out.push({ key: "a" + i, name: a.name, icon: a.icon || "📍", bounds: b, desc: "Viewing " + a.name + "." });
     });
     return out;
+};
+
+// What a player needs access to for a race that visits the given areas (park names).
+// Returns { loc, kind: "single"|"hopper"|"multi"|"unknown", label, detail, areas: [{name, icon}] }
+window.locAccessInfo = function (parks, locationId) {
+    parks = (parks || []).filter(Boolean);
+    let loc = window.locById(locationId);
+    if (!loc && parks.length) { const i = window.locAreaInfo(parks[0]); loc = i && i.loc; }
+    if (!loc || !parks.length) return { loc: loc || null, kind: "unknown", label: "", detail: "", areas: parks.map(n => ({ name: n, icon: "📍" })) };
+    const order = (loc.areas || []).map(a => a.name);
+    const sorted = parks.slice().sort((a, b) => (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b)));
+    const areas = sorted.map(n => { const a = (loc.areas || []).find(x => x.name === n); return { name: n, icon: (a && a.icon) || "📍" }; });
+    const acc = loc.access, noun = acc.noun;
+    const core = acc.hopperAreas && acc.hopperAreas.length ? acc.hopperAreas : order;
+    const coversAll = core.length > 1 && core.every(n => parks.includes(n));
+    if (parks.length === 1) return { loc, kind: "single", label: parks[0] + " only", detail: "Everything in this race is in " + parks[0] + ", so you only need access to " + parks[0] + ".", areas };
+    if (coversAll) return { loc, kind: "hopper", label: acc.hopperLabel, detail: "This race visits all " + core.length + " " + noun + "s, so you need access to every one of them.", areas };
+    return { loc, kind: "multi", label: sorted.length <= 3 ? sorted.join(" + ") : parks.length + " " + noun + "s", detail: "You need access to " + (parks.length === 2 ? "both" : "all " + parks.length) + " of these " + noun + "s: " + sorted.join(", ") + ".", areas };
 };
