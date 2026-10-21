@@ -17,6 +17,24 @@ window.LOCATION_REGIONS = [
     { id: "asia",       name: "Asia" }
 ];
 
+// Generic wording used whenever a location file has no line of its own. Locations override any of these in their `flavour` block.
+window.LOCATION_FLAVOUR_DEFAULT = {
+    tagline: "Can your team beat this? Play The Amazing Mouse Race! 🏁",
+    flawless: [
+        "No wrong answers at all! Absolute geniuses! 🧠✨",
+        "Flawless trivia. Smug mode: activated. 😎",
+        "Not a single slip. Quizmasters everywhere are nervous. 🏆"
+    ],
+    // {guess} {question} {answer} are filled in by the app
+    roasts: [
+        "Oof! You said {guess} for {question}. It was {answer}. Your mates would be ashamed. 🤦",
+        "{guess}? Bold. Wrong, but bold. The answer to {question} was {answer}. 😬",
+        "You said {guess} with total confidence. It was {answer}. Confidence isn't everything. 🫠",
+        "{question} You went for {guess}. It was {answer}. The group chat is going to hear about this. 📱"
+    ],
+    transitAdvice: "Plan your route to the next stop and check your race rules for which transport is allowed."
+};
+
 window.LOCATIONS = window.LOCATIONS || {};     // id -> pack
 window.LOCATION_ORDER = window.LOCATION_ORDER || [];
 window.DISNEY_PRESETS = window.DISNEY_PRESETS || [];   // every stop and bonus from every pack, each tagged with `loc` (kept under the old name so older code keeps working)
@@ -31,7 +49,8 @@ window.registerLocation = function (pack) {
     stops.forEach(p => { if (areaNames.size && !areaNames.has(p.park)) console.warn("[" + pack.id + "] stop '" + p.name + "' has park '" + p.park + "' which is not listed in areas"); });
     pack.presets = stops.concat(bonuses);
     pack.region = pack.region || "europe";
-    pack.transit = Object.assign({ modes: [], transferRules: [], transferNoun: "stop", transferOther: "Other / not listed", transferPoints: [] }, pack.transit || {});
+    pack.transit = Object.assign({ modes: [], advice: [], adviceFallback: "", transferRules: [], transferNoun: "stop", transferOther: "Other / not listed", transferPoints: [] }, pack.transit || {});
+    pack.flavour = pack.flavour || {};
     pack.features = pack.features || {};
     window.LOCATIONS[pack.id] = pack;
     window.LOCATION_ORDER.push(pack.id);
@@ -69,6 +88,19 @@ window.locIdForRace = function (race) {
     return best || window.locDefaultId();
 };
 window.locForRace = (race) => window.locById(window.locIdForRace(race));
+// Flavour lines for a race, per key: the location's own lines if it has any, otherwise the generic ones.
+window.locFlavour = function (race) {
+    const l = race ? window.locForRace(race) : null, own = (l && l.flavour) || {}, d = window.LOCATION_FLAVOUR_DEFAULT;
+    const pick = (k) => (Array.isArray(own[k]) ? own[k].length : own[k]) ? own[k] : d[k];
+    return { tagline: pick("tagline"), flawless: pick("flawless"), roasts: pick("roasts") };
+};
+// Hint for how to reach a stop's area at this race's location
+window.locAdvice = function (areaName, race) {
+    const l = (race ? window.locForRace(race) : null) || window.locById(window.locDefaultId());
+    const t = (l && l.transit) || {}, park = String(areaName || "").toLowerCase();
+    const hit = (t.advice || []).find(a => (a.match || []).some(m => park.includes(String(m).toLowerCase())));
+    return hit ? hit.text : (t.adviceFallback || window.LOCATION_FLAVOUR_DEFAULT.transitAdvice);
+};
 // Transit set-up for a race (falls back to the first location when there is no race yet).
 window.locTransit = function (race) {
     const l = race ? window.locForRace(race) : null;
