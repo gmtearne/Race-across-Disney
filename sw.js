@@ -5,13 +5,15 @@
 // - Common CDN libraries (Tailwind, Font Awesome, Firebase SDK, fonts): stale-while-revalidate,
 //   so the app can still open offline after the first visit.
 // BUMP `VERSION` whenever you add files to CORE below, so phones pick up the new list.
-const VERSION = 'mouse-race-v6';
+const VERSION = 'mouse-race-v7';
 
 const CORE = [
   './',
   './index.html',
   './trivia-data.js',
-  './locations-data.js',
+  './locations-registry.js',
+  './locations-wdw.js',
+  './locations-coventry.js',
   './fun-facts.js',
   './img/bg-placeholder.jpg',
   './wdw-map.json?v=1',
