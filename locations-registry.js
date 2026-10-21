@@ -52,6 +52,9 @@ window.registerLocation = function (pack) {
     pack.transit = Object.assign({ modes: [], advice: [], adviceFallback: "", transferRules: [], transferNoun: "stop", transferOther: "Other / not listed", transferPoints: [] }, pack.transit || {});
     pack.flavour = pack.flavour || {};
     pack.features = pack.features || {};
+    // Map settings: `vector` = { data: "file.json?v=1", bounds: [[south, west], [north, east]] } when this location has its own
+    // vector map (leave it out and the app shows OpenStreetMap instead). `areas` = optional hand-made list for the Maps page.
+    pack.map = Object.assign({ vector: null, areas: null, tips: [] }, pack.map || {});
     window.LOCATIONS[pack.id] = pack;
     window.LOCATION_ORDER.push(pack.id);
     window.DISNEY_PRESETS.push.apply(window.DISNEY_PRESETS, pack.presets);
@@ -105,4 +108,35 @@ window.locAdvice = function (areaName, race) {
 window.locTransit = function (race) {
     const l = race ? window.locForRace(race) : null;
     return (l || window.locById(window.locDefaultId()) || { transit: { modes: [], transferRules: [], transferPoints: [] } }).transit;
+};
+
+// ---------- maps ----------
+// The vector map (if any) that covers a [lat,lng] point, or the one belonging to a location id. null => use OpenStreetMap.
+window.locVectorFor = function (opts) {
+    opts = opts || {};
+    const inBox = (b, p) => p && b && p[0] >= b[0][0] && p[0] <= b[1][0] && p[1] >= b[0][1] && p[1] <= b[1][1];
+    if (opts.location) { const l = window.locById(opts.location); return l && l.map && l.map.vector ? { id: l.id, vector: l.map.vector } : null; }
+    const hit = window.locList().find(l => l.map && l.map.vector && inBox(l.map.vector.bounds, opts.center));
+    return hit ? { id: hit.id, vector: hit.map.vector } : null;
+};
+// Areas the Maps page offers for a location: the hand-made list in the pack, else one entry per area built from its stops.
+window.locMapAreas = function (id) {
+    const l = window.locById(id); if (!l) return [];
+    if (l.map && l.map.areas && l.map.areas.length) return l.map.areas.map(a => ({ key: a.key, name: a.name, icon: a.icon || "📍", bounds: a.bounds, desc: a.desc || ("Viewing " + a.name + ".") }));
+    const box = (list) => {
+        if (!list.length) return null;
+        let s = 90, w = 180, n = -90, e = -180;
+        list.forEach(x => { s = Math.min(s, x.lat); n = Math.max(n, x.lat); w = Math.min(w, x.lng); e = Math.max(e, x.lng); });
+        const padLat = Math.max(0.003, (n - s) * 0.12), padLng = Math.max(0.004, (e - w) * 0.12);
+        return [[s - padLat, w - padLng], [n + padLat, e + padLng]];
+    };
+    const gps = (l.presets || []).filter(p => p.type === "GPS" && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    const out = [];
+    const all = box(gps);
+    if (all) out.push({ key: "all", name: "Whole area", icon: "🗺️", bounds: all, desc: "Viewing all of " + l.name + ". Pick an area from the menu above to zoom in, or pinch and drag to explore." });
+    (l.areas || []).forEach((a, i) => {
+        const b = box(gps.filter(p => p.park === a.name));
+        if (b) out.push({ key: "a" + i, name: a.name, icon: a.icon || "📍", bounds: b, desc: "Viewing " + a.name + "." });
+    });
+    return out;
 };
