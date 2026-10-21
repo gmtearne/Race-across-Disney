@@ -1656,41 +1656,23 @@
         <section id="tab-maps" class="px-3 space-y-6">
                 <div>
                     <h1 class="page-title" style="margin-bottom:0"><i class="fa-solid fa-map"></i>Park Maps</h1>
-                    <p class="page-sub">Interactive open-source maps and resort layouts to plan your route offline or on the go.</p>
+                    <p class="page-sub"><span id="map-page-sub">Interactive maps to plan your route on the go.</span></p>
                 </div>
 
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl space-y-3">
                     <button type="button" id="map-picker-btn" onclick="openMapPicker()" aria-haspopup="dialog" class="w-full flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-left text-white transition active:scale-[0.99] focus:outline-none focus:border-disneyGold">
                         <span id="map-picker-icon" class="text-lg shrink-0">🗺️</span>
-                        <span id="map-picker-label" class="min-w-0 flex-1 text-sm font-semibold truncate">Whole Resort</span>
+                        <span id="map-picker-label" class="min-w-0 flex-1 text-sm font-semibold truncate">Choose a map</span>
                         <i class="fa-solid fa-chevron-down text-slate-400 text-xs shrink-0"></i>
                     </button>
                     <div class="w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative shadow-inner" style="height:min(62dvh,30rem)">
                         <div id="wdw-map" class="absolute inset-0" style="position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%"></div>
                         <p id="wdw-map-msg" class="hidden absolute left-2 right-2 bottom-8 text-center text-[11px] font-semibold text-amber-300 bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2"></p>
                     </div>
-                    <p id="map-desc-text" class="text-xs text-slate-400 italic">
-                        Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore.
-                    </p>
+                    <p id="map-desc-text" class="text-xs text-slate-400 italic">Pick a map from the menu above to zoom in, or pinch and drag to explore.</p>
                 </div>
 
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
-                    <div class="font-bold text-disneyGold flex items-center gap-2 text-sm">
-                        <i class="fa-solid fa-train-subway"></i> Free Transit Hubs
-                    </div>
-                    <p class="text-slate-300 leading-relaxed">
-                        Remember your race rules: only free Disney transportation is allowed! Use the Transportation and Ticket Center (TTC) for monorails and buses, or transfer via Epcot/Hollywood Studios for the Disney Skyliner network.
-                    </p>
-                </div>
-
-                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
-                    <div class="font-bold text-disneyBlue flex items-center gap-2 text-sm">
-                        <i class="fa-solid fa-compass"></i> Strategic Planning Tip
-                    </div>
-                    <p class="text-slate-300 leading-relaxed">
-                        Organize your team checkpoints into geographic clusters (e.g., knocking out all Fantasyland stops together) before moving across parks to minimize walking fatigue and transit wait times.
-                    </p>
-                </div>
+                <div id="map-tips" class="space-y-6"></div>
         </section>
 
         <!-- ================= TAB 4: RULES ================= -->
@@ -3360,45 +3342,68 @@
             });
         }
 
-        const MAP_LOCATIONS = {
-            wdw: { title: "Walt Disney World Resort", bbox: "-81.6250%2C28.3350%2C-81.5000%2C28.4350", link: "https://www.openstreetmap.org/#map=12/28.3850/-81.5625", desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
-            mk: { title: "Magic Kingdom Park Map View", bbox: "-81.5900%2C28.4140%2C-81.5720%2C28.4250", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5900%2C28.4140%2C-81.5720%2C28.4250&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.4194/-81.5812", desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
-            epcot: { title: "Epcot Park Map View", bbox: "-81.5600%2C28.3650%2C-81.5400%2C28.3800", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5600%2C28.3650%2C-81.5400%2C28.3800&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3753/-81.5494", desc: "Viewing Epcot (World Celebration, World Discovery, World Nature, and World Showcase international pavilions)." },
-            hs: { title: "Disney's Hollywood Studios Map View", bbox: "-81.5700%2C28.3500%2C-81.5500%2C28.3620", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5700%2C28.3500%2C-81.5500%2C28.3620&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3565/-81.5606", desc: "Viewing Disney's Hollywood Studios (Galaxy's Edge, Toy Story Land, Tower of Terror, Hollywood Boulevard)." },
-            ak: { title: "Disney's Animal Kingdom Map View", bbox: "-81.6000%2C28.3500%2C-81.5800%2C28.3650", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.6000%2C28.3500%2C-81.5800%2C28.3650&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3553/-81.5907", desc: "Viewing Disney's Animal Kingdom (Pandora - The World of Avatar, Africa, Asia, Dinoland U.S.A.)." },
-            ds: { title: "Disney Springs Shopping & Dining District", bbox: "-81.5300%2C28.3700%2C-81.5150%2C28.3820", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5300%2C28.3700%2C-81.5150%2C28.3820&layer=mapnik", link: "https://www.openstreetmap.org/#map=16/28.3730/-81.5220", desc: "Viewing Disney Springs (Town Center, Marketplace, The Landing, West Side)." },
-            resorts: { title: "Disney Resort Hotels & Skyliner Transit Hubs", bbox: "-81.5800%2C28.3850%2C-81.5300%2C28.4100", url: "https://www.openstreetmap.org/export/embed.html?bbox=-81.5800%2C28.3850%2C-81.5300%2C28.4100&layer=mapnik", link: "https://www.openstreetmap.org/#map=14/28.3950/-81.5550", desc: "Viewing central resort areas including Caribbean Beach, Art of Animation, Pop Century, and Epcot resort area skyliner stations." }
+        // ---- Park Maps ----
+        // Which location the Maps page shows: the location of the race the player is in, otherwise every location (so players can see what we cover).
+        // Map choices are keyed "<locationId>:<areaKey>". The map engine (WdwMap) decides vector vs OpenStreetMap from the location.
+        let currentMapKey = '';
+        const splitMapKey = k => { const i = String(k || '').indexOf(':'); return i < 0 ? { loc: '', area: '' } : { loc: k.slice(0, i), area: k.slice(i + 1) }; };
+        const mapRaceLoc = () => { const r = window.liveTeamRaceData; return (r && window.activeRaceCode && window.locIdForRace) ? window.locIdForRace(r) : ''; };
+        const mapEntry = key => { const { loc, area } = splitMapKey(key); return (window.locMapAreas ? window.locMapAreas(loc) : []).find(a => a.key === area) || null; };
+        const mapChoices = () => {
+            const rl = mapRaceLoc();
+            if (rl) return window.locMapAreas(rl).map(a => ({ value: rl + ':' + a.key, label: a.name, icon: a.icon }));
+            const out = [];
+            window.locGrouped().forEach(g => g.locations.forEach(l => {
+                window.locMapAreas(l.id).forEach(a => out.push({ value: l.id + ':' + a.key, label: a.key === 'all' ? l.name + ' (whole area)' : a.name, icon: a.icon, group: g.region.name + ' · ' + l.name }));
+            }));
+            return out;
+        };
+        const mapKeyValid = key => mapChoices().some(c => c.value === key);
+        const mapDefaultKey = () => { const c = mapChoices(); return c.length ? c[0].value : ''; };
+        const paintMapChrome = () => {
+            const e = mapEntry(currentMapKey); if (!e) return;
+            const { loc } = splitMapKey(currentMapKey), l = window.locById(loc);
+            const icon = document.getElementById('map-picker-icon'), label = document.getElementById('map-picker-label'), desc = document.getElementById('map-desc-text');
+            if (icon) icon.textContent = e.icon || '📍';
+            if (label) label.textContent = mapRaceLoc() ? e.name : (l ? l.name + (e.key === 'all' ? '' : ' · ' + e.name) : e.name);
+            if (desc) desc.innerText = e.desc;
+        };
+        const paintMapTips = () => {
+            const box = document.getElementById('map-tips'); if (!box) return;
+            const { loc } = splitMapKey(currentMapKey), l = window.locById(loc);
+            const tips = (l && l.map && l.map.tips) || [];
+            box.innerHTML = tips.map(t => `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2"><div class="font-bold ${escHtml(t.color || 'text-disneyBlue')} flex items-center gap-2 text-sm"><i class="fa-solid ${escHtml(t.icon || 'fa-compass')}"></i> ${escHtml(t.title)}</div><p class="text-slate-300 leading-relaxed">${escHtml(t.text)}</p></div>`).join('');
+            const sub = document.getElementById('map-page-sub');
+            if (sub) sub.textContent = mapRaceLoc() ? 'Map of ' + (l ? l.name : 'your race') + ' to plan your route on the go.' : 'Browse the places we cover and plan your route on the go.';
         };
 
-        const MAP_NAMES = { wdw: 'Whole Resort', mk: 'Magic Kingdom', epcot: 'Epcot', hs: 'Hollywood Studios', ak: 'Animal Kingdom', ds: 'Disney Springs', resorts: 'Resorts & Transit' };
-        let currentMapKey = 'wdw';
-
-        window.switchMapArea = function(areaKey) {
-            const mapData = MAP_LOCATIONS[areaKey];
-            if (!mapData) return;
-            currentMapKey = areaKey;
-            const name = MAP_NAMES[areaKey] || mapData.title;
-            const icon = document.getElementById('map-picker-icon');
-            const label = document.getElementById('map-picker-label');
-            if (icon) icon.textContent = (window.areaIcon ? window.areaIcon(name) : '📍');
-            if (label) label.textContent = name;
-            flyToArea(areaKey, true);
-            document.getElementById('map-desc-text').innerText = mapData.desc;
+        window.switchMapArea = function(key) {
+            if (!mapEntry(key)) return;
+            const prev = splitMapKey(currentMapKey).loc;
+            currentMapKey = key;
+            paintMapChrome();
+            if (splitMapKey(key).loc !== prev) paintMapTips();
+            flyToArea(key, true);
         };
 
-        // ---- Park Maps: one offline vector map of the whole resort; the picker flies the camera to each area ----
-        const areaBounds = key => { const m = MAP_LOCATIONS[key]; if (!m) return null; const [w, s, e, n] = String(m.bbox).replace(/%2C/gi, ',').split(',').map(Number); return [[s, w], [n, e]]; };
-        let parkMap = null, parkMapPromise = null;
+        const areaBounds = key => { const e = mapEntry(key); return e ? e.bounds : null; };
+        let parkMap = null, parkMapPromise = null, parkMapKind = '';
         const parkMapMessage = text => { const m = document.getElementById('wdw-map-msg'); if (m) { m.textContent = text || ''; m.classList.toggle('hidden', !text); } };
+        // 'wdw' style vector id, or 'osm'. Switching between kinds rebuilds the map; moving between OSM locations just flies.
+        const mapKindFor = key => { const v = window.locVectorFor ? window.locVectorFor({ location: splitMapKey(key).loc }) : null; return v ? v.id : 'osm'; };
         window.ensureParkMap = function () {
+            const want = mapKindFor(currentMapKey);
+            if (parkMap && parkMapKind !== want) { try { parkMap.remove(); } catch (e) {} parkMap = null; parkMapPromise = null; const bx = document.getElementById('wdw-map'); if (bx) bx.innerHTML = ''; }
             if (parkMap) return Promise.resolve(parkMap);
             if (parkMapPromise) return parkMapPromise;
             const box = document.getElementById('wdw-map');
             if (!box || !window.WdwMap) return Promise.resolve(null);
             parkMapMessage('Starting map...');
-            parkMapPromise = WdwMap.create(box, {}).then(m => {
-                parkMap = m;
-                parkMapMessage(m.__hasData ? '' : 'Map data (wdw-map.json) was not found, so only the base layer is shown.');
+            const b0 = areaBounds(currentMapKey), c0 = b0 ? [(b0[0][0] + b0[1][0]) / 2, (b0[0][1] + b0[1][1]) / 2] : undefined;
+            const kind = want;
+            parkMapPromise = WdwMap.create(box, { location: splitMapKey(currentMapKey).loc, center: c0 }).then(m => {
+                parkMap = m; parkMapKind = kind;
+                parkMapMessage(m.__kind === 'vector' ? '' : (kind !== 'osm' ? 'The detailed map could not be loaded, so a standard map is shown instead.' : ''));
                 flyToArea(currentMapKey, false);
                 return m;
             }).catch(e => {
@@ -3418,17 +3423,24 @@
                 if (animate) WdwMap.flyTo(m, cam.center, cam.zoom, { duration: 1.6 }); else WdwMap.jump(m, cam.center, cam.zoom);
             });
         }
-        // Called whenever the Park Maps page is shown: starts the map on first visit, and fixes its size afterwards
+        // Called whenever the Park Maps page is shown: re-checks which location applies (race joined/left), then starts or refits the map
         window.showParkMap = function () {
             if (!window.WdwMap) { window.addEventListener('load', () => { if (window.showParkMap) window.showParkMap(); }, { once: true }); return; }
-            window.ensureParkMap().then(m => { if (m) setTimeout(() => { try { m.resize(); } catch (e) {} if (!m.__refitted) { m.__refitted = true; flyToArea(currentMapKey, false); } }, 380); });
+            const before = currentMapKey, rl = mapRaceLoc();
+            if (!currentMapKey || !mapKeyValid(currentMapKey)) currentMapKey = mapDefaultKey();
+            if (!currentMapKey) return;
+            const changed = currentMapKey !== before;
+            paintMapChrome(); paintMapTips();
+            if (changed && parkMap) { flyToArea(currentMapKey, false); }
+            window.ensureParkMap().then(m => { if (m) setTimeout(() => { try { m.resize(); } catch (e) {} if (!m.__refitted || changed) { m.__refitted = true; flyToArea(currentMapKey, false); } }, 380); });
         };
 
         // Bottom-sheet picker for the map area (same sheet as every other dropdown in the app)
         window.openMapPicker = function() {
+            if (!currentMapKey || !mapKeyValid(currentMapKey)) { currentMapKey = mapDefaultKey(); paintMapChrome(); paintMapTips(); }
             window.openAppSheet({
-                title: 'Choose a map',
-                options: Object.keys(MAP_NAMES).map(k => ({ value: k, label: MAP_NAMES[k], icon: window.areaIcon ? window.areaIcon(MAP_NAMES[k]) : '' })),
+                title: mapRaceLoc() ? 'Choose an area' : 'Choose a map',
+                options: mapChoices(),
                 selected: currentMapKey,
                 searchable: false,
                 onSelect: k => window.switchMapArea(k)
@@ -14107,10 +14119,9 @@
     (function () {
         'use strict';
         const MAPLIBRE_VERSION = '4.7.1';
-        const DATA_URL = 'wdw-map.json?v=1';                       // bump v= after you rebuild the data file
         const WDW_BOUNDS = [[28.335, -81.625], [28.435, -81.500]]; // [[south, west], [north, east]]: same box as the build script
         const EMPTY = { type: 'FeatureCollection', features: [] };
-        let libPromise = null, dataPromise = null;
+        let libPromise = null; const dataCache = {};
 
         // ---------- loading ----------
         const addTag = (tag, attrs) => new Promise((resolve, reject) => {
@@ -14134,12 +14145,20 @@
             libPromise.catch(() => { libPromise = null; });
             return libPromise;
         }
-        function loadData() {
-            if (!dataPromise) {
-                dataPromise = fetch(DATA_URL).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-                dataPromise.catch(() => { dataPromise = null; });
+        // One vector data file per location (url comes from the location file: map.vector.data). Cached per url.
+        function loadData(url) {
+            url = url || 'wdw-map.json?v=1';
+            if (!dataCache[url]) {
+                dataCache[url] = fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+                dataCache[url].catch(() => { delete dataCache[url]; });
             }
-            return dataPromise;
+            return dataCache[url];
+        }
+        // Fallback for locations with no vector map: standard OpenStreetMap tiles drawn by the same MapLibre engine.
+        function osmStyle() {
+            return { version: 8, name: 'osm',
+                sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: '&copy; OpenStreetMap contributors' } },
+                layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0b1220' } }, { id: 'osm', type: 'raster', source: 'osm' }] };
         }
 
         // ---------- look: dark navy to match the app, gold monorail ----------
@@ -14194,25 +14213,27 @@
         const ll = p => [p[1], p[0]];                              // [lat,lng] -> [lng,lat]
         const whenSized = async (el, ms) => { const t0 = Date.now(); while ((el.clientWidth < 10 || el.clientHeight < 10) && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 100)); };
         async function create(container, o = {}) {
-            const [, data] = await Promise.all([loadLib(), loadData().catch(e => { console.warn('WDW map data unavailable', e); return null; })]);
+            // Pick the map: a location with a vector map (tagged in its location file) uses it; everything else uses OpenStreetMap.
+            const pick = window.locVectorFor ? window.locVectorFor({ location: o.location, center: o.center }) : null;
+            const [, data] = await Promise.all([loadLib(), pick ? loadData(pick.vector.data).catch(e => { console.warn('Vector map data unavailable, using OpenStreetMap', e); return null; }) : Promise.resolve(null)]);
             await whenSized(container, 4000);                      // the Park Maps page can be off-screen when it first starts
             const map = new maplibregl.Map({
-                container, style: buildStyle(data), center: ll(o.center || [28.385, -81.5625]), zoom: o.zoom != null ? o.zoom : 11,
+                container, style: data ? buildStyle(data) : osmStyle(), center: ll(o.center || [28.385, -81.5625]), zoom: o.zoom != null ? o.zoom : 11,
                 minZoom: 8, maxZoom: 19, attributionControl: false, dragRotate: false, pitchWithRotate: false, fadeDuration: 0, renderWorldCopies: false
             });
             map.touchZoomRotate.disableRotation();
-            map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: '&copy; OpenStreetMap contributors' }));
+            map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: data ? '&copy; OpenStreetMap contributors' : '' }));
             map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
             // Small status line so a blank map explains itself
             const note = document.createElement('div'); note.className = 'wdw-status';
-            note.textContent = data ? `Drawing map... (${(data.features || []).length} features)` : 'Map data not loaded';
+            note.textContent = data ? `Drawing map... (${(data.features || []).length} features)` : 'Loading map...';
             container.appendChild(note);
             let failed = false;
             map.on('error', e => { failed = true; const msg = (e && e.error && e.error.message) || String(e); window.__wdwErr = msg; console.error('WdwMap error', e); note.textContent = 'Map error: ' + msg; });
-            map.once('idle', () => { if (failed) return; if (data) { note.textContent = 'Map ready'; setTimeout(() => note.remove(), 2500); } });
+            map.once('idle', () => { if (failed) return; note.textContent = 'Map ready'; setTimeout(() => note.remove(), 1500); });
             await Promise.race([new Promise(res => map.once('load', res)), new Promise(res => setTimeout(res, 7000))]);
             try { map.resize(); } catch (e) { /* ignore */ }
-            map.__hasData = !!data;
+            map.__hasData = !!data; map.__kind = data ? 'vector' : 'osm';
             if (data) addLabels(map, data, o.labelsMaxZoom != null ? o.labelsMaxZoom : 99);
             return map;
         }
