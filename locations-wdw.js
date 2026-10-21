@@ -1,58 +1,89 @@
-// Locations and Pre-configured Checkpoints Data File - Coventry UK & Disney Edition (Precision Geocoded)
-window.DISNEY_PRESETS = [
-    // ================= COVENTRY: CITY CENTRE =================
-    { name: "Coventry Cathedral (New)", lat: 52.4082, lng: -1.5073, type: "GPS", park: "Coventry", land: "City Centre (Historic Landmark)" },
-    { name: "St Michael's Cathedral Ruins", lat: 52.4085, lng: -1.5065, type: "GPS", park: "Coventry", land: "City Centre (Historic Landmark)" },
-    { name: "Lady Godiva Statue (Broadgate)", lat: 52.4078, lng: -1.5097, type: "GPS", park: "Coventry", land: "City Centre (Public Square)" },
-    { name: "Coventry Transport Museum", lat: 52.4103, lng: -1.5090, type: "GPS", park: "Coventry", land: "City Centre (Museum)" },
-    { name: "The Wave Waterpark", lat: 52.4054, lng: -1.5126, type: "GPS", park: "Coventry", land: "City Centre (Leisure / Attraction)" },
-    { name: "Herbert Art Gallery & Museum", lat: 52.4078, lng: -1.5058, type: "GPS", park: "Coventry", land: "City Centre (Museum & Gallery)" },
-    { name: "St Mary's Guildhall", lat: 52.4078, lng: -1.5070, type: "GPS", park: "Coventry", land: "City Centre (Historic Building)" },
-    { name: "Belgrade Theatre", lat: 52.4098, lng: -1.5135, type: "GPS", park: "Coventry", land: "City Centre (Entertainment)" },
-    { name: "Holy Trinity Church", lat: 52.4087, lng: -1.5078, type: "GPS", park: "Coventry", land: "City Centre (Historic Church)" },
-    { name: "Lower Precinct Shopping Centre", lat: 52.4081, lng: -1.5128, type: "GPS", park: "Coventry", land: "City Centre (Shopping)" },
-    { name: "West Orchards Shopping Centre", lat: 52.4091, lng: -1.5115, type: "GPS", park: "Coventry", land: "City Centre (Shopping)" },
-    { name: "Coventry Railway Station", lat: 52.4008, lng: -1.5134, type: "GPS", park: "Coventry", land: "City Centre (Transit Hub)" },
-    { name: "Skydome Arena / Ice Rink", lat: 52.4068, lng: -1.5182, type: "GPS", park: "Coventry", land: "City Centre (Sports & Leisure)" },
-    { name: "Coventry Market", lat: 52.4067, lng: -1.5138, type: "GPS", park: "Coventry", land: "City Centre (Local Market)" },
-    { name: "The Phoenix Pub", lat: 52.4088, lng: -1.5042, type: "GPS", park: "Coventry", land: "City Centre (Pub / Food)" },
+// ============================================================================
+// Location pack: Walt Disney World (Florida)
+// ----------------------------------------------------------------------------
+// Everything that belongs to this destination lives in this one file: its areas, its GPS stops, its bonus photo
+// challenges and its transit rules. Nothing here is shared with other destinations.
+// To add a new destination, copy this file, change the id/name/region and fill in your own data, then add one
+// <script> line for it in index.html (and the file name to sw.js). Regions are listed in locations-registry.js.
+//
+// Fields
+//   id        short unique id saved on every race created here (races/{code}.locationId). Never change it once races exist.
+//   region    one of the ids in window.LOCATION_REGIONS (locations-registry.js)
+//   areas     the parks / zones the stops belong to, in the order they are listed in the app. `name` must match each stop's `park`.
+//   stops     GPS checkpoints:  { name, lat, lng, type: "GPS", park: <area name>, land: <sub-area / description> }
+//   bonuses   photo challenges: { name, type: "BONUS_PHOTO", bonusMinDeduction, park: "Bonus Challenge", areas: [<area names> or "*"], land, bingo: [...] }
+//   transit   how teams travel here: modes they can tick, trips that need a transfer, and the transfer points to choose from
+//   features  switches for things that only make sense at some places (e.g. Hidden Mickey Bingo)
+// ============================================================================
+window.registerLocation({
+    id: "wdw",
+    name: "Walt Disney World",
+    region: "florida",
+    icon: "🏰",
+    blurb: "Magic Kingdom, Epcot, Hollywood Studios, Animal Kingdom, Disney Springs and the resorts",
+    center: { lat: 28.4177, lng: -81.5812 },
+    features: { hiddenMickeyBingo: true },
 
-    // ================= COVENTRY: CV6 AREA =================
-    { name: "The Craftsman Pub", lat: 52.44148, lng: -1.522368, type: "GPS", park: "Coventry", land: "CV6 / Holbrooks (Pub)" },
-    { name: "Glentworth Fish and Chips", lat: 52.44195, lng: -1.52310, type: "GPS", park: "Coventry", land: "CV6 / Holbrooks (Takeaway / Food)" },
-    { name: "Morrisons Parkgate Road", lat: 52.4372, lng: -1.5185, type: "GPS", park: "Coventry", land: "CV6 / Holbrooks (Supermarket / Shop)" },
-    { name: "CBS Arena (Coventry Building Society Arena)", lat: 52.4481, lng: -1.4955, type: "GPS", park: "Coventry", land: "CV6 / Rowleys Green (Stadium / Arena)" },
-    { name: "Arena Park Shopping Centre", lat: 52.4496, lng: -1.4988, type: "GPS", park: "Coventry", land: "CV6 / Rowleys Green (Retail Park)" },
-    { name: "Keresley Jubilee Wood", lat: 52.4452, lng: -1.5385, type: "GPS", park: "Coventry", land: "CV6 / Keresley (Nature Park)" },
-    { name: "The Royal Oak Keresley", lat: 52.4428, lng: -1.5360, type: "GPS", park: "Coventry", land: "CV6 / Keresley (Pub)" },
-    { name: "The Hare and Hounds Keresley", lat: 52.4510, lng: -1.5398, type: "GPS", park: "Coventry", land: "CV6 / Keresley (Pub)" },
-    { name: "Keresley Community Centre", lat: 52.4395, lng: -1.5332, type: "GPS", park: "Coventry", land: "CV6 / Keresley (Community Hub)" },
-    { name: "Holbrooks Park", lat: 52.4335, lng: -1.5205, type: "GPS", park: "Coventry", land: "CV6 / Holbrooks (Public Park)" },
-    { name: "The Wheel Pub Holbrooks", lat: 52.4360, lng: -1.5180, type: "GPS", park: "Coventry", land: "CV6 / Holbrooks (Pub)" },
-    { name: "Foleshill Community Centre", lat: 52.4285, lng: -1.4982, type: "GPS", park: "Coventry", land: "CV6 / Foleshill (Community Hub)" },
-    { name: "Broad Street Meeting Hall", lat: 52.4250, lng: -1.4995, type: "GPS", park: "Coventry", land: "CV6 / Foleshill (Historic Venue)" },
-    { name: "Coventry Canal Basin", lat: 52.4140, lng: -1.5085, type: "GPS", park: "Coventry", land: "CV6 / Foleshill (Waterway / Historic)" },
-    { name: "Longford Park", lat: 52.4468, lng: -1.4880, type: "GPS", park: "Coventry", land: "CV6 / Longford (Public Park)" },
-    { name: "Daisychain Park", lat: 52.4310, lng: -1.5090, type: "GPS", park: "Coventry", land: "CV6 / Edgwick (Park & Playground)" },
+    areas: [
+        { name: "Magic Kingdom",     icon: "🏰" },
+        { name: "Epcot",             icon: "🌐" },
+        { name: "Hollywood Studios", icon: "🎬" },
+        { name: "Animal Kingdom",    icon: "🦁" },
+        { name: "Disney Springs",    icon: "🛍️" },
+        { name: "Disney Resorts",    icon: "🏨" }
+    ],
 
-    // ================= COVENTRY: COOMBE ABBEY & BINLEY =================
-    { name: "Coombe Abbey Hotel Entrance", lat: 52.4145, lng: -1.4081, type: "GPS", park: "Coventry", land: "Coombe Abbey (Historic Country House)" },
-    { name: "Coombe Abbey Visitor Centre", lat: 52.4121, lng: -1.4110, type: "GPS", park: "Coventry", land: "Coombe Abbey (Country Park)" },
-    { name: "Go Ape Coombe Abbey", lat: 52.4128, lng: -1.4125, type: "GPS", park: "Coventry", land: "Coombe Abbey (Outdoor Activity)" },
-    { name: "Coombe Pool Fishing Lake", lat: 52.4115, lng: -1.4060, type: "GPS", park: "Coventry", land: "Coombe Abbey (Nature Trail)" },
-    { name: "Coombe Abbey Heronry", lat: 52.4132, lng: -1.4035, type: "GPS", park: "Coventry", land: "Coombe Abbey (Wildlife Area)" },
-    { name: "Binley Woods Village Hall", lat: 52.3980, lng: -1.4285, type: "GPS", park: "Coventry", land: "Binley (Community Venue)" },
-    { name: "The Rose & Crown Binley", lat: 52.3970, lng: -1.4310, type: "GPS", park: "Coventry", land: "Binley (Pub)" },
-    { name: "Warwickshire Shopping Park", lat: 52.3965, lng: -1.4485, type: "GPS", park: "Coventry", land: "Binley (Retail Park)" },
-    { name: "Binley Fire Station", lat: 52.3995, lng: -1.4550, type: "GPS", park: "Coventry", land: "Binley (Public Service)" },
+    transit: {
+        // Modes a team can tick after each check-in. Keep "none" last (it means they only walked).
+        modes: [
+            { id: "bus",      label: "Bus",           emoji: "🚌" },
+            { id: "boat",     label: "Boat",          emoji: "⛴️" },
+            { id: "skyliner", label: "Skyliner",      emoji: "🚡" },
+            { id: "monorail", label: "Monorail",      emoji: "🚝" },
+            { id: "none",     label: "None (walked)", emoji: "🚶" }
+        ],
+        // Trips that cannot be made directly. The team is asked which transfer point they went through.
+        transferRules: [
+            {
+                between: ["Disney Springs"],
+                and: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"],
+                reason: "You can't travel directly between a theme park and Disney Springs."
+            }
+        ],
+        transferNoun: "resort",                      // used in the question: "Which resort did you transfer through?"
+        transferOther: "Other resort / not listed",
+        // Choices for the transfer question, grouped by `area`. lat/lng bend the race replay through that point.
+        transferPoints: [
+                { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4151, lng: -81.5745 },
+                { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.4173, lng: -81.5752 },
+                { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4055, lng: -81.5841 },
+                { name: "Grand Floridian Resort & Spa", area: "Magic Kingdom area", lat: 28.4111, lng: -81.5877 },
+                { name: "Wilderness Lodge", area: "Magic Kingdom area", lat: 28.4057, lng: -81.5727 },
+                { name: "Fort Wilderness Resort & Campground", area: "Magic Kingdom area", lat: 28.4062, lng: -81.5543 },
+                { name: "Beach Club Resort", area: "Epcot area", lat: 28.3713, lng: -81.5562 },
+                { name: "Yacht Club Resort", area: "Epcot area", lat: 28.3706, lng: -81.5583 },
+                { name: "BoardWalk Inn & Villas", area: "Epcot area", lat: 28.3665, lng: -81.5564 },
+                { name: "Swan Resort", area: "Epcot area", lat: 28.3683, lng: -81.5598 },
+                { name: "Dolphin Resort", area: "Epcot area", lat: 28.3662, lng: -81.5606 },
+                { name: "Swan Reserve", area: "Epcot area", lat: 28.3661, lng: -81.5630 },
+                { name: "Riviera Resort", area: "Epcot area", lat: 28.3648, lng: -81.5441 },
+                { name: "Caribbean Beach Resort", area: "Epcot area", lat: 28.3618, lng: -81.5414 },
+                { name: "Pop Century Resort", area: "Epcot area", lat: 28.3499, lng: -81.5417 },
+                { name: "Art of Animation Resort", area: "Epcot area", lat: 28.3496, lng: -81.5450 },
+                { name: "Animal Kingdom Lodge (Jambo House)", area: "Animal Kingdom area", lat: 28.3528, lng: -81.6025 },
+                { name: "Animal Kingdom Villas (Kidani Village)", area: "Animal Kingdom area", lat: 28.3537, lng: -81.6067 },
+                { name: "All-Star Movies Resort", area: "Animal Kingdom area", lat: 28.3375, lng: -81.5739 },
+                { name: "All-Star Music Resort", area: "Animal Kingdom area", lat: 28.3397, lng: -81.5735 },
+                { name: "All-Star Sports Resort", area: "Animal Kingdom area", lat: 28.3427, lng: -81.5738 },
+                { name: "Coronado Springs Resort", area: "Animal Kingdom area", lat: 28.3630, lng: -81.5746 },
+                { name: "Old Key West Resort", area: "Disney Springs area", lat: 28.3759, lng: -81.5350 },
+                { name: "Saratoga Springs Resort & Spa", area: "Disney Springs area", lat: 28.3762, lng: -81.5240 },
+                { name: "Port Orleans Resort - French Quarter", area: "Disney Springs area", lat: 28.3794, lng: -81.5367 },
+                { name: "Port Orleans Resort - Riverside", area: "Disney Springs area", lat: 28.3855, lng: -81.5365 }
+        ]
+    },
 
-    // ================= COVENTRY: OTHER NOTABLE LOCATIONS =================
-    { name: "War Memorial Park (Cenotaph)", lat: 52.3935, lng: -1.5262, type: "GPS", park: "Coventry", land: "Earlsdon (Public Park)" },
-    { name: "University of Warwick Piazza", lat: 52.3792, lng: -1.5615, type: "GPS", park: "Coventry", land: "Gibbet Hill (University Campus)" },
-    { name: "FarGo Village", lat: 52.4072, lng: -1.4980, type: "GPS", park: "Coventry", land: "Far Gosford (Creative Quarter)" },
-    { name: "Charterhouse Heritage Park", lat: 52.4025, lng: -1.4925, type: "GPS", park: "Coventry", land: "London Road (Historic Park)" },
-
-    // ================= DISNEY: MAGIC KINGDOM =================
+    stops: [
     { name: "Cinderella Castle", lat: 28.419350, lng: -81.581350, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
     { name: "Space Mountain", lat: 28.419050, lng: -81.577550, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
     { name: "Haunted Mansion", lat: 28.420460, lng: -81.583125, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
@@ -180,13 +211,9 @@ window.DISNEY_PRESETS = [
     { name: "Art of Animation & Pop Century Skyliner", lat: 28.3508, lng: -81.5431, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
     { name: "Disney's BoardWalk Inn Entrance", lat: 28.3665, lng: -81.5564, type: "GPS", park: "Disney Resorts", land: "Epcot Resort Area" },
     { name: "Animal Kingdom Lodge (Jambo House)", lat: 28.3528, lng: -81.6025, type: "GPS", park: "Disney Resorts", land: "Deluxe Resort" },
+    ],
 
-    // ================= BONUS PHOTO CHALLENGES =================
-    { name: "Photo with the Lady Godiva Statue", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
-    { name: "Photo eating a Batch / Cob from a Coventry Bakery", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Food & Snacks", bingo: ["foodbingo", "snackbingo"] },
-    { name: "Photo with a Peeping Tom Clock Scene", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "City Centre" },
-    { name: "Photo feeding ducks at Coombe Abbey Lake", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Coombe Park" },
-    { name: "Photo in front of a Coventry City Sky Blues Logo", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Coventry"], land: "Sports / CBS Arena" },
+    bonuses: [
     { name: "Photo with Mickey Mouse", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Character Meet & Greet", bingo: ["characterbingo", "photobingo"] },
     { name: "Photo with any Princess", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios"], land: "Character Meet & Greet", bingo: ["characterbingo", "photobingo"] },
     { name: "Photo with a Hidden Mickey", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "All Parks", bingo: ["hiddenmickeybingo", "photobingo"] },
@@ -220,41 +247,5 @@ window.DISNEY_PRESETS = [
     { name: "Photo with a Disney plush toy", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom", "Disney Springs"], land: "Shopping", bingo: ["shopbingo", "photobingo"] },
     { name: "Photo outside a Disney attraction entrance", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Attractions", bingo: ["ridebingo", "photobingo"] },
     { name: "Photo with a ride vehicle or ride sign", type: "BONUS_PHOTO", bonusMinDeduction: 10, park: "Bonus Challenge", areas: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"], land: "Attractions", bingo: ["ridebingo", "photobingo"] }
-];
-
-window.TRANSIT_TRANSFER_RULES = [
-    {
-        between: ["Disney Springs"],
-        and: ["Magic Kingdom", "Epcot", "Hollywood Studios", "Animal Kingdom"],
-        reason: "You can't travel directly between a theme park and Disney Springs."
-    }
-];
-
-window.DISNEY_RESORTS = [
-    { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4151, lng: -81.5745 },
-    { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.4173, lng: -81.5752 },
-    { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4055, lng: -81.5841 },
-    { name: "Grand Floridian Resort & Spa", area: "Magic Kingdom area", lat: 28.4111, lng: -81.5877 },
-    { name: "Wilderness Lodge", area: "Magic Kingdom area", lat: 28.4057, lng: -81.5727 },
-    { name: "Fort Wilderness Resort & Campground", area: "Magic Kingdom area", lat: 28.4062, lng: -81.5543 },
-    { name: "Beach Club Resort", area: "Epcot area", lat: 28.3713, lng: -81.5562 },
-    { name: "Yacht Club Resort", area: "Epcot area", lat: 28.3706, lng: -81.5583 },
-    { name: "BoardWalk Inn & Villas", area: "Epcot area", lat: 28.3665, lng: -81.5564 },
-    { name: "Swan Resort", area: "Epcot area", lat: 28.3683, lng: -81.5598 },
-    { name: "Dolphin Resort", area: "Epcot area", lat: 28.3662, lng: -81.5606 },
-    { name: "Swan Reserve", area: "Epcot area", lat: 28.3661, lng: -81.5630 },
-    { name: "Riviera Resort", area: "Epcot area", lat: 28.3648, lng: -81.5441 },
-    { name: "Caribbean Beach Resort", area: "Epcot area", lat: 28.3618, lng: -81.5414 },
-    { name: "Pop Century Resort", area: "Epcot area", lat: 28.3499, lng: -81.5417 },
-    { name: "Art of Animation Resort", area: "Epcot area", lat: 28.3496, lng: -81.5450 },
-    { name: "Animal Kingdom Lodge (Jambo House)", area: "Animal Kingdom area", lat: 28.3528, lng: -81.6025 },
-    { name: "Animal Kingdom Villas (Kidani Village)", area: "Animal Kingdom area", lat: 28.3537, lng: -81.6067 },
-    { name: "All-Star Movies Resort", area: "Animal Kingdom area", lat: 28.3375, lng: -81.5739 },
-    { name: "All-Star Music Resort", area: "Animal Kingdom area", lat: 28.3397, lng: -81.5735 },
-    { name: "All-Star Sports Resort", area: "Animal Kingdom area", lat: 28.3427, lng: -81.5738 },
-    { name: "Coronado Springs Resort", area: "Animal Kingdom area", lat: 28.3630, lng: -81.5746 },
-    { name: "Old Key West Resort", area: "Disney Springs area", lat: 28.3759, lng: -81.5350 },
-    { name: "Saratoga Springs Resort & Spa", area: "Disney Springs area", lat: 28.3762, lng: -81.5240 },
-    { name: "Port Orleans Resort - French Quarter", area: "Disney Springs area", lat: 28.3794, lng: -81.5367 },
-    { name: "Port Orleans Resort - Riverside", area: "Disney Springs area", lat: 28.3855, lng: -81.5365 }
-];
+    ]
+});
