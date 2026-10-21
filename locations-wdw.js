@@ -24,6 +24,24 @@ window.registerLocation({
     center: { lat: 28.4177, lng: -81.5812 },
     features: { hiddenMickeyBingo: true },
 
+    // Words that belong to this place: shown on the report card (and anywhere else the app needs local flavour).
+    // Any line left out falls back to the generic wording in locations-registry.js, so a new location works with none of this.
+    //   roasts use {guess} {question} {answer}.   flawless / tagline are plain text.
+    flavour: {
+        tagline: "Can your team beat this time? Play The Amazing Mouse Race! 🏰✨",
+        flawless: [
+            "No wrong trivia answers! Absolute Disney Geniuses! 🧠✨",
+            "Flawless trivia. Imagineers everywhere are taking notes. 📝✨",
+            "Not a single slip. Cast Members would be handing out gold stars. ⭐"
+        ],
+        roasts: [
+            "Oof! You guessed {guess} for {question}. The correct answer was {answer}. Mickey is shaking his head! 🐭🤦‍♂️",
+            "{guess}? Even Goofy knew it was {answer}. (Question: {question}) 🤪",
+            "{question} Answer: {answer}. You said {guess}. A Cast Member just winced somewhere. 😬",
+            "You said {guess} with total confidence. It was {answer}. Pixie dust can't fix that one. ✨🫠"
+        ]
+    },
+
     areas: [
         { name: "Magic Kingdom",     icon: "🏰" },
         { name: "Epcot",             icon: "🌐" },
@@ -50,6 +68,15 @@ window.registerLocation({
                 reason: "You can't travel directly between a theme park and Disney Springs."
             }
         ],
+        // Hint shown for a stop: first entry whose `match` words appear in the stop's area name wins; otherwise `adviceFallback`.
+        advice: [
+            { match: ["magic kingdom"],     text: "Magic Kingdom can be reached via Disney Resort Buses from any resort hotel. If arriving via Transportation and Ticket Center (TTC), take the Resort Monorail or the Ferryboat. From Epcot, take the Monorail transfer via the TTC." },
+            { match: ["epcot"],             text: "Epcot can be reached via bus from any resort, or by using the Disney Skyliner from eligible resorts (Caribbean Beach, Art of Animation, Pop Century, Riviera) and Hollywood Studios. You can also take the Monorail from Magic Kingdom/TTC or Friendship boats from the Epcot resort area (BoardWalk, Yacht & Beach Club)." },
+            { match: ["hollywood studios"], text: "Disney's Hollywood Studios can be reached via resort buses from any hotel, the Disney Skyliner network (transfer via Caribbean Beach), or Friendship water boats from Epcot resort hotels and the BoardWalk." },
+            { match: ["animal kingdom"],    text: "Disney's Animal Kingdom is accessible exclusively via complimentary Disney Resort Buses from any resort hotel or park transfer hub." },
+            { match: ["springs", "bonus"],  text: "You can't travel straight between a theme park and Disney Springs. Go via a resort first, then a bus or boat on to Disney Springs. For example: Magic Kingdom to Contemporary by monorail; Epcot to BoardWalk on foot or by boat; Hollywood Studios to Pop Century by Skyliner; or Animal Kingdom to Old Key West by bus and then a boat." }
+        ],
+        adviceFallback: "Use complimentary Disney Resort Buses, Monorails, Skyliner routes, or watercraft available across property. Remember: paid ride-shares and taxis are strictly prohibited!",
         transferNoun: "resort",                      // used in the question: "Which resort did you transfer through?"
         transferOther: "Other resort / not listed",
         // Choices for the transfer question, grouped by `area`. lat/lng bend the race replay through that point.
