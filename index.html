@@ -875,7 +875,11 @@
     html.desk .desk-col > * { margin-top: 0 !important; }
     html.desk .desk-col:empty, html.desk .desk-col:not(:has(> :not(.hidden))) { display: none; }
     html.desk .desk-cols:not(:has(.desk-col-side > :not(.hidden))) { grid-template-columns: minmax(0, 1fr); }
-    .desk-cols { display: block; } .desk-col { display: block; } .desk-col > * + * { margin-top: 1.5rem; }
+    /* phone / narrow layout: the two columns simply stack, with the same 1.5rem gap as every other card */
+    .desk-cols { display: flex; flex-direction: column; gap: 1.5rem; }
+    .desk-col { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
+    .desk-col > * { margin-top: 0 !important; }
+    .desk-col:not(:has(> :not(.hidden))) { display: none; }
     /* the wizard becomes a wide centred panel */
     html.desk #race-wizard { align-items: center; background: rgba(2,6,23,.88); }
     html.desk #race-wizard > * { width: min(980px, 100%); }
