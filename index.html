@@ -1801,6 +1801,12 @@
                         Depending on your host's settings, a race may include extras such as <strong>trivia questions</strong>, surprise <strong>wildcard</strong> bonuses, <strong>checkpoint frenzies</strong> and <strong>Hidden Mickey Bingo</strong>. If your race uses them, their rules appear on this page after you join.
                     </p>
                 </div>
+                <div id="rules-riddle-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-fuchsia-300 font-bold text-sm">
+                        <span aria-hidden="true">🧩</span> Riddle clues
+                    </div>
+                    <p id="rules-riddle-text" class="text-slate-300 leading-relaxed"></p>
+                </div>
                 <div id="rules-poison-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl text-xs space-y-2">
                     <div class="flex items-center gap-2 text-lime-300 font-bold text-sm">
                         <span aria-hidden="true">🍎</span> Poison Apple
@@ -2940,6 +2946,15 @@
                     $('rules-bingo-text').innerHTML = `Find and photograph <strong>four hidden Mickeys</strong> to fill your 2×2 card, one photo per square. ${winnerTxt} A partly filled card earns nothing, and the host reviews every photo.`;
                     bingoCard.classList.remove('hidden');
                 } else bingoCard.classList.add('hidden');
+            }
+            const riddleCard = $('rules-riddle-card');
+            if (riddleCard) {
+                const rd = race && race.riddles;
+                if (rd && rd.enabled && Number(rd.count) > 0) {
+                    const c = window.riddleHintCosts(race), hunt = race.gameMode === 'scavenger', u = hunt ? ' points off your score' : ' minutes added to your time';
+                    $('rules-riddle-text').innerHTML = `Some stops are given as <strong>riddles</strong> instead of names. <strong>Hard</strong> shows only the riddle, <strong>Medium</strong> also names the park, and <strong>Easy</strong> also names the area and shows the map. Stuck? Use a hint: <strong>name the park</strong> (${c.park}${u}), <strong>name the area</strong> (${c.land}) or <strong>reveal the stop</strong> (${c.name}). Costs add up. The name is revealed when you check in by GPS. A <strong>manual check-in never reveals it</strong>, but you can undo it and try again at the stop.`;
+                    riddleCard.classList.remove('hidden');
+                } else riddleCard.classList.add('hidden');
             }
             const poisonCard = $('rules-poison-card');
             if (poisonCard) {
@@ -5836,7 +5851,7 @@
                     wildcardAuto: wildcardAuto,
                     frenzyAuto: frenzyAuto,
                     poisonApple: poisonApple,
-                    riddles: { enabled: riddlesOn, count: riddleCount },
+                    riddles: { enabled: riddlesOn, count: riddleCount, hintCost: window.riddleHintDefaults(gameMode === 'scavenger', missedPenaltyMin, defaultPoints) },
                     bingo: bingoInfo || { enabled: false },
                     rules: raceRules,
                     missedPenaltyMin: missedPenaltyMin,
@@ -7503,6 +7518,7 @@
                                 <button onclick="toggleTriviaAnswersView(this)" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-disneyGold font-semibold rounded-lg text-[10px] transition"><i class="fa-solid fa-eye mr-1"></i> View Answers</button>
                             </div>
                             <p class="text-slate-300">Total Trivia Bonus Accumulated: <span class="font-mono font-bold text-emerald-400">${triviaBonus}</span></p>
+                            ${team.riddleHintCost ? `<p class="text-slate-300">Riddle hints used: <span class="font-mono font-bold text-fuchsia-300">${race.gameMode === 'scavenger' ? '−' + Number(team.riddleHintCost) + ' pts' : '+' + Number(team.riddleHintCost) + ' min added'}</span></p>` : ''}
                             ${race.poisonApple ? `<p class="text-slate-300">Poison apple adjustment: <span class="font-mono font-bold ${verifyPoisonNet < 0 ? 'text-rose-400' : 'text-lime-300'}">${verifyPoisonNet >= 0 ? '+' : '−'}${Math.abs(verifyPoisonNet)} ${race.gameMode === 'scavenger' ? 'pts' : 'min (positive = time off)'}</span></p>` : ''}
                             
                             <div id="trivia-history-details-box" class="hidden space-y-2 pt-2">
@@ -9298,6 +9314,7 @@
                 const poisonApples = raceData.poisonApple ? await window.fetchApples(targetCode) : [];
                 teamList.forEach(t => {
                     const poisonNet = window.poisonNetFor(raceData, t.id, poisonApples);   // poison apples: +helps / -hurts (minutes or points)
+                    const hintNet = window.riddleHintNet(t);   // riddle hints: always costs (minutes added / points off)
                     const completed = t.completedCheckpoints || [];
                     const claimed = t.claimedBonus || [];
                     const extraAdj = window.bingoBonusFor(raceData, t) + (frenzyRes.bonusByTeam[t.id] || 0);   // bingo card + checkpoint frenzy wins
@@ -9306,7 +9323,7 @@
                     
                     const rejectedMap = t.rejectedCheckins || {};
                     const rejectedCount = completed.filter(id => rejectedMap[id] && mandatory.some(m => m.id === id)).length;
-                    let totalPoints = triviaBonusPts + (isScavenger ? extraAdj + poisonNet : 0);
+                    let totalPoints = triviaBonusPts + (isScavenger ? extraAdj + poisonNet + hintNet : 0);
                     completed.forEach(cpId => {
                         const match = mandatory.find(m => m.id === cpId);
                         if (match && !rejectedMap[cpId]) {      // host-rejected check-ins lose their points
@@ -9324,7 +9341,7 @@
                     const missedCount = mandatory.length - completed.length;
                     const penaltyMin = (missedCount + rejectedCount) * window.missedPenaltyMin(raceData);   // a rejected check-in counts as a missed stop; a rejected bonus only loses its reward (bonuses are optional, so no penalty)
 
-                    let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj + poisonNet : 0);
+                    let bonusMinDeduction = triviaTimeDed + (!isScavenger ? extraAdj + poisonNet + hintNet : 0);
                     claimed.forEach(bId => {
                         const match = bonuses.find(b => b.id === bId);
                         if (match && !rejectedMap[bId]) bonusMinDeduction += (match.bonusMinDeduction !== undefined ? match.bonusMinDeduction : 10);
@@ -10012,7 +10029,9 @@
             const sel = u.sel || [];
             const p = pend || {};
             const step = u.step || (p.needsVia ? 'via' : 'modes');
-            const fromName = p.fromName || 'your last stop';
+            const prevCp = (raceData.checkpoints || []).find(c => c.id === p.fromId);
+            const fromName = (prevCp && window.riddleInfo(prevCp, tData, raceData).masked) ? 'your last stop' : (p.fromName || 'your last stop');
+            const toName = window.riddleInfo(cp, tData, raceData).masked ? 'this stop' : cp.name;
             let heading = '🚏 Transit used', question, body, canGo, goLabel = 'Confirm', back = '';
             const modeBtns = () => window.transitModes(raceData).map(m => {
                 const on = sel.includes(m.id);
@@ -10022,7 +10041,7 @@
                 heading = '🚏 Transfer needed';
                 const rule = window.transitRuleFor({ park: p.fromPark }, cp, raceData);
                 const tr = window.transitFor(raceData), noun = tr.transferNoun || 'stop';
-                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which ${noun} did you transfer through to get to ${cp.name}?`;
+                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which ${noun} did you transfer through to get to ${toName}?`;
                 const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const opt = o => `<option value="${q(o)}" ${u.via === o ? 'selected' : ''}>${q(o)}</option>`;
                 const groups = [];                                           // transfer points grouped by area, in the order listed in the location file
@@ -10042,12 +10061,12 @@
                 back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Change resort</button>`;
             } else if (step === 'seg2') {
                 heading = '🚏 Transit · leg 2 of 2';
-                question = `How did you get from ${u.via} to ${cp.name}? Pick everything you rode, or None if you only walked.`;
+                question = `How did you get from ${u.via} to ${toName}? Pick everything you rode, or None if you only walked.`;
                 body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
                 canGo = sel.length > 0;
                 back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to leg 1</button>`;
             } else {
-                question = `What transit did you take to get to ${cp.name}? Pick everything you rode, or None if you only walked.`;
+                question = `What transit did you take to get to ${toName}? Pick everything you rode, or None if you only walked.`;
                 body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
                 canGo = sel.length > 0;
             }
@@ -10203,7 +10222,7 @@
                     : `<p class="text-sm font-bold text-rose-300">❌ Not quite.</p><p class="text-[11px] text-slate-300 mt-1">Answer: ${r.correctAnswer}</p>`;
             } else {
                 body = `<p class="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-1"><i class="fa-solid fa-brain mr-1"></i> Trivia challenge</p>
-                    <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">${q.q}</p>
+                    <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">${window.riddleMaskText(q.q, cp, tData, raceData)}</p>
                     <div class="space-y-1.5">${q.options.map((opt, i) => `<button type="button" onclick="answerCheckpointTrivia('${cpId}', ${i})" class="w-full p-2.5 bg-slate-900 hover:bg-indigo-600 active:scale-[.99] text-white font-medium text-left rounded-xl transition text-xs border border-slate-700">${opt}</button>`).join('')}</div>`;
             }
             return `<div class="cp-trivia ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()">
@@ -11240,7 +11259,73 @@
             window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent((st.name + ' ' + park).trim()), '_blank', 'noopener');
         };
 
+        // ---------- Riddle stops ----------
+        // A stop with a `riddle` hides its name from the team until it is revealed: by a GPS check-in, by the "reveal" hint, or when the race ends.
+        // A MANUAL check-in never reveals it (otherwise undo + retry could be used to peek). Park / area are shown by difficulty or bought as hints.
+        // Hint prices scale with what a stop is worth in that race, so skipping a stop is never cheaper than hinting:
+        //   speed race: 10% / 20% / 30% of the missed-stop penalty (60 min if none is set), rounded to 5 minutes, at least 5
+        //   hunt:       20% / 30% / 50% of the default stop points (10 points -> 2 / 3 / 5), at least 1
+        window.riddleHintDefaults = function (isHunt, missedMin, huntPoints) {
+            if (isHunt) { const b = Number(huntPoints) > 0 ? Number(huntPoints) : 10; return { park: Math.max(1, Math.round(b * 0.2)), land: Math.max(1, Math.round(b * 0.3)), name: Math.max(1, Math.round(b * 0.5)) }; }
+            const v = Number(missedMin) > 0 ? Number(missedMin) : 60, r5 = x => Math.max(5, Math.round(x / 5) * 5);
+            return { park: r5(v * 0.1), land: r5(v * 0.2), name: r5(v * 0.3) };
+        };
+        // Costs are stored on the race when it is created (race.riddles.hintCost) so they never change mid-race
+        window.riddleHintCosts = function (race) {
+            const hunt = !!race && race.gameMode === 'scavenger';
+            return Object.assign({}, window.riddleHintDefaults(hunt, window.missedPenaltyMin ? window.missedPenaltyMin(race) : 60, race && race.defaultPoints), (race && race.riddles && race.riddles.hintCost) || {});
+        };
+        window.riddleInfo = function (cp, tData, raceData) {
+            if (!cp || !cp.riddle) return { riddle: false, masked: false, nameShown: true, showPark: true, showLand: true };
+            tData = tData || {}; raceData = raceData || {};
+            const d = String(tData.difficultyOverride || raceData.difficulty || 'easy').toLowerCase();
+            const h = (tData.riddleHints || {})[cp.id] || {};
+            const done = (tData.completedCheckpoints || []).includes(cp.id);
+            const manual = !!((tData.checkinDetails || {})[cp.id] || {}).isManual;
+            const nameShown = !!h.name || !!tData.endTime || (done && !manual);
+            return { riddle: true, hints: h, done, manual, nameShown, masked: !nameShown, difficulty: d,
+                     showPark: nameShown || !!h.park || d !== 'hard', showLand: nameShown || !!h.land || d === 'easy' };
+        };
+        // Time added (race) or points taken (hunt) by hints: reported as a negative "net", like poison apples
+        window.riddleHintNet = function (team) { return -(Number(team && team.riddleHintCost) || 0); };
+        // Replace a hidden stop's name inside free text (trivia, transit questions)
+        window.riddleMaskText = function (text, cp, tData, raceData) {
+            if (!cp || !window.riddleInfo(cp, tData, raceData).masked || !text) return text;
+            return String(text).split(cp.name).join('this stop');
+        };
+        window.buyRiddleHint = async function (cpId, kind) {
+            const race = window.liveTeamRaceData, team0 = window.liveTeamData;
+            if (!race || !team0 || !window.activeTeamId) return;
+            if (team0.endTime) return alert('The race is over.');
+            const costs = window.riddleHintCosts(race), cost = Number(costs[kind]) || 0, hunt = race.gameMode === 'scavenger';
+            const what = { park: 'name the park', land: 'name the area', name: "reveal the stop's name" }[kind];
+            if (!what) return;
+            if (!(await appConfirm(`Use a hint to ${what}? It costs ${cost} ${hunt ? 'points off your score' : 'minutes added to your time'}. Hint costs add up.`, { title: 'Use a hint?', confirmText: 'Use hint', tone: 'warning' }))) return;
+            try {
+                const teamRef = doc(window.db, "races", window.activeRaceCode, "teams", window.activeTeamId);
+                const snap = await safeGetDoc(teamRef); if (!snap.exists()) return;
+                const t = snap.data();
+                if (t.endTime) return alert('The race is over.');
+                const hints = Object.assign({}, t.riddleHints || {});
+                const mine = Object.assign({}, hints[cpId] || {});
+                if (mine[kind]) return;                        // already used: never charge twice
+                mine[kind] = true; hints[cpId] = mine;
+                const total = (Number(t.riddleHintCost) || 0) + cost;
+                await fastUpdate(teamRef, { riddleHints: hints, riddleHintCost: total });
+                window.liveTeamData = Object.assign({}, window.liveTeamData, { riddleHints: hints, riddleHintCost: total });
+                const cp = ((race.checkpoints || []).find(c => c.id === cpId)) || {};
+                if (kind === 'name') {
+                    window.closeCheckpointInfoModal && window.closeCheckpointInfoModal();
+                    window.appToast && window.appToast('The stop is ' + cp.name);
+                } else if (window.__riddleModalArgs) {
+                    window.openCheckpointModal.apply(null, window.__riddleModalArgs);
+                }
+                if (window.renderTeamPortalNow) window.renderTeamPortalNow();
+            } catch (e) { console.error(e); alert('Could not use the hint. Check your connection and try again.'); }
+        };
+
         window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty, cpId, riddleFlag) {
+            window.__riddleModalArgs = riddleFlag ? [cpName, cpPark, cpLand, lat, lng, difficulty, cpId, riddleFlag] : null;
             const modal = document.getElementById('checkpoint-info-modal');
             const titleEl = document.getElementById('cp-modal-title');
             const descEl = document.getElementById('cp-modal-desc');
@@ -11271,24 +11356,31 @@
             }
 
             if (riddleFlag) {
-                // Riddle stop: the name is hidden until check-in, so no fun facts, photo clue or name anywhere in this window.
-                const rc = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
-                const txt = rc && rc.riddle ? rc.riddle : '';
+                // Riddle stop: the name stays hidden, so no fun facts, photo clue or name anywhere in this window.
+                const race = window.liveTeamRaceData || {}, team = window.liveTeamData || {};
+                const rc = (race.checkpoints || []).find(c => c.id === cpId) || {};
+                const info = window.riddleInfo(rc, team, race);
                 const fb = document.getElementById('cp-modal-fact-box'); if (fb) fb.classList.add('hidden');
                 titleEl.innerHTML = '<i class="fa-solid fa-puzzle-piece text-fuchsia-300"></i> Riddle';
-                let html = `<span class="block italic text-[15px] text-white leading-relaxed">&ldquo;${escHtml(txt)}&rdquo;</span>`;
-                if (difficulty === 'hard') {
-                    html += `<span class="block mt-3 text-slate-400">Blind navigation: no hints. Solve it, find it, then check in to reveal the stop.</span>`;
-                    transitBox.classList.add('hidden'); extraBox.classList.add('hidden');
-                } else if (difficulty === 'medium') {
-                    html += `<span class="block mt-3">Area clue: it is somewhere in <strong>${escHtml(cpPark)}</strong>.</span>`;
-                    transitBox.classList.add('hidden'); extraBox.classList.add('hidden');
-                } else {
-                    html += `<span class="block mt-3">Location: <strong>${escHtml(cpPark)}${cpLand ? ' - ' + escHtml(cpLand) : ''}</strong>. The map pin below shows where it is.</span>`;
+                const hunt = race.gameMode === 'scavenger', costs = window.riddleHintCosts(race);
+                let html = `<span class="block italic text-[15px] text-white leading-relaxed">&ldquo;${escHtml(rc.riddle || '')}&rdquo;</span>`;
+                const facts = [];
+                if (info.showPark) facts.push(`Park: <strong>${escHtml(rc.park || '')}</strong>`);
+                if (info.showLand && rc.land) facts.push(`Area: <strong>${escHtml(rc.land)}</strong>`);
+                if (facts.length) html += `<span class="block mt-3">${facts.join(' &middot; ')}</span>`;
+                else html += `<span class="block mt-3 text-slate-400">Blind navigation: no hints. Solve it, find it, then check in to reveal the stop.</span>`;
+                if (info.done && info.manual) html += `<span class="block mt-3 text-amber-300 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Manual check-in recorded. The name stays hidden until you check in by GPS (undo this one and try again at the stop), or use the reveal hint.</span>`;
+                const hintBtn = (kind, label) => `<button type="button" onclick="buyRiddleHint('${escHtml(cpId)}','${kind}')" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-fuchsia-600/15 hover:bg-fuchsia-600/30 border border-fuchsia-500/40 text-left text-xs font-semibold text-fuchsia-100"><span>💡 ${label}</span><span class="font-mono font-bold text-fuchsia-200 shrink-0">${hunt ? '−' + costs[kind] + ' pts' : '+' + costs[kind] + ' min'}</span></button>`;
+                const btns = [];
+                if (!info.showPark) btns.push(hintBtn('park', 'Name the park'));
+                if (!info.showLand) btns.push(hintBtn('land', 'Name the area'));
+                if (!info.nameShown) btns.push(hintBtn('name', 'Reveal the stop name'));
+                if (btns.length) html += `<span class="block mt-4 space-y-1.5"><span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Hints (costs add up)</span>${btns.join('')}</span>`;
+                if (difficulty === 'easy') {
                     transitText.innerText = getDetailedTransitAdvice(cpPark);
                     transitBox.classList.remove('hidden'); extraBox.classList.remove('hidden');
                     showMap = true;
-                }
+                } else { transitBox.classList.add('hidden'); extraBox.classList.add('hidden'); }
                 descEl.innerHTML = html;
                 modal.classList.remove('hidden');
                 if (showMap) window.showPinMap('cp-modal-extra', lat, lng, 'Riddle stop');
@@ -12179,6 +12271,7 @@
                 const allTeams = []; teamsSnap.forEach(d => allTeams.push({ id: d.id, ...d.data() }));
                 const poisonApples = race.poisonApple ? await window.fetchApples(raceCode) : [];
                 const poisonNet = window.poisonNetFor(race, teamId, poisonApples);
+                const hintNet = window.riddleHintNet(team);
                 const mandatory = (race.checkpoints || []).filter(c => c.type !== 'BONUS_PHOTO');
                 const bonuses = (race.checkpoints || []).filter(c => c.type === 'BONUS_PHOTO');
                 const rejected = team.rejectedCheckins || {};
@@ -12197,7 +12290,7 @@
                 const triviaDed = race.gameMode === 'scavenger' ? 0 : Number(team.triviaBonus || 0);
                 const penaltyDed = race.gameMode === 'scavenger' ? 0 : missed * window.missedPenaltyMin(race);
                 const elapsedMin = window.teamElapsedMs(team, race) / 60000;
-                const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed - (race.gameMode === 'scavenger' ? 0 : poisonNet));
+                const overallMin = Math.max(0, elapsedMin + penaltyDed - normalBonusDed - wildcardDed - bingoDed - frenzyDed - triviaDed - (race.gameMode === 'scavenger' ? 0 : poisonNet + hintNet));
                 const fmt = mins => {
                     const secs = Math.max(0, Math.round(Number(mins || 0) * 60));
                     return [Math.floor(secs / 3600), Math.floor((secs % 3600) / 60), secs % 60].map(n => String(n).padStart(2, '0')).join(':');
@@ -12223,8 +12316,9 @@
                 const isScavenger = race.gameMode === 'scavenger';
                 const stopPoints = completed.size ? mandatory.filter(c => completed.has(c.id)).reduce((sum, cp) => sum + Number(window.stopPoints(cp, race) || 0), 0) : 0;
                 const bonusPoints = claimed.reduce((sum, id) => { const cp = bonuses.find(c => c.id === id); return sum + (cp ? Number(cp.points !== undefined ? cp.points : (cp.bonusMinDeduction || 10)) : 0); }, 0);
-                const totalPoints = stopPoints + bonusPoints + Number(team.triviaBonus || 0) + Number(window.bingoBonusFor(race, team) || 0) + Number(frenzyRes.bonusByTeam[teamId] || 0) + poisonNet;
+                const totalPoints = stopPoints + bonusPoints + Number(team.triviaBonus || 0) + Number(window.bingoBonusFor(race, team) || 0) + Number(frenzyRes.bonusByTeam[teamId] || 0) + poisonNet + hintNet;
                 const poisonRow = race.poisonApple ? row('Poison Apple', isScavenger ? `${poisonNet >= 0 ? '+' : '−'}${Math.abs(poisonNet)} pts` : (poisonNet >= 0 ? `−${fmt(poisonNet)}` : `+${fmt(-poisonNet)}`), poisonNet < 0 ? 'text-rose-300' : 'text-lime-300') : '';
+                const hintRow = team.riddleHintCost ? row('Riddle hints', isScavenger ? `−${Number(team.riddleHintCost)} pts` : `+${fmt(Number(team.riddleHintCost))}`, 'text-fuchsia-300') : '';
                 const content = `
                     <div class="fixed inset-0 z-[85] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="team-scorecard-modal">
                       <div class="w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl border border-emerald-400/30 bg-slate-900 shadow-2xl p-5 space-y-4">
@@ -12238,7 +12332,7 @@
                           ${row('Trivia', isScavenger ? `+${Number(team.triviaBonus || 0)} pts` : `−${fmt(triviaDed)}`, 'text-indigo-300')}
                           ${row('Wildcard', wildcardClaimed.length ? (isScavenger ? `+${wildcardClaimed.length} bonus` : `−${fmt(wildcardDed)}`) : 'No deduction', 'text-fuchsia-300')}
                           ${row('Checkpoint Frenzy', isScavenger ? `+${Number(frenzyRes.bonusByTeam[teamId] || 0)} pts` : `−${fmt(frenzyDed)}`, 'text-orange-300')}
-                          ${poisonRow}
+                          ${poisonRow}${hintRow}
                         </div>
                         ${triviaAnswersHtml}
                         <div class="rounded-2xl bg-gradient-to-r from-emerald-500/15 to-sky-500/10 border border-emerald-400/30 p-4 flex items-center justify-between gap-4"><div><p class="text-[10px] uppercase tracking-widest text-emerald-200 font-black">Overall ${isScavenger ? 'points' : 'time'}</p><p class="text-[10px] text-slate-400 mt-1">${isScavenger ? 'Based on the race points total' : 'Time + penalties − bonuses'}</p></div><strong class="text-2xl font-black text-white font-mono">${isScavenger ? `${totalPoints} pts` : fmtOverall(overallMin)}</strong></div>
@@ -12507,7 +12601,7 @@
                 const am = done ? appleMarks[cp.id] : '';
                 return `<div class="flex flex-col items-center gap-1 min-w-[3.25rem] max-w-[4rem]">
                     <span class="race-stop-dot ${done ? 'done' : (next ? 'next' : '')}" ${am ? 'title="Your poison apple is here"' : ''}>${am ? (am === 'active' ? '☠️' : '🍎') : (done ? '<i class="fa-solid fa-check"></i>' : (i + 1))}</span>
-                    <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${(cp.riddle && !done) ? '🧩' : cp.name}</span>
+                    <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${window.riddleInfo(cp, window.liveTeamData, window.liveTeamRaceData).masked ? '🧩' : cp.name}</span>
                 </div>`;
             }).join('<div class="h-[2px] min-w-[.75rem] flex-1 bg-slate-700 mt-3"></div>');
             const nextStop = orderedStops.find(cp => !completedIds.includes(cp.id));
@@ -12521,7 +12615,7 @@
                 timer.textContent = 'READY';
                 return;
             }
-            nextLabel.textContent = nextStop ? `Next up: ${nextStop.riddle ? 'solve the riddle 🧩' : nextStop.name}` : 'All stops complete — head for the finish!';
+            nextLabel.textContent = nextStop ? `Next up: ${window.riddleInfo(nextStop, window.liveTeamData, window.liveTeamRaceData).masked ? 'solve the riddle 🧩' : nextStop.name}` : 'All stops complete — head for the finish!';
             const latest = orderedStops.filter(cp => completedIds.includes(cp.id))
                 .map(cp => ({ id: cp.id, time: Date.parse((checkinDetails[cp.id] || {}).timestamp || '') }))
                 .filter(item => Number.isFinite(item.time))
@@ -12601,7 +12695,8 @@
             renderRaceJourney(orderedMandatory, completedIds, checkinDetails, !!tData.startTime, !!tData.endTime);
 
             const portalExtra = window.bingoBonusFor(raceData, tData) + (window.portalFrenzyBonus ? window.portalFrenzyBonus(raceData, tData) : 0)
-                + (window.poisonNetFor ? window.poisonNetFor(raceData, window.activeTeamId, window.liveApples || []) : 0);
+                + (window.poisonNetFor ? window.poisonNetFor(raceData, window.activeTeamId, window.liveApples || []) : 0)
+                + window.riddleHintNet(tData);
             if (isScavenger) {
                 document.getElementById('score-progress-label').innerText = "Stops Completed";
                 document.getElementById('checkpoint-ratio').innerText = `${completedIds.length}/${mandatory.length}`;
@@ -12736,7 +12831,8 @@
                     const ptValue = window.stopPoints(cp, raceData);
                     const detail = checkinDetails[cp.id];
                     const isManualOverride = detail && detail.isManual;
-                    const riddleOn = !!cp.riddle && !isDone;   // riddle stops hide their name until checked in
+                    const rInfo = window.riddleInfo(cp, tData, raceData);
+                    const riddleOn = rInfo.masked;   // riddle stops hide their name until a GPS check-in (or the reveal hint)
                     
                     let hintText = "";
                     if (difficulty === 'easy') {
@@ -12817,9 +12913,9 @@
                         ? `style="background-image: linear-gradient(90deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.80) 100%), url('${locImg}'); background-size: cover; background-position: center;"`
                         : '';
 
-                    const riddleSubtitle = difficulty === 'hard' ? `<span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`
-                        : difficulty === 'medium' ? `${escHtml(cp.park || '')}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`
-                        : `${escHtml(cp.park || '')} • ${escHtml(cp.land || '')}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`;
+                    const riddleSubtitle = ['<span class="text-fuchsia-300">🧩 Riddle</span>']
+                        .concat(rInfo.showPark && cp.park ? [escHtml(cp.park)] : [], rInfo.showLand && cp.land ? [escHtml(cp.land)] : [], isScavenger ? [ptValue + ' pts'] : [],
+                                ['<span class="text-disneyGold">' + hintText + '</span>']).join(' • ');
                     const subtitleContent = riddleOn ? riddleSubtitle : difficulty === 'hard'
                         ? `<span class="text-disneyGold">${hintText}</span>${hasFacts ? ' • <span class="text-amber-200">💡 Fun fact</span>' : ''}`
                         : `${cp.park || 'Disney Park'}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-disneyGold">${hintText}</span>`;
@@ -12862,8 +12958,9 @@
                                             ${isFinal ? '<span title="Final destination stop" class="w-6 h-6 rounded-full bg-slate-900/10 flex items-center justify-center text-xs">🏁</span>' : ''}
                                         </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="font-extrabold text-[13px] leading-snug text-slate-900">${cp.name}</p>
+                                            <p class="font-extrabold text-[13px] leading-snug text-slate-900">${riddleOn ? '🧩 Riddle stop (name hidden)' : cp.name}</p>
                                             <p class="text-[11px] font-semibold text-slate-800 leading-snug mt-0.5">Checked in${doneTime ? ' at ' + doneTime : ''}</p>
+                                            ${riddleOn ? '<p class="text-[10px] font-bold text-slate-900/80 mt-0.5">Manual check-in: the name stays hidden. Check in by GPS or use a hint to reveal it.</p>' : ''}
                                             ${appleMark ? `<p class="text-[10px] font-black text-lime-900 mt-0.5">${appleMark === 'active' ? '☠️ Your apple has been eaten here' : '🍎 Your poison apple is waiting here'}</p>` : ''}
                                             ${legTxt ? `<p class="text-[10px] font-semibold text-slate-800 mt-0.5">${legTxt}</p>` : ''}
                                             ${isRejected ? '<p class="text-[10px] font-bold text-rose-800 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-ban"></i> Rejected by the host</p>' : (isManualOverride ? '<p class="text-[10px] font-bold text-amber-900 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Manual check-in</p>' : '')}
