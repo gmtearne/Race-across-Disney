@@ -2623,6 +2623,19 @@
                             <p class="text-[10px] text-slate-500 leading-relaxed">Triggers randomly after every team has completed at least 2 checkpoints and before any team has fewer than 2 left. It will never overlap the wildcard. If the race ends early, valid check-ins up to the final team's finish still count.</p>
                         </div>
                     </div>
+                    <div id="create-riddle-card" class="bg-slate-900 p-4 rounded-3xl border border-fuchsia-500/30 space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="font-bold text-sm text-white flex items-center gap-2"><span aria-hidden="true">🧩</span> Riddle clues</span>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Up to 1 in 3 stops are shown as a riddle instead of a name. Teams solve it to find where to go, and the name is revealed when they check in.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="create-riddle-switch" class="sr-only peer">
+                                <div class="w-12 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:bg-fuchsia-600"></div>
+                            </label>
+                        </div>
+                        <p class="text-[10px] text-slate-500 leading-relaxed">Hard shows only the riddle. Medium adds the park. Easy adds the park, the area and the map. Only stops that have a riddle written for them can become riddles.</p>
+                    </div>
                     <div class="bg-slate-900 p-4 rounded-3xl border border-lime-500/30 space-y-3">
                         <div class="flex items-center justify-between gap-3">
                             <div class="min-w-0">
@@ -5772,6 +5785,16 @@
                 initialCps.push(...bonusPicked.map((p, idx) => { const cp = toCheckpoint(p, idx, 'cp_bonus_'); cp.points = defaultBonusPoints; cp.bonusMinDeduction = defaultBonusPoints; return cp; }));
                 initialCps.push(...bingoCps);
 
+                // Riddle clues: up to 1 in 3 GPS stops (only ones with a riddle written) are shown to teams as a riddle
+                let riddleCount = 0;
+                const riddlesOn = !!document.getElementById('create-riddle-switch')?.checked;
+                if (riddlesOn) {
+                    const gpsCps = initialCps.filter(c => c.type !== 'BONUS_PHOTO');
+                    const riddleOf = c => { const pr = presets.find(p => p.name === c.name && p.loc === wizLocNow); return pr && pr.riddle ? pr.riddle : ''; };
+                    const pool = gpsCps.filter(c => riddleOf(c));
+                    pickRandom(pool, Math.min(Math.floor(gpsCps.length / 3), pool.length)).forEach(c => { c.riddle = riddleOf(c); riddleCount++; });
+                }
+
                 let finalCheckpointId = null;
                 if (gameMode === 'race') {
                     const finalSelectVal = demo ? '' : document.getElementById('create-final-stop-select').value;
@@ -5813,6 +5836,7 @@
                     wildcardAuto: wildcardAuto,
                     frenzyAuto: frenzyAuto,
                     poisonApple: poisonApple,
+                    riddles: { enabled: riddlesOn, count: riddleCount },
                     bingo: bingoInfo || { enabled: false },
                     rules: raceRules,
                     missedPenaltyMin: missedPenaltyMin,
@@ -5844,6 +5868,7 @@
                     window.raceWizardOnCreated({
                         code, title, gameMode, difficulty,
                         gpsCount: initialCps.filter(c => c.type !== 'BONUS_PHOTO').length,
+                        riddleCount,
                         bonusCount: initialCps.filter(c => c.type === 'BONUS_PHOTO' && !c.bingoId).length,
                         bingoName: bingoInfo ? bingoInfo.name : '',
                         locationName: wizLocPack ? wizLocPack.name : '',
@@ -5942,6 +5967,7 @@
             setChk('create-frenzy-switch', false);
             window.toggleFrenzyCreateSettings();
             setChk('create-poison-switch', false);
+            setChk('create-riddle-switch', false);
             if (rwEl('create-poison-expiry')) rwEl('create-poison-expiry').value = '60';
             window.toggleCreatePoisonSettings();
             setChk('create-bonus-switch', false);
@@ -6143,6 +6169,7 @@
                 rwRow('Checkpoints', stops)
             ];
             if (isHunt) rows.push(rwRow('Time limit', info.timeLimitMinutes > 0 ? `${info.timeLimitMinutes} min` : 'No limit'));
+            if (info.riddleCount) rows.push(rwRow('Riddle clues', `${info.riddleCount} stop${info.riddleCount === 1 ? '' : 's'} shown as riddles`));
             rows.push(rwRow('Start', start));
             if (info.checkinRadius) rows.push(rwRow('Check-in zone (incl. GPS buffer)', `${info.checkinRadius} m`));
             if (info.spreadShort > 0) rows.push(rwRow('Stop spread', `Only ${info.spreadShort} fewer stops available than requested`));
@@ -11213,7 +11240,7 @@
             window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent((st.name + ' ' + park).trim()), '_blank', 'noopener');
         };
 
-        window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty, cpId) {
+        window.openCheckpointModal = function(cpName, cpPark, cpLand, lat, lng, difficulty, cpId, riddleFlag) {
             const modal = document.getElementById('checkpoint-info-modal');
             const titleEl = document.getElementById('cp-modal-title');
             const descEl = document.getElementById('cp-modal-desc');
@@ -11243,6 +11270,30 @@
                 triviaBox.classList.add('hidden');
             }
 
+            if (riddleFlag) {
+                // Riddle stop: the name is hidden until check-in, so no fun facts, photo clue or name anywhere in this window.
+                const rc = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
+                const txt = rc && rc.riddle ? rc.riddle : '';
+                const fb = document.getElementById('cp-modal-fact-box'); if (fb) fb.classList.add('hidden');
+                titleEl.innerHTML = '<i class="fa-solid fa-puzzle-piece text-fuchsia-300"></i> Riddle';
+                let html = `<span class="block italic text-[15px] text-white leading-relaxed">&ldquo;${escHtml(txt)}&rdquo;</span>`;
+                if (difficulty === 'hard') {
+                    html += `<span class="block mt-3 text-slate-400">Blind navigation: no hints. Solve it, find it, then check in to reveal the stop.</span>`;
+                    transitBox.classList.add('hidden'); extraBox.classList.add('hidden');
+                } else if (difficulty === 'medium') {
+                    html += `<span class="block mt-3">Area clue: it is somewhere in <strong>${escHtml(cpPark)}</strong>.</span>`;
+                    transitBox.classList.add('hidden'); extraBox.classList.add('hidden');
+                } else {
+                    html += `<span class="block mt-3">Location: <strong>${escHtml(cpPark)}${cpLand ? ' - ' + escHtml(cpLand) : ''}</strong>. The map pin below shows where it is.</span>`;
+                    transitText.innerText = getDetailedTransitAdvice(cpPark);
+                    transitBox.classList.remove('hidden'); extraBox.classList.remove('hidden');
+                    showMap = true;
+                }
+                descEl.innerHTML = html;
+                modal.classList.remove('hidden');
+                if (showMap) window.showPinMap('cp-modal-extra', lat, lng, 'Riddle stop');
+                return;
+            }
             if (difficulty === 'hard') {
                 // Blind mode: no hints or map, only a fun fact / trivia answer (and only if we have one)
                 if (!facts.all.length && !triviaRes) return;
@@ -12456,7 +12507,7 @@
                 const am = done ? appleMarks[cp.id] : '';
                 return `<div class="flex flex-col items-center gap-1 min-w-[3.25rem] max-w-[4rem]">
                     <span class="race-stop-dot ${done ? 'done' : (next ? 'next' : '')}" ${am ? 'title="Your poison apple is here"' : ''}>${am ? (am === 'active' ? '☠️' : '🍎') : (done ? '<i class="fa-solid fa-check"></i>' : (i + 1))}</span>
-                    <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${cp.name}</span>
+                    <span class="text-[9px] leading-tight text-center ${done ? 'text-emerald-300' : (next ? 'text-amber-200' : 'text-slate-500')}">${(cp.riddle && !done) ? '🧩' : cp.name}</span>
                 </div>`;
             }).join('<div class="h-[2px] min-w-[.75rem] flex-1 bg-slate-700 mt-3"></div>');
             const nextStop = orderedStops.find(cp => !completedIds.includes(cp.id));
@@ -12470,7 +12521,7 @@
                 timer.textContent = 'READY';
                 return;
             }
-            nextLabel.textContent = nextStop ? `Next up: ${nextStop.name}` : 'All stops complete — head for the finish!';
+            nextLabel.textContent = nextStop ? `Next up: ${nextStop.riddle ? 'solve the riddle 🧩' : nextStop.name}` : 'All stops complete — head for the finish!';
             const latest = orderedStops.filter(cp => completedIds.includes(cp.id))
                 .map(cp => ({ id: cp.id, time: Date.parse((checkinDetails[cp.id] || {}).timestamp || '') }))
                 .filter(item => Number.isFinite(item.time))
@@ -12685,6 +12736,7 @@
                     const ptValue = window.stopPoints(cp, raceData);
                     const detail = checkinDetails[cp.id];
                     const isManualOverride = detail && detail.isManual;
+                    const riddleOn = !!cp.riddle && !isDone;   // riddle stops hide their name until checked in
                     
                     let hintText = "";
                     if (difficulty === 'easy') {
@@ -12723,7 +12775,7 @@
                         const gEsc = (v) => String(v).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         const hasGuideCoords = cp.lat != null && cp.lat !== '' && cp.lng != null && cp.lng !== '' && Number.isFinite(Number(cp.lat)) && Number.isFinite(Number(cp.lng));
                         const guideBtn = hasGuideCoords ? `
-                                <button type="button" onclick="openCompass('${gEsc(cp.id)}', '${gEsc(cp.name)}', ${Number(cp.lat)}, ${Number(cp.lng)})" aria-label="Compass guide to this stop" title="Compass guide" class="w-11 h-12 shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 text-disneyGold border border-disneyGold/40 font-bold rounded-xl text-[10px] whitespace-nowrap transition shadow flex flex-col items-center justify-center gap-0.5">
+                                <button type="button" onclick="openCompass('${gEsc(cp.id)}', '${gEsc(riddleOn ? 'Riddle stop' : cp.name)}', ${Number(cp.lat)}, ${Number(cp.lng)})" aria-label="Compass guide to this stop" title="Compass guide" class="w-11 h-12 shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 text-disneyGold border border-disneyGold/40 font-bold rounded-xl text-[10px] whitespace-nowrap transition shadow flex flex-col items-center justify-center gap-0.5">
                                     <i class="fa-solid fa-compass text-base"></i><span>Guide</span>
                                 </button>` : '';
                         frontAction = `
@@ -12754,9 +12806,9 @@
 
                     const hasFacts = window.hasFunFacts(cp.name, cp.park, cp.land);
                     const triviaDone = isDone && !!((tData.triviaAttempts || {})[cp.id] && (tData.triviaAttempts || {})[cp.id].asked);
-                    const canOpen = difficulty !== 'hard' || hasFacts || triviaDone;
+                    const canOpen = difficulty !== 'hard' || hasFacts || triviaDone || riddleOn;
                     const esc = (v) => String(v).replace(/'/g, "\\'");
-                    const clickAction = !canOpen ? '' : `onclick="openCheckpointModal('${esc(cp.name)}', '${esc(cp.park || 'Disney Park')}', '${esc(cp.land || 'Attraction Area')}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}', '${cp.id}')"`;
+                    const clickAction = !canOpen ? '' : `onclick="openCheckpointModal('${esc(riddleOn ? 'Riddle stop' : cp.name)}', '${esc(cp.park || 'Disney Park')}', '${esc(cp.land || 'Attraction Area')}', ${cp.lat || 28.4177}, ${cp.lng || -81.5812}, '${difficulty}', '${cp.id}', ${riddleOn ? 1 : 0})"`;
                     const hoverCursor = !canOpen ? 'cursor-default' : 'cursor-pointer';
                     const frontHover = !canOpen ? '' : 'hover:border-disneyGold/60';
 
@@ -12765,7 +12817,10 @@
                         ? `style="background-image: linear-gradient(90deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.80) 100%), url('${locImg}'); background-size: cover; background-position: center;"`
                         : '';
 
-                    const subtitleContent = difficulty === 'hard'
+                    const riddleSubtitle = difficulty === 'hard' ? `<span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`
+                        : difficulty === 'medium' ? `${escHtml(cp.park || '')}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`
+                        : `${escHtml(cp.park || '')} • ${escHtml(cp.land || '')}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-fuchsia-300">🧩 Riddle</span> • <span class="text-disneyGold">${hintText}</span>`;
+                    const subtitleContent = riddleOn ? riddleSubtitle : difficulty === 'hard'
                         ? `<span class="text-disneyGold">${hintText}</span>${hasFacts ? ' • <span class="text-amber-200">💡 Fun fact</span>' : ''}`
                         : `${cp.park || 'Disney Park'}${isScavenger ? ' • ' + ptValue + ' pts' : ''} • <span class="text-disneyGold">${hintText}</span>`;
 
@@ -12794,7 +12849,7 @@
                                             ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
                                         </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="font-bold text-[13px] leading-snug text-white">${cp.name}</p>
+                                            <p class="${riddleOn ? 'font-medium italic text-[12.5px]' : 'font-bold text-[13px]'} leading-snug text-white">${riddleOn ? '<span class="not-italic text-[10px] font-black uppercase tracking-widest text-fuchsia-300 block mb-0.5">🧩 Riddle</span>' + escHtml(cp.riddle) : cp.name}</p>
                                             <p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p>
                                         </div>
                                         ${frontAction}
