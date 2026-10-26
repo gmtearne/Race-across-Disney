@@ -10,7 +10,8 @@
 //   id        short unique id saved on every race created here (races/{code}.locationId). Never change it once races exist.
 //   region    one of the ids in window.LOCATION_REGIONS (locations-registry.js)
 //   areas     the parks / zones the stops belong to, in the order they are listed in the app. `name` must match each stop's `park`.
-//   stops     GPS checkpoints:  { name, lat, lng, type: "GPS", park: <area name>, land: <sub-area / description> }
+//   stops     GPS checkpoints:  { name, lat, lng, type: "GPS", park: <area name>, land: <sub-area / description>, riddle: "optional" }
+//             `riddle` (optional) = a clue that points to the stop WITHOUT saying its name. Used when the host switches on "Riddle clues".
 //   bonuses   photo challenges: { name, type: "BONUS_PHOTO", bonusMinDeduction, park: "Bonus Challenge", areas: [<area names> or "*"], land, bingo: [...] }
 //   transit   how teams travel here: modes they can tick, trips that need a transfer, and the transfer points to choose from
 //   features  switches for things that only make sense at some places (e.g. Hidden Mickey Bingo)
@@ -133,22 +134,22 @@ window.registerLocation({
     },
 
     stops: [
-    { name: "Cinderella Castle", lat: 28.419350, lng: -81.581350, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub" },
-    { name: "Space Mountain", lat: 28.419050, lng: -81.577550, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Haunted Mansion", lat: 28.420460, lng: -81.583125, type: "GPS", park: "Magic Kingdom", land: "Liberty Square" },
-    { name: "Big Thunder Mountain Railroad", lat: 28.420411, lng: -81.584772, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-    { name: "Pirates of the Caribbean", lat: 28.418200, lng: -81.584800, type: "GPS", park: "Magic Kingdom", land: "Adventureland" },
-    { name: "Tiana's Bayou Adventure", lat: 28.419700, lng: -81.585200, type: "GPS", park: "Magic Kingdom", land: "Frontierland" },
-    { name: "Seven Dwarfs Mine Train", lat: 28.420750, lng: -81.580550, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "Peter Pan's Flight", lat: 28.420314, lng: -81.581975, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "It's a Small World", lat: 28.420442, lng: -81.582119, type: "GPS", park: "Magic Kingdom", land: "Fantasyland" },
-    { name: "Dumbo the Flying Elephant", lat: 28.420322, lng: -81.579736, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)" },
-    { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.418450, lng: -81.579550, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Tron Lightcycle / Run", lat: 28.421900, lng: -81.577050, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland" },
-    { name: "Emporium Gift Shop", lat: 28.417450, lng: -81.581550, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
+    { name: "Cinderella Castle", lat: 28.419350, lng: -81.581350, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Hub", riddle: "I wear a crown of turrets but have never ruled a day. A curfew at midnight, a lost slipper, and every fireworks night begins at my feet. Find the home of the girl who ran down the stairs." },
+    { name: "Space Mountain", lat: 28.419050, lng: -81.577550, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland", riddle: "A mountain with no snow, no trees and no windows. Inside, the stars whizz past your head in the pitch dark, and the biggest drop is the one in your stomach. Under a great white cone, find where the galaxy lives." },
+    { name: "Haunted Mansion", lat: 28.420460, lng: -81.583125, type: "GPS", park: "Magic Kingdom", land: "Liberty Square", riddle: "A house with a thousand guests, every one of them see-through, and every one hoping you'll stay forever. Find the stately home where the portraits stretch and the rooms are far too full." },
+    { name: "Big Thunder Mountain Railroad", lat: 28.420411, lng: -81.584772, type: "GPS", park: "Magic Kingdom", land: "Frontierland", riddle: "A runaway mining train rattles through a red-rock gold rush town. The ground shakes and the hills growl even when the sky is clear. Hold on to your hat and find the wildest ride in the wilderness." },
+    { name: "Pirates of the Caribbean", lat: 28.418200, lng: -81.584800, type: "GPS", park: "Magic Kingdom", land: "Adventureland", riddle: "Dead men tell no tales, but here they certainly sing. Drift through a candlelit battle, past a dog holding the keys, with a very talkative parrot overhead. Find the sunken town where the buccaneers never leave." },
+    { name: "Tiana's Bayou Adventure", lat: 28.419700, lng: -81.585200, type: "GPS", park: "Magic Kingdom", land: "Frontierland", riddle: "I used to be a mountain that splashed. Now I'm a swampy riverbank where a chef's dream comes true, with jazz in the air and one great big drop at the end. Find the log flume with a brand new name." },
+    { name: "Seven Dwarfs Mine Train", lat: 28.420750, lng: -81.580550, type: "GPS", park: "Magic Kingdom", land: "Fantasyland", riddle: "A gang of little diggers with pickaxes hunt for diamonds all day, and their carts rock and sway through the forest. Count the workers if you can. Find the ride where the helpers wave you off." },
+    { name: "Peter Pan's Flight", lat: 28.420314, lng: -81.581975, type: "GPS", park: "Magic Kingdom", land: "Fantasyland", riddle: "Climb aboard a pirate galleon that floats in the air, soar over a city of rooftops and a famous clock, and find the island where nobody has to grow up. You'll need a little dust to find this one." },
+    { name: "It's a Small World", lat: 28.420442, lng: -81.582119, type: "GPS", park: "Magic Kingdom", land: "Fantasyland", riddle: "A boat ride that is both a hymn and an earworm. Dolls from every corner of the globe sing the very same tune, and it will follow you home. Find the gentlest voyage in the park." },
+    { name: "Dumbo the Flying Elephant", lat: 28.420322, lng: -81.579736, type: "GPS", park: "Magic Kingdom", land: "Fantasyland (Storybook Circus)", riddle: "My ears are my wings and my best friend is a mouse. Hop in, pull the lever and steer yourself up and down above the circus tents. Find the baby who learned to fly." },
+    { name: "Buzz Lightyear's Space Ranger Spin", lat: 28.418450, lng: -81.579550, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland", riddle: "Strap into a little space cruiser and swivel your joystick. Fire at every target you can find to win a high score and save the galaxy from an emperor with a very big grudge." },
+    { name: "Tron Lightcycle / Run", lat: 28.421900, lng: -81.577050, type: "GPS", park: "Magic Kingdom", land: "Tomorrowland", riddle: "A glowing canopy stretches over the walkway like a bridge to the digital world. Lean forward on your glowing bike and race through the grid at light speed. Find where the neon lives." },
+    { name: "Emporium Gift Shop", lat: 28.417450, lng: -81.581550, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop", riddle: "The biggest shop on the most famous street in the park. Every souvenir journey starts here, from mouse ears to snow globes, under old-fashioned shopfronts." },
     { name: "Main Street Confectionery", lat: 28.417500, lng: -81.580800, type: "GPS", park: "Magic Kingdom", land: "Main Street, U.S.A. / Shop" },
     { name: "Cinderella's Royal Table", lat: 28.419350, lng: -81.581450, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
-    { name: "Be Our Guest Restaurant", lat: 28.421383, lng: -81.580817, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining" },
+    { name: "Be Our Guest Restaurant", lat: 28.421383, lng: -81.580817, type: "GPS", park: "Magic Kingdom", land: "Fantasyland / Dining", riddle: "A beast's castle serves dinner. Dine in a grand ballroom or the forbidden west wing, where a single rose waits under a glass dome and the candlesticks may be listening." },
     { name: "Pecos Bill Tall Tale Inn & Cafe", lat: 28.418650, lng: -81.584450, type: "GPS", park: "Magic Kingdom", land: "Frontierland / Dining" },
     // Magic Kingdom Fab 50 Sculptures
     { name: "Fab 50: Mickey Mouse & Minnie Mouse", lat: 28.4189, lng: -81.5812, type: "GPS", park: "Magic Kingdom", land: "Central Hub Statue" },
@@ -168,12 +169,12 @@ window.registerLocation({
     { name: "Fab 50: Mad Hatter & Cheshire Cat", lat: 28.4199, lng: -81.5798, type: "GPS", park: "Magic Kingdom", land: "Mad Tea Party Statue" },
 
     // ================= DISNEY: EPCOT =================
-    { name: "Spaceship Earth", lat: 28.374650, lng: -81.549100, type: "GPS", park: "Epcot", land: "World Celebration" },
-    { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.374450, lng: -81.547950, type: "GPS", park: "Epcot", land: "World Discovery" },
-    { name: "Test Track", lat: 28.372650, lng: -81.547450, type: "GPS", park: "Epcot", land: "World Discovery" },
-    { name: "Soarin' Around the World", lat: 28.374250, lng: -81.551950, type: "GPS", park: "Epcot", land: "World Nature" },
-    { name: "Frozen Ever After (Norway)", lat: 28.37080, lng: -81.54624, type: "GPS", park: "Epcot", land: "World Showcase (Norway)" },
-    { name: "Remy's Ratatouille Adventure (France)", lat: 28.36855, lng: -81.55320, type: "GPS", park: "Epcot", land: "World Showcase (France)" },
+    { name: "Spaceship Earth", lat: 28.374650, lng: -81.549100, type: "GPS", park: "Epcot", land: "World Celebration", riddle: "I'm not a golf ball, though I do sit on a tee. A silver sphere, a time machine inside, spiralling slowly up through the story of how people talk to each other. Find the giant at the front gate." },
+    { name: "Guardians of the Galaxy: Cosmic Rewind", lat: 28.374450, lng: -81.547950, type: "GPS", park: "Epcot", land: "World Discovery", riddle: "A coaster that spins you around backwards in the dark, powered by a mixtape of old favourites. The building looks like a planet rolled in from deep space." },
+    { name: "Test Track", lat: 28.372650, lng: -81.547450, type: "GPS", park: "Epcot", land: "World Discovery", riddle: "Design your own car, then watch it get pushed to its limits. Hairpin bends, a bumpy road and a final blast of speed outdoors. Find the proving ground for concept cars." },
+    { name: "Soarin' Around the World", lat: 28.374250, lng: -81.551950, type: "GPS", park: "Epcot", land: "World Nature", riddle: "Hang-glide across the globe without leaving your seat. You'll have no wings, no pilot, and a giant dome, with the breeze carrying the scent of orange groves." },
+    { name: "Frozen Ever After (Norway)", lat: 28.37080, lng: -81.54624, type: "GPS", park: "Epcot", land: "World Showcase (Norway)", riddle: "A snow queen's sister sails a boat through a Nordic village with a stave church and a troll or two. Find the country of fjords where summer and winter share a doorstep." },
+    { name: "Remy's Ratatouille Adventure (France)", lat: 28.36855, lng: -81.55320, type: "GPS", park: "Epcot", land: "World Showcase (France)", riddle: "Shrink to the size of a mouse (well, a rat) and scamper through a Parisian kitchen. The finest chef in the city is actually a rodent who's not supposed to be here." },
     // Epcot World Showcase Dining & Shops
     { name: "San Angel Inn Restaurante", lat: 28.37120, lng: -81.54755, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Dining)" },
     { name: "Plaza de los Amigos Market", lat: 28.37110, lng: -81.54770, type: "GPS", park: "Epcot", land: "World Showcase (Mexico / Shop)" },
@@ -186,22 +187,22 @@ window.registerLocation({
     { name: "Biergarten Restaurant", lat: 28.36825, lng: -81.54715, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Dining)" },
     { name: "Der Teddybär Toy Shop", lat: 28.36850, lng: -81.54700, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Shop)" },
     { name: "Karamell-Küche Candy Shop", lat: 28.36835, lng: -81.54720, type: "GPS", park: "Epcot", land: "World Showcase (Germany / Bakery)" },
-    { name: "Via Napoli Ristorante e Pizzeria", lat: 28.36755, lng: -81.54835, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Dining)" },
+    { name: "Via Napoli Ristorante e Pizzeria", lat: 28.36755, lng: -81.54835, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Dining)", riddle: "Dine in the shadow of a volcano that does not erupt, it just bakes the pizza. Find the restaurant with the oven shaped like a famous mountain." },
     { name: "Tutto Italia Ristorante", lat: 28.36785, lng: -81.54855, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Dining)" },
     { name: "La Bottega Italiana", lat: 28.36805, lng: -81.54825, type: "GPS", park: "Epcot", land: "World Showcase (Italy / Shop)" },
     { name: "Regal Eagle Smokehouse Barbecue", lat: 28.36730, lng: -81.54945, type: "GPS", park: "Epcot", land: "World Showcase (American / Dining)" },
     { name: "Art of Disney Gallery", lat: 28.36750, lng: -81.54950, type: "GPS", park: "Epcot", land: "World Showcase (American / Shop)" },
     { name: "Teppan Edo Hibachi Restaurant", lat: 28.36695, lng: -81.55050, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Dining)" },
-    { name: "Mitsukoshi Department Store", lat: 28.36715, lng: -81.55065, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Shop)" },
+    { name: "Mitsukoshi Department Store", lat: 28.36715, lng: -81.55065, type: "GPS", park: "Epcot", land: "World Showcase (Japan / Shop)", riddle: "A shopping hall in a land of cherry blossom and a pagoda, selling treasures from the East. Find it beside the torii gate." },
     { name: "Spice Road Table", lat: 28.36785, lng: -81.55155, type: "GPS", park: "Epcot", land: "World Showcase (Morocco / Dining)" },
     { name: "Souk-al-Magreb Gift Shop", lat: 28.36800, lng: -81.55180, type: "GPS", park: "Epcot", land: "World Showcase (Morocco / Shop)" },
     { name: "Chefs de France", lat: 28.36855, lng: -81.55285, type: "GPS", park: "Epcot", land: "World Showcase (France / Dining)" },
     { name: "Les Halles Boulangerie-Patisserie", lat: 28.36825, lng: -81.55305, type: "GPS", park: "Epcot", land: "World Showcase (France / Bakery)" },
     { name: "Plume et Palette Perfume Shop", lat: 28.36875, lng: -81.55265, type: "GPS", park: "Epcot", land: "World Showcase (France / Shop)" },
-    { name: "Rose & Crown Pub & Dining Room", lat: 28.36945, lng: -81.55185, type: "GPS", park: "Epcot", land: "World Showcase (UK / Pub & Dining)" },
+    { name: "Rose & Crown Pub & Dining Room", lat: 28.36945, lng: -81.55185, type: "GPS", park: "Epcot", land: "World Showcase (UK / Pub & Dining)", riddle: "A pub by the lake with fish on the menu and a village green outside. Find the country where it's polite to queue and tea is poured with milk." },
     { name: "Yorkshire County Fish Shop", lat: 28.36955, lng: -81.55160, type: "GPS", park: "Epcot", land: "World Showcase (UK / Quick Service)" },
     { name: "The Crown & Crest Shop", lat: 28.36930, lng: -81.55205, type: "GPS", park: "Epcot", land: "World Showcase (UK / Shop)" },
-    { name: "Le Cellier Steakhouse", lat: 28.37025, lng: -81.55085, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Dining)" },
+    { name: "Le Cellier Steakhouse", lat: 28.37025, lng: -81.55085, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Dining)", riddle: "Dine in a stone cellar beneath a mock chateau by the maple trees. Find the country that is famous for lumberjacks and politeness." },
     { name: "Northwest Mercantile Gift Shop", lat: 28.37040, lng: -81.55110, type: "GPS", park: "Epcot", land: "World Showcase (Canada / Shop)" },
     // Epcot Fab 50 Sculptures
     { name: "Fab 50: Figment", lat: 28.37010, lng: -81.54980, type: "GPS", park: "Epcot", land: "Bridge to World Showcase Statue" },
@@ -211,15 +212,15 @@ window.registerLocation({
     { name: "Fab 50: Pua & Hei-Hei", lat: 28.36990, lng: -81.55000, type: "GPS", park: "Epcot", land: "Showcase Plaza Statue" },
 
     // ================= DISNEY: HOLLYWOOD STUDIOS =================
-    { name: "Twilight Zone Tower of Terror", lat: 28.359808, lng: -81.559978, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-    { name: "Rock 'n' Roller Coaster", lat: 28.359417, lng: -81.560694, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard" },
-    { name: "Star Wars: Rise of the Resistance", lat: 28.354128, lng: -81.560519, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-    { name: "Millennium Falcon: Smugglers Run", lat: 28.354050, lng: -81.562050, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge" },
-    { name: "Toy Story Mania!", lat: 28.356180, lng: -81.561030, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
-    { name: "Slinky Dog Dash", lat: 28.356450, lng: -81.563120, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land" },
+    { name: "Twilight Zone Tower of Terror", lat: 28.359808, lng: -81.559978, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard", riddle: "A grand old hotel where the lift is the main attraction. The doors open, the floor falls away, and you find a fifth dimension beyond sight and sound." },
+    { name: "Rock 'n' Roller Coaster", lat: 28.359417, lng: -81.560694, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard", riddle: "Zero to sixty in under three seconds, in a stretch limo, with guitar riffs in your ears. Find the neon-lit ride at the end of the boulevard where the band is waiting." },
+    { name: "Star Wars: Rise of the Resistance", lat: 28.354128, lng: -81.560519, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge", riddle: "Board a transport, get captured by an enemy fleet and dash through a star destroyer with a rebel on your side. This is a rescue mission on the biggest scale in the galaxy." },
+    { name: "Millennium Falcon: Smugglers Run", lat: 28.354050, lng: -81.562050, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge", riddle: "Take the controls of the fastest hunk of junk in the galaxy. The pilot, gunner and engineer all matter, and the Kessel Run is calling. Find the smuggler's ship docked at a rocky outpost." },
+    { name: "Toy Story Mania!", lat: 28.356180, lng: -81.561030, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land", riddle: "Put on your 3D glasses and fire plungers and eggs at carnival games inside a giant toy box. The highest score wins, and the toys are cheering for you." },
+    { name: "Slinky Dog Dash", lat: 28.356450, lng: -81.563120, type: "GPS", park: "Hollywood Studios", land: "Toy Story Land", riddle: "A dachshund made of springs stretches across a backyard-sized land. Climb aboard his long coil and zoom round the toy box, past a giant set of building blocks." },
     { name: "Dok-Ondar's Den of Antiquities", lat: 28.353550, lng: -81.562000, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Shop" },
-    { name: "Oga's Cantina", lat: 28.353850, lng: -81.562350, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Lounge" },
-    { name: "The Hollywood Brown Derby", lat: 28.355050, lng: -81.558350, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining" },
+    { name: "Oga's Cantina", lat: 28.353850, lng: -81.562350, type: "GPS", park: "Hollywood Studios", land: "Star Wars: Galaxy's Edge / Lounge", riddle: "A watering hole at the edge of the galaxy where the music is by a DJ droid and the drinks glow. Find the tavern at the edge of the outpost with a very strict sense of rules." },
+    { name: "The Hollywood Brown Derby", lat: 28.355050, lng: -81.558350, type: "GPS", park: "Hollywood Studios", land: "Hollywood Boulevard / Dining", riddle: "A restaurant of old Tinseltown glamour, with caricatures of the stars on the walls and a famous salad named after its owner. Find the dining room from Hollywood's golden age." },
     { name: "Tower Hotel Gifts", lat: 28.359650, lng: -81.559900, type: "GPS", park: "Hollywood Studios", land: "Sunset Boulevard / Shop" },
     // Hollywood Studios Fab 50 Sculptures
     { name: "Fab 50: Woody & Bo Peep", lat: 28.3569, lng: -81.5612, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Statue" },
@@ -230,11 +231,11 @@ window.registerLocation({
     { name: "Fab 50: Frozone", lat: 28.3566, lng: -81.5619, type: "GPS", park: "Hollywood Studios", land: "Animation Courtyard Plaza Statue" },
 
     // ================= DISNEY: ANIMAL KINGDOM =================
-    { name: "Avatar Flight of Passage", lat: 28.355150, lng: -81.592150, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar" },
-    { name: "Expedition Everest", lat: 28.358192, lng: -81.587144, type: "GPS", park: "Animal Kingdom", land: "Asia" },
-    { name: "Kilimanjaro Safaris", lat: 28.363108, lng: -81.593531, type: "GPS", park: "Animal Kingdom", land: "Africa" },
-    { name: "Tree of Life Roots", lat: 28.357850, lng: -81.590250, type: "GPS", park: "Animal Kingdom", land: "Discovery Island" },
-    { name: "Tiffins Restaurant & Nomad Lounge", lat: 28.356950, lng: -81.591400, type: "GPS", park: "Animal Kingdom", land: "Discovery Island / Dining" },
+    { name: "Avatar Flight of Passage", lat: 28.355150, lng: -81.592150, type: "GPS", park: "Animal Kingdom", land: "Pandora - The World of Avatar", riddle: "Link your mind to a tall blue body and soar on a winged beast over floating mountains and glowing seas. Find the moon where the mountains drift in the sky." },
+    { name: "Expedition Everest", lat: 28.358192, lng: -81.587144, type: "GPS", park: "Animal Kingdom", land: "Asia", riddle: "A mountain in Asia hides a creature with a temper. The train goes backwards in the dark and the beast is not happy. Find the tallest mountain in the park, where the yeti lives." },
+    { name: "Kilimanjaro Safaris", lat: 28.363108, lng: -81.593531, type: "GPS", park: "Animal Kingdom", land: "Africa", riddle: "Ride across the savannah in a bumpy truck, spotting giraffe, rhino and lions on the plains. The guide's radio is crackling, and the poachers are about. Find the African adventure." },
+    { name: "Tree of Life Roots", lat: 28.357850, lng: -81.590250, type: "GPS", park: "Animal Kingdom", land: "Discovery Island", riddle: "A giant trunk carved with more than three hundred creatures stands at the centre of the park. Find the base where the animals are hiding, and look carefully to see them all." },
+    { name: "Tiffins Restaurant & Nomad Lounge", lat: 28.356950, lng: -81.591400, type: "GPS", park: "Animal Kingdom", land: "Discovery Island / Dining", riddle: "A restaurant named after an Indian lunchbox. Dine beneath a great tree and enjoy a feast inspired by explorers' journeys." },
     { name: "Windtraders Shop", lat: 28.355250, lng: -81.592000, type: "GPS", park: "Animal Kingdom", land: "Pandora / Shop" },
     { name: "Mombasa Marketplace", lat: 28.360650, lng: -81.590450, type: "GPS", park: "Animal Kingdom", land: "Africa / Shop" },
     // Animal Kingdom Fab 50 Sculptures
@@ -243,23 +244,23 @@ window.registerLocation({
     { name: "Fab 50: Nemo & Dory", lat: 28.3584, lng: -81.5895, type: "GPS", park: "Animal Kingdom", land: "Discovery Island Tree Front Statue" },
 
     // ================= DISNEY SPRINGS =================
-    { name: "World of Disney Store", lat: 28.371700, lng: -81.516750, type: "GPS", park: "Disney Springs", land: "Marketplace" },
-    { name: "Aerophile Balloon Ascent", lat: 28.370450, lng: -81.522000, type: "GPS", park: "Disney Springs", land: "West Side" },
-    { name: "Gideon's Bakehouse", lat: 28.370850, lng: -81.518900, type: "GPS", park: "Disney Springs", land: "The Landing" },
+    { name: "World of Disney Store", lat: 28.371700, lng: -81.516750, type: "GPS", park: "Disney Springs", land: "Marketplace", riddle: "The biggest shop of its kind in the world. Every corner holds toys, clothing and souvenirs, and the shelves go on for miles." },
+    { name: "Aerophile Balloon Ascent", lat: 28.370450, lng: -81.522000, type: "GPS", park: "Disney Springs", land: "West Side", riddle: "A tethered airship of helium lifts you high above the springs, with no basket needed for a clear view of the resort. Find the sphere that goes up but never goes away." },
+    { name: "Gideon's Bakehouse", lat: 28.370850, lng: -81.518900, type: "GPS", park: "Disney Springs", land: "The Landing", riddle: "A cookie as big as your face, from a bakery whose queue is as legendary as its bakes. Find the sweet treat with the long line out the door." },
     { name: "The Boathouse Restaurant", lat: 28.371250, lng: -81.520150, type: "GPS", park: "Disney Springs", land: "The Landing" },
-    { name: "Lego Store Giant Dragon", lat: 28.371200, lng: -81.516700, type: "GPS", park: "Disney Springs", land: "Marketplace" },
+    { name: "Lego Store Giant Dragon", lat: 28.371200, lng: -81.516700, type: "GPS", park: "Disney Springs", land: "Marketplace", riddle: "A monster built from bricks guards a shop and blinks over the lake. Every scale is a single block. Find the serpent that never sleeps." },
     { name: "AMC Disney Springs 24", lat: 28.370000, lng: -81.521200, type: "GPS", park: "Disney Springs", land: "West Side" },
 
     // ================= DISNEY RESORTS & TRANSIT HUBS =================
     { name: "Fort Wilderness Reception Outpost", lat: 28.4062, lng: -81.5543, type: "GPS", park: "Disney Resorts", land: "Wilderness / Campground" },
-    { name: "Grand Floridian Resort Entrance", lat: 28.4111, lng: -81.5877, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
-    { name: "Contemporary Resort Lobby", lat: 28.4151, lng: -81.5745, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
-    { name: "Polynesian Village Resort Lobby", lat: 28.4055, lng: -81.5841, type: "GPS", park: "Disney Resorts", land: "Monorail Resort" },
+    { name: "Grand Floridian Resort Entrance", lat: 28.4111, lng: -81.5877, type: "GPS", park: "Disney Resorts", land: "Monorail Resort", riddle: "A white Victorian palace with red roofs and a lobby with a grand piano. The monorail glides right past. Find the flagship hotel of the resort." },
+    { name: "Contemporary Resort Lobby", lat: 28.4151, lng: -81.5745, type: "GPS", park: "Disney Resorts", land: "Monorail Resort", riddle: "A hotel where the monorail passes through the middle of the building. Look up and you'll see an A-frame tower. Find where the trains run right through the lobby." },
+    { name: "Polynesian Village Resort Lobby", lat: 28.4055, lng: -81.5841, type: "GPS", park: "Disney Resorts", land: "Monorail Resort", riddle: "A South Seas village with a great ceremonial house, orchids and a thatched roof. The lobby has a volcano and the air smells of the islands." },
     { name: "Disney's Riviera Resort (Skyliner Station)", lat: 28.3665, lng: -81.5436, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
     { name: "Caribbean Beach Resort Skyliner Hub", lat: 28.3582, lng: -81.5438, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
     { name: "Art of Animation & Pop Century Skyliner", lat: 28.3508, lng: -81.5431, type: "GPS", park: "Disney Resorts", land: "Skyliner Hub" },
     { name: "Disney's BoardWalk Inn Entrance", lat: 28.3665, lng: -81.5564, type: "GPS", park: "Disney Resorts", land: "Epcot Resort Area" },
-    { name: "Animal Kingdom Lodge (Jambo House)", lat: 28.3528, lng: -81.6025, type: "GPS", park: "Disney Resorts", land: "Deluxe Resort" },
+    { name: "Animal Kingdom Lodge (Jambo House)", lat: 28.3528, lng: -81.6025, type: "GPS", park: "Disney Resorts", land: "Deluxe Resort", riddle: "A savannah hotel where the giraffes graze outside your window and the rooms look out over the plains. Find the lodge inspired by African villages." },
     ],
 
     bonuses: [
