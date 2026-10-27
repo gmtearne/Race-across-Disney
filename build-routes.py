@@ -7,6 +7,8 @@ Gaps between dangling line ends and nearby lines are repaired up to JOIN_M metre
 import json, sys, math, collections
 
 JOIN_M = 50
+GAP_M = 120        # a dead-end road/path this close to another line is joined to it, if getting there by the network would be a big detour
+GAP_RATIO = 8
 R = 6371000.0; rad = math.pi / 180
 
 def hav(a, b):
@@ -76,6 +78,47 @@ def join_endpoints(adj, tol):
                 adj[p][pt] = (dd, 1); adj.setdefault(pt, {})[p] = (dd, 1)
     return adj
 
+def join_gaps(adj, tol, ratio):
+    """Repairs breaks INSIDE the main network: a dead end close to another road/path whose only way there (by the network) is a long detour."""
+    import heapq
+    segs = [(a, b) for a in adj for b in adj[a] if a < b]
+    sg = collections.defaultdict(list); cell = 0.0004
+    for i, (a, b) in enumerate(segs):
+        for cx in range(int(min(a[0], b[0]) / cell) - 1, int(max(a[0], b[0]) / cell) + 2):
+            for cy in range(int(min(a[1], b[1]) / cell) - 1, int(max(a[1], b[1]) / cell) + 2):
+                sg[(cx, cy)].append(i)
+    ends = [p for p in adj if len(adj[p]) == 1]; added = 0
+    for p in ends:
+        if len(adj.get(p, ())) != 1: continue
+        cx, cy = int(p[0] / cell), int(p[1] / cell); best = None
+        nb = next(iter(adj[p]))
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                for i in sg.get((cx + dx, cy + dy), ()):
+                    a, b = segs[i]
+                    if a not in adj or b not in adj[a] or a == p or b == p or a == nb or b == nb: continue
+                    dd, pt = proj(p, a, b)
+                    if 8 < dd <= tol and (best is None or dd < best[0]): best = (dd, a, b, pt)
+        if not best: continue
+        dd, a, b, pt = best; R = max(ratio * dd, 400)
+        dist = {p: 0.0}; h = [(0.0, p)]; reached = False
+        while h:
+            d, x = heapq.heappop(h)
+            if d > dist.get(x, 1e18): continue
+            if x == a or x == b: reached = True; break
+            for y, (w, c) in adj[x].items():
+                nd = d + w
+                if nd <= R and nd < dist.get(y, 1e18): dist[y] = nd; heapq.heappush(h, (nd, y))
+        if reached: continue
+        pt = (round(pt[0], 6), round(pt[1], 6))
+        if pt not in adj and b in adj[a]:
+            w, c = adj[a].pop(b); adj[b].pop(a)
+            wa, wb = hav(a, pt), hav(pt, b)
+            adj[a][pt] = (wa, c); adj[pt] = {a: (wa, c)}; adj[pt][b] = (wb, c); adj[b][pt] = (wb, c)
+        adj[p][pt] = (dd, 1); adj.setdefault(pt, {})[p] = (dd, 1); added += 1
+    print('gap joins added', added)
+    return adj
+
 def pack(adj, keep_main=True):
     if keep_main:
         seen, n = components(adj)
@@ -95,8 +138,8 @@ def pack(adj, keep_main=True):
 
 def main(src, dst):
     d = json.load(open(src)); feats = d['features']
-    out = {'v': 1, 'joinM': JOIN_M}
-    net = join_endpoints(build(feats, ('road', 'path')), JOIN_M)
+    out = {'v': 2, 'joinM': JOIN_M, 'gapM': GAP_M}
+    net = join_gaps(join_endpoints(build(feats, ('road', 'path')), JOIN_M), GAP_M, GAP_RATIO)
     out['net'] = pack(net)
     out['lines'] = {}
     for kind in ('monorail', 'gondola', 'ferry', 'rail'):
