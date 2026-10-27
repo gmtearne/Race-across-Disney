@@ -11742,7 +11742,7 @@
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = [];
                 teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); tm.vias.forEach(vs => vs.forEach(v => allLatLngs.push([v.lat, v.lng]))); });
-                try { map = await WdwMap.create(modal.querySelector('#orr-map'), { center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
+                try { map = await WdwMap.create(modal.querySelector('#orr-map'), { location:(window.locIdForRace ? window.locIdForRace(race) : '') || undefined, center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
                 const teamLines = WdwMap.lineLayer(map, 'team-trails', { width:3.5, opacity:.85 });
@@ -11760,7 +11760,7 @@
                     });
                 });
                 if (window.RouteNet) {
-                    const netP = RouteNet.load([allLatLngs[0][0], allLatLngs[0][1]]);
+                    const netP = RouteNet.load((() => { const t0 = teams.find(t => t.stops && t.stops.length); return t0 ? [t0.stops[0].lat, t0.stops[0].lng] : [allLatLngs[0][0], allLatLngs[0][1]]; })());
                     try { const net = await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 2500))]); if (net && modal.isConnected) buildPolys(net); } catch (e) {}
                 }
 
@@ -12177,7 +12177,7 @@
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
                 events.forEach(ev => { ((ev.kind === 'checkpoint' && window.transitViaPoints(ev.transit)) || []).forEach(v => allLatLngs.push([v.lat, v.lng])); });
-                try { map = await WdwMap.create(modal.querySelector('#team-replay-map'), { center:[events[0].lat, events[0].lng], zoom:15, labelsMaxZoom:14.5 }); }
+                try { map = await WdwMap.create(modal.querySelector('#team-replay-map'), { location:(window.locIdForRace ? window.locIdForRace(race) : '') || undefined, center:[events[0].lat, events[0].lng], zoom:15, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
 
