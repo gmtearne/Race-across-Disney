@@ -11648,6 +11648,7 @@
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
                 const teamLines = WdwMap.lineLayer(map, 'team-trails', { width:3.5, opacity:.85 });
+                const RACE_EMOJI = { bus:'🚌', monorail:'🚝', skyliner:'🚡', boat:'⛴️', train:'🚆', taxi:'🚕' };
                 // Estimated road / line routes for every leg (RouteNet); without the network the legs stay straight lines.
                 const buildPolys = net => teams.forEach(tm => {
                     tm.polys = tm.stops.map((sp, k) => {
@@ -11678,7 +11679,9 @@
                     img.onerror = () => { img.onerror = null; img.src = DEFAULT_AVATAR; }; img.src = tm.photo;
                     tm.flag = document.createElement('span'); tm.flag.textContent = '🏁';
                     tm.flag.style.cssText = 'position:absolute;right:-8px;top:-10px;font-size:13px;display:none;filter:drop-shadow(0 1px 2px #000)';
-                    el.append(img, tm.flag);
+                    tm.badge = document.createElement('span');
+                    tm.badge.style.cssText = 'position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;border-radius:50%;background:#0f172a;border:1.5px solid ' + tm.color + ';display:none;align-items:center;justify-content:center;font-size:11px;line-height:1';
+                    el.append(img, tm.flag, tm.badge);
                     const ang = idx * 2.399963, ox = Math.cos(ang) * 9, oy = Math.sin(ang) * 9;     // fan avatars out so teams on the same spot stay visible
                     tm.marker = WdwMap.marker(map, [tm.start.lat, tm.start.lng], el, { size:[32, 32], offset:[ox, oy], title:tm.name });
                     tm.prog = 0;
@@ -11725,16 +11728,27 @@
                     const trails = [];
                     teams.forEach(tm => {
                         const done = Math.min(Math.floor(tm.prog + 1e-6), tm.m);
-                        const pts = [[tm.start.lat, tm.start.lng]];
+                        let pts = [[tm.start.lat, tm.start.lng]];
+                        const flush = () => { if (pts.length > 1) trails.push({ latlngs:pts, color:tm.color }); };
+                        // Walking is a solid line; any other mode on an estimated route is dashed (and shows its emoji on the avatar while travelling).
+                        const addRuns = (pl, parts) => {
+                            parts.forEach(sg => {
+                                if (!sg.mode || sg.mode === 'walk' || sg.mode === 'none' || sg.mode === 'other') { for (let q = 1; q < sg.pts.length; q++) pts.push(sg.pts[q]); return; }
+                                flush(); trails.push({ latlngs:sg.pts, color:tm.color, dash:true }); pts = [sg.pts[sg.pts.length - 1]];
+                            });
+                        };
                         for (let k = 0; k < done; k++) {
                             const pl = tm.polys && tm.polys[k];
-                            if (pl) { for (let q = 1; q < pl.pts.length; q++) pts.push(pl.pts[q]); continue; }          // estimated road route
+                            if (pl) { if (!pl.full) pl.full = RouteNet.polySlice(pl, 0, 1); addRuns(pl, pl.full); continue; }          // estimated road route
                             if (tm.vias[k]) pts.push([tm.vias[k].lat, tm.vias[k].lng]); pts.push([tm.stops[k].lat, tm.stops[k].lng]);
                         }
                         const p = live && live[tm.id];
-                        if (p && p.poly) { const up = RouteNet.upTo(p.poly, p.f); for (let q = 1; q < up.length; q++) pts.push(up[q]); }
+                        if (p && p.poly) addRuns(p.poly, RouteNet.polySlice(p.poly, 0, p.f));
                         else if (p) { if (p.viaPassed && tm.vias[done]) pts.push([tm.vias[done].lat, tm.vias[done].lng]); pts.push([p.lat, p.lng]); }
-                        if (pts.length > 1) trails.push({ latlngs:pts, color:tm.color });
+                        flush();
+                        // emoji badge on the avatar while on a non-walking part of an estimated route
+                        const m = (p && p.poly && p.f > 0 && p.f < 1) ? RouteNet.polyModeAt(p.poly, p.f) : null, em = m ? RACE_EMOJI[m] : '';
+                        if (tm.badge && tm.badge.textContent !== (em || '')) { tm.badge.textContent = em || ''; tm.badge.style.display = em ? 'flex' : 'none'; }
                     });
                     teamLines.set(trails);
                 };
@@ -12019,7 +12033,7 @@
                 // ---- State shared by close/play/render ----
                 let step = 0, playing = false, playToken = 0, waitTimer = null, speed = 1, map = null;
                 let postcard = null, modeMarker = null, postcardCount = 0;   // bonus-photo overlay and the transit badge behind the avatar
-                const SPEEDS = [1, 2, 4];
+                const SPEEDS = [0.5, 1, 2, 4];
                 const stopWaiting = () => { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; };
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
@@ -14604,16 +14618,19 @@
         // A group of coloured line segments that can be redrawn cheaply (batched: many add() calls cost one update).
         function lineLayer(map, id, o = {}) {
             map.addSource(id, { type: 'geojson', data: EMPTY });
-            map.addLayer({ id, type: 'line', source: id, layout: { 'line-cap': 'round', 'line-join': 'round' },
+            map.addLayer({ id, type: 'line', source: id, filter: ['!=', ['get', 'dash'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' },
                 paint: { 'line-color': ['get', 'color'], 'line-width': o.width || 4, 'line-opacity': o.opacity != null ? o.opacity : 0.9 } });
+            // features marked dash:1 are drawn dashed (MapLibre can't data-drive dash arrays, so they get their own layer)
+            map.addLayer({ id: id + '-dash', type: 'line', source: id, filter: ['==', ['get', 'dash'], 1], layout: { 'line-cap': 'butt', 'line-join': 'round' },
+                paint: { 'line-color': ['get', 'color'], 'line-width': o.width || 4, 'line-opacity': o.opacity != null ? o.opacity : 0.9, 'line-dasharray': [1.6, 1.4] } });
             let feats = [], queued = false;
             const flush = () => { queued = false; try { const s = map.getSource(id); if (s) s.setData({ type: 'FeatureCollection', features: feats }); } catch (e) { /* map already closed */ } };
             const mark = () => { if (!queued) { queued = true; queueMicrotask(flush); } };
-            const feature = (latlngs, color) => ({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: latlngs.map(ll) } });
+            const feature = (latlngs, color, dash) => ({ type: 'Feature', properties: { color, dash: dash ? 1 : 0 }, geometry: { type: 'LineString', coordinates: latlngs.map(ll) } });
             return {
                 clear() { feats = []; mark(); },
-                add(latlngs, color) { feats.push(feature(latlngs, color)); mark(); },
-                set(list) { feats = list.filter(x => x.latlngs.length > 1).map(x => feature(x.latlngs, x.color)); mark(); }
+                add(latlngs, color, dash) { feats.push(feature(latlngs, color, dash)); mark(); },
+                set(list) { feats = list.filter(x => x.latlngs.length > 1).map(x => feature(x.latlngs, x.color, x.dash)); mark(); }
             };
         }
 
@@ -14788,9 +14805,20 @@
         function polyline(net, a, b, modes, via) {
             const ps = via ? [plan(net, a, via, modes), plan(net, via, b, modes)] : [plan(net, a, b, modes)];
             let pts = []; ps.forEach(p => units(p).forEach(u => { pts = pts.concat(pts.length ? u.pts.slice(1) : u.pts); }));
-            pts = dedupe(pts); const cum = cumOf(pts);
-            return { pts, cum, meters: cum[cum.length - 1] || 0, routed: ps.some(p => p.routed) };
+            pts = dedupe(pts); const cum = cumOf(pts), meters = cum[cum.length - 1] || 0;
+            const us = []; ps.forEach(p => units(p).forEach(u => us.push(u)));       // which mode covers which part of the line (as fractions of its length)
+            const tot = us.reduce((a, u) => a + u.len, 0) || 1, runs = []; let at = 0;
+            us.forEach(u => { if (u.len > 0) { runs.push({ mode: u.mode, f0: at / tot, f1: (at + u.len) / tot }); at += u.len; } });
+            return { pts, cum, meters, runs, routed: ps.some(p => p.routed) };
         }
+        // The coloured/dashed parts of a polyline between fractions f0 and f1: [{ mode, pts }]
+        function polySlice(poly, f0, f1) {
+            if (!poly.runs || !poly.runs.length) return [{ mode: null, pts: cutD(poly.pts, poly.cum, poly.meters * f0, poly.meters * f1) }];
+            const out = [];
+            poly.runs.forEach(r => { const a = Math.max(f0, r.f0), b = Math.min(f1, r.f1); if (b > a) out.push({ mode: r.mode, pts: cutD(poly.pts, poly.cum, poly.meters * a, poly.meters * b) }); });
+            return out;
+        }
+        function polyModeAt(poly, f) { const r = (poly.runs || []).find(x => f <= x.f1 + 1e-9); return r ? r.mode : null; }
         function along(poly, f) { return pointAtD(poly.pts, poly.cum, poly.meters * Math.max(0, Math.min(1, f))); }
         function upTo(poly, f) { return cutD(poly.pts, poly.cum, 0, poly.meters * Math.max(0, Math.min(1, f))); }
 
@@ -14803,7 +14831,7 @@
             return ps.every(p => p.routed) ? ps.reduce((s, p) => s + p.meters, 0) / 1609.344 : null;
         }
 
-        window.RouteNet = { load, plan, slice, pointAt, modeAt, polyline, along, upTo, legMiles, hav, _test: { makeGraph, search, nearest, routePts, linePts } };
+        window.RouteNet = { load, plan, slice, pointAt, modeAt, polySlice, polyModeAt, polyline, along, upTo, legMiles, hav, _test: { makeGraph, search, nearest, routePts, linePts } };
     })();
     </script>
     <style>
