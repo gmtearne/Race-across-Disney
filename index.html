@@ -5939,7 +5939,7 @@
             document.getElementById('create-host-team-fields')?.classList.toggle('hidden', !e.target.checked);
         });
         let rwStep = 1;
-        let rwBusy = false;
+        let rwBusy = false, rwFinishing = null, rwClosing = false;
         let rwDone = false;
         let rwInfo = null;
         const rwEl = (id) => document.getElementById(id);
@@ -6146,7 +6146,11 @@
 
         window.rwNext = async function() {
             if (rwBusy) return;
-            if (rwDone) { window.closeRaceWizard(); return; }
+            if (rwDone) {
+                if (rwClosing) return; rwClosing = true;
+                try { if (rwFinishing) await rwFinishing.catch(() => {}); window.closeRaceWizard(); } finally { rwClosing = false; }     // wait for a host team sign-in still finishing, then close
+                return;
+            }
             if (!rwValidate(rwStep)) return;
             if (rwStep < rwTotal()) { rwStep++; rwRender(); return; }
             // Finish
@@ -6154,8 +6158,8 @@
             rwBusy = true;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
-            try { await window.createNewRace(); }
-            finally { rwBusy = false; btn.disabled = false; if (!rwDone) rwRender(); }
+            try { rwFinishing = window.createNewRace(); await rwFinishing; }
+            finally { rwFinishing = null; rwBusy = false; btn.disabled = false; if (!rwDone) rwRender(); }
         };
 
         function rwRow(label, value) {
@@ -6165,6 +6169,7 @@
         window.raceWizardOnCreated = function(info) {
             rwInfo = info;
             rwDone = true;
+            rwBusy = false; const nb = rwEl('rw-next'); if (nb) nb.disabled = false;     // the race exists now: Done must work straight away (the rest of the setup carries on behind it)
             const isHunt = info.gameMode === 'scavenger';
             rwEl('rw-success-title').textContent = info.title;
             rwEl('rw-success-code').textContent = info.code;
@@ -10067,18 +10072,9 @@
                 heading = nTransfers > 1 ? `🚏 Transfer ${i + 1} of ${nTransfers}` : '🚏 Transfer';
                 const before = i === 0 ? fromName : (u.vias[i - 1] || 'the first transfer'), after = i === nTransfers - 1 ? toName : 'the next transfer';
                 question = `${(rule && i === 0 && u.lock && rule.reason) ? rule.reason + ' ' : ''}Where did you transfer${nTransfers > 1 ? ' (' + (i + 1) + ' of ' + nTransfers + ')' : ''} between ${before} and ${after}?`;
-                const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const cur = u.vias[i];
-                const opt = o => `<option value="${q(o)}" ${cur === o ? 'selected' : ''}>${q(o)}</option>`;
-                const groups = [];                                           // transfer points grouped by area, in the order listed in the location file
-                const skipName = new Set([p.fromPark, cp.park].map(v => String(v || '').toLowerCase()).filter(Boolean));   // changing at the park you left / are arriving at makes no sense
-                (tr.transferPoints || []).filter(r => !skipName.has(String(r.name).toLowerCase())).forEach(r => {
-                    const area = r.area || 'Options';
-                    let g = groups.find(x => x.area === area); if (!g) groups.push(g = { area, names: [] });
-                    g.names.push(r.name);
-                });
-                const grouped = groups.map(g => `<optgroup label="${q(g.area)}">${g.names.map(opt).join('')}</optgroup>`).join('');
-                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${cur ? '' : 'selected'} disabled>Select a ${noun}…</option>${grouped}${opt(tr.transferOther || 'Other / not listed')}</select>`;
+                const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                body = `<button type="button" onclick="openTransitViaPicker('${cpId}')" class="w-full flex items-center justify-between gap-2 bg-slate-900 border ${cur ? 'border-sky-400/70' : 'border-slate-600'} rounded-xl px-3 py-3 text-sm text-left active:scale-[.99] transition"><span class="${cur ? 'text-white font-semibold' : 'text-slate-400'} truncate">${cur ? q(cur) : 'Transfer via…'}</span><i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i></button>`;
                 canGo = !!cur; goLabel = i < nTransfers - 1 ? 'Next' : 'Confirm'; disabledLabel = 'Pick a ' + noun;
                 back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to your route</button>`;
             } else {
@@ -10159,6 +10155,29 @@
             let merged = u.segs[i].concat(u.segs[i + 1].filter(m => !u.segs[i].includes(m)));
             if (merged.includes('none') && merged.length > 1) merged = merged.filter(m => m !== 'none');
             u.segs.splice(i, 2, merged); u.cur = Math.min(i, u.segs.length - 1); u.msg = ''; window.refreshTransitPanel(cpId);
+        };
+        // Transfer points that make sense for this transfer: the place must be served by the mode you rode in on AND the one you left on.
+        // A point's modes come from its own `modes` tag, or (for the theme parks) from transit.areaModes; a point with neither is always offered.
+        window.transitViaOptions = function(cpId) {
+            const u = window.cpTransitUi[cpId]; if (!u || !u.segs) return [];
+            const lt = window.liveTeamData || {}, race = window.liveTeamRaceData || {};
+            const pend = (lt.transitPending || {})[cpId] || {}, cp = (race.checkpoints || []).find(c => c.id === cpId);
+            const tr = window.transitFor(race), am = tr.areaModes || {};
+            const i = u.viaIdx || 0, before = (u.segs[i] || []).filter(m => m !== 'none'), after = (u.segs[i + 1] || []).filter(m => m !== 'none');
+            const need = [before[before.length - 1], after[0]].filter(Boolean);
+            const skip = new Set([pend.fromPark, cp && cp.park].map(v => String(v || '').toLowerCase()).filter(Boolean));   // changing at the park you left / are arriving at makes no sense
+            return (tr.transferPoints || []).filter(r => {
+                if (skip.has(String(r.name).toLowerCase())) return false;
+                const list = r.modes || am[r.name] || null;
+                return !list || need.every(m => list.includes(m));
+            });
+        };
+        window.openTransitViaPicker = function(cpId) {
+            const u = window.cpTransitUi[cpId]; if (!u || u.answeredAt || !window.openAppSheet) return;
+            const race = window.liveTeamRaceData || {}, tr = window.transitFor(race), other = tr.transferOther || 'Other / not listed';
+            const opts = window.transitViaOptions(cpId).map(r => ({ value: r.name, label: r.name, group: r.area || 'Options', icon: (r.area === 'Theme parks') ? '🎢' : '🏨' }));
+            opts.push({ value: other, label: other, group: 'Not listed', icon: '📍' });
+            window.openAppSheet({ title: 'Transfer via…', options: opts, selected: u.vias[u.viaIdx || 0] || '', searchable: opts.length > 8, onSelect: v => window.pickTransitVia(cpId, v) });
         };
         window.pickTransitVia = function(cpId, resort) {
             const u = window.cpTransitUi[cpId];
@@ -14874,7 +14893,7 @@
             const pk = packFor(point); if (!pk) return Promise.resolve(null);
             if (!nets[pk.data]) {
                 nets[pk.data] = fetch(pk.data).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(raw => {
-                    const net = { road: makeGraph(raw.net), lines: {}, busStops: (pk.busStops || []).filter(b => Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))).map(b => ({ name: b.name, lat: Number(b.lat), lng: Number(b.lng), gate: (b.gate && Number.isFinite(Number(b.gate.lat)) && Number.isFinite(Number(b.gate.lng))) ? [Number(b.gate.lat), Number(b.gate.lng)] : null })) };
+                    const net = { road: makeGraph(raw.net), lines: {}, busStops: (pk.busStops || []).filter(b => Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))).map(b => ({ name: b.name, lat: Number(b.lat), lng: Number(b.lng), within: (b.within && b.within.length === 2) ? b.within : null, gate: (b.gate && Number.isFinite(Number(b.gate.lat)) && Number.isFinite(Number(b.gate.lng))) ? [Number(b.gate.lat), Number(b.gate.lng)] : null })) };
                     Object.keys(raw.lines || {}).forEach(k => { net.lines[k] = makeGraph(raw.lines[k]); });
                     return net;
                 }).catch(e => { console.warn('Route network unavailable, using straight lines', e); delete nets[pk.data]; return null; });
@@ -14909,7 +14928,8 @@
                 }
                 // Buses: ride to the listed bus stop at each end and walk the rest (when the place has a stop nearby).
                 if (net.busStops && net.busStops.length && walkish.includes('bus') && !walkish.some(m => m !== 'bus' && m !== 'walk')) {
-                    const near = p => { let best = null, bd = Infinity; net.busStops.forEach(st => { const d = hav(p, [st.lat, st.lng]); if (d < bd) { bd = d; best = st; } }); return best && bd <= BUS_STOP_M ? { st: best, pt: [best.lat, best.lng] } : null; };
+                    // A stop only serves places inside its own park (`within` box) so a World Showcase stop isn't drawn to the nearer Studios stop; stops with no box use distance.
+                    const near = p => { let best = null, bd = Infinity; net.busStops.forEach(st => { if (st.within && !inBox(st.within, p)) return; const d = hav(p, [st.lat, st.lng]); if (d < bd) { bd = d; best = st; } }); return best && (bd <= BUS_STOP_M || best.within) ? { st: best, pt: [best.lat, best.lng] } : null; };
                     const sa = near(A), sb = near(B);
                     if ((sa || sb) && !(sa && sb && sa.st === sb.st)) {
                         const aP = sa ? sa.pt : A, bP = sb ? sb.pt : B, autoWalk = !walkish.includes('walk');
