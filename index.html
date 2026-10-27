@@ -9958,17 +9958,12 @@
             const pts = names.map(n => window.transitViaPoint({ via: { resort: n } }));
             return pts.every(Boolean) ? pts : null;
         };
-        // Which modes could a team have used between two areas? Only modes listed for BOTH areas (transit.areaModes in the location file).
-        // An area with no list is unrestricted. Walking / other ("none") is always allowed.
-        window.transitAllowedModes = function(fromPark, toPark, race) {
-            const tr = window.transitFor(race), am = tr.areaModes || {}, norm = v => String(v == null ? '' : v).toLowerCase();
-            const listFor = park => { const k = Object.keys(am).find(n => norm(n) && norm(park).includes(norm(n))); return k ? am[k] : null; };
-            const lists = [listFor(fromPark), listFor(toPark)].filter(Boolean);
-            const all = (tr.modes || []).map(m => m.id);
-            if (!lists.length) return new Set(all);
-            const ok = new Set(['none']);
-            all.forEach(id => { if (lists.every(l => l.includes(id))) ok.add(id); });
-            return ok;
+        // The modes that can be used to leave / arrive at an area (transit.areaModes in the location file), as a Set, or null when the area has no list
+        // (unrestricted). Walking / other ("none") is always included.
+        window.transitAreaModes = function(park, race) {
+            const am = window.transitFor(race).areaModes || {}, norm = v => String(v == null ? '' : v).toLowerCase();
+            const k = Object.keys(am).find(n => norm(n) && norm(park).includes(norm(n)));
+            return k ? new Set(am[k].concat('none')) : null;
         };
 
         window.planTransitLeg = function(race, tData, cpId) {
@@ -10076,7 +10071,8 @@
                 const cur = u.vias[i];
                 const opt = o => `<option value="${q(o)}" ${cur === o ? 'selected' : ''}>${q(o)}</option>`;
                 const groups = [];                                           // transfer points grouped by area, in the order listed in the location file
-                (tr.transferPoints || []).forEach(r => {
+                const skipName = new Set([p.fromPark, cp.park].map(v => String(v || '').toLowerCase()).filter(Boolean));   // changing at the park you left / are arriving at makes no sense
+                (tr.transferPoints || []).filter(r => !skipName.has(String(r.name).toLowerCase())).forEach(r => {
                     const area = r.area || 'Options';
                     let g = groups.find(x => x.area === area); if (!g) groups.push(g = { area, names: [] });
                     g.names.push(r.name);
@@ -10086,8 +10082,10 @@
                 canGo = !!cur; goLabel = i < nTransfers - 1 ? 'Next' : 'Confirm'; disabledLabel = 'Pick a ' + noun;
                 back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to your route</button>`;
             } else {
-                const allowed = u.segs.length > 1 ? new Set(modes.map(m => m.id)) : window.transitAllowedModes(p.fromPark, cp.park, raceData);
-                if (u.segs.length === 1) u.segs[0] = u.segs[0].filter(m => allowed.has(m));
+                // Every mode can be ticked, with two position rules: the first part of the journey can only use ways of LEAVING the starting area (the others are greyed out),
+                // and a way that can't ARRIVE at this area automatically adds a transfer after it (so skyliner to Epcot, then monorail on to Magic Kingdom, just works).
+                const originSet = window.transitAreaModes(p.fromPark, raceData);
+                const allowed = u.cur === 0 && originSet ? new Set(originSet) : new Set(modes.map(m => m.id));
                 const active = u.segs[u.cur] || [];
                 question = `How did you get to ${toName}? Tap each way you travelled, in order, from ${fromName}.${nTransfers ? ' Tap a part of the route to add to it.' : ''}`;
                 const chip = (m, i, j) => { const mi = modeInfo(m); return `<button type="button" onclick="event.stopPropagation();removeTransitMode('${cpId}',${i},${j})" class="px-2 py-1 rounded-lg bg-sky-700/80 border border-sky-300/60 text-white text-xs font-semibold flex items-center gap-1" title="Tap to remove"><span>${mi.emoji}</span><span>${mi.label}</span></button>`; };
@@ -10101,7 +10099,7 @@
                     return `<button type="button" ${ok ? '' : 'disabled'} onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${!ok ? 'bg-slate-900/40 border-slate-800 text-slate-600 opacity-50 cursor-not-allowed' : on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.id === 'none' ? 'Walk / other' : m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
                 }).join('');
                 const canXfer = u.segs.length < 3 && active.length > 0;
-                const dimNote = u.segs.length === 1 && modes.some(m => !allowed.has(m.id)) ? '<p class="text-[10px] text-slate-500 mt-1.5">Greyed-out options aren\'t available for this trip. Add a transfer to unlock every option.</p>' : '';
+                const dimNote = modes.some(m => !allowed.has(m.id)) ? `<p class="text-[10px] text-slate-500 mt-1.5">Greyed-out options can't be used to leave ${p.fromPark || 'where you started'}. Start with another way, then add a transfer.</p>` : '';
                 body = `${lineHtml}<div class="grid grid-cols-2 gap-1.5">${btns}</div>
                     <button type="button" ${canXfer ? '' : 'disabled'} onclick="addTransitTransfer('${cpId}')" class="mt-1.5 w-full p-2 rounded-xl text-xs font-semibold border ${canXfer ? 'bg-amber-500/10 border-amber-400/50 text-amber-200 hover:bg-amber-500/20' : 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed'}">🔁 Add a transfer</button>${dimNote}
                     ${u.msg ? `<p class="mt-2 text-[12px] font-semibold text-amber-300 leading-snug">${u.msg}</p>` : ''}`;
@@ -10137,6 +10135,15 @@
             if (mode === 'none') seg = was.includes('none') ? [] : ['none'];
             else { seg = was.filter(m => m !== 'none'); seg = seg.includes(mode) ? seg.filter(m => m !== mode) : seg.concat(mode); }
             u.segs[u.cur] = seg; u.msg = '';
+            // A way that can't arrive at this area (e.g. the Skyliner at Magic Kingdom) can't be the last part: add a transfer after it
+            const race = window.liveTeamRaceData || {}, cpT = (race.checkpoints || []).find(c => c.id === cpId);
+            const destSet = cpT ? window.transitAreaModes(cpT.park, race) : null;
+            if (destSet && mode !== 'none' && seg.includes(mode) && u.cur === u.segs.length - 1 && !destSet.has(mode)) {
+                const info = ((window.transitModes(race) || []).find(m => m.id === mode) || { label: mode }).label;
+                if (u.segs.length < 3) { u.segs.splice(u.cur + 1, 0, []); u.cur += 1; u.msg = `${info} can't be used to arrive at ${cpT.park}, so a transfer has been added. How did you travel on from there?`; }
+                else { u.segs[u.cur] = was; u.msg = `${info} can't be used to arrive at ${cpT.park}.`; }
+                window.refreshTransitPanel(cpId); return;
+            }
             // a trip with a required transfer: after the first mode before it, the next tap goes after it
             if (u.lock && u.cur === 0 && !was.length && seg.length && u.segs[1] && !u.segs[1].length) u.cur = 1;
             window.refreshTransitPanel(cpId);
@@ -10180,6 +10187,17 @@
                     u.msg = u.lock && rule
                         ? `${rule.reason} Add how you travelled before AND after the transfer, then you'll pick where you transferred.`
                         : 'Add at least one way of travelling on each side of a transfer, or remove the transfer.';
+                    window.refreshTransitPanel(cpId); return;
+                }
+                const lt2 = window.liveTeamData || {}, race2 = window.liveTeamRaceData || {};
+                const pend2 = (lt2.transitPending || {})[cpId] || {}, cp2 = (race2.checkpoints || []).find(c => c.id === cpId);
+                const labelOf = id => ((window.transitModes(race2) || []).find(m => m.id === id) || { label: id }).label;
+                const oSet = window.transitAreaModes(pend2.fromPark, race2), dSet = cp2 ? window.transitAreaModes(cp2.park, race2) : null;
+                const badEnd = dSet ? u.segs[u.segs.length - 1].filter(m => !dSet.has(m)) : [];
+                const badStart = oSet ? u.segs[0].filter(m => !oSet.has(m)) : [];
+                if (badEnd.length || badStart.length) {
+                    u.msg = badEnd.length ? `${badEnd.map(labelOf).join(' and ')} can't be used to arrive at ${cp2.park}. Add a transfer, then say how you travelled on from there.`
+                                          : `${badStart.map(labelOf).join(' and ')} can't be used to leave ${pend2.fromPark}. Start with another way, then add a transfer.`;
                     window.refreshTransitPanel(cpId); return;
                 }
                 if (u.segs.length > 1) { u.step = 'via'; u.viaIdx = 0; window.refreshTransitPanel(cpId); return; }
