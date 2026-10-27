@@ -90,8 +90,16 @@ window.registerLocation({
             { id: "boat",     label: "Boat",          emoji: "⛴️" },
             { id: "skyliner", label: "Skyliner",      emoji: "🚡" },
             { id: "monorail", label: "Monorail",      emoji: "🚝" },
-            { id: "none",     label: "None (walked)", emoji: "🚶" }
+            { id: "none",     label: "Walk / other",  emoji: "🚶" }
         ],
+        // Which modes can be used to reach / leave each area. A mode is only selectable for a trip if it is listed for BOTH areas (areas not listed here are
+        // unrestricted). Walk / other is always allowed, and adding a transfer unlocks every mode.
+        areaModes: {
+            "Magic Kingdom":     ["bus", "monorail", "boat"],
+            "Epcot":             ["bus", "monorail", "boat", "skyliner"],
+            "Hollywood Studios": ["bus", "boat", "skyliner"],
+            "Animal Kingdom":    ["bus"]
+        },
         // Trips that cannot be made directly. The team is asked which transfer point they went through.
         transferRules: [
             {
