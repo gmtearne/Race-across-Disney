@@ -10155,16 +10155,28 @@
                 const toModes = ids => ids.includes('none') ? ['walk'] : ids.slice();   // tap order = travel order (for the replay)
                 const legs = t.transitLegs || {};
                 const cpName = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
+                // Distance: estimated road / line route when this location has a route network, else the straight-line figure from when the stop was reached.
+                let legMilesVal = (entry.miles === undefined ? null : entry.miles);
+                try {
+                    const cps = (window.liveTeamRaceData || {}).checkpoints || [];
+                    const fromP = entry.fromId === 'start' ? t.startLocation : cps.find(c => c.id === entry.fromId);
+                    if (window.RouteNet && fromP && cpName) {
+                        const viaPt = (seg1Sel && via) ? window.transitViaPoint({ via: { resort: via } }) : null;
+                        const modesAll = (seg1Sel && via) ? toModes(seg1Sel).concat(toModes(sel)) : toModes(sel);
+                        const rm = await Promise.race([RouteNet.legMiles(fromP, cpName, modesAll, viaPt), new Promise(r => setTimeout(() => r(null), 2500))]);
+                        if (rm && rm > 0) legMilesVal = Math.round(rm * 1000) / 1000;
+                    }
+                } catch (e) { /* keep the straight-line figure */ }
                 if (seg1Sel && via) {
                     const m1 = toModes(seg1Sel), m2 = toModes(sel);
                     legs[cpId] = {
-                        fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles),
+                        fromId: entry.fromId || null, miles: legMilesVal,
                         modes: m1.concat(m2), via: { resort: via },
                         segments: [ { from: entry.fromName || '', to: via, modes: m1 }, { from: via, to: (cpName && cpName.name) || '', modes: m2 } ],
                         at: Date.now()
                     };
                 } else {
-                    legs[cpId] = { fromId: entry.fromId || null, miles: (entry.miles === undefined ? null : entry.miles), modes: toModes(sel), at: Date.now() };
+                    legs[cpId] = { fromId: entry.fromId || null, miles: legMilesVal, modes: toModes(sel), at: Date.now() };
                 }
                 delete pending[cpId];
                 await fastUpdate(teamRef, { transitPending: pending, transitLegs: legs, distanceMiles: window.transitDistanceTotals(legs) });
@@ -11636,6 +11648,21 @@
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
                 const teamLines = WdwMap.lineLayer(map, 'team-trails', { width:3.5, opacity:.85 });
+                // Estimated road / line routes for every leg (RouteNet); without the network the legs stay straight lines.
+                const buildPolys = net => teams.forEach(tm => {
+                    tm.polys = tm.stops.map((sp, k) => {
+                        try {
+                            const tr = sp.transit || {}, modes = (tr.modes && tr.modes.length ? tr.modes : ['walk']).filter(x => x !== 'bonus' && x !== 'other');
+                            if (!modes.length) return null;
+                            const pl = RouteNet.polyline(net, spotAt(tm, k), tm.stops[k], modes, tm.vias[k]);
+                            return pl.routed ? pl : null;
+                        } catch (e) { return null; }
+                    });
+                });
+                if (window.RouteNet) {
+                    const netP = RouteNet.load([allLatLngs[0][0], allLatLngs[0][1]]);
+                    try { const net = await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 2500))]); if (net && modal.isConnected) buildPolys(net); } catch (e) {}
+                }
 
                 // ---- Map pins + team avatars ----
                 checkpoints.forEach(cp => {
@@ -11699,9 +11726,14 @@
                     teams.forEach(tm => {
                         const done = Math.min(Math.floor(tm.prog + 1e-6), tm.m);
                         const pts = [[tm.start.lat, tm.start.lng]];
-                        for (let k = 0; k < done; k++) { if (tm.vias[k]) pts.push([tm.vias[k].lat, tm.vias[k].lng]); pts.push([tm.stops[k].lat, tm.stops[k].lng]); }
+                        for (let k = 0; k < done; k++) {
+                            const pl = tm.polys && tm.polys[k];
+                            if (pl) { for (let q = 1; q < pl.pts.length; q++) pts.push(pl.pts[q]); continue; }          // estimated road route
+                            if (tm.vias[k]) pts.push([tm.vias[k].lat, tm.vias[k].lng]); pts.push([tm.stops[k].lat, tm.stops[k].lng]);
+                        }
                         const p = live && live[tm.id];
-                        if (p) { if (p.viaPassed && tm.vias[done]) pts.push([tm.vias[done].lat, tm.vias[done].lng]); pts.push([p.lat, p.lng]); }
+                        if (p && p.poly) { const up = RouteNet.upTo(p.poly, p.f); for (let q = 1; q < up.length; q++) pts.push(up[q]); }
+                        else if (p) { if (p.viaPassed && tm.vias[done]) pts.push([tm.vias[done].lat, tm.vias[done].lng]); pts.push([p.lat, p.lng]); }
                         if (pts.length > 1) trails.push({ latlngs:pts, color:tm.color });
                     });
                     teamLines.set(trails);
@@ -11749,7 +11781,7 @@
                     const act = teams.filter(tm => n <= tm.m);
                     const prevAdj = tm => tm.cum[n - 1] - tm.bonusPre[n - 1];                // standing going into this leg (bonuses included)
                     const minPrev = Math.min(...act.map(prevAdj));
-                    const plan = act.map(tm => ({ tm, delay:prevAdj(tm) - minPrev, leg:legMs(tm, n), from:spotAt(tm, n - 1), to:spotAt(tm, n), via:tm.vias[n - 1] }));
+                    const plan = act.map(tm => ({ tm, delay:prevAdj(tm) - minPrev, leg:legMs(tm, n), from:spotAt(tm, n - 1), to:spotAt(tm, n), via:tm.vias[n - 1], poly:tm.polys && tm.polys[n - 1] }));
                     const maxArr = Math.max(1, ...plan.map(p => p.delay + p.leg));
                     const total = 4200 / speed, s = total / maxArr, minMove = 400 / speed;
                     plan.forEach(p => { p.off = p.delay * s; p.mv = Math.max(minMove, p.leg * s); });
@@ -11761,8 +11793,10 @@
                         plan.forEach(p => {
                             const f = ease(Math.max(0, Math.min(1, (t - p.off) / p.mv)));
                             // Via a resort: first half of the trip goes to the resort, second half on to the checkpoint (same total time).
-                            const pos = p.via ? (f < .5 ? lerp(p.from, p.via, f * 2) : lerp(p.via, p.to, (f - .5) * 2)) : lerp(p.from, p.to, f);
-                            live[p.tm.id] = { lat:pos.lat, lng:pos.lng, viaPassed:!!p.via && f >= .5 };
+                            let pos;
+                            if (p.poly) { const q = RouteNet.along(p.poly, f); pos = { lat:q[0], lng:q[1] }; }
+                            else pos = p.via ? (f < .5 ? lerp(p.from, p.via, f * 2) : lerp(p.via, p.to, (f - .5) * 2)) : lerp(p.from, p.to, f);
+                            live[p.tm.id] = { lat:pos.lat, lng:pos.lng, viaPassed:!!p.via && f >= .5, poly:p.poly, f };
                             p.tm.marker.setLatLng([pos.lat, pos.lng]);
                             p.tm.prog = (n - 1) + f;
                             p.tm.marker.setZ(10 + Math.round(p.tm.prog * 100));
@@ -12050,7 +12084,20 @@
                         layer.add([lerp(a, b, t0), lerp(a, b, t1)], modeColors[modes[j]] || modeColors.other);
                     }
                 };
+                // Estimated road / line routes (RouteNet). legPlans[i] is the routed plan for the leg INTO events[i]; missing => straight lines as before.
+                let legPlans = {};
+                const planLeg = (net, a, b, ev) => {
+                    if (!ev || ev.kind === 'bonus') return null;                              // bonus / unknown-mode legs stay straight
+                    const segs = legSegs(a, b, ev);
+                    if (segs.some(sg => sg.modes.includes('other'))) return null;
+                    const ps = segs.map(sg => RouteNet.plan(net, sg.a, sg.b, sg.modes));
+                    return ps.some(p => p.routed) ? { pieces: ps.flatMap(p => p.pieces), routed: true } : null;
+                };
+                const buildPlans = net => { const o = {}; for (let i = 1; i < events.length; i++) { try { const p = planLeg(net, events[i - 1], events[i], events[i]); if (p) o[i] = p; } catch (e) {} } return o; };
+                const planOf = ev => { const i = events.indexOf(ev); return i > 0 ? legPlans[i] : null; };
                 const drawLegSegs = (layer, a, b, ev, frac) => {
+                    const rp = planOf(ev);
+                    if (rp) { RouteNet.slice(rp, 0, frac).forEach(s => { if (s.pts.length > 1) layer.add(s.pts, modeColors[s.mode] || modeColors.other); }); return; }
                     const segs = legSegs(a, b, ev), n = segs.length;
                     segs.forEach((sg, i) => {
                         const f = Math.max(0, Math.min(1, (frac - i / n) * n));
@@ -12058,6 +12105,7 @@
                     });
                 };
                 const routeLayer = WdwMap.lineLayer(map, 'route-done', { width:5, opacity:.94 });   // finished legs
+                const netP = (window.RouteNet ? RouteNet.load([events[0].lat, events[0].lng]) : Promise.resolve(null));
                 const liveLayer = WdwMap.lineLayer(map, 'route-live', { width:5, opacity:.94 });    // leg currently being travelled
 
                 // ---- Avatar: the team's own photo ----
@@ -12184,6 +12232,33 @@
                 const animateLeg = (a, b, token) => new Promise(resolve => {
                     const dist = WdwMap.distance([a.lat, a.lng], [b.lat, b.lng]);
                     const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
+                    const rp = planOf(b);
+                    if (rp) {                                                                 // routed: follow the road / line, badge changes with the mode
+                        const started = performance.now(); let shown = null;
+                        const frameR = now => {
+                            if (token !== playToken || !playing) { clearModeMarker(); return resolve(false); }
+                            const t = ease(Math.min(1, (now - started) / duration)), pos = RouteNet.pointAt(rp, t);
+                            avatar.setLatLng(pos);
+                            const m = RouteNet.modeAt(rp, t);
+                            if (m !== shown) {
+                                shown = m; const emoji = modeEmoji[m];
+                                if (!emoji) clearModeMarker(); else {
+                                    const ahead = RouteNet.pointAt(rp, Math.min(1, t + .03)), p0 = map.project([pos[1], pos[0]]), p1 = map.project([ahead[1], ahead[0]]);
+                                    let ux = p1.x - p0.x, uy = p1.y - p0.y; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+                                    const badge = document.createElement('div');
+                                    badge.style.cssText = `width:40px;height:40px;border-radius:50%;background:#0f172ae6;border:2px solid ${modeColors[m]};display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;box-shadow:0 2px 8px #0008`;
+                                    badge.textContent = emoji;
+                                    badge.animate([{ transform:'scale(.3)', opacity:0 }, { transform:'scale(1)', opacity:1 }], { duration:240, easing:'ease-out' });
+                                    if (modeMarker) modeMarker.remove();
+                                    modeMarker = WdwMap.marker(map, pos, badge, { size:[40, 40], offset:[-ux * 34, -uy * 34], z:900, interactive:false });
+                                }
+                            }
+                            if (modeMarker) modeMarker.setLatLng(pos);
+                            liveLayer.clear(); drawLegSegs(liveLayer, a, b, b, t);
+                            if (t < 1) requestAnimationFrame(frameR); else { clearModeMarker(); resolve(true); }
+                        };
+                        requestAnimationFrame(frameR); return;
+                    }
                     const segs = legSegs(a, b, b), nSeg = segs.length, started = performance.now();
                     // Badge sequence follows the line's colour sections; each segment keeps its own trailing direction.
                     const flat = [], offs = [];
@@ -12245,6 +12320,8 @@
                     playing = true; play.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
                     playSequence(++playToken);
                 };
+                try { const net = await Promise.race([netP, new Promise(r => setTimeout(() => r(null), 2500))]); if (net && modal.isConnected) legPlans = buildPlans(net); } catch (e) {}
+                netP.then(net => { if (net && !Object.keys(legPlans).length && modal.isConnected) { legPlans = buildPlans(net); if (!playing) { try { renderStep(step, false); } catch (e) {} } } }).catch(() => {});
                 renderStep(0, false);
                 setTimeout(() => {
                     if (!map) return;
@@ -14541,6 +14618,192 @@
         }
 
         window.WdwMap = { WDW_BOUNDS, create, cameraFor, flyTo, panTo, jump, fit, inView, distance, marker, dot, lineLayer, loadData };
+    })();
+    /* RouteNet: estimated routes on the device, with no routing service. Each location can ship a pre-built route network
+       (made from its map data by tools/build-routes.py, e.g. wdw-routes.json): roads + paths for walking and vehicles, plus the fixed
+       lines (monorail, Skyliner, ferry, rail). Where there is no network, or no route can be found, everything quietly falls back to a
+       straight line, so this can only improve the replays. Routes are ESTIMATES: buses are routed as the best road route.
+       Positions are [lat, lng]. */
+    (function () {
+        'use strict';
+        const rad = Math.PI / 180, R = 6371000;
+        const hav = (a, b) => { const dl = (b[0] - a[0]) * rad, dg = (b[1] - a[1]) * rad; const h = Math.sin(dl / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dg / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+        const VEHICLE = new Set(['bus', 'taxi', 'car']);
+        const LINE_OF = { monorail: 'monorail', skyliner: 'gondola', boat: 'ferry', train: 'rail' };   // travel mode -> line network
+        const PATH_COST = 4;                                   // vehicles may use paths, but a path costs this many times a road
+        const CELL = 0.0005;                                   // ~55 m grid for snapping
+
+        // ---------- graph ----------
+        function makeGraph(raw) {
+            const n = raw.lat.length, lat = new Float64Array(n), lng = new Float64Array(n);
+            for (let i = 0; i < n; i++) { lat[i] = raw.lat[i] / 1e5; lng[i] = raw.lng[i] / 1e5; }
+            const grid = new Map();
+            for (let i = 0; i < n; i++) { const k = Math.floor(lat[i] / CELL) * 100003 + Math.floor(lng[i] / CELL); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(i); }
+            return { n, lat, lng, off: Int32Array.from(raw.off), to: Int32Array.from(raw.to), len: Float32Array.from(raw.len), cls: Uint8Array.from(raw.cls || new Array(raw.to.length).fill(0)),
+                     grid, dist: new Float64Array(n), prev: new Int32Array(n), stamp: new Uint32Array(n), run: 0 };
+        }
+        function nearest(g, p, maxM) {
+            const cx = Math.floor(p[0] / CELL), cy = Math.floor(p[1] / CELL), maxR = Math.ceil(maxM / 55) + 1;
+            let best = -1, bd = Infinity;
+            for (let r = 0; r <= maxR; r++) {
+                for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+                    const c = g.grid.get((cx + dx) * 100003 + (cy + dy)); if (!c) continue;
+                    for (const i of c) { const d = hav(p, [g.lat[i], g.lng[i]]); if (d < bd) { bd = d; best = i; } }
+                }
+                if (best >= 0 && bd <= (r) * 50) break;      // nothing nearer can be in an outer ring
+            }
+            return best >= 0 && bd <= maxM ? { i: best, d: bd } : null;
+        }
+        // A* over the graph. vehicle: paths cost PATH_COST x. Returns node ids or null.
+        function search(g, s, t, vehicle) {
+            if (s === t) return [s];
+            const run = ++g.run, dist = g.dist, prev = g.prev, stamp = g.stamp, tp = [g.lat[t], g.lng[t]];
+            const hp = [], hf = [];                                // binary heap of nodes ordered by f
+            const push = (node, f) => { let i = hp.length; hp.push(node); hf.push(f); while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hp[p], hp[i]] = [hp[i], hp[p]]; [hf[p], hf[i]] = [hf[i], hf[p]]; i = p; } };
+            const pop = () => { const top = hp[0], ln = hp.pop(), lf = hf.pop(); if (hp.length) { hp[0] = ln; hf[0] = lf; let i = 0; for (;;) { let l = 2 * i + 1, r = l + 1, m = i; if (l < hp.length && hf[l] < hf[m]) m = l; if (r < hp.length && hf[r] < hf[m]) m = r; if (m === i) break; [hp[m], hp[i]] = [hp[i], hp[m]]; [hf[m], hf[i]] = [hf[i], hf[m]]; i = m; } } return top; };
+            stamp[s] = run; dist[s] = 0; prev[s] = -1; push(s, hav([g.lat[s], g.lng[s]], tp));
+            let guard = 0;
+            while (hp.length && guard++ < 400000) {
+                const x = pop();
+                if (x === t) { const out = []; for (let n = t; n !== -1; n = prev[n]) out.push(n); return out.reverse(); }
+                const dx = dist[x];
+                for (let e = g.off[x]; e < g.off[x + 1]; e++) {
+                    const y = g.to[e], nd = dx + g.len[e] * (vehicle && g.cls[e] ? PATH_COST : 1);
+                    if (stamp[y] !== run || nd < dist[y]) { stamp[y] = run; dist[y] = nd; prev[y] = x; push(y, nd + hav([g.lat[y], g.lng[y]], tp)); }
+                }
+            }
+            return null;
+        }
+        const nodePts = (g, ids) => ids.map(i => [g.lat[i], g.lng[i]]);
+        const dedupe = pts => pts.filter((p, i) => !i || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
+
+        // road/path route between two points: [lat,lng] list (with short connectors at both ends), or null
+        function routePts(g, a, b, vehicle) {
+            const sa = nearest(g, a, 700), sb = nearest(g, b, 700);
+            if (!sa || !sb) return null;
+            const ids = search(g, sa.i, sb.i, vehicle);
+            return ids ? dedupe([a].concat(nodePts(g, ids), [b])) : null;
+        }
+        // ride along a fixed line between the points nearest to a and b: { pts, from, to } or null (different loops / too far)
+        function linePts(g, a, b) {
+            const sa = nearest(g, a, 900), sb = nearest(g, b, 900);
+            if (!sa || !sb || sa.i === sb.i) return null;
+            const ids = search(g, sa.i, sb.i, false);
+            return ids ? { pts: nodePts(g, ids), from: [g.lat[sa.i], g.lng[sa.i]], to: [g.lat[sb.i], g.lng[sb.i]] } : null;
+        }
+
+        // ---------- polylines ----------
+        const plen = pts => { let s = 0; for (let i = 1; i < pts.length; i++) s += hav(pts[i - 1], pts[i]); return s; };
+        function cumOf(pts) { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + hav(pts[i - 1], pts[i])); return c; }
+        function pointAtD(pts, cum, d) {
+            const tot = cum[cum.length - 1]; if (d <= 0 || tot === 0) return pts[0]; if (d >= tot) return pts[pts.length - 1];
+            let lo = 1, hi = cum.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (cum[m] >= d) hi = m; else lo = m + 1; }
+            const t = (d - cum[lo - 1]) / ((cum[lo] - cum[lo - 1]) || 1), a = pts[lo - 1], b = pts[lo];
+            return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        }
+        function cutD(pts, cum, d0, d1) {                          // the part of the line between distances d0 and d1
+            const out = [pointAtD(pts, cum, d0)];
+            for (let i = 1; i < pts.length - 1; i++) if (cum[i] > d0 && cum[i] < d1) out.push(pts[i]);
+            out.push(pointAtD(pts, cum, d1)); return out;
+        }
+
+        // ---------- loading (one network per location, loaded once) ----------
+        const nets = {};
+        const inBox = (b, p) => !!b && p[0] >= b[0][0] && p[0] <= b[1][0] && p[1] >= b[0][1] && p[1] <= b[1][1];
+        function packFor(p) { const l = (window.locList ? window.locList() : []).find(x => x.map && x.map.routes && inBox(x.map.routes.bounds, p)); return l ? l.map.routes : null; }
+        function load(point) {                                      // -> Promise<net | null>
+            const pk = packFor(point); if (!pk) return Promise.resolve(null);
+            if (!nets[pk.data]) {
+                nets[pk.data] = fetch(pk.data).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(raw => {
+                    const net = { road: makeGraph(raw.net), lines: {} };
+                    Object.keys(raw.lines || {}).forEach(k => { net.lines[k] = makeGraph(raw.lines[k]); });
+                    return net;
+                }).catch(e => { console.warn('Route network unavailable, using straight lines', e); delete nets[pk.data]; return null; });
+            }
+            return nets[pk.data];
+        }
+
+        // ---------- planning one leg ----------
+        // Returns { pieces: [{ modes: [..], pts: [[lat,lng],..] }], meters, routed }.
+        // A piece with several modes is split equally between them (the order they were ticked), like the old straight-line replay did.
+        function plan(net, a, b, modes) {
+            const A = [a.lat !== undefined ? a.lat : a[0], a.lng !== undefined ? a.lng : a[1]], B = [b.lat !== undefined ? b.lat : b[0], b.lng !== undefined ? b.lng : b[1]];
+            const ms = (modes && modes.length ? modes : ['other']).map(m => String(m).toLowerCase());
+            const straight = () => ({ pieces: [{ modes: ms, pts: [A, B], straight: true }], meters: hav(A, B), routed: false });
+            if (!net) return straight();
+            const walkish = ms.map(m => (m === 'none' ? 'walk' : m));
+            const fixed = walkish.find(m => LINE_OF[m] && net.lines[LINE_OF[m]]);
+            try {
+                if (fixed) {
+                    const L = linePts(net.lines[LINE_OF[fixed]], A, B);
+                    if (L) {
+                        const rest = walkish.filter(m => m !== fixed);
+                        const acc = rest.find(m => VEHICLE.has(m)) || 'walk', veh = VEHICLE.has(acc);
+                        const p1 = routePts(net.road, A, L.from, veh), p3 = routePts(net.road, L.to, B, veh);
+                        if (p1 && p3) {
+                            const pcs = [{ modes: [acc], pts: p1 }, { modes: [fixed], pts: [L.from].concat(L.pts, [L.to]) }, { modes: [acc], pts: p3 }];
+                            return { pieces: pcs, meters: pcs.reduce((s, p) => s + plen(p.pts), 0), routed: true };
+                        }
+                    }
+                }
+                const veh = walkish.some(m => VEHICLE.has(m));
+                const pts = routePts(net.road, A, B, veh);
+                if (pts) return { pieces: [{ modes: walkish, pts }], meters: plen(pts), routed: true };
+            } catch (e) { console.warn('Routing failed for a leg', e); }
+            return straight();
+        }
+        // Split pieces into drawable units (one per mode) so a fraction 0..1 of the whole leg maps to coloured polylines
+        function units(p) {
+            if (p.units) return p.units;
+            const out = []; let tot = 0;
+            p.pieces.forEach(pc => {
+                const cum = cumOf(pc.pts), L = cum[cum.length - 1], k = pc.modes.length;
+                pc.modes.forEach((m, j) => { const d0 = L * j / k, d1 = L * (j + 1) / k; out.push({ mode: m, pts: cutD(pc.pts, cum, d0, d1), len: d1 - d0 }); tot += d1 - d0; });
+            });
+            p.units = out; p.total = tot; return out;
+        }
+        // The coloured parts between fractions f0 and f1 of the leg: [{ mode, pts }]
+        function slice(p, f0, f1) {
+            const us = units(p), T = p.total || 1, out = []; let at = 0;
+            us.forEach(u => {
+                const s = at / T, e = (at + u.len) / T; at += u.len;
+                const a = Math.max(f0, s), b = Math.min(f1, e); if (b <= a || u.len <= 0) return;
+                const cum = cumOf(u.pts), L = cum[cum.length - 1];
+                out.push({ mode: u.mode, pts: cutD(u.pts, cum, (a - s) / (e - s) * L, (b - s) / (e - s) * L) });
+            });
+            return out;
+        }
+        function pointAt(p, f) {
+            const us = units(p), T = p.total || 1; let at = 0; f = Math.max(0, Math.min(1, f));
+            for (const u of us) { const s = at / T, e = (at + u.len) / T; at += u.len; if (f <= e + 1e-9) { const cum = cumOf(u.pts), L = cum[cum.length - 1]; return pointAtD(u.pts, cum, e > s ? (f - s) / (e - s) * L : 0); } }
+            return us.length ? us[us.length - 1].pts[us[us.length - 1].pts.length - 1] : null;
+        }
+        // One flat polyline for a whole leg (optionally through a transfer point): { pts, cum, meters }. Used by the all-teams replay.
+        function modeAt(p, f) {                                    // which mode (and its direction on the leg) at fraction f
+            const us = units(p), T = p.total || 1; let at = 0; f = Math.max(0, Math.min(1, f));
+            for (const u of us) { const e = (at + u.len) / T; at += u.len; if (f <= e + 1e-9) return u.mode; }
+            return us.length ? us[us.length - 1].mode : null;
+        }
+        function polyline(net, a, b, modes, via) {
+            const ps = via ? [plan(net, a, via, modes), plan(net, via, b, modes)] : [plan(net, a, b, modes)];
+            let pts = []; ps.forEach(p => units(p).forEach(u => { pts = pts.concat(pts.length ? u.pts.slice(1) : u.pts); }));
+            pts = dedupe(pts); const cum = cumOf(pts);
+            return { pts, cum, meters: cum[cum.length - 1] || 0, routed: ps.some(p => p.routed) };
+        }
+        function along(poly, f) { return pointAtD(poly.pts, poly.cum, poly.meters * Math.max(0, Math.min(1, f))); }
+        function upTo(poly, f) { return cutD(poly.pts, poly.cum, 0, poly.meters * Math.max(0, Math.min(1, f))); }
+
+        // Estimated length of a travelled leg in miles (road routes, via a transfer point if there was one); null if no network
+        async function legMiles(a, b, modes, via) {
+            const A = [Number(a.lat), Number(a.lng)], B = [Number(b.lat), Number(b.lng)];
+            if (![...A, ...B].every(Number.isFinite)) return null;
+            const net = await load(A); if (!net) return null;
+            const ps = (via ? [plan(net, A, [via.lat, via.lng], modes), plan(net, [via.lat, via.lng], B, modes)] : [plan(net, A, B, modes)]);
+            return ps.every(p => p.routed) ? ps.reduce((s, p) => s + p.meters, 0) / 1609.344 : null;
+        }
+
+        window.RouteNet = { load, plan, slice, pointAt, modeAt, polyline, along, upTo, legMiles, hav, _test: { makeGraph, search, nearest, routePts, linePts } };
     })();
     </script>
     <style>
