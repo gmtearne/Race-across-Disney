@@ -13613,6 +13613,11 @@
             const triviaSettings = raceData.trivia;
             const triviaDb = window.DISNEY_TRIVIA_DATABASE || {};
             const locTrivia = cp ? triviaDb[cp.name] : null;
+            // TEMPORARY diagnostic: say why no question appeared (remove once Paris trivia is confirmed working)
+            if (cp && triviaSettings && triviaSettings.enabled && !locTrivia && window.locIdForRace && window.locIdForRace(raceData) !== 'wdw') {
+                const n = Object.keys(triviaDb).length, hasPar = !!triviaDb['Sleeping Beauty Castle'];
+                window.appToast && window.appToast(`No trivia found for "${cp.name}". Database has ${n} stops; Paris trivia loaded: ${hasPar ? 'yes' : 'NO'}.`);
+            }
 
             // The first attempt at a stop is final: undoing and re-checking-in never re-asks (or re-rolls) the question
             const priorAttempt = (tData.triviaAttempts || {})[cpId];
