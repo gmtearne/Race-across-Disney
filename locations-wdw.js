@@ -121,6 +121,11 @@ window.registerLocation({
         transferOther: "Other resort / not listed",
         // Choices for the transfer question, grouped by `area`. lat/lng bend the race replay through that point.
         transferPoints: [
+                // Theme parks as transfer points (a team can change at a park, e.g. monorail to Epcot, then bus to Animal Kingdom). Coordinates are the park entrances.
+                { name: "Magic Kingdom",     area: "Theme parks", lat: 28.416662, lng: -81.581178 },
+                { name: "Epcot",             area: "Theme parks", lat: 28.376169, lng: -81.549363 },
+                { name: "Hollywood Studios", area: "Theme parks", lat: 28.358059, lng: -81.559067 },
+                { name: "Animal Kingdom",    area: "Theme parks", lat: 28.355483, lng: -81.590098 },
                 { name: "Contemporary Resort", area: "Magic Kingdom area", lat: 28.4151, lng: -81.5745 },
                 { name: "Bay Lake Tower", area: "Magic Kingdom area", lat: 28.4173, lng: -81.5752 },
                 { name: "Polynesian Village Resort", area: "Magic Kingdom area", lat: 28.4055, lng: -81.5841 },
