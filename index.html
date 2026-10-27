@@ -11627,9 +11627,9 @@
                 document.body.appendChild(modal);
 
                 // ---- Lifecycle ----
-                let step = 0, playing = false, playToken = 0, speed = 0.5, map = null, autoFrame = true, board = null;   // `speed` is the real pacing factor; the button shows speed x 2 (so the old 0.5x pacing is now 1x)
+                let step = 0, playing = false, playToken = 0, speed = 1, map = null, autoFrame = true, board = null;
                 let waitTimer = null, holdResolve = null;
-                const SPEEDS = [0.25, 0.5, 1, 2];
+                const SPEEDS = [0.5, 1, 2, 4];
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
                     playing = false; playToken++; releaseHold();
@@ -11986,7 +11986,7 @@
                     setStep(slider.value);
                     clearTimeout(scrubTimer); scrubTimer = setTimeout(() => frameTeams(true), 150);
                 });
-                modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = (speed * 2) + '×'; };
+                modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = speed + '×'; };
 
                 setStep(0);
                 setTimeout(() => { if (!map) return; map.resize(); WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:false }); }, 120);   // opening overview
@@ -12056,9 +12056,9 @@
                 document.body.appendChild(modal);
 
                 // ---- State shared by close/play/render ----
-                let step = 0, playing = false, playToken = 0, waitTimer = null, speed = 1, map = null;
+                let step = 0, playing = false, playToken = 0, waitTimer = null, speed = 0.5, map = null;   // `speed` is the real pacing factor; the button shows speed x 2 (so the old 0.5x pacing is now 1x)
                 let postcard = null, modeMarker = null, postcardCount = 0;   // bonus-photo overlay and the transit badge behind the avatar
-                const SPEEDS = [0.5, 1, 2, 4];
+                const SPEEDS = [0.25, 0.5, 1, 2];
                 const stopWaiting = () => { if (waitTimer) clearTimeout(waitTimer); waitTimer = null; };
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
@@ -12368,7 +12368,7 @@
                 slider.addEventListener('input', () => { stopPlay(); renderStep(slider.value, true); });
                 const labelsBtn = modal.querySelector('#replay-labels');
                 labelsBtn.onclick = () => { labelsOn = !labelsOn; labelsBtn.style.opacity = labelsOn ? '1' : '.55'; showLabels(step); };
-                speedBtn.onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; speedBtn.textContent = speed + '×'; };
+                speedBtn.onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; speedBtn.textContent = (speed * 2) + '×'; };
                 play.onclick = () => {
                     if (playing) { stopPlay(); return; }
                     if (step >= events.length - 1) renderStep(0, false);
