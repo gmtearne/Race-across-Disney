@@ -9950,6 +9950,27 @@
             return { lat: Number(r.lat), lng: Number(r.lng), name: r.name };
         };
 
+        // All the transfer points of a leg (one per transfer, in order) as [{lat,lng,name}], or null if there are none / any is unknown.
+        window.transitViaPoints = function(leg) {
+            if (!leg) return null;
+            const names = (leg.vias && leg.vias.length) ? leg.vias.map(v => v && v.resort) : ((leg.via && leg.via.resort) ? [leg.via.resort] : []);
+            if (!names.length || !leg.segments || leg.segments.length !== names.length + 1) return null;
+            const pts = names.map(n => window.transitViaPoint({ via: { resort: n } }));
+            return pts.every(Boolean) ? pts : null;
+        };
+        // Which modes could a team have used between two areas? Only modes listed for BOTH areas (transit.areaModes in the location file).
+        // An area with no list is unrestricted. Walking / other ("none") is always allowed.
+        window.transitAllowedModes = function(fromPark, toPark, race) {
+            const tr = window.transitFor(race), am = tr.areaModes || {}, norm = v => String(v == null ? '' : v).toLowerCase();
+            const listFor = park => { const k = Object.keys(am).find(n => norm(n) && norm(park).includes(norm(n))); return k ? am[k] : null; };
+            const lists = [listFor(fromPark), listFor(toPark)].filter(Boolean);
+            const all = (tr.modes || []).map(m => m.id);
+            if (!lists.length) return new Set(all);
+            const ok = new Set(['none']);
+            all.forEach(id => { if (lists.every(l => l.includes(id))) ok.add(id); });
+            return ok;
+        };
+
         window.planTransitLeg = function(race, tData, cpId) {
             const cps = race.checkpoints || [];
             const cp = cps.find(c => c.id === cpId);
@@ -10006,13 +10027,18 @@
             const names = { walk: '🚶 On foot', none: '🚶 On foot' };
             (window.locList ? window.locList() : []).forEach(loc => (loc.transit.modes || []).forEach(m => { if (!names[m.id]) names[m.id] = m.emoji + ' ' + m.label; }));
             const one = ms => ms.map(m => names[m] || m).join(' + ');
+            const viaNames = (leg.vias && leg.vias.length) ? leg.vias.map(v => v && v.resort).filter(Boolean) : ((leg.via && leg.via.resort) ? [leg.via.resort] : []);
             const txt = (leg.segments && leg.segments.length > 1)
-                ? `via ${(leg.via && leg.via.resort) || 'a resort'}: ` + leg.segments.map(sg => one(sg.modes || [])).join(' → ')
+                ? `via ${viaNames.join(' and ') || 'a resort'}: ` + leg.segments.map(sg => one(sg.modes || [])).join(' → ')
                 : one(leg.modes);
             const mi = (leg.miles === null || leg.miles === undefined) ? '' : ' • ' + (leg.miles < 0.1 ? Number(leg.miles).toFixed(2) : Number(leg.miles).toFixed(1)) + ' mi';
             return txt + mi;
         };
 
+        // ---- Transit route builder ----
+        // The team builds their journey as a line above the mode buttons: tap modes to add them to the part of the journey being edited,
+        // add 🔁 Transfer to start the next part. A trip that has to include a transfer (rules in the location file) starts with it in place.
+        // Modes not listed for the areas involved (transit.areaModes) are dimmed until a transfer is added.
         window.buildTransitPanel = function(cpId, tData, raceData, now) {
             const ui = window.cpTransitUi[cpId];
             const pend = (tData.transitPending || {})[cpId];
@@ -10029,24 +10055,26 @@
                 if (now >= u.answeredAt + 450) { return ''; }
                 cls = 'closing'; delay = now - u.answeredAt;
             } else if (now - u.t0 < 450) { cls = 'opening'; delay = now - u.t0; }
-            const sel = u.sel || [];
             const p = pend || {};
-            const step = u.step || (p.needsVia ? 'via' : 'modes');
+            if (!u.segs) { const forced = !!p.needsVia; u.segs = forced ? [[], []] : [[]]; u.lock = forced ? 1 : 0; u.cur = 0; u.step = 'build'; u.vias = []; u.viaIdx = 0; u.msg = ''; }
+            const step = u.step || 'build';
             const prevCp = (raceData.checkpoints || []).find(c => c.id === p.fromId);
             const fromName = (prevCp && window.riddleInfo(prevCp, tData, raceData).masked) ? 'your last stop' : (p.fromName || 'your last stop');
             const toName = window.riddleInfo(cp, tData, raceData).masked ? 'this stop' : cp.name;
-            let heading = '🚏 Transit used', question, body, canGo, goLabel = 'Confirm', back = '';
-            const modeBtns = () => window.transitModes(raceData).map(m => {
-                const on = sel.includes(m.id);
-                return `<button type="button" onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
-            }).join('');
+            const tr = window.transitFor(raceData), noun = tr.transferNoun || 'stop';
+            const modes = window.transitModes(raceData);
+            const modeInfo = id => modes.find(m => m.id === id) || { emoji: '•', label: id };
+            const rule = window.transitRuleFor({ park: p.fromPark }, cp, raceData);
+            const nTransfers = u.segs.length - 1;
+            let heading = '🚏 Transit used', question, body, canGo = true, goLabel = 'Confirm', disabledLabel = 'Pick at least one', back = '';
             if (step === 'via') {
-                heading = '🚏 Transfer needed';
-                const rule = window.transitRuleFor({ park: p.fromPark }, cp, raceData);
-                const tr = window.transitFor(raceData), noun = tr.transferNoun || 'stop';
-                question = `${(rule && rule.reason) || "This trip needs a transfer."} Which ${noun} did you transfer through to get to ${toName}?`;
+                const i = u.viaIdx || 0;
+                heading = nTransfers > 1 ? `🚏 Transfer ${i + 1} of ${nTransfers}` : '🚏 Transfer';
+                const before = i === 0 ? fromName : (u.vias[i - 1] || 'the first transfer'), after = i === nTransfers - 1 ? toName : 'the next transfer';
+                question = `${(rule && i === 0 && u.lock && rule.reason) ? rule.reason + ' ' : ''}Where did you transfer${nTransfers > 1 ? ' (' + (i + 1) + ' of ' + nTransfers + ')' : ''} between ${before} and ${after}?`;
                 const q = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                const opt = o => `<option value="${q(o)}" ${u.via === o ? 'selected' : ''}>${q(o)}</option>`;
+                const cur = u.vias[i];
+                const opt = o => `<option value="${q(o)}" ${cur === o ? 'selected' : ''}>${q(o)}</option>`;
                 const groups = [];                                           // transfer points grouped by area, in the order listed in the location file
                 (tr.transferPoints || []).forEach(r => {
                     const area = r.area || 'Options';
@@ -10054,31 +10082,38 @@
                     g.names.push(r.name);
                 });
                 const grouped = groups.map(g => `<optgroup label="${q(g.area)}">${g.names.map(opt).join('')}</optgroup>`).join('');
-                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${u.via ? '' : 'selected'} disabled>Select a ${noun}…</option>${grouped}${opt(tr.transferOther || 'Other / not listed')}</select>`;
-                canGo = !!u.via; goLabel = 'Next';
-            } else if (step === 'seg1') {
-                heading = '🚏 Transit · leg 1 of 2';
-                question = `How did you get from ${fromName} to ${u.via}? Pick everything you rode, or None if you only walked.`;
-                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
-                canGo = sel.length > 0; goLabel = 'Next';
-                back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Change resort</button>`;
-            } else if (step === 'seg2') {
-                heading = '🚏 Transit · leg 2 of 2';
-                question = `How did you get from ${u.via} to ${toName}? Pick everything you rode, or None if you only walked.`;
-                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
-                canGo = sel.length > 0;
-                back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to leg 1</button>`;
+                body = `<select onchange="pickTransitVia('${cpId}', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-sky-400"><option value="" ${cur ? '' : 'selected'} disabled>Select a ${noun}…</option>${grouped}${opt(tr.transferOther || 'Other / not listed')}</select>`;
+                canGo = !!cur; goLabel = i < nTransfers - 1 ? 'Next' : 'Confirm'; disabledLabel = 'Pick a ' + noun;
+                back = `<button type="button" onclick="backTransit('${cpId}')" class="mt-2 w-full text-[11px] text-slate-400 hover:text-slate-200">‹ Back to your route</button>`;
             } else {
-                question = `What transit did you take to get to ${toName}? Pick everything you rode, or None if you only walked.`;
-                body = `<div class="grid grid-cols-2 gap-1.5">${modeBtns()}</div>`;
-                canGo = sel.length > 0;
+                const allowed = u.segs.length > 1 ? new Set(modes.map(m => m.id)) : window.transitAllowedModes(p.fromPark, cp.park, raceData);
+                if (u.segs.length === 1) u.segs[0] = u.segs[0].filter(m => allowed.has(m));
+                const active = u.segs[u.cur] || [];
+                question = `How did you get to ${toName}? Tap each way you travelled, in order, from ${fromName}.${nTransfers ? ' Tap a part of the route to add to it.' : ''}`;
+                const chip = (m, i, j) => { const mi = modeInfo(m); return `<button type="button" onclick="event.stopPropagation();removeTransitMode('${cpId}',${i},${j})" class="px-2 py-1 rounded-lg bg-sky-700/80 border border-sky-300/60 text-white text-xs font-semibold flex items-center gap-1" title="Tap to remove"><span>${mi.emoji}</span><span>${mi.label}</span></button>`; };
+                const segHtml = (seg, i) => `<div onclick="setTransitSeg('${cpId}',${i})" class="flex flex-wrap items-center gap-1 min-h-[34px] px-1.5 py-1 rounded-xl border ${u.cur === i ? 'border-amber-300 bg-slate-900' : 'border-slate-700 bg-slate-900/50'}">${seg.length ? seg.map((m, j) => chip(m, i, j)).join('') : '<span class="text-[11px] text-slate-500 px-1">tap a mode…</span>'}</div>`;
+                const xfer = i => (u.lock && i === 0)
+                    ? `<span class="px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs font-semibold">🔁 Transfer 🔒</span>`
+                    : `<button type="button" onclick="event.stopPropagation();removeTransitTransfer('${cpId}',${i})" class="px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs font-semibold" title="Tap to remove">🔁 Transfer</button>`;
+                const lineHtml = `<div class="flex flex-wrap items-center gap-1.5 mb-2.5">${u.segs.map((seg, i) => segHtml(seg, i) + (i < u.segs.length - 1 ? '<span class="text-slate-500 text-xs">›</span>' + xfer(i) + '<span class="text-slate-500 text-xs">›</span>' : '')).join('')}</div>`;
+                const btns = modes.map(m => {
+                    const on = active.includes(m.id), ok = allowed.has(m.id);
+                    return `<button type="button" ${ok ? '' : 'disabled'} onclick="toggleTransitMode('${cpId}', '${m.id}')" class="${m.id === 'none' ? 'col-span-2' : ''} p-2.5 rounded-xl text-xs font-semibold text-left border transition active:scale-[.98] flex items-center gap-2 ${!ok ? 'bg-slate-900/40 border-slate-800 text-slate-600 opacity-50 cursor-not-allowed' : on ? 'bg-sky-600 border-sky-300 text-white' : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700'}"><span class="text-base leading-none">${m.emoji}</span><span>${m.id === 'none' ? 'Walk / other' : m.label}</span>${on ? '<i class="fa-solid fa-check ml-auto text-[10px]"></i>' : ''}</button>`;
+                }).join('');
+                const canXfer = u.segs.length < 3 && active.length > 0;
+                const dimNote = u.segs.length === 1 && modes.some(m => !allowed.has(m.id)) ? '<p class="text-[10px] text-slate-500 mt-1.5">Greyed-out options aren\'t available for this trip. Add a transfer to unlock every option.</p>' : '';
+                body = `${lineHtml}<div class="grid grid-cols-2 gap-1.5">${btns}</div>
+                    <button type="button" ${canXfer ? '' : 'disabled'} onclick="addTransitTransfer('${cpId}')" class="mt-1.5 w-full p-2 rounded-xl text-xs font-semibold border ${canXfer ? 'bg-amber-500/10 border-amber-400/50 text-amber-200 hover:bg-amber-500/20' : 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed'}">🔁 Add a transfer</button>${dimNote}
+                    ${u.msg ? `<p class="mt-2 text-[12px] font-semibold text-amber-300 leading-snug">${u.msg}</p>` : ''}`;
+                canGo = u.segs.some(sg => sg.length > 0);
+                goLabel = nTransfers ? 'Next' : 'Confirm';
             }
             return `<div class="cp-transit ${cls}" style="--cp-trivia-delay:-${delay}ms" onclick="event.stopPropagation()">
                 <div class="cp-trivia-inner"><div class="mt-2 p-3 bg-slate-800 rounded-2xl border border-sky-400/40 shadow-lg ${window.cpAttnClass(cpId, now)}">
                     <p class="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-1">${heading}</p>
                     <p class="text-[13px] font-semibold text-white leading-snug mb-2.5">${question}</p>
                     ${body}
-                    <button type="button" ${canGo ? '' : 'disabled'} onclick="confirmTransit('${cpId}')" class="mt-2.5 w-full py-2.5 rounded-xl text-xs font-black uppercase transition ${canGo ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">${canGo ? goLabel : (step === 'via' ? 'Pick a resort' : 'Pick at least one')}</button>
+                    <button type="button" ${canGo ? '' : 'disabled'} onclick="confirmTransit('${cpId}')" class="mt-2.5 w-full py-2.5 rounded-xl text-xs font-black uppercase transition ${canGo ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">${canGo ? goLabel : disabledLabel}</button>
                     ${back}
                 </div></div>
             </div>`;
@@ -10093,45 +10128,67 @@
             if (html) card.insertAdjacentHTML('beforeend', html);
         };
 
+        const transitBuilding = cpId => { const u = window.cpTransitUi[cpId]; return (u && !u.answeredAt && u.segs && (u.step || 'build') === 'build') ? u : null; };
+        // Tap a mode: it is added to the part of the journey being edited (tap again to remove). Walking / other stands alone.
         window.toggleTransitMode = function(cpId, mode) {
-            const u = window.cpTransitUi[cpId];
-            if (!u || u.answeredAt || u.step === 'via') return;
-            let sel = u.sel || [];
-            if (mode === 'none') sel = sel.includes('none') ? [] : ['none'];
-            else {
-                sel = sel.filter(m => m !== 'none');
-                sel = sel.includes(mode) ? sel.filter(m => m !== mode) : [...sel, mode];
-            }
-            u.sel = sel;
+            const u = transitBuilding(cpId); if (!u) return;
+            const was = u.segs[u.cur] || [];
+            let seg;
+            if (mode === 'none') seg = was.includes('none') ? [] : ['none'];
+            else { seg = was.filter(m => m !== 'none'); seg = seg.includes(mode) ? seg.filter(m => m !== mode) : seg.concat(mode); }
+            u.segs[u.cur] = seg; u.msg = '';
+            // a trip with a required transfer: after the first mode before it, the next tap goes after it
+            if (u.lock && u.cur === 0 && !was.length && seg.length && u.segs[1] && !u.segs[1].length) u.cur = 1;
             window.refreshTransitPanel(cpId);
         };
-
+        window.setTransitSeg = function(cpId, i) { const u = transitBuilding(cpId); if (!u || !u.segs[i]) return; u.cur = i; window.refreshTransitPanel(cpId); };
+        window.removeTransitMode = function(cpId, i, j) { const u = transitBuilding(cpId); if (!u || !u.segs[i]) return; u.segs[i].splice(j, 1); u.cur = i; u.msg = ''; window.refreshTransitPanel(cpId); };
+        window.addTransitTransfer = function(cpId) {
+            const u = transitBuilding(cpId); if (!u || u.segs.length >= 3 || !(u.segs[u.cur] || []).length) return;
+            u.segs.splice(u.cur + 1, 0, []); u.cur += 1; u.msg = ''; window.refreshTransitPanel(cpId);
+        };
+        window.removeTransitTransfer = function(cpId, i) {
+            const u = transitBuilding(cpId); if (!u || (u.lock && i === 0) || !u.segs[i + 1]) return;
+            let merged = u.segs[i].concat(u.segs[i + 1].filter(m => !u.segs[i].includes(m)));
+            if (merged.includes('none') && merged.length > 1) merged = merged.filter(m => m !== 'none');
+            u.segs.splice(i, 2, merged); u.cur = Math.min(i, u.segs.length - 1); u.msg = ''; window.refreshTransitPanel(cpId);
+        };
         window.pickTransitVia = function(cpId, resort) {
             const u = window.cpTransitUi[cpId];
             if (!u || u.answeredAt) return;
-            u.via = resort;
+            u.vias[u.viaIdx || 0] = resort;
             window.refreshTransitPanel(cpId);
         };
         window.backTransit = function(cpId) {
             const u = window.cpTransitUi[cpId];
             if (!u || u.answeredAt) return;
-            if (u.step === 'seg2') { u.step = 'seg1'; u.sel = (u.seg1 || []).slice(); }
-            else { u.step = 'via'; u.sel = []; }
+            if ((u.viaIdx || 0) > 0) u.viaIdx -= 1; else u.step = 'build';
             window.refreshTransitPanel(cpId);
         };
 
         window.confirmTransit = async function(cpId) {
             const u = window.cpTransitUi[cpId];
-            if (!u || u.answeredAt) return;
-            const lt0 = window.liveTeamData || {};
-            const pend0 = (lt0.transitPending || {})[cpId] || {};
-            const step = u.step || (pend0.needsVia ? 'via' : 'modes');
-            // Transfer legs: resort first, then the ride to it, then the ride from it.
-            if (step === 'via') { if (!u.via) return; u.step = 'seg1'; u.sel = []; window.refreshTransitPanel(cpId); return; }
-            if (!(u.sel || []).length) return;
-            if (step === 'seg1') { u.seg1 = u.sel.slice(); u.step = 'seg2'; u.sel = []; window.refreshTransitPanel(cpId); return; }
-            const sel = u.sel.slice();
-            const seg1Sel = step === 'seg2' ? (u.seg1 || []).slice() : null, via = u.via || null;
+            if (!u || u.answeredAt || !u.segs) return;
+            const step = u.step || 'build';
+            if (step === 'build') {
+                if (!u.segs.some(sg => sg.length)) return;
+                if (u.segs.some(sg => !sg.length)) {                       // a transfer with nothing on one side of it
+                    const lt = window.liveTeamData || {}, race = window.liveTeamRaceData || {};
+                    const pend = (lt.transitPending || {})[cpId] || {};
+                    const cp = (race.checkpoints || []).find(c => c.id === cpId);
+                    const rule = cp ? window.transitRuleFor({ park: pend.fromPark }, cp, race) : null;
+                    u.msg = u.lock && rule
+                        ? `${rule.reason} Add how you travelled before AND after the transfer, then you'll pick where you transferred.`
+                        : 'Add at least one way of travelling on each side of a transfer, or remove the transfer.';
+                    window.refreshTransitPanel(cpId); return;
+                }
+                if (u.segs.length > 1) { u.step = 'via'; u.viaIdx = 0; window.refreshTransitPanel(cpId); return; }
+            } else {
+                if (!u.vias[u.viaIdx || 0]) return;
+                if ((u.viaIdx || 0) < u.segs.length - 2) { u.viaIdx += 1; window.refreshTransitPanel(cpId); return; }
+            }
+            const toModes = ids => ids.includes('none') ? ['walk'] : ids.slice();   // tap order = travel order (for the replay)
+            const segModes = u.segs.map(toModes), viaNames = u.vias.slice(0, u.segs.length - 1);
             u.answeredAt = Date.now();
             // Clear the pending flag locally right away. The trivia panel refuses to show while transit is
             // pending, and the saved copy can take longer than the slide animation to come back.
@@ -10155,7 +10212,6 @@
                 const pending = t.transitPending || {};
                 const entry = pending[cpId];
                 if (!entry) return;
-                const toModes = ids => ids.includes('none') ? ['walk'] : ids.slice();   // tap order = travel order (for the replay)
                 const legs = t.transitLegs || {};
                 const cpName = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
                 // Distance: estimated road / line route when this location has a route network, else the straight-line figure from when the stop was reached.
@@ -10164,22 +10220,21 @@
                     const cps = (window.liveTeamRaceData || {}).checkpoints || [];
                     const fromP = entry.fromId === 'start' ? t.startLocation : cps.find(c => c.id === entry.fromId);
                     if (window.RouteNet && fromP && cpName) {
-                        const viaPt = (seg1Sel && via) ? window.transitViaPoint({ via: { resort: via } }) : null;
-                        const modesAll = (seg1Sel && via) ? toModes(seg1Sel).concat(toModes(sel)) : toModes(sel);
-                        const rm = await Promise.race([RouteNet.legMilesSplit(fromP, cpName, modesAll, viaPt), new Promise(r => setTimeout(() => r(null), 2500))]);
+                        const viaPts = viaNames.map(n => window.transitViaPoint({ via: { resort: n } }));
+                        const rm = await Promise.race([RouteNet.legMilesSplit(fromP, cpName, segModes, viaPts.every(Boolean) ? viaPts : []), new Promise(r => setTimeout(() => r(null), 2500))]);
                         if (rm && rm.miles > 0) { legMilesVal = Math.round(rm.miles * 1000) / 1000; legWalkMiles = Math.round(Math.min(rm.walkMiles, rm.miles) * 1000) / 1000; }
                     }
                 } catch (e) { /* keep the straight-line figure */ }
-                if (seg1Sel && via) {
-                    const m1 = toModes(seg1Sel), m2 = toModes(sel);
+                if (segModes.length > 1) {
+                    const toName = (cpName && cpName.name) || '';
                     legs[cpId] = {
                         fromId: entry.fromId || null, miles: legMilesVal, walkMiles: legWalkMiles,
-                        modes: m1.concat(m2), via: { resort: via },
-                        segments: [ { from: entry.fromName || '', to: via, modes: m1 }, { from: via, to: (cpName && cpName.name) || '', modes: m2 } ],
+                        modes: [].concat(...segModes), via: { resort: viaNames[0] }, vias: viaNames.map(r => ({ resort: r })),
+                        segments: segModes.map((m, i) => ({ from: i === 0 ? (entry.fromName || '') : viaNames[i - 1], to: i === segModes.length - 1 ? toName : viaNames[i], modes: m })),
                         at: Date.now()
                     };
                 } else {
-                    legs[cpId] = { fromId: entry.fromId || null, miles: legMilesVal, walkMiles: legWalkMiles, modes: toModes(sel), at: Date.now() };
+                    legs[cpId] = { fromId: entry.fromId || null, miles: legMilesVal, walkMiles: legWalkMiles, modes: segModes[0], at: Date.now() };
                 }
                 delete pending[cpId];
                 await fastUpdate(teamRef, { transitPending: pending, transitLegs: legs, distanceMiles: window.transitDistanceTotals(legs) });
@@ -11561,7 +11616,7 @@
                     }
                     const bonusPre = [0];                                                  // bonusPre[k] = bonus ms earned on legs 1..k
                     for (let k = 1; k <= m; k++) bonusPre.push(bonusPre[k - 1] + items[k].reduce((a, b) => a + b.min, 0) * 60000);
-                    const vias = stops.map(sp => (sp.transit && sp.transit.segments && sp.transit.segments.length === 2) ? window.transitViaPoint(sp.transit) : null);   // resort a team transferred through, if we have its coordinates
+                    const vias = stops.map(sp => window.transitViaPoints(sp.transit) || []);   // resort a team transferred through, if we have its coordinates
                     teams.push({ id:t.id, name:t.teamName || 'Team', photo:t.photoUrl || DEFAULT_AVATAR, finished:!!t.endTime, start, stops, m, cum, items, bonusPre, vias });
                 });
                 if (!teams.length) return window.appToast("No team has recorded locations to replay yet.");
@@ -11647,7 +11702,7 @@
                 modal.querySelector('#orr-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = [];
-                teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); tm.vias.forEach(v => { if (v) allLatLngs.push([v.lat, v.lng]); }); });
+                teams.forEach(tm => { allLatLngs.push([tm.start.lat, tm.start.lng]); tm.stops.forEach(s => allLatLngs.push([s.lat, s.lng])); tm.vias.forEach(vs => vs.forEach(v => allLatLngs.push([v.lat, v.lng]))); });
                 try { map = await WdwMap.create(modal.querySelector('#orr-map'), { center:allLatLngs[0], zoom:14, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#orr-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
@@ -11657,9 +11712,10 @@
                 const buildPolys = net => teams.forEach(tm => {
                     tm.polys = tm.stops.map((sp, k) => {
                         try {
-                            const tr = sp.transit || {}, modes = (tr.modes && tr.modes.length ? tr.modes : ['walk']).filter(x => x !== 'bonus' && x !== 'other');
+                            const tr = sp.transit || {}, modes = (tr.modes && tr.modes.length ? tr.modes : ['walk']).filter(x => x !== 'bonus' && x !== 'other'), vs = tm.vias[k] || [];
                             if (!modes.length) return null;
-                            const pl = RouteNet.polyline(net, spotAt(tm, k), tm.stops[k], modes, tm.vias[k]);
+                            const segModes = (vs.length && tr.segments && tr.segments.length === vs.length + 1) ? tr.segments.map(sg => { const m = (sg.modes || []).filter(x => x !== 'bonus' && x !== 'other'); return m.length ? m : ['walk']; }) : null;
+                            const pl = RouteNet.polyline(net, spotAt(tm, k), tm.stops[k], segModes || modes, vs);
                             return pl.routed ? pl : null;
                         } catch (e) { return null; }
                     });
@@ -11764,11 +11820,11 @@
                         for (let k = 0; k < done; k++) {
                             const pl = tm.polys && tm.polys[k];
                             if (pl) { if (!pl.full) pl.full = RouteNet.polySlice(pl, 0, 1); addRuns(pl, pl.full); continue; }          // estimated road route
-                            if (tm.vias[k]) pts.push([tm.vias[k].lat, tm.vias[k].lng]); pts.push([tm.stops[k].lat, tm.stops[k].lng]);
+                            (tm.vias[k] || []).forEach(v => pts.push([v.lat, v.lng])); pts.push([tm.stops[k].lat, tm.stops[k].lng]);
                         }
                         const p = live && live[tm.id];
                         if (p && p.poly) addRuns(p.poly, RouteNet.polySlice(p.poly, 0, p.f));
-                        else if (p) { if (p.viaPassed && tm.vias[done]) pts.push([tm.vias[done].lat, tm.vias[done].lng]); pts.push([p.lat, p.lng]); }
+                        else if (p) { (p.passed || []).forEach(v => pts.push([v.lat, v.lng])); pts.push([p.lat, p.lng]); }
                         flush();
                         // emoji badge on the avatar while on a non-walking part of an estimated route
                         const m = (p && p.poly && p.f > 0 && p.f < 1) ? RouteNet.polyModeAt(p.poly, p.f) : null, em = m ? RACE_EMOJI[m] : '';
@@ -11833,10 +11889,13 @@
                         plan.forEach(p => {
                             const f = ease(Math.max(0, Math.min(1, (t - p.off) / p.mv)));
                             // Via a resort: first half of the trip goes to the resort, second half on to the checkpoint (same total time).
-                            let pos;
+                            let pos, passed = [];
                             if (p.poly) { const q = RouteNet.along(p.poly, f); pos = { lat:q[0], lng:q[1] }; }
-                            else pos = p.via ? (f < .5 ? lerp(p.from, p.via, f * 2) : lerp(p.via, p.to, (f - .5) * 2)) : lerp(p.from, p.to, f);
-                            live[p.tm.id] = { lat:pos.lat, lng:pos.lng, viaPassed:!!p.via && f >= .5, poly:p.poly, f };
+                            else {      // straight lines: the parts of the leg (via each transfer point) share the time equally
+                                const chain = [p.from].concat(p.via || [], [p.to]), nS = chain.length - 1, x = Math.min(nS - 1, Math.floor(f * nS));
+                                pos = lerp(chain[x], chain[x + 1], f * nS - x); passed = chain.slice(1, x + 1);
+                            }
+                            live[p.tm.id] = { lat:pos.lat, lng:pos.lng, passed, poly:p.poly, f };
                             p.tm.marker.setLatLng([pos.lat, pos.lng]);
                             p.tm.prog = (n - 1) + f;
                             p.tm.marker.setZ(10 + Math.round(p.tm.prog * 100));
@@ -11961,7 +12020,7 @@
                         const n = step + 1;
                         const act = teams.filter(tm => n <= tm.m);
                         const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; })
-                            .concat(act.filter(tm => tm.vias[n - 1]).map(tm => [tm.vias[n - 1].lat, tm.vias[n - 1].lng]))
+                            .concat(act.flatMap(tm => (tm.vias[n - 1] || []).map(v => [v.lat, v.lng])))
                             .concat(act.flatMap(tm => { const pl = tm.polys && tm.polys[n - 1]; return pl ? pl.pts.filter((_, i) => i % 6 === 0) : []; }));   // keep the whole estimated route in frame, not just its ends
                         showLabels(n, true);                                    // name the stops being travelled to from the start of the round
                         if (frameTeams(true, extra) && !(await wait(900 / speed, token))) return;
@@ -12078,7 +12137,7 @@
                 modal.querySelector('#replay-close').onclick = close;
                 modal.addEventListener('click', e => { if (e.target === modal) close(); });
                 const allLatLngs = events.concat(skipped).map(e => [e.lat, e.lng]);
-                events.forEach(ev => { const v = ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2 ? window.transitViaPoint(ev.transit) : null; if (v) allLatLngs.push([v.lat, v.lng]); });
+                events.forEach(ev => { ((ev.kind === 'checkpoint' && window.transitViaPoints(ev.transit)) || []).forEach(v => allLatLngs.push([v.lat, v.lng])); });
                 try { map = await WdwMap.create(modal.querySelector('#team-replay-map'), { center:[events[0].lat, events[0].lng], zoom:15, labelsMaxZoom:14.5 }); }
                 catch (e) { console.error('Replay map failed', e); modal.querySelector('#team-replay-map').innerHTML = '<p class="p-5 text-white">The map could not be started on this device. Please try again.</p>'; return; }
                 if (!modal.isConnected) { try { map.remove(); } catch (e) {} map = null; return; }          // closed while the map was loading
@@ -12111,8 +12170,7 @@
                     WdwMap.marker(map, [ev.lat, ev.lng], x, { size:[18, 18], title:`Rejected by host: ${ev.label}` });
                 });
                 events.forEach(ev => {     // small grey dot where a team transferred through a resort
-                    const v = ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2 ? window.transitViaPoint(ev.transit) : null;
-                    if (v) WdwMap.dot(map, [v.lat, v.lng], { color:'#94a3b8', r:4, weight:2, fill:.9, title:'Via ' + v.name });
+                    ((ev.kind === 'checkpoint' && window.transitViaPoints(ev.transit)) || []).forEach(v => WdwMap.dot(map, [v.lat, v.lng], { color:'#94a3b8', r:4, weight:2, fill:.9, title:'Via ' + v.name }));
                 });
                 // ---- Route drawing ----
                 const modeColors = { walk:'#38bdf8', none:'#38bdf8', bus:'#34d399', monorail:'#a78bfa', skyliner:'#fb923c', boat:'#f87171', train:'#facc15', taxi:'#fb7185', bonus:'#f472b6', other:'#94a3b8' };
@@ -12124,12 +12182,13 @@
                 };
                 // A leg is one straight segment, or two when the team transferred through a resort we have coordinates for
                 // (park → resort → Disney Springs). The two halves share the leg's time equally, so replay spacing is unchanged.
-                const viaOf = ev => (ev && ev.kind === 'checkpoint' && ev.transit && ev.transit.segments && ev.transit.segments.length === 2) ? window.transitViaPoint(ev.transit) : null;
+                const viasOf = ev => (ev && ev.kind === 'checkpoint') ? (window.transitViaPoints(ev.transit) || []) : [];
                 const legSegs = (a, b, ev) => {
-                    const v = viaOf(ev);
-                    if (!v) return [{ a, b, modes:legModes(ev) }];
+                    const vs = viasOf(ev);
+                    if (!vs.length) return [{ a, b, modes:legModes(ev) }];
                     const segModes = i => { const mm = (ev.transit.segments[i].modes || []).map(x => String(x).toLowerCase()).filter(x => modeColors[x]); return mm.length ? mm : ['other']; };
-                    return [{ a, b:v, modes:segModes(0) }, { a:v, b, modes:segModes(1) }];
+                    const chain = [a].concat(vs, [b]);
+                    return chain.slice(1).map((q, i) => ({ a:chain[i], b:q, modes:segModes(i) }));
                 };
                 // Multi-mode legs: successive portions of the straight line, in the order the modes were tapped.
                 const drawLeg = (layer, a, b, modes, frac) => {
@@ -12247,10 +12306,11 @@
                     },
                     cluster(ev, animate) { return this.fitTo(clusterPts[ev.cluster], 'c' + ev.cluster, animate); },
                     leg(a, b, animate) {
-                        if (a.cluster === b.cluster && !viaOf(b)) return this.cluster(b, animate);          // short hop inside a park: frame the park
-                        const v = viaOf(b), rp = planOf(b);
+                        const vs = viasOf(b);
+                        if (a.cluster === b.cluster && !vs.length) return this.cluster(b, animate);          // short hop inside a park: frame the park
+                        const rp = planOf(b);
                         const route = rp ? rp.pieces.flatMap(pc => pc.pts.filter((_, i) => i % 6 === 0)) : [];       // include the estimated route so it can't leave the frame
-                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]].concat(v ? [[v.lat, v.lng]] : [], route), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg (and any resort in between)
+                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]].concat(vs.map(v => [v.lat, v.lng]), route), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg (and any resort in between)
                     },
                     overview(animate) { framed = 'all'; WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:animate !== false }); },
                     reset() { framed = null; }
@@ -14891,7 +14951,7 @@
             return us.length ? us[us.length - 1].mode : null;
         }
         function polyline(net, a, b, modes, via) {
-            const ps = via ? [plan(net, a, via, modes), plan(net, via, b, modes)] : [plan(net, a, b, modes)];
+            const ps = legPlans(net, a, b, modes, via);
             let pts = []; ps.forEach(p => units(p).forEach(u => { pts = pts.concat(pts.length ? u.pts.slice(1) : u.pts); }));
             pts = dedupe(pts); const cum = cumOf(pts), meters = cum[cum.length - 1] || 0;
             const us = []; ps.forEach(p => units(p).forEach(u => us.push(u)));       // which mode covers which part of the line (as fractions of its length)
@@ -14910,13 +14970,22 @@
         function along(poly, f) { return pointAtD(poly.pts, poly.cum, poly.meters * Math.max(0, Math.min(1, f))); }
         function upTo(poly, f) { return cutD(poly.pts, poly.cum, 0, poly.meters * Math.max(0, Math.min(1, f))); }
 
+        // One plan per part of a leg: modes is a flat list (used for every part) or one list per part; via = transfer points between the parts.
+        function legPlans(net, a, b, modes, via) {
+            const ll = x => (Array.isArray(x) ? [Number(x[0]), Number(x[1])] : [Number(x.lat), Number(x.lng)]);
+            const vs = (Array.isArray(via) ? via : (via ? [via] : [])).filter(v => v && Number.isFinite(Number(v.lat !== undefined ? v.lat : v[0])) && Number.isFinite(Number(v.lng !== undefined ? v.lng : v[1]))).map(ll);
+            const segs = (modes && Array.isArray(modes[0])) ? modes : null;
+            const segModes = (segs && segs.length === vs.length + 1) ? segs : Array.from({ length: vs.length + 1 }, () => (segs ? [].concat(...segs) : modes));
+            const pts = [ll(a)].concat(vs, [ll(b)]);
+            return segModes.map((m, i) => plan(net, pts[i], pts[i + 1], m));
+        }
         // Estimated length of a travelled leg in miles (road routes, via a transfer point if there was one); null if no network
         async function legMiles(a, b, modes, via) {
             const A = [Number(a.lat), Number(a.lng)], B = [Number(b.lat), Number(b.lng)];
             if (![...A, ...B].every(Number.isFinite)) return null;
             const net = await load(A); if (!net) return null;
-            const ps = (via ? [plan(net, A, [via.lat, via.lng], modes), plan(net, [via.lat, via.lng], B, modes)] : [plan(net, A, B, modes)]);
-            return ps.every(p => p.routed) ? ps.reduce((s, p) => s + p.meters, 0) / 1609.344 : null;
+            const ps = legPlans(net, A, B, modes, via);
+            return ps.some(p => p.routed) ? ps.reduce((s, p) => s + p.meters, 0) / 1609.344 : null;      // parts with no route count as straight lines
         }
 
         // Same as legMiles, but also says how much of it was walking to / from a stop or station that the team did not tick as walking: { miles, walkMiles } or null
@@ -14924,8 +14993,8 @@
             const A = [Number(a.lat), Number(a.lng)], B = [Number(b.lat), Number(b.lng)];
             if (![...A, ...B].every(Number.isFinite)) return null;
             const net = await load(A); if (!net) return null;
-            const ps = (via ? [plan(net, A, [via.lat, via.lng], modes), plan(net, [via.lat, via.lng], B, modes)] : [plan(net, A, B, modes)]);
-            if (!ps.every(p => p.routed)) return null;
+            const ps = legPlans(net, A, B, modes, via);
+            if (!ps.some(p => p.routed)) return null;
             const walkM = ps.reduce((s, p) => s + p.pieces.filter(pc => pc.auto).reduce((x, pc) => x + plen(pc.pts), 0), 0);
             return { miles: ps.reduce((s, p) => s + p.meters, 0) / 1609.344, walkMiles: walkM / 1609.344 };
         }
