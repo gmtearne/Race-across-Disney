@@ -52,6 +52,13 @@ window.registerLocation({
         vector: { data: "wdw-map.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
         // estimated road / line routes for the replays and distances (built from the map file by tools/build-routes.py; leave out to keep straight lines)
         routes: { data: "wdw-routes.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
+        // Bus stops for the replays: a bus leg rides to the stop nearest the place and walks the rest (used within ~1.8 km; add one per resort / water park / Disney Springs later).
+        busStops: [
+            { name: "Magic Kingdom bus stop",        lat: 28.415787, lng: -81.578713 },
+            { name: "Epcot bus stop",                lat: 28.376610, lng: -81.552542 },
+            { name: "Hollywood Studios bus stop",    lat: 28.360311, lng: -81.555449 },
+            { name: "Animal Kingdom bus stop",       lat: 28.352994, lng: -81.591010 },
+        ],
         areas: [
             { key: "all", name: "Whole Resort", icon: "🗺️", bounds: [[28.335,-81.625],[28.435,-81.500]], desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
             { key: "mk", name: "Magic Kingdom", icon: "🏰", bounds: [[28.4140,-81.5900],[28.4250,-81.5720]], desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
