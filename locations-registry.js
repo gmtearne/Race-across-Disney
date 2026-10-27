@@ -49,7 +49,7 @@ window.registerLocation = function (pack) {
     stops.forEach(p => { if (areaNames.size && !areaNames.has(p.park)) console.warn("[" + pack.id + "] stop '" + p.name + "' has park '" + p.park + "' which is not listed in areas"); });
     pack.presets = stops.concat(bonuses);
     pack.region = pack.region || "europe";
-    pack.transit = Object.assign({ modes: [], advice: [], adviceFallback: "", transferRules: [], transferNoun: "stop", transferOther: "Other / not listed", transferPoints: [] }, pack.transit || {});
+    pack.transit = Object.assign({ modes: [], advice: [], adviceFallback: "", transferRules: [], areaModes: {}, transferNoun: "stop", transferOther: "Other / not listed", transferPoints: [] }, pack.transit || {});
     pack.flavour = pack.flavour || {};
     pack.features = pack.features || {};
     // Map settings: `vector` = { data: "file.json?v=1", bounds: [[south, west], [north, east]] } when this location has its own
