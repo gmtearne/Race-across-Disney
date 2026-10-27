@@ -9989,8 +9989,11 @@
                 if (!l || l.miles === null || l.miles === undefined || !l.modes || !l.modes.length) return;
                 // A transfer leg is two segments (to the resort, then from it): each gets half the distance.
                 const segs = (l.segments && l.segments.length) ? l.segments.filter(sg => sg && sg.modes && sg.modes.length) : [{ modes: l.modes }];
+                // Walking to / from a bus stop or station (not ticked as walking) counts as walking; the rest is shared between the modes ticked.
+                const autoWalk = Math.max(0, Math.min(Number(l.walkMiles) || 0, Number(l.miles)));
+                if (autoWalk > 0) t.walk += autoWalk;
                 segs.forEach(sg => {
-                    const share = Number(l.miles) / segs.length / sg.modes.length;
+                    const share = (Number(l.miles) - autoWalk) / segs.length / sg.modes.length;
                     sg.modes.forEach(m => { if (m in t) t[m] += share; });
                 });
             });
@@ -10156,27 +10159,27 @@
                 const legs = t.transitLegs || {};
                 const cpName = ((window.liveTeamRaceData || {}).checkpoints || []).find(c => c.id === cpId);
                 // Distance: estimated road / line route when this location has a route network, else the straight-line figure from when the stop was reached.
-                let legMilesVal = (entry.miles === undefined ? null : entry.miles);
+                let legMilesVal = (entry.miles === undefined ? null : entry.miles), legWalkMiles = 0;
                 try {
                     const cps = (window.liveTeamRaceData || {}).checkpoints || [];
                     const fromP = entry.fromId === 'start' ? t.startLocation : cps.find(c => c.id === entry.fromId);
                     if (window.RouteNet && fromP && cpName) {
                         const viaPt = (seg1Sel && via) ? window.transitViaPoint({ via: { resort: via } }) : null;
                         const modesAll = (seg1Sel && via) ? toModes(seg1Sel).concat(toModes(sel)) : toModes(sel);
-                        const rm = await Promise.race([RouteNet.legMiles(fromP, cpName, modesAll, viaPt), new Promise(r => setTimeout(() => r(null), 2500))]);
-                        if (rm && rm > 0) legMilesVal = Math.round(rm * 1000) / 1000;
+                        const rm = await Promise.race([RouteNet.legMilesSplit(fromP, cpName, modesAll, viaPt), new Promise(r => setTimeout(() => r(null), 2500))]);
+                        if (rm && rm.miles > 0) { legMilesVal = Math.round(rm.miles * 1000) / 1000; legWalkMiles = Math.round(Math.min(rm.walkMiles, rm.miles) * 1000) / 1000; }
                     }
                 } catch (e) { /* keep the straight-line figure */ }
                 if (seg1Sel && via) {
                     const m1 = toModes(seg1Sel), m2 = toModes(sel);
                     legs[cpId] = {
-                        fromId: entry.fromId || null, miles: legMilesVal,
+                        fromId: entry.fromId || null, miles: legMilesVal, walkMiles: legWalkMiles,
                         modes: m1.concat(m2), via: { resort: via },
                         segments: [ { from: entry.fromName || '', to: via, modes: m1 }, { from: via, to: (cpName && cpName.name) || '', modes: m2 } ],
                         at: Date.now()
                     };
                 } else {
-                    legs[cpId] = { fromId: entry.fromId || null, miles: legMilesVal, modes: toModes(sel), at: Date.now() };
+                    legs[cpId] = { fromId: entry.fromId || null, miles: legMilesVal, walkMiles: legWalkMiles, modes: toModes(sel), at: Date.now() };
                 }
                 delete pending[cpId];
                 await fastUpdate(teamRef, { transitPending: pending, transitLegs: legs, distanceMiles: window.transitDistanceTotals(legs) });
@@ -14691,6 +14694,7 @@
         const VEHICLE = new Set(['bus', 'taxi', 'car']);
         const LINE_OF = { monorail: 'monorail', skyliner: 'gondola', boat: 'ferry', train: 'rail' };   // travel mode -> line network
         const PATH_COST = 4;                                   // vehicles may use paths, but a path costs this many times a road
+        const BUS_STOP_M = 1800;                               // a bus leg uses a listed bus stop when the stop is within this distance of the place
         const CELL = 0.0005;                                   // ~55 m grid for snapping
 
         // ---------- graph ----------
@@ -14771,12 +14775,12 @@
         // ---------- loading (one network per location, loaded once) ----------
         const nets = {};
         const inBox = (b, p) => !!b && p[0] >= b[0][0] && p[0] <= b[1][0] && p[1] >= b[0][1] && p[1] <= b[1][1];
-        function packFor(p) { const l = (window.locList ? window.locList() : []).find(x => x.map && x.map.routes && inBox(x.map.routes.bounds, p)); return l ? l.map.routes : null; }
+        function packFor(p) { const l = (window.locList ? window.locList() : []).find(x => x.map && x.map.routes && inBox(x.map.routes.bounds, p)); return l ? Object.assign({}, l.map.routes, { busStops: l.map.busStops || [] }) : null; }
         function load(point) {                                      // -> Promise<net | null>
             const pk = packFor(point); if (!pk) return Promise.resolve(null);
             if (!nets[pk.data]) {
                 nets[pk.data] = fetch(pk.data).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(raw => {
-                    const net = { road: makeGraph(raw.net), lines: {} };
+                    const net = { road: makeGraph(raw.net), lines: {}, busStops: (pk.busStops || []).filter(b => Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))).map(b => ({ name: b.name, lat: Number(b.lat), lng: Number(b.lng) })) };
                     Object.keys(raw.lines || {}).forEach(k => { net.lines[k] = makeGraph(raw.lines[k]); });
                     return net;
                 }).catch(e => { console.warn('Route network unavailable, using straight lines', e); delete nets[pk.data]; return null; });
@@ -14802,8 +14806,25 @@
                         const acc = rest.find(m => VEHICLE.has(m)) || 'walk', veh = VEHICLE.has(acc);
                         const p1 = routePts(net.road, A, L.from, veh), p3 = routePts(net.road, L.to, B, veh);
                         if (p1 && p3) {
-                            const pcs = [{ modes: [acc], pts: p1 }, { modes: [fixed], pts: [L.from].concat(L.pts, [L.to]) }, { modes: [acc], pts: p3 }];
+                            const aw = acc === 'walk' && !walkish.includes('walk');
+                            const pcs = [{ modes: [acc], pts: p1, auto: aw }, { modes: [fixed], pts: [L.from].concat(L.pts, [L.to]) }, { modes: [acc], pts: p3, auto: aw }];
                             return { pieces: pcs, meters: pcs.reduce((s, p) => s + plen(p.pts), 0), routed: true };
+                        }
+                    }
+                }
+                // Buses: ride to the listed bus stop at each end and walk the rest (when the place has a stop nearby).
+                if (net.busStops && net.busStops.length && walkish.includes('bus') && !walkish.some(m => m !== 'bus' && m !== 'walk')) {
+                    const near = p => { let best = null, bd = Infinity; net.busStops.forEach(st => { const d = hav(p, [st.lat, st.lng]); if (d < bd) { bd = d; best = st; } }); return best && bd <= BUS_STOP_M ? { st: best, pt: [best.lat, best.lng] } : null; };
+                    const sa = near(A), sb = near(B);
+                    if ((sa || sb) && !(sa && sb && sa.st === sb.st)) {
+                        const aP = sa ? sa.pt : A, bP = sb ? sb.pt : B, autoWalk = !walkish.includes('walk');
+                        const bus = routePts(net.road, aP, bP, true), w1 = sa ? routePts(net.road, A, aP, false) : null, w2 = sb ? routePts(net.road, bP, B, false) : null;
+                        if (bus && (!sa || w1) && (!sb || w2)) {
+                            const pcs = [];
+                            if (w1) pcs.push({ modes: ['walk'], pts: w1, auto: autoWalk });
+                            pcs.push({ modes: ['bus'], pts: bus });
+                            if (w2) pcs.push({ modes: ['walk'], pts: w2, auto: autoWalk });
+                            return { pieces: pcs, meters: pcs.reduce((a, p) => a + plen(p.pts), 0), routed: true };
                         }
                     }
                 }
@@ -14874,7 +14895,17 @@
             return ps.every(p => p.routed) ? ps.reduce((s, p) => s + p.meters, 0) / 1609.344 : null;
         }
 
-        window.RouteNet = { load, plan, slice, pointAt, modeAt, polySlice, polyModeAt, polyline, along, upTo, legMiles, hav, _test: { makeGraph, search, nearest, routePts, linePts } };
+        // Same as legMiles, but also says how much of it was walking to / from a stop or station that the team did not tick as walking: { miles, walkMiles } or null
+        async function legMilesSplit(a, b, modes, via) {
+            const A = [Number(a.lat), Number(a.lng)], B = [Number(b.lat), Number(b.lng)];
+            if (![...A, ...B].every(Number.isFinite)) return null;
+            const net = await load(A); if (!net) return null;
+            const ps = (via ? [plan(net, A, [via.lat, via.lng], modes), plan(net, [via.lat, via.lng], B, modes)] : [plan(net, A, B, modes)]);
+            if (!ps.every(p => p.routed)) return null;
+            const walkM = ps.reduce((s, p) => s + p.pieces.filter(pc => pc.auto).reduce((x, pc) => x + plen(pc.pts), 0), 0);
+            return { miles: ps.reduce((s, p) => s + p.meters, 0) / 1609.344, walkMiles: walkM / 1609.344 };
+        }
+        window.RouteNet = { legMilesSplit, load, plan, slice, pointAt, modeAt, polySlice, polyModeAt, polyline, along, upTo, legMiles, hav, _test: { makeGraph, search, nearest, routePts, linePts } };
     })();
     </script>
     <style>
