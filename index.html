@@ -14780,7 +14780,7 @@
             const pk = packFor(point); if (!pk) return Promise.resolve(null);
             if (!nets[pk.data]) {
                 nets[pk.data] = fetch(pk.data).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(raw => {
-                    const net = { road: makeGraph(raw.net), lines: {}, busStops: (pk.busStops || []).filter(b => Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))).map(b => ({ name: b.name, lat: Number(b.lat), lng: Number(b.lng) })) };
+                    const net = { road: makeGraph(raw.net), lines: {}, busStops: (pk.busStops || []).filter(b => Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))).map(b => ({ name: b.name, lat: Number(b.lat), lng: Number(b.lng), gate: (b.gate && Number.isFinite(Number(b.gate.lat)) && Number.isFinite(Number(b.gate.lng))) ? [Number(b.gate.lat), Number(b.gate.lng)] : null })) };
                     Object.keys(raw.lines || {}).forEach(k => { net.lines[k] = makeGraph(raw.lines[k]); });
                     return net;
                 }).catch(e => { console.warn('Route network unavailable, using straight lines', e); delete nets[pk.data]; return null; });
@@ -14818,7 +14818,13 @@
                     const sa = near(A), sb = near(B);
                     if ((sa || sb) && !(sa && sb && sa.st === sb.st)) {
                         const aP = sa ? sa.pt : A, bP = sb ? sb.pt : B, autoWalk = !walkish.includes('walk');
-                        const bus = routePts(net.road, aP, bP, true), w1 = sa ? routePts(net.road, A, aP, false) : null, w2 = sb ? routePts(net.road, bP, B, false) : null;
+                        // Walk between a place and its stop: through the park entrance (gate) when the stop has one, so the walk uses the guest paths.
+                        const walkVia = (from, to, gate) => {
+                            if (!gate) return routePts(net.road, from, to, false);
+                            const x = routePts(net.road, from, gate, false), y = routePts(net.road, gate, to, false);
+                            return x && y ? dedupe(x.concat(y)) : null;
+                        };
+                        const bus = routePts(net.road, aP, bP, true), w1 = sa ? walkVia(A, aP, sa.st.gate) : null, w2 = sb ? walkVia(bP, B, sb.st.gate) : null;
                         if (bus && (!sa || w1) && (!sb || w2)) {
                             const pcs = [];
                             if (w1) pcs.push({ modes: ['walk'], pts: w1, auto: autoWalk });
