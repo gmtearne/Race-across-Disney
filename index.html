@@ -11699,10 +11699,10 @@
                     const pin = WdwMap.marker(map, [sp.lat, sp.lng], el, { size:[1, 1], interactive:false, z:500 });
                     pin.el.style.display = 'none'; labelPins.set(k, pin);
                 }));
-                const showLabels = n => {
+                const showLabels = (n, trav) => {
                     const on = new Set();
                     if (labelsOn) {
-                        if (n >= N) teams.forEach(tm => tm.stops.forEach(sp => on.add(labelKey(sp))));
+                        if (n >= N && !trav) teams.forEach(tm => tm.stops.forEach(sp => on.add(labelKey(sp))));
                         else teams.forEach(tm => { const j = Math.min(n, tm.m); if (j >= 1) on.add(labelKey(tm.stops[j - 1])); if (j >= 2) on.add(labelKey(tm.stops[j - 2])); });
                     }
                     labelPins.forEach((pin, k) => { pin.el.style.display = on.has(k) ? '' : 'none'; });
@@ -11959,6 +11959,7 @@
                         const act = teams.filter(tm => n <= tm.m);
                         const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; })
                             .concat(act.filter(tm => tm.vias[n - 1]).map(tm => [tm.vias[n - 1].lat, tm.vias[n - 1].lng]));
+                        showLabels(n, true);                                    // name the stops being travelled to from the start of the round
                         if (frameTeams(true, extra) && !(await wait(900 / speed, token))) return;
                         if (!(await animateStage(n, token))) return;
                         step = n; syncUi();
@@ -12097,7 +12098,8 @@
                 });
                 // Only the stop just reached and the one before it are named while playing; the finished map names them all. Toggle with the 🏷️ button.
                 let labelsOn = true;
-                const showLabels = at => stopLabels.forEach((m, i) => { if (m) m.el.style.display = (labelsOn && (at >= events.length - 1 || i === at || i === at - 1) && i <= at) ? '' : 'none'; });
+                // trav = true while travelling TO stop `at`: its name is shown from the moment the leg starts, so you can see where the team is heading.
+                const showLabels = (at, trav) => stopLabels.forEach((m, i) => { if (m) m.el.style.display = (labelsOn && ((at >= events.length - 1 && !trav) || i === at || i === at - 1) && i <= at) ? '' : 'none'; });
                 skipped.forEach(ev => {
                     const x = document.createElement('div');
                     x.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#7f1d1d;border:2px solid #f87171;color:#fecaca;font-size:11px;font-weight:900;line-height:14px;text-align:center;opacity:.9';
@@ -12274,12 +12276,13 @@
                 const stopPlay = () => {
                     playing = false; playToken++; stopWaiting();
                     clearPostcard(); clearModeMarker();
-                    liveLayer.clear(); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
+                    liveLayer.clear(); showLabels(step); if (events[step]) avatar.setLatLng([events[step].lat, events[step].lng]);
                     play.innerHTML = '<i class="fa-solid fa-play"></i> Play';
                 };
                 const wait = (ms, token) => new Promise(resolve => { waitTimer = setTimeout(() => resolve(token === playToken && playing), ms); });
                 const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
                 const animateLeg = (a, b, token) => new Promise(resolve => {
+                    showLabels(events.indexOf(b), true);
                     const dist = WdwMap.distance([a.lat, a.lng], [b.lat, b.lng]);
                     const duration = Math.min(2600, 900 + Math.sqrt(dist) * 18) / speed;   // short hops are quick, long trips take longer
                     const rp = planOf(b);
