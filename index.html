@@ -14703,17 +14703,22 @@
             for (let i = 0; i < n; i++) { lat[i] = raw.lat[i] / 1e5; lng[i] = raw.lng[i] / 1e5; }
             const grid = new Map();
             for (let i = 0; i < n; i++) { const k = Math.floor(lat[i] / CELL) * 100003 + Math.floor(lng[i] / CELL); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(i); }
-            return { n, lat, lng, off: Int32Array.from(raw.off), to: Int32Array.from(raw.to), len: Float32Array.from(raw.len), cls: Uint8Array.from(raw.cls || new Array(raw.to.length).fill(0)),
+            const off = Int32Array.from(raw.off), to = Int32Array.from(raw.to), cls = Uint8Array.from(raw.cls || new Array(raw.to.length).fill(0));
+            const roadNode = new Uint8Array(n), comp = new Int32Array(n).fill(-1);       // roadNode: has a real road (not just a path); comp: connected piece (fixed lines have several)
+            for (let i = 0; i < n; i++) for (let e = off[i]; e < off[i + 1]; e++) if (!cls[e]) { roadNode[i] = 1; break; }
+            let nc = 0;
+            for (let i = 0; i < n; i++) { if (comp[i] >= 0) continue; const st = [i]; comp[i] = nc; while (st.length) { const x = st.pop(); for (let e = off[x]; e < off[x + 1]; e++) { const y = to[e]; if (comp[y] < 0) { comp[y] = nc; st.push(y); } } } nc++; }
+            return { n, lat, lng, off, to, len: Float32Array.from(raw.len), cls, roadNode, comp,
                      grid, dist: new Float64Array(n), prev: new Int32Array(n), stamp: new Uint32Array(n), run: 0 };
         }
-        function nearest(g, p, maxM) {
+        function nearest(g, p, maxM, ok) {
             const cx = Math.floor(p[0] / CELL), cy = Math.floor(p[1] / CELL), maxR = Math.ceil(maxM / 55) + 1;
             let best = -1, bd = Infinity;
             for (let r = 0; r <= maxR; r++) {
                 for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
                     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
                     const c = g.grid.get((cx + dx) * 100003 + (cy + dy)); if (!c) continue;
-                    for (const i of c) { const d = hav(p, [g.lat[i], g.lng[i]]); if (d < bd) { bd = d; best = i; } }
+                    for (const i of c) { if (ok && !ok(i)) continue; const d = hav(p, [g.lat[i], g.lng[i]]); if (d < bd) { bd = d; best = i; } }
                 }
                 if (best >= 0 && bd <= (r) * 50) break;      // nothing nearer can be in an outer ring
             }
@@ -14744,15 +14749,26 @@
 
         // road/path route between two points: [lat,lng] list (with short connectors at both ends), or null
         function routePts(g, a, b, vehicle) {
-            const sa = nearest(g, a, 700), sb = nearest(g, b, 700);
+            const roadOk = i => g.roadNode[i] === 1;                      // vehicles start and finish on a road, not on a footpath
+            const snap = p => (vehicle && nearest(g, p, 700, roadOk)) || nearest(g, p, 700);
+            const sa = snap(a), sb = snap(b);
             if (!sa || !sb) return null;
             const ids = search(g, sa.i, sb.i, vehicle);
             return ids ? dedupe([a].concat(nodePts(g, ids), [b])) : null;
         }
         // ride along a fixed line between the points nearest to a and b: { pts, from, to } or null (different loops / too far)
         function linePts(g, a, b) {
-            const sa = nearest(g, a, 900), sb = nearest(g, b, 900);
-            if (!sa || !sb || sa.i === sb.i) return null;
+            let sa = nearest(g, a, 900), sb = nearest(g, b, 900);
+            if (!sa || !sb) return null;
+            if (g.comp[sa.i] !== g.comp[sb.i]) {                          // the nearest points are on different routes: use the one route that serves both places
+                let best = null;
+                [g.comp[sa.i], g.comp[sb.i]].forEach(c => {
+                    const ok = i => g.comp[i] === c, na = nearest(g, a, 900, ok), nb = nearest(g, b, 900, ok);
+                    if (na && nb && (!best || na.d + nb.d < best.s)) best = { s: na.d + nb.d, na, nb };
+                });
+                if (!best) return null; sa = best.na; sb = best.nb;
+            }
+            if (sa.i === sb.i) return null;
             const ids = search(g, sa.i, sb.i, false);
             return ids ? { pts: nodePts(g, ids), from: [g.lat[sa.i], g.lng[sa.i]], to: [g.lat[sb.i], g.lng[sb.i]] } : null;
         }
@@ -14805,6 +14821,7 @@
                         const rest = walkish.filter(m => m !== fixed);
                         const acc = rest.find(m => VEHICLE.has(m)) || 'walk', veh = VEHICLE.has(acc);
                         const p1 = routePts(net.road, A, L.from, veh), p3 = routePts(net.road, L.to, B, veh);
+                        if (!(p1 && p3)) return straight();
                         if (p1 && p3) {
                             const aw = acc === 'walk' && !walkish.includes('walk');
                             const pcs = [{ modes: [acc], pts: p1, auto: aw }, { modes: [fixed], pts: [L.from].concat(L.pts, [L.to]) }, { modes: [acc], pts: p3, auto: aw }];
@@ -14834,6 +14851,7 @@
                         }
                     }
                 }
+                if (fixed) return straight();                              // a boat / monorail / Skyliner / train leg with no line serving both places: don't pretend it drove
                 const veh = walkish.some(m => VEHICLE.has(m));
                 const pts = routePts(net.road, A, B, veh);
                 if (pts) return { pieces: [{ modes: walkish, pts }], meters: plen(pts), routed: true };
