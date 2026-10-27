@@ -1,7 +1,11 @@
 // Trivia for Disneyland Paris stops. Loaded after trivia-data.js, it ADDS to the same database (keyed by stop name; each stop can have easy / medium / hard).
 // Answer = index of the correct option.
-window.DISNEY_TRIVIA_DATABASE = window.DISNEY_TRIVIA_DATABASE || {};
-Object.assign(window.DISNEY_TRIVIA_DATABASE, {
+(function () {
+  var db = window.DISNEY_TRIVIA_DATABASE || {};
+  // If the main trivia file froze its object, work on a copy so adding Paris can't fail
+  if (Object.isFrozen(db) || !Object.isExtensible(db)) db = Object.assign({}, db);
+  window.DISNEY_TRIVIA_DATABASE = db;
+  Object.assign(db, {
   "Sleeping Beauty Castle": {
     "easy": {
       "q": "Which princess's story inspired the castle at Disneyland Paris?",
@@ -901,4 +905,70 @@ Object.assign(window.DISNEY_TRIVIA_DATABASE, {
       "q": "What is beside the hotel?",
       "options": [
         "A volcano",
-        "A
+        "A canal",
+        "Lake Disney",
+        "A forest"
+      ],
+      "answer": 2
+    }
+  },
+  "Disney's Sequoia Lodge": {
+    "easy": {
+      "q": "What kind of lodge is Sequoia Lodge?",
+      "options": [
+        "A beach hut",
+        "A castle",
+        "A national park lodge",
+        "A space station"
+      ],
+      "answer": 2
+    }
+  },
+  "Disney's Hotel Cheyenne": {
+    "easy": {
+      "q": "Which theme does Hotel Cheyenne use?",
+      "options": [
+        "The Arctic",
+        "The Jungle",
+        "Medieval Europe",
+        "The Wild West"
+      ],
+      "answer": 3
+    }
+  },
+  "Disney's Hotel Santa Fe": {
+    "easy": {
+      "q": "Which landscape inspires Hotel Santa Fe?",
+      "options": [
+        "The American Southwest desert",
+        "The Alps",
+        "The Caribbean",
+        "The Arctic"
+      ],
+      "answer": 0
+    }
+  },
+  "Disney's Davy Crockett Ranch": {
+    "easy": {
+      "q": "Who is the ranch named after?",
+      "options": [
+        "A cartoon dog",
+        "A French king",
+        "A famous American frontiersman",
+        "A space ranger"
+      ],
+      "answer": 2
+    },
+    "medium": {
+      "q": "What type of accommodation is found here?",
+      "options": [
+        "High-rise rooms",
+        "Boats",
+        "Log cabins",
+        "Igloos"
+      ],
+      "answer": 2
+    }
+  }
+});
+})();
