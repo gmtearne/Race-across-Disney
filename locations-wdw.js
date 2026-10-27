@@ -51,7 +51,7 @@ window.registerLocation({
     map: {
         vector: { data: "wdw-map.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
         // estimated road / line routes for the replays and distances (built from the map file by tools/build-routes.py; leave out to keep straight lines)
-        routes: { data: "wdw-routes.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
+        routes: { data: "wdw-routes.json?v=2", bounds: [[28.335, -81.625], [28.435, -81.500]] },
         // Bus stops for the replays: a bus leg rides to the stop nearest the place and walks the rest (used within ~1.8 km; `gate` = park entrance the walk goes through; add one per resort / water park / Disney Springs later).
         busStops: [
             { name: "Magic Kingdom bus stop",        lat: 28.415787, lng: -81.578713 , gate: { lat: 28.416662, lng: -81.581178 } },
