@@ -50,6 +50,8 @@ window.registerLocation({
 
     map: {
         vector: { data: "wdw-map.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
+        // estimated road / line routes for the replays and distances (built from the map file by tools/build-routes.py; leave out to keep straight lines)
+        routes: { data: "wdw-routes.json?v=1", bounds: [[28.335, -81.625], [28.435, -81.500]] },
         areas: [
             { key: "all", name: "Whole Resort", icon: "🗺️", bounds: [[28.335,-81.625],[28.435,-81.500]], desc: "Viewing all of Walt Disney World. Pick a park from the menu above to zoom in, or pinch and drag to explore." },
             { key: "mk", name: "Magic Kingdom", icon: "🏰", bounds: [[28.4140,-81.5900],[28.4250,-81.5720]], desc: "Viewing Magic Kingdom (Cinderella Castle, Fantasyland, Tomorrowland, Frontierland, Adventureland, Liberty Square)." },
