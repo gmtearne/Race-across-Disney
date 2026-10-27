@@ -11958,7 +11958,8 @@
                         const n = step + 1;
                         const act = teams.filter(tm => n <= tm.m);
                         const extra = act.map(tm => { const p = spotAt(tm, n); return [p.lat, p.lng]; })
-                            .concat(act.filter(tm => tm.vias[n - 1]).map(tm => [tm.vias[n - 1].lat, tm.vias[n - 1].lng]));
+                            .concat(act.filter(tm => tm.vias[n - 1]).map(tm => [tm.vias[n - 1].lat, tm.vias[n - 1].lng]))
+                            .concat(act.flatMap(tm => { const pl = tm.polys && tm.polys[n - 1]; return pl ? pl.pts.filter((_, i) => i % 6 === 0) : []; }));   // keep the whole estimated route in frame, not just its ends
                         showLabels(n, true);                                    // name the stops being travelled to from the start of the round
                         if (frameTeams(true, extra) && !(await wait(900 / speed, token))) return;
                         if (!(await animateStage(n, token))) return;
@@ -12244,8 +12245,9 @@
                     cluster(ev, animate) { return this.fitTo(clusterPts[ev.cluster], 'c' + ev.cluster, animate); },
                     leg(a, b, animate) {
                         if (a.cluster === b.cluster && !viaOf(b)) return this.cluster(b, animate);          // short hop inside a park: frame the park
-                        const v = viaOf(b);
-                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]].concat(v ? [[v.lat, v.lng]] : []), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg (and any resort in between)
+                        const v = viaOf(b), rp = planOf(b);
+                        const route = rp ? rp.pieces.flatMap(pc => pc.pts.filter((_, i) => i % 6 === 0)) : [];       // include the estimated route so it can't leave the frame
+                        return this.fitTo([[a.lat, a.lng], [b.lat, b.lng]].concat(v ? [[v.lat, v.lng]] : [], route), 'l' + a.cluster + '-' + b.cluster, animate);   // long leg: frame the whole leg (and any resort in between)
                     },
                     overview(animate) { framed = 'all'; WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:animate !== false }); },
                     reset() { framed = null; }
