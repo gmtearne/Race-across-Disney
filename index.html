@@ -11604,6 +11604,7 @@
                         <div><p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Round</p><p id="orr-clock" class="font-mono font-bold text-xl text-white leading-none">Race start</p></div>
                         <div class="flex items-center gap-2 flex-wrap justify-end">
                           <button id="orr-frame" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200">📍 Auto-frame</button>
+                          <button id="orr-labels" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Show or hide stop names">🏷️ Labels</button>
                           <button id="orr-speed" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Playback speed">1×</button>
                           <button id="orr-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button>
                         </div>
@@ -11620,15 +11621,15 @@
                         </div>
                       </div>
                       <div id="orr-chips" class="flex flex-wrap gap-1.5"></div>
-                      <p class="text-[10px] text-slate-500">Every team heads for its next checkpoint together; the leader sets off first, by the size of their lead. Times are cumulative from each team's own start${isScavenger ? '' : ', with bonus time applied at the end of each leg'}. Straight-line legs; tap a team to follow it.</p>
+                      <p class="text-[10px] text-slate-500">Every team heads for its next checkpoint together; the leader sets off first, by the size of their lead. Times are cumulative from each team's own start${isScavenger ? '' : ', with bonus time applied at the end of each leg'}. Routes between checkpoints are estimates: there's no GPS tracking between check-ins, so a team's real path may have differed. They're for fun, not a record of where anyone actually went. Tap a team to follow it.</p>
                     </div>
                   </div>`;
                 document.body.appendChild(modal);
 
                 // ---- Lifecycle ----
-                let step = 0, playing = false, playToken = 0, speed = 1, map = null, autoFrame = true, board = null;
+                let step = 0, playing = false, playToken = 0, speed = 0.5, map = null, autoFrame = true, board = null;   // `speed` is the real pacing factor; the button shows speed x 2 (so the old 0.5x pacing is now 1x)
                 let waitTimer = null, holdResolve = null;
-                const SPEEDS = [0.5, 1, 2, 4];
+                const SPEEDS = [0.25, 0.5, 1, 2];
                 const onKey = e => { if (e.key === 'Escape') close(); };
                 const close = () => {
                     playing = false; playToken++; releaseHold();
@@ -11686,6 +11687,26 @@
                     tm.marker = WdwMap.marker(map, [tm.start.lat, tm.start.lng], el, { size:[32, 32], offset:[ox, oy], title:tm.name });
                     tm.prog = 0;
                 });
+                // Stop-name labels (one per place even if several teams checked in there): while playing, each team names the stop it just reached and the one before; the finished map names every stop.
+                let labelsOn = true;
+                const labelPins = new Map();
+                const labelKey = sp => sp.lat.toFixed(5) + ',' + sp.lng.toFixed(5);
+                teams.forEach(tm => tm.stops.forEach(sp => {
+                    const k = labelKey(sp); if (labelPins.has(k) || !sp.label) return;
+                    const el = document.createElement('div');
+                    el.style.cssText = 'position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 9px));white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;padding:1px 6px;border-radius:6px;background:rgba(15,23,42,.84);border:1px solid rgba(148,163,184,.35);color:#f1f5f9;font-size:10px;font-weight:700;line-height:14px;pointer-events:none;text-shadow:0 1px 2px #000';
+                    el.textContent = sp.label;
+                    const pin = WdwMap.marker(map, [sp.lat, sp.lng], el, { size:[1, 1], interactive:false, z:500 });
+                    pin.el.style.display = 'none'; labelPins.set(k, pin);
+                }));
+                const showLabels = n => {
+                    const on = new Set();
+                    if (labelsOn) {
+                        if (n >= N) teams.forEach(tm => tm.stops.forEach(sp => on.add(labelKey(sp))));
+                        else teams.forEach(tm => { const j = Math.min(n, tm.m); if (j >= 1) on.add(labelKey(tm.stops[j - 1])); if (j >= 2) on.add(labelKey(tm.stops[j - 2])); });
+                    }
+                    labelPins.forEach((pin, k) => { pin.el.style.display = on.has(k) ? '' : 'none'; });
+                };
 
                 // ---- Progress bar avatars + ranking chips ----
                 const barAv = modal.querySelector('#orr-avatars'), fill = modal.querySelector('#orr-fill'), chips = modal.querySelector('#orr-chips');
@@ -11753,7 +11774,7 @@
                     teamLines.set(trails);
                 };
                 const clockEl = modal.querySelector('#orr-clock'), slider = modal.querySelector('#orr-slider');
-                const syncUi = () => { slider.value = String(step); clockEl.textContent = step === 0 ? 'Race start' : `Checkpoint ${step} / ${N}`; };
+                const syncUi = () => { showLabels(step); slider.value = String(step); clockEl.textContent = step === 0 ? 'Race start' : `Checkpoint ${step} / ${N}`; };
                 const setStep = k => {     // jump straight to the state after round k (no leaderboard)
                     closeBoard(false);
                     step = Math.max(0, Math.min(N, Number(k) || 0));
@@ -11775,6 +11796,8 @@
                     WdwMap.flyTo(map, cam.center, cam.zoom, { duration:1 });
                     return true;
                 };
+                const labelsBtn = modal.querySelector('#orr-labels');
+                labelsBtn.onclick = () => { labelsOn = !labelsOn; labelsBtn.style.opacity = labelsOn ? '1' : '.55'; showLabels(step); };
                 const frameBtn = modal.querySelector('#orr-frame');
                 const setAutoFrame = on => { autoFrame = on; frameBtn.textContent = on ? '📍 Auto-frame' : '📍 Free camera'; frameBtn.style.opacity = on ? '1' : '.7'; };
                 frameBtn.onclick = () => { setAutoFrame(!autoFrame); if (autoFrame) frameTeams(true); };
@@ -11962,7 +11985,7 @@
                     setStep(slider.value);
                     clearTimeout(scrubTimer); scrubTimer = setTimeout(() => frameTeams(true), 150);
                 });
-                modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = speed + '×'; };
+                modal.querySelector('#orr-speed').onclick = e => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; e.currentTarget.textContent = (speed * 2) + '×'; };
 
                 setStep(0);
                 setTimeout(() => { if (!map) return; map.resize(); WdwMap.fit(map, allLatLngs, { padding:28, maxZoom:16, animate:false }); }, 120);   // opening overview
@@ -12014,6 +12037,7 @@
                       <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0"><p id="replay-stop-name" class="font-bold text-white truncate">Race start</p><p id="replay-stop-meta" class="text-xs text-slate-400">Starting point</p></div>
                         <div class="flex items-center gap-2 shrink-0">
+                          <button id="replay-labels" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Show or hide stop names">🏷️ Labels</button>
                           <button id="replay-speed" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-200" aria-label="Playback speed">1×</button>
                           <button id="replay-play" class="race-action race-action--start shrink-0"><i class="fa-solid fa-play"></i> Play</button>
                         </div>
@@ -12024,7 +12048,7 @@
                         <span><i class="fa-solid fa-minus" style="color:#38bdf8"></i> Walk</span><span><i class="fa-solid fa-minus" style="color:#34d399"></i> Bus</span><span><i class="fa-solid fa-minus" style="color:#a78bfa"></i> Monorail</span><span><i class="fa-solid fa-minus" style="color:#fb923c"></i> Skyliner</span><span><i class="fa-solid fa-minus" style="color:#f87171"></i> Boat</span><span><i class="fa-solid fa-minus" style="color:#f472b6"></i> Bonus</span><span><i class="fa-solid fa-minus" style="color:#94a3b8"></i> Not recorded</span>
                         ${hasManual ? '<span><i class="fa-regular fa-circle" style="color:#34d399"></i> Manual check-in</span>' : ''}
                         ${skipped.length ? `<span style="color:#fca5a5">✕ Rejected by host (${skipped.length}) – not on route</span>` : ''}
-                        <span class="text-slate-500">Straight-line legs; not a GPS track</span>
+                        <span class="text-slate-500">Routes are estimates for fun: no GPS between check-ins, so the real path may have differed</span>
                       </div>
                     </div>
                   </div>`;
@@ -12062,6 +12086,18 @@
                     WdwMap.dot(map, [ev.lat, ev.lng], { color:c, r:i === 0 ? 7 : 5, weight:2, fill:ev.manual ? .2 : .95,
                         title:`${i + 1}. ${ev.label}${ev.manual ? ' (manual check-in)' : ''}`, onClick:() => { stopPlay(); renderStep(i, true); } });
                 });
+                // Name labels over the pins: a stop's label appears once the team has checked in there (the park map's own labels are hidden when zoomed in).
+                const stopLabels = events.map((ev, i) => {
+                    if (i === 0 || !ev.label) return null;
+                    const el = document.createElement('div');
+                    el.style.cssText = 'position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 9px));white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;padding:1px 6px;border-radius:6px;background:rgba(15,23,42,.84);border:1px solid rgba(148,163,184,.35);color:#f1f5f9;font-size:10px;font-weight:700;line-height:14px;pointer-events:none;text-shadow:0 1px 2px #000';
+                    el.textContent = (ev.kind === 'bonus' ? '⭐ ' : '') + ev.label;
+                    const m = WdwMap.marker(map, [ev.lat, ev.lng], el, { size:[1, 1], interactive:false, z:500 });
+                    m.el.style.display = 'none'; return m;
+                });
+                // Only the stop just reached and the one before it are named while playing; the finished map names them all. Toggle with the 🏷️ button.
+                let labelsOn = true;
+                const showLabels = at => stopLabels.forEach((m, i) => { if (m) m.el.style.display = (labelsOn && (at >= events.length - 1 || i === at || i === at - 1) && i <= at) ? '' : 'none'; });
                 skipped.forEach(ev => {
                     const x = document.createElement('div');
                     x.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#7f1d1d;border:2px solid #f87171;color:#fecaca;font-size:11px;font-weight:900;line-height:14px;text-align:center;opacity:.9';
@@ -12226,7 +12262,7 @@
 
                 const renderStep = (n, moveCamera) => {
                     step = Math.max(0, Math.min(events.length - 1, Number(n) || 0)); slider.value = String(step);
-                    routeLayer.clear(); liveLayer.clear();
+                    routeLayer.clear(); liveLayer.clear(); showLabels(step);
                     for (let i = 1; i <= step; i++) drawLegSegs(routeLayer, events[i - 1], events[i], events[i], 1);
                     const ev = events[step]; avatar.setLatLng([ev.lat, ev.lng]);
                     nameEl.textContent = ev.label;
@@ -12327,6 +12363,8 @@
                     }
                 };
                 slider.addEventListener('input', () => { stopPlay(); renderStep(slider.value, true); });
+                const labelsBtn = modal.querySelector('#replay-labels');
+                labelsBtn.onclick = () => { labelsOn = !labelsOn; labelsBtn.style.opacity = labelsOn ? '1' : '.55'; showLabels(step); };
                 speedBtn.onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; speedBtn.textContent = speed + '×'; };
                 play.onclick = () => {
                     if (playing) { stopPlay(); return; }
