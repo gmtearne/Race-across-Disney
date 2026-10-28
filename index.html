@@ -14584,7 +14584,9 @@
         window.enhanceSelect('create-wildcard-duration', { title: 'Wildcard offered for', searchable: false });
         window.enhanceSelect('create-rules-transport', { title: 'Transportation', searchable: false });
         window.enhanceSelect('create-rules-internet', { title: 'Internet help', searchable: false });
-        window.applyRulesPreset('competitive');
+        // applyRulesPreset is defined further down in the module script, which runs after this one: wait for it
+        if (window.applyRulesPreset) window.applyRulesPreset('competitive');
+        else window.addEventListener('DOMContentLoaded', () => { if (window.applyRulesPreset) window.applyRulesPreset('competitive'); });
         window.enhanceSegmented('trivia-frequency');
         window.enhanceSegmented('edit-trivia-frequency');
 
