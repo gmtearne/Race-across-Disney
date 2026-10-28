@@ -1316,8 +1316,26 @@
             <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('how-to-play')"><i class="fa-solid fa-circle-question"></i>How to play</button>
             <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('support')"><i class="fa-solid fa-life-ring"></i>Support</button>
             <button type="button" role="menuitem" class="sm-item" onclick="openUtilPage('disclaimer')"><i class="fa-solid fa-scale-balanced"></i>Disclaimer</button>
+            <button type="button" role="menuitem" class="sm-item" id="sm-install" onclick="installApp()" style="display:none"><i class="fa-solid fa-mobile-screen-button"></i>Install app</button>
         </nav>
     </div>
+    <script>
+    // "Install app" menu item. Chrome only fires beforeinstallprompt when it considers the site installable; if it has not, we explain how to add it by hand.
+    (function () {
+        var deferred = null, item = function () { return document.getElementById('sm-install'); };
+        var standalone = function () { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; };
+        var show = function () { var el = item(); if (el && !standalone()) el.style.display = ''; };
+        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; show(); });
+        window.addEventListener('appinstalled', function () { deferred = null; var el = item(); if (el) el.style.display = 'none'; });
+        document.addEventListener('DOMContentLoaded', show);
+        window.installApp = function () {
+            try { window.closeAppMenu && window.closeAppMenu(); } catch (e) {}
+            if (deferred) { var d = deferred; deferred = null; d.prompt(); if (d.userChoice) d.userChoice.then(function () { var el = item(); if (el) el.style.display = 'none'; }); return; }
+            var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            alert(ios ? 'To install: tap the Share button, then "Add to Home Screen".' : 'Your browser has not offered one-tap install yet. In Chrome, open the \u22EE menu and choose "Install app" or "Add to Home screen". If neither is listed, reload the page once or twice and try again.');
+        };
+    })();
+    </script>
 
     <!-- Utility pages: full screen, above everything. Placeholders for now. -->
     <section id="util-how-to-play" class="util-page" role="dialog" aria-modal="true" aria-labelledby="util-how-to-play-title" aria-hidden="true">
