@@ -5,7 +5,7 @@
 // - Common CDN libraries (Tailwind, Font Awesome, Firebase SDK, fonts): stale-while-revalidate,
 //   so the app can still open offline after the first visit.
 // BUMP `VERSION` whenever you add files to CORE below, so phones pick up the new list.
-const VERSION = 'mouse-race-v8';
+const VERSION = 'mouse-race-v9';
 
 const CORE = [
   './',
@@ -18,9 +18,15 @@ const CORE = [
   './img/bg-placeholder.jpg',
   './wdw-map.json?v=1',
   './vendor/maplibre-gl.js',
-  './vendor/maplibre-gl.css'
+  './vendor/maplibre-gl.css',
   './trivia-dlp.js',
   './locations-dlp.js',
+  './wdw-routes.json?v=2',
+  './host.html',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png'
 ];
 
 const CDN_HOSTS = [
