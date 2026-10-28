@@ -347,6 +347,8 @@
         /* ---- Check-in card flip + trivia slide ---- */
         .cp-flip { perspective: 900px; }
         .cp-flip-inner { display: grid; transform-style: preserve-3d; }
+        .cp-h-std { min-height: 4.6rem; }
+        .cp-h-riddle { min-height: 6.6rem; }   /* every card is as tall as a riddle card when the race has riddles, so the list stays even */
         .cp-face { grid-area: 1 / 1; -webkit-backface-visibility: hidden; backface-visibility: hidden; min-width: 0; }
         .cp-back { transform: rotateY(180deg); background: linear-gradient(135deg, #FFF176 0%, #FFE600 60%, #FFD600 100%); border: 1px solid #FFF59D; color: #1e293b; }
         .cp-back.cp-back-rejected { background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%); border-color: #FECACA; }
@@ -5849,6 +5851,7 @@
                 await setDoc(doc(window.db, "races", code), {
                     title: title,
                     code: code,
+                    demoRace: !!demo,   // created in demo mode: may always be started (demo is free and permanent); real limits are the demo caps
                     gameMode: gameMode,
                     difficulty: difficulty,
                     timeLimitMinutes: timeLimitMinutes,
@@ -13186,25 +13189,26 @@
                     const appleMark = (window.myAppleMarks()[cp.id]) || '';
                     const legTxt = isDone ? window.formatTransitLeg((tData.transitLegs || {})[cp.id]) : '';
 
+                    const hCls = (raceData.checkpoints || []).some(c => c && c.riddle) ? 'cp-h-riddle' : 'cp-h-std';
                     const handle = (cls) => `<div class="cursor-grab ${cls} px-1 py-3 shrink-0" title="Drag to reorder route"><i class="fa-solid fa-grip-vertical text-sm"></i></div>`;
 
                     return `
                         <div data-id="${cp.id}" ${clickAction} class="checkpoint-card ${hoverCursor} transition">
                             <div class="cp-flip ${flipClass}" ${flipStyle}>
                                 <div class="cp-flip-inner">
-                                    <div ${bgStyle} class="cp-face cp-front p-2.5 bg-slate-900 rounded-2xl border border-slate-700/80 ${frontHover} transition flex items-center gap-2 shadow-sm">
+                                    <div ${bgStyle} class="cp-face cp-front ${hCls} p-2.5 bg-slate-900 rounded-2xl border border-slate-700/80 ${frontHover} transition flex items-center gap-2 shadow-sm">
                                         ${handle('text-slate-500 hover:text-slate-300')}
                                         <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
                                             <span class="checkpoint-number font-mono font-bold text-disneyGold text-sm">#${idx + 1}</span>
                                             ${isFinal ? '<span title="Final destination stop" aria-label="Final destination stop" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xs">🏁</span>' : ''}
                                         </div>
                                         <div class="min-w-0 flex-1">
-                                            <p class="${riddleOn ? 'font-medium italic text-[12.5px]' : 'font-bold text-[13px]'} leading-snug text-white">${riddleOn ? '<span class="not-italic text-[10px] font-black uppercase tracking-widest text-fuchsia-300 block mb-0.5">🧩 Riddle</span>' + escHtml(cp.riddle) : cp.name}</p>
-                                            <p class="text-[11px] text-slate-400 leading-snug mt-0.5">${subtitleContent}</p>
+                                            <p class="${riddleOn ? 'font-medium italic text-[12.5px]' : 'font-bold text-[13px]'} leading-snug text-white">${riddleOn ? '<span class="not-italic text-[10px] font-black uppercase tracking-widest text-fuchsia-300 block mb-0.5">🧩 Riddle</span><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + escHtml(cp.riddle) + '</span>' : cp.name}</p>
+                                            <p class="text-[11px] text-slate-400 leading-snug mt-0.5" ${riddleOn ? 'style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"' : ''}>${subtitleContent}</p>
                                         </div>
                                         ${frontAction}
                                     </div>
-                                    <div class="cp-face cp-back ${isRejected ? 'cp-back-rejected' : ''} ${appleMark ? 'ring-2 ring-lime-400 ring-offset-1 ring-offset-slate-900' : ''} p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
+                                    <div class="cp-face cp-back ${hCls} ${isRejected ? 'cp-back-rejected' : ''} ${appleMark ? 'ring-2 ring-lime-400 ring-offset-1 ring-offset-slate-900' : ''} p-2.5 rounded-2xl flex items-center gap-2 shadow-lg">
                                         ${handle('text-slate-700 hover:text-slate-900')}
                                         <div class="w-9 shrink-0 flex flex-col items-center gap-1 leading-none">
                                             <span class="checkpoint-number font-mono font-extrabold text-slate-800 text-sm">#${idx + 1}</span>
@@ -13214,7 +13218,7 @@
                                         <div class="min-w-0 flex-1">
                                             <p class="font-extrabold text-[13px] leading-snug text-slate-900">${riddleOn ? '🧩 Riddle stop (name hidden)' : cp.name}</p>
                                             <p class="text-[11px] font-semibold text-slate-800 leading-snug mt-0.5">Checked in${doneTime ? ' at ' + doneTime : ''}</p>
-                                            ${riddleOn ? '<p class="text-[10px] font-bold text-slate-900/80 mt-0.5">Manual check-in: the name stays hidden. Check in by GPS or use a hint to reveal it.</p>' : ''}
+                                            ${riddleOn ? '<p class="text-[10px] font-bold text-slate-900/80 mt-0.5" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Name stays hidden. Check in by GPS or use a hint to reveal it.</p>' : ''}
                                             ${appleMark ? `<p class="text-[10px] font-black text-lime-900 mt-0.5">${appleMark === 'active' ? '☠️ Your apple has been eaten here' : '🍎 Your poison apple is waiting here'}</p>` : ''}
                                             ${legTxt ? `<p class="text-[10px] font-semibold text-slate-800 mt-0.5">${legTxt}</p>` : ''}
                                             ${isRejected ? '<p class="text-[10px] font-bold text-rose-800 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-ban"></i> Rejected by the host</p>' : (isManualOverride ? '<p class="text-[10px] font-bold text-amber-900 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Manual check-in</p>' : '')}
@@ -13873,7 +13877,7 @@
             if (raceConfig.gameMode !== 'scavenger' && raceConfig.enforceHostStart !== true) return alert('This race was created for individual team starts.');
             if ((raceConfig.startMode || 'global') !== 'global' || raceConfig.gameMode === 'race' && raceConfig.startMode === 'staggered') return alert('This race is configured for staggered start.');
             if (raceConfig.raceStartedAt || raceConfig.staggerSchedule?.length) return alert('This race has already started. Use pause/resume instead.');
-            if (!window.isPlatformAdmin && !window.isHostPassActive()) return alert(window.hostRacingClosedMessage());
+            if (!window.isPlatformAdmin && !window.isHostPassActive() && !raceConfig.demoRace) return alert(window.hostRacingClosedMessage());
             if (!await appConfirm("Start every currently approved, unfinished team's timer at the same time? Teams approved later can start individually.", {title:"Global start", confirmText:"Start all teams"})) return;
             const teams = await getDocs(collection(window.db, "races", code, "teams"));
             const startTime = new Date().toISOString();
@@ -13937,7 +13941,7 @@
             if (owned.data.gameMode==='scavenger') return alert("Staggered starts are available for Speed Races only.");
             if (owned.data.enforceHostStart !== true || (owned.data.startMode || 'global') !== 'staggered') return alert("This race was not configured for a host-controlled staggered start.");
             if (owned.data.raceStartedAt || owned.data.staggerSchedule?.length) return alert("This race has already started. Use pause/resume instead.");
-            if (!window.isPlatformAdmin && !window.isHostPassActive()) return alert(window.hostRacingClosedMessage());
+            if (!window.isPlatformAdmin && !window.isHostPassActive() && !owned.data.demoRace) return alert(window.hostRacingClosedMessage());
             const teams=await getDocs(collection(window.db,"races",code,"teams"));
             const eligible=teams.docs.filter(d=>d.data().isApproved&&!d.data().endTime&&!d.data().startTime);
             if (!eligible.length) return alert("There are no approved, not-yet-started teams to schedule.");
